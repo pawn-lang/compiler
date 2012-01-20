@@ -1,0 +1,4 @@
+54c54
+< #define sLINEMAX     511    /* input line length (in characters) */
+---
+> #define sLINEMAX    4095    /* input line length (in characters) */
