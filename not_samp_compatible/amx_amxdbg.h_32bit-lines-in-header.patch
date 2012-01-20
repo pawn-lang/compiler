@@ -1,0 +1,4 @@
+72c72
+<   int16_t lines         PACKED; /* number of entries in the "line" table */
+---
+>   int32_t lines         PACKED; /* number of entries in the "line" table */
