@@ -11,6 +11,9 @@ fi
 srcdir=$1
 patch="patch --batch"
 
+# Convert CRLF to LF to fix patch errors on *nix
+find $srcdir -name '*.c' -or -name '*.h' | xargs sed -i 's/\r//g'
+
 $patch "$srcdir/AMX/amxdbg.h"   "not_samp_compatible/AMX_amxdbg.h_32bit-lines-in-header.patch"
 
 $patch "$srcdir/COMPILER/sc.h"  "samp_compatible/COMPILER_sc.h_increase-max-line-length.patch"
