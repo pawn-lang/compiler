@@ -9,7 +9,7 @@ then
 fi
 
 srcdir=$1
-patch="patch --batch"
+patch="patch --force --silent"
 
 # Convert CRLF to LF to fix patch errors on *nix
 find $srcdir -name '*.c' -or -name '*.h' | xargs sed -i 's/\r//g'
