@@ -1,0 +1,4 @@
+78c78
+< #define AMX_DBG_MAGIC   0xf1ef
+---
+> #define AMX_DBG_MAGIC   0xf2ef
