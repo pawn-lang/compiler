@@ -1,5 +1,4 @@
-Applying all patches at once
-----------------------------
+Instructions:
 
 1) download http://www.compuphase.com/pawn/pawn-3.2.3664.zip
 2) unzip pawn-3.2.3664.zip somewhere
