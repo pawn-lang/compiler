@@ -8,15 +8,21 @@ then
   exit
 fi
 
-srcdir=$1
-patch="patch --force --silent"
-
-# Convert CRLF to LF to fix patch errors on *nix
+# Convert all CRLF to LF to fix patch errors on *nix
 find $srcdir -name '*.c' -or -name '*.h' | xargs sed -i 's/\r//g'
 
-$patch "$srcdir/AMX/amxdbg.h"   "not_samp_compatible/AMX_amxdbg.h_32bit-lines-in-header.patch"
-$patch "$srcdir/AMX/amxdbg.h"   "not_samp_compatible/AMX_amxdbg.h_new-magic.patch"
+# Remember the current directory
+patchdir=`pwd`
 
-$patch "$srcdir/COMPILER/sc.h"  "samp_compatible/COMPILER_sc.h_increase-max-line-length.patch"
-$patch "$srcdir/COMPILER/sc1.c" "samp_compatible/COMPILER_sc1.c_md-array-fix.patch"
-$patch "$srcdir/COMPILER/sc2.c" "samp_compatible/COMPILER_sc2.c_stringize-ops.patch"
+# Go to the source directory and patch all files from there
+srcdir=$1
+cd $srcdir
+
+patch="patch -p1 --force -i"
+
+$patch $patchdir/not_samp_compatible/32bitLinesInDebugHeader.patch
+$patch $patchdir/not_samp_compatible/NewDebugMagic.patch
+
+$patch $patchdir/samp_compatible/CompileTimeStringOps.patch
+$patch $patchdir/samp_compatible/FixMDArrayInitialization.patch
+$patch $patchdir/samp_compatible/IncreaseLineLimitTo4095.patch

@@ -1,0 +1,242 @@
+diff -ruNpw SOURCE/COMPILER/sc2.c SOURCE_patched/COMPILER/sc2.c
+--- SOURCE/COMPILER/sc2.c	Tue Oct 24 09:13:26 2006
++++ SOURCE_patched/COMPILER/sc2.c	Sun Jan 22 20:00:59 2012
+@@ -39,6 +39,7 @@
+ /* flags for litchar() */
+ #define RAWMODE         1
+ #define UTF8MODE        2
++#define STRINGIZE       4
+ static cell litchar(const unsigned char **lptr,int flags);
+ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int automaton,int *cmptag);
+ 
+@@ -1724,32 +1725,135 @@ SC_FUNC void preprocess(void)
+   } while (iscommand!=CMD_NONE && iscommand!=CMD_TERM && freading); /* enddo */
+ }
+ 
+-static const unsigned char *unpackedstring(const unsigned char *lptr,int flags)
++static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
+ {
+-  while (*lptr!='\"' && *lptr!='\0') {
+-    if (*lptr=='\a') {          /* ignore '\a' (which was inserted at a line concatenation) */
++  unsigned char *stringize;
++  int instring=1;
++  if (*flags & STRINGIZE)                 /* ignore leading spaces after the # */
++    while (*lptr==' ' || *lptr=='\t')     /* this is as defines with parameters may add them */
++      lptr++;                             /* when you use a space after , in a match pattern */
++  while (*lptr!='\0') {
++    if (*lptr=='\a') {
+       lptr++;
+       continue;
+     } /* if */
+-    litadd(litchar(&lptr,flags | UTF8MODE));  /* litchar() alters "lptr" */
++    if (!instring) {
++      if (*lptr=='\"') {
++        instring=1;
++      } else if (*lptr=='#') {
++        while (*++lptr==' ' || *lptr=='\t');
++        lptr--;
++        instring=1;
++        *flags |= STRINGIZE;
++      } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' || *lptr=='\r' || *lptr=='\n') {
++        break;
++      } else if (*lptr!=' ' && *lptr!='\t') {
++        error(1,"-string end-","-identifier-");
++        break;
++      }
++      lptr++;
++      continue;
++    }
++    if (*flags & STRINGIZE) {
++      stringize=lptr; /* check we're still in a valid stringize string */
++      while (*stringize==' ' || *stringize=='\t')
++        stringize++; /* find next non space */
++      if (*stringize=='#') { /* new stringize string */
++        lptr=stringize+1;
++        while (*lptr==' ' || *lptr=='\t')
++          lptr++;
++        continue;
++      } else if (*stringize=='\"') { /* new string */
++        lptr=stringize+1;
++        *flags &= ~STRINGIZE;
++        continue;
++      } else if (*stringize==',' || *stringize==')' || *stringize=='}' || *stringize==';') { /* end */
++        lptr=stringize;
++        break;
++      } else if (*stringize=='\0') {
++        lptr=stringize;
++        *flags &= ~STRINGIZE; /* shouldn't happen - trigger an error */
++        break;
++      }
++    } else {
++      if (*lptr=='\"') {
++        stringize=lptr++;
++        instring=0;
++        continue;
++      } /* if (*flags & STRINGIZE) */
++    }
++    litadd(litchar(&lptr,*flags | UTF8MODE));  /* litchar() alters "lptr" */
+   } /* while */
+-  litadd(0);                    /* terminate string */
++  litadd(0);
++  
++  if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';')
++    lptr=stringize;						/* backtrack to end of last string for closing " */
+   return lptr;
+ }
+ 
+-static const unsigned char *packedstring(const unsigned char *lptr,int flags)
++static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
+ {
+   int i;
+   ucell val,c;
++  unsigned char *stringize;
++  int instring=1;
++  if (*flags & STRINGIZE)                     
++    while (*lptr==' ' || *lptr=='\t')
++      lptr++;
+ 
+   i=sizeof(ucell)-(sCHARBITS/8); /* start at most significant byte */
+   val=0;
+-  while (*lptr!='\"' && *lptr!='\0') {
++  while (*lptr!='\0') {
+     if (*lptr=='\a') {          /* ignore '\a' (which was inserted at a line concatenation) */
+       lptr++;
+       continue;
+     } /* if */
+-    c=litchar(&lptr,flags);     /* litchar() alters "lptr" */
++    if (!instring) {
++      if (*lptr=='\"') {
++        instring=1;
++      } else if (*lptr=='#') {
++        while (*++lptr==' ' || *lptr=='\t');
++        lptr--;
++        instring=1;
++        *flags |= STRINGIZE;
++      } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' || *lptr=='\r' || *lptr=='\n') {
++        break;
++      } else if (*lptr!=' ' && *lptr!='\t') {
++        error(1,"-string end-","-identifier-");
++        break;
++      }
++      lptr++;
++      continue;
++    }
++    if (*flags & STRINGIZE) {
++      stringize=lptr; /* check we're still in a valid stringize string */
++      while (*stringize==' ' || *stringize=='\t')
++        stringize++; /* find next non space */
++      if (*stringize=='#') { /* new stringize string */
++        lptr=stringize+1;
++        while (*lptr==' ' || *lptr=='\t')
++          lptr++;
++        continue;
++      } else if (*stringize=='\"') { /* new string */
++        lptr=stringize+1;
++        *flags &= ~STRINGIZE;
++        continue;
++      } else if (*stringize==',' || *stringize==')' || *stringize=='}' || *stringize==';') { /* end */
++        lptr=stringize;
++        break;
++      } else if (*stringize=='\0') {
++        lptr=stringize;
++        *flags &= ~STRINGIZE; /* shouldn't happen - trigger an error */
++        break;
++      }
++    } else {
++      if (*lptr=='\"') {
++        stringize=lptr++;
++        instring=0;
++        continue;
++      } /* if (*flags & STRINGIZE) */
++    }
++    c=litchar(&lptr,*flags);     /* litchar() alters "lptr" */
+     if (c>=(ucell)(1 << sCHARBITS))
+       error(43);                /* character constant exceeds range */
+     val |= (c << 8*i);
+@@ -1758,12 +1862,15 @@ static const unsigned char *packedstring
+       val=0;
+     } /* if */
+     i=(i+sizeof(ucell)-(sCHARBITS/8)) % sizeof(ucell);
+-  } /* if */
++  } /* while */
+   /* save last code; make sure there is at least one terminating zero character */
+   if (i!=(int)(sizeof(ucell)-(sCHARBITS/8)))
+     litadd(val);        /* at least one zero character in "val" */
+   else
+     litadd(0);          /* add full cell of zeros */
++
++  if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';')
++    lptr=stringize;						/* backtrack to end of last string for closing " */
+   return lptr;
+ }
+ 
+@@ -1947,33 +2054,41 @@ SC_FUNC int lex(cell *lexvalue,char **le
+         error(220);
+       } /* if */
+     } /* if */
+-  } else if (*lptr=='\"' || *lptr==sc_ctrlchar && *(lptr+1)=='\"')
++    } else if (*lptr=='\"' || *lptr=='#' || *lptr==sc_ctrlchar && (*(lptr+1)=='\"' || *(lptr+1)=='#'))
+   {                                     /* unpacked string literal */
+     _lextok=tSTRING;
+     stringflags= (*lptr==sc_ctrlchar) ? RAWMODE : 0;
++    stringflags |= (*lptr=='#' || (*lptr==sc_ctrlchar && *(lptr+1)=='#')) ? STRINGIZE : 0;
+     *lexvalue=_lexval=litidx;
+     lptr+=1;            /* skip double quote */
+     if ((stringflags & RAWMODE)!=0)
+       lptr+=1;          /* skip "escape" character too */
+-    lptr=sc_packstr ? packedstring(lptr,stringflags) : unpackedstring(lptr,stringflags);
++    lptr=sc_packstr ? packedstring(lptr,&stringflags) : unpackedstring(lptr,&stringflags);
+     if (*lptr=='\"')
+       lptr+=1;          /* skip final quote */
+-    else
++    else if (!(stringflags & STRINGIZE))
+       error(37);        /* invalid (non-terminated) string */
+-  } else if (*lptr=='!' && *(lptr+1)=='\"'
+-             || *lptr=='!' && *(lptr+1)==sc_ctrlchar && *(lptr+2)=='\"'
+-             || *lptr==sc_ctrlchar && *(lptr+1)=='!' && *(lptr+2)=='\"')
++  } else if (*lptr=='!' && (*(lptr+1)=='\"' || *(lptr+1)=='#')
++             || *lptr=='!' && *(lptr+1)==sc_ctrlchar && (*(lptr+2)=='\"'  || *(lptr+2)=='#')
++             || *lptr==sc_ctrlchar && *(lptr+1)=='!' && (*(lptr+2)=='\"'  || *(lptr+2)=='#'))
+   {                                     /* packed string literal */
+     _lextok=tSTRING;
+-    stringflags= (*lptr==sc_ctrlchar || *(lptr+1)==sc_ctrlchar) ? RAWMODE : 0;
++    stringflags=0;
++    if (*lptr==sc_ctrlchar || *(lptr+1)==sc_ctrlchar) {
++      stringflags=RAWMODE;
++      if (*(lptr+2)=='#')
++        stringflags |= STRINGIZE;
++    } else if (*(lptr+1)=='#') {
++      stringflags = STRINGIZE;
++    }
+     *lexvalue=_lexval=litidx;
+     lptr+=2;            /* skip exclamation point and double quote */
+     if ((stringflags & RAWMODE)!=0)
+       lptr+=1;          /* skip "escape" character too */
+-    lptr=sc_packstr ? unpackedstring(lptr,stringflags) : packedstring(lptr,stringflags);
++    lptr=sc_packstr ? unpackedstring(lptr,&stringflags) : packedstring(lptr,&stringflags);
+     if (*lptr=='\"')
+       lptr+=1;          /* skip final quote */
+-    else
++    else if (!(stringflags & STRINGIZE))
+       error(37);        /* invalid (non-terminated) string */
+   } else if (*lptr=='\'') {             /* character literal */
+     lptr+=1;            /* skip quote */
+@@ -2288,6 +2403,18 @@ static cell litchar(const unsigned char 
+         c=*cptr;
+         cptr+=1;
+         break;
++      case '#':
++      case ',':
++      case ';':
++      case ')':
++      case '}':
++        if (flags & STRINGIZE) {
++          c=*cptr;
++          cptr+=1;
++        } else {
++          error(27);    /* invalid character constant - only valid in stringize */
++        }
++        break;
+       default:
+         if (isdigit(*cptr)) {   /* \ddd */
+           c=0;
