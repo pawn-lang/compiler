@@ -8,6 +8,8 @@ then
   exit
 fi
 
+srcdir=$1
+
 # Convert all CRLF to LF to fix patch errors on *nix
 find $srcdir -name '*.c' -or -name '*.h' | xargs sed -i 's/\r//g'
 
@@ -15,7 +17,6 @@ find $srcdir -name '*.c' -or -name '*.h' | xargs sed -i 's/\r//g'
 patchdir=`pwd`
 
 # Go to the source directory and patch all files from there
-srcdir=$1
 cd $srcdir
 
 patch="patch -p1 --force -i"
