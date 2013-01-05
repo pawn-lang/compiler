@@ -8,7 +8,11 @@ Pre-compiled binaries for Linux and Windows can be found on the
 Build Instructions
 ------------------
 
-If you want to build the compiler manually:
+First of all, you have to install some packages. If you're using Ubuntu this is as simple as:
+
+    sudo apt-get install wget unzip git patch cmake make
+
+Then execute these commands, in order:
 
     wget http://www.compuphase.com/pawn/pawn-3.2.3664.zip
     unzip pawn-3.2.3664.zip
@@ -21,3 +25,5 @@ If you want to build the compiler manually:
     ./apply_compatible.sh ../../
     cmake ../
     make
+
+If everything goes well you'll find `pawncc` and `libpawnc.so` in `SOURCE/COMPILER/patches` folder.
