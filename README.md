@@ -25,5 +25,7 @@ Then execute these commands, in order:
     ./apply_compatible.sh ../../
     cmake ../
     make
+    cp libpawnc.so /usr/lib
+    cp pawncc /usr/bin
 
 If everything goes well you'll find `pawncc` and `libpawnc.so` in `SOURCE/COMPILER/patches` folder.
