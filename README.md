@@ -17,13 +17,12 @@ Then execute these commands, in order:
     wget http://www.compuphase.com/pawn/pawn-3.2.3664.zip
     unzip pawn-3.2.3664.zip
     cd SOURCE
-    mv AMX amx
-    mv LINUX linux
-    cd COMPILER
     git clone git://github.com/Zeex/pawn-3.2.3664_patches.git patches
     cd patches
-    ./apply_compatible.sh ../../
-    cmake ../
+    ./apply_compatible.sh ../ # change to apply_all.sh if you want all patches
+    mv ../AMX ../amx
+    mv ../LINUX ../linux
+    cmake ../COMPILER
     make
     cp libpawnc.so /usr/lib/
     cp pawncc /usr/bin/
