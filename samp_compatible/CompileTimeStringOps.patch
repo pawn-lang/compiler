@@ -38,6 +38,7 @@ diff -ruNpw SOURCE/COMPILER/sc2.c SOURCE_patched/COMPILER/sc2.c
 +        instring=1;
 +        *flags |= STRINGIZE;
 +      } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' || *lptr=='\r' || *lptr=='\n') {
++        lptr=stringize;
 +        break;
 +      } else if (*lptr!=' ' && *lptr!='\t') {
 +        error(1,"-string end-","-identifier-");
@@ -77,10 +78,6 @@ diff -ruNpw SOURCE/COMPILER/sc2.c SOURCE_patched/COMPILER/sc2.c
 +    litadd(litchar(&lptr,*flags | UTF8MODE));  /* litchar() alters "lptr" */
    } /* while */
 -  litadd(0);                    /* terminate string */
-+  litadd(0);
-+  
-+  if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';')
-+    lptr=stringize;						/* backtrack to end of last string for closing " */
    return lptr;
  }
  
