@@ -2,13 +2,15 @@ Download
 --------
 
 Pre-compiled binaries for Linux and Windows can be found on the
-[**`downloads`**](https://github.com/Zeex/pawn-3.2.3664_patches/tree/downloads) branch.
+[**`downloads`**](https://github.com/Zeex/pawn-3.2.3664_patches/tree/downloads)
+branch.
 
 
 Build Instructions
 ------------------
 
-First of all, you have to install some packages. If you're using Ubuntu this is as simple as:
+First of all, you have to install some packages. If you're using Ubuntu this is
+as simple as:
 
     sudo apt-get install wget unzip git patch cmake make
 
@@ -24,7 +26,6 @@ Then execute these commands, in order:
     mv ../LINUX ../linux
     cmake ../COMPILER
     make
-    cp libpawnc.so /usr/lib/
-    cp pawncc /usr/bin/
 
-If everything goes well you'll find `pawncc` and `libpawnc.so` in `SOURCE/COMPILER/patches` folder.
+If everything goes well you'll find `pawncc` and `libpawnc.so` in
+`SOURCE/COMPILER/patches` folder.
