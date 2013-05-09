@@ -1,11 +1,3 @@
-Download
---------
-
-Pre-compiled binaries for Linux and Windows can be found on the
-[**`downloads`**](https://github.com/Zeex/pawn-3.2.3664_patches/tree/downloads)
-branch.
-
-
 Build Instructions
 ------------------
 
