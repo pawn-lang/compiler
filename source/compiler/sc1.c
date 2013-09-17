@@ -4431,7 +4431,7 @@ static void reduce_referrers(symbol *root)
 }
 
 #if !defined SC_LIGHT
-static long max_stacksize_recurse(symbol **sourcesym,symbol **rsourcesym,int stkidx,symbol *sym,long basesize,int *pubfuncparams,int *recursion)
+static long max_stacksize_recurse(symbol **sourcesym,symbol *sym,symbol **rsourcesym,long basesize,int *pubfuncparams,int *recursion)
 {
   long size,maxsize;
   int i,stkpos;
@@ -4447,10 +4447,10 @@ static long max_stacksize_recurse(symbol **sourcesym,symbol **rsourcesym,int stk
     if (sym->refer[i]!=NULL) {
       assert(sym->refer[i]->ident==iFUNCTN);
       assert((sym->refer[i]->usage & uNATIVE)==0); /* a native function cannot refer to a user-function */
+      *(rsourcesym)=sym;
+      *(rsourcesym+1)=NULL;
       for (stkpos=0; sourcesym[stkpos]!=NULL; stkpos++) {
         if (sym->refer[i]==sourcesym[stkpos]) {   /* recursion detection */
-          rsourcesym[stkidx]=sym;
-          rsourcesym[stkidx+1]=NULL;
           *recursion=1;
           goto break_recursion;         /* recursion was detected, quit loop */
         } /* if */
@@ -4458,10 +4458,8 @@ static long max_stacksize_recurse(symbol **sourcesym,symbol **rsourcesym,int stk
       /* add this symbol to the stack */
       sourcesym[stkpos]=sym;
       sourcesym[stkpos+1]=NULL;
-      rsourcesym[stkidx]=sym;
-      rsourcesym[stkidx+1]=NULL;
       /* check size of callee */
-      size=max_stacksize_recurse(sourcesym,rsourcesym,stkidx+1,sym->refer[i],sym->x.stacksize,pubfuncparams,recursion);
+      size=max_stacksize_recurse(sourcesym,sym->refer[i],rsourcesym+1,sym->x.stacksize,pubfuncparams,recursion);
       if (maxsize<size)
         maxsize=size;
       /* remove this symbol from the stack */
@@ -4537,7 +4535,7 @@ static long max_stacksize(symbol *root,int *recursion)
     symstack[0]=sym;
     assert(symstack[1]==NULL);
     recursion_detected=0;
-    size=max_stacksize_recurse(symstack,rsymstack,0,sym,0L,&maxparams,&recursion_detected);
+    size=max_stacksize_recurse(symstack,sym,rsymstack,0L,&maxparams,&recursion_detected);
     if (recursion_detected) {
       if (rsymstack[1]==NULL) {
         pc_printf("recursion detected: function %s directly calls itself\n", sym->name);
