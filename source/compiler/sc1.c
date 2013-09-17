@@ -4431,7 +4431,7 @@ static void reduce_referrers(symbol *root)
 }
 
 #if !defined SC_LIGHT
-static long max_stacksize_recurse(symbol **sourcesym,symbol *sym,long basesize,int *pubfuncparams,int *recursion)
+static long max_stacksize_recurse(symbol **sourcesym,symbol **rsourcesym,int stkidx,symbol *sym,long basesize,int *pubfuncparams,int *recursion)
 {
   long size,maxsize;
   int i,stkpos;
@@ -4449,6 +4449,8 @@ static long max_stacksize_recurse(symbol **sourcesym,symbol *sym,long basesize,i
       assert((sym->refer[i]->usage & uNATIVE)==0); /* a native function cannot refer to a user-function */
       for (stkpos=0; sourcesym[stkpos]!=NULL; stkpos++) {
         if (sym->refer[i]==sourcesym[stkpos]) {   /* recursion detection */
+          rsourcesym[stkidx]=sym;
+          rsourcesym[stkidx+1]=NULL;
           *recursion=1;
           goto break_recursion;         /* recursion was detected, quit loop */
         } /* if */
@@ -4456,8 +4458,10 @@ static long max_stacksize_recurse(symbol **sourcesym,symbol *sym,long basesize,i
       /* add this symbol to the stack */
       sourcesym[stkpos]=sym;
       sourcesym[stkpos+1]=NULL;
+      rsourcesym[stkidx]=sym;
+      rsourcesym[stkidx+1]=NULL;
       /* check size of callee */
-      size=max_stacksize_recurse(sourcesym,sym->refer[i],sym->x.stacksize,pubfuncparams,recursion);
+      size=max_stacksize_recurse(sourcesym,rsourcesym,stkidx+1,sym->refer[i],sym->x.stacksize,pubfuncparams,recursion);
       if (maxsize<size)
         maxsize=size;
       /* remove this symbol from the stack */
@@ -4500,7 +4504,7 @@ static long max_stacksize(symbol *root,int *recursion)
   long size,maxsize;
   int maxparams,numfunctions;
   symbol *sym;
-  symbol **symstack;
+  symbol **symstack,**rsymstack;
 
   assert(root!=NULL);
   assert(recursion!=NULL);
@@ -4515,31 +4519,51 @@ static long max_stacksize(symbol *root,int *recursion)
   } /* if */
   /* allocate function symbol stack */
   symstack=(symbol **)malloc((numfunctions+1)*sizeof(symbol*));
-  if (symstack==NULL)
+  rsymstack=(symbol **)malloc((numfunctions+1)*sizeof(symbol*));
+  if (symstack==NULL || rsymstack==NULL)
     error(103);         /* insufficient memory (fatal error) */
   memset(symstack,0,(numfunctions+1)*sizeof(symbol*));
+  memset(rsymstack,0,(numfunctions+1)*sizeof(symbol*));
 
   maxsize=0;
   maxparams=0;
   *recursion=0;         /* assume no recursion */
   for (sym=root->next; sym!=NULL; sym=sym->next) {
+    int recursion_detected;
     /* drop out if this is not a user-implemented function */
     if (sym->ident!=iFUNCTN || (sym->usage & uNATIVE)!=0)
       continue;
     /* accumulate stack size for this symbol */
     symstack[0]=sym;
     assert(symstack[1]==NULL);
-    size=max_stacksize_recurse(symstack,sym,0L,&maxparams,recursion);
+    recursion_detected=0;
+    size=max_stacksize_recurse(symstack,rsymstack,0,sym,0L,&maxparams,&recursion_detected);
+    if (recursion_detected) {
+      if (rsymstack[1]==NULL) {
+        pc_printf("recursion detected: function %s directly calls itself\n", sym->name);
+      } else {
+        int i;
+        pc_printf("recursion detected: function %s indirectly calls itself:\n", sym->name);
+        pc_printf("%s ", sym->name);
+        for (i=1; rsymstack[i]!=NULL; i++) {
+          pc_printf("<- %s ", rsymstack[i]->name);
+        }
+        pc_printf("<- %s\n", sym->name);
+      }
+      *recursion=recursion_detected;
+    }
     assert(size>=0);
     if (maxsize<size)
       maxsize=size;
   } /* for */
 
   free((void*)symstack);
+  free((void*)rsymstack);
   maxsize++;                  /* +1 because a zero cell is always pushed on top
                                * of the stack to catch stack overwrites */
   return maxsize+(maxparams+1);/* +1 because # of parameters is always pushed on entry */
 }
+
 #endif
 
 /*  testsymbols - test for unused local or global variables
