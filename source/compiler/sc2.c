@@ -1868,7 +1868,7 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
   else
     litadd(0);          /* add full cell of zeros */
 
-  if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';')
+  if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';' || *lptr=='\n' || *lptr=='\r')
     lptr=stringize;						/* backtrack to end of last string for closing " */
   return lptr;
 }
