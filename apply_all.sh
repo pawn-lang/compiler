@@ -21,10 +21,10 @@ cd "$srcdir"
 
 patch="patch -p1 --force -i"
 
-$patch "$patchdir/not_samp_compatible/32bitLinesInDebugHeader.patch"
-$patch "$patchdir/not_samp_compatible/NewDebugMagic.patch"
+$patch "$patchdir/not_samp_compatible/32_bit_lines_in_debug_header.patch"
+$patch "$patchdir/not_samp_compatible/new_debug_magic.patch"
 
-$patch "$patchdir/samp_compatible/CompileTimeStringOps.patch"
-$patch "$patchdir/samp_compatible/FixMDArrayInitialization.patch"
-$patch "$patchdir/samp_compatible/FixTripleStateCrash.patch"
-$patch "$patchdir/samp_compatible/IncreaseLineLengthLimit.patch"
+$patch "$patchdir/samp_compatible/fix_md_array_init.patch"
+$patch "$patchdir/samp_compatible/fix_triple_state_crash.patch"
+$patch "$patchdir/samp_compatible/increase_line_length_limit.patch"
+$patch "$patchdir/samp_compatible/stringize.patch"

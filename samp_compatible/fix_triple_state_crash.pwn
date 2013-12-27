@@ -1,4 +1,4 @@
-// Test case for TripleStateCrash.patch
+// Test case for fix_triple_state_crash.patch
 
 #include <a_samp>
 
