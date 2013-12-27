@@ -2,6 +2,8 @@
 
 PROJECT(pawnamx)
 
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+
 # check for optional include files
 INCLUDE(${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake)
 CHECK_INCLUDE_FILE("unistd.h" HAVE_UNISTD_H)
