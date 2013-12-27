@@ -23,5 +23,5 @@ patch="patch -p1 --force -i"
 
 $patch "$patchdir/samp_compatible/CompileTimeStringOps.patch"
 $patch "$patchdir/samp_compatible/FixMDArrayInitialization.patch"
-$patch "$patchdir/samp_compatible/IncreaseLineLimitTo4095.patch"
-$patch "$patchdir/samp_compatible/TripleStateCrash.patch"
+$patch "$patchdir/samp_compatible/FixTripleStateCrash.patch"
+$patch "$patchdir/samp_compatible/IncreaseLineLengthLimit.patch"
