@@ -1746,7 +1746,6 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
         instring=1;
         *flags |= STRINGIZE;
       } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' || *lptr=='\r' || *lptr=='\n') {
-        lptr=stringize;
         break;
       } else if (*lptr!=' ' && *lptr!='\t') {
         error(1,"-string end-","-identifier-");
@@ -1786,7 +1785,9 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
     litadd(litchar(&lptr,*flags | UTF8MODE));  /* litchar() alters "lptr" */
   } /* while */
   litadd(0);
-
+  
+  if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';' || *lptr=='\n' || *lptr=='\r')
+    lptr=stringize;           /* backtrack to end of last string for closing " */
   return lptr;
 }
 
