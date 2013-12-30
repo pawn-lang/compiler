@@ -1,6 +1,6 @@
 diff -ruNpw SOURCE/COMPILER/sc2.c SOURCE_patched/COMPILER/sc2.c
---- SOURCE/COMPILER/sc2.c	Tue Oct 24 09:13:26 2006
-+++ SOURCE_patched/COMPILER/sc2.c	Sun Jan 22 20:00:59 2012
+--- SOURCE/COMPILER/sc2.c	2006-10-24 09:13:26.000000000 +0700
++++ SOURCE_patched/COMPILER/sc2.c	2013-12-30 18:26:04.213866100 +0700
 @@ -39,6 +39,7 @@
  /* flags for litchar() */
  #define RAWMODE         1
@@ -9,7 +9,7 @@ diff -ruNpw SOURCE/COMPILER/sc2.c SOURCE_patched/COMPILER/sc2.c
  static cell litchar(const unsigned char **lptr,int flags);
  static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int automaton,int *cmptag);
  
-@@ -1724,32 +1725,135 @@ SC_FUNC void preprocess(void)
+@@ -1724,32 +1725,136 @@ SC_FUNC void preprocess(void)
    } while (iscommand!=CMD_NONE && iscommand!=CMD_TERM && freading); /* enddo */
  }
  
@@ -38,7 +38,6 @@ diff -ruNpw SOURCE/COMPILER/sc2.c SOURCE_patched/COMPILER/sc2.c
 +        instring=1;
 +        *flags |= STRINGIZE;
 +      } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' || *lptr=='\r' || *lptr=='\n') {
-+        lptr=stringize;
 +        break;
 +      } else if (*lptr!=' ' && *lptr!='\t') {
 +        error(1,"-string end-","-identifier-");
@@ -78,6 +77,11 @@ diff -ruNpw SOURCE/COMPILER/sc2.c SOURCE_patched/COMPILER/sc2.c
 +    litadd(litchar(&lptr,*flags | UTF8MODE));  /* litchar() alters "lptr" */
    } /* while */
 -  litadd(0);                    /* terminate string */
++  litadd(0);
++  
++  if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';' ||
++      *lptr=='\n' || *lptr=='\r')
++    lptr=stringize;						/* backtrack to end of last string for closing " */
    return lptr;
  }
  
@@ -150,7 +154,7 @@ diff -ruNpw SOURCE/COMPILER/sc2.c SOURCE_patched/COMPILER/sc2.c
      if (c>=(ucell)(1 << sCHARBITS))
        error(43);                /* character constant exceeds range */
      val |= (c << 8*i);
-@@ -1758,12 +1862,15 @@ static const unsigned char *packedstring
+@@ -1758,12 +1863,16 @@ static const unsigned char *packedstring
        val=0;
      } /* if */
      i=(i+sizeof(ucell)-(sCHARBITS/8)) % sizeof(ucell);
@@ -162,12 +166,13 @@ diff -ruNpw SOURCE/COMPILER/sc2.c SOURCE_patched/COMPILER/sc2.c
    else
      litadd(0);          /* add full cell of zeros */
 +
-+  if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';' || *lptr=='\n' || *lptr=='\r')
++  if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';' ||
++      *lptr=='\n' || *lptr=='\r')
 +    lptr=stringize;						/* backtrack to end of last string for closing " */
    return lptr;
  }
  
-@@ -1947,33 +2054,41 @@ SC_FUNC int lex(cell *lexvalue,char **le
+@@ -1947,33 +2056,41 @@ SC_FUNC int lex(cell *lexvalue,char **le
          error(220);
        } /* if */
      } /* if */
@@ -218,7 +223,7 @@ diff -ruNpw SOURCE/COMPILER/sc2.c SOURCE_patched/COMPILER/sc2.c
        error(37);        /* invalid (non-terminated) string */
    } else if (*lptr=='\'') {             /* character literal */
      lptr+=1;            /* skip quote */
-@@ -2288,6 +2403,18 @@ static cell litchar(const unsigned char 
+@@ -2288,6 +2405,18 @@ static cell litchar(const unsigned char
          c=*cptr;
          cptr+=1;
          break;
