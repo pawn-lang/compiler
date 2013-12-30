@@ -9,15 +9,14 @@ You may have to install some packages. I had to install these on my Ubuntu:
 
 When you're done installng dependencies run the following commands:
 
-    wget http://www.compuphase.com/pawn/pawn-3.2.3664.zip
-    unzip pawn-3.2.3664.zip
-    cd SOURCE
     git clone -b patches git://github.com/Zeex/pawn.git patches
-    cd patches
-    ./apply_compatible.sh ../ # replace with apply_all.sh for all patches
-    mv ../AMX ../amx
-    mv ../LINUX ../linux
-    cmake ../COMPILER
+    wget http://www.compuphase.com/pawn/pawn-3.2.3664.zip
+    unzip pawn-3.2.3664.zip -d pawn
+    python patches/patch.py -s pawn/SOURCE
+    mv pawn/SOURCE/AMX   pawn/SOURCE/amx
+    mv pawn/SOURCE/LINUX pawn/SOURCE/linux
+    mkdir build && cd build
+    cmake ../pawn/SOURCE/COMPILER
     make
 
 This will download Pawn source code, apply all (compatible) patches and build
