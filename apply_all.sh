@@ -21,8 +21,7 @@ cd "$srcdir"
 
 patch="patch -p1 --force -i"
 
-$patch "$patchdir/not_samp_compatible/32_bit_lines_in_debug_header.patch"
-$patch "$patchdir/not_samp_compatible/new_debug_magic.patch"
+$patch "$patchdir/not_samp_compatible/debug_info.patch"
 
 $patch "$patchdir/samp_compatible/fix_md_array_init.patch"
 $patch "$patchdir/samp_compatible/fix_triple_state_crash.patch"
