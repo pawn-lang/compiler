@@ -37,4 +37,4 @@ patches = patches_all if args.all else patches_compat
 for p in patches:
   print('aplying patch: ' + p)
   subprocess.call(['patch'] + patch_opcions +
-  	              [os.path.join(home, 'patches', p)])
+                  [os.path.join(home, 'patches', p)])
