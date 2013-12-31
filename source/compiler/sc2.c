@@ -1432,7 +1432,7 @@ static const unsigned char *skippgroup(const unsigned char *string)
     break;
   default:
     assert(0);
-	close='\0';         /* only to avoid a compiler warning */
+    close='\0';         /* only to avoid a compiler warning */
   }/* switch */
 
   string++;
@@ -1745,7 +1745,8 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
         lptr--;
         instring=1;
         *flags |= STRINGIZE;
-      } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' || *lptr=='\r' || *lptr=='\n') {
+      } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' |
+                 *lptr==':' || *lptr=='\r' || *lptr=='\n') {
         break;
       } else if (*lptr!=' ' && *lptr!='\t') {
         error(1,"-string end-","-identifier-");
@@ -1767,7 +1768,8 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
         lptr=stringize+1;
         *flags &= ~STRINGIZE;
         continue;
-      } else if (*stringize==',' || *stringize==')' || *stringize=='}' || *stringize==';') { /* end */
+      } else if (*stringize==',' || *stringize==')' || *stringize=='}' ||
+                 *stringize==';' || *stringize==':') { /* end */
         lptr=stringize;
         break;
       } else if (*stringize=='\0') {
@@ -1785,8 +1787,9 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
     litadd(litchar(&lptr,*flags | UTF8MODE));  /* litchar() alters "lptr" */
   } /* while */
   litadd(0);
-  
-  if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';' || *lptr=='\n' || *lptr=='\r')
+
+  if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';' ||
+      *lptr==':' || *lptr=='\n' || *lptr=='\r')
     lptr=stringize;           /* backtrack to end of last string for closing " */
   return lptr;
 }
@@ -1797,7 +1800,7 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
   ucell val,c;
   unsigned char *stringize;
   int instring=1;
-  if (*flags & STRINGIZE)                     
+  if (*flags & STRINGIZE)
     while (*lptr==' ' || *lptr=='\t')
       lptr++;
 
@@ -1816,7 +1819,8 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
         lptr--;
         instring=1;
         *flags |= STRINGIZE;
-      } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' || *lptr=='\r' || *lptr=='\n') {
+      } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' ||
+                 *lptr==':' || *lptr=='\r' || *lptr=='\n') {
         break;
       } else if (*lptr!=' ' && *lptr!='\t') {
         error(1,"-string end-","-identifier-");
@@ -1838,7 +1842,8 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
         lptr=stringize+1;
         *flags &= ~STRINGIZE;
         continue;
-      } else if (*stringize==',' || *stringize==')' || *stringize=='}' || *stringize==';') { /* end */
+      } else if (*stringize==',' || *stringize==')' || *stringize=='}' |
+                 *stringize==';' || *stringize==':') { /* end */
         lptr=stringize;
         break;
       } else if (*stringize=='\0') {
@@ -1869,7 +1874,8 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
   else
     litadd(0);          /* add full cell of zeros */
 
-  if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';' || *lptr=='\n' || *lptr=='\r')
+  if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';' ||
+      *lptr==':' || *lptr=='\n' || *lptr=='\r')
     lptr=stringize;						/* backtrack to end of last string for closing " */
   return lptr;
 }
