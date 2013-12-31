@@ -9,7 +9,7 @@ diff -ruNpw SOURCE/COMPILER/sc2.c SOURCE_patched/COMPILER/sc2.c
  static cell litchar(const unsigned char **lptr,int flags);
  static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int automaton,int *cmptag);
  
-@@ -1724,32 +1725,136 @@ SC_FUNC void preprocess(void)
+@@ -1724,32 +1725,140 @@ SC_FUNC void preprocess(void)
    } while (iscommand!=CMD_NONE && iscommand!=CMD_TERM && freading); /* enddo */
  }
  
@@ -37,7 +37,8 @@ diff -ruNpw SOURCE/COMPILER/sc2.c SOURCE_patched/COMPILER/sc2.c
 +        lptr--;
 +        instring=1;
 +        *flags |= STRINGIZE;
-+      } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' || *lptr=='\r' || *lptr=='\n') {
++      } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' |
++                 *lptr==':' || *lptr=='\r' || *lptr=='\n') {
 +        break;
 +      } else if (*lptr!=' ' && *lptr!='\t') {
 +        error(1,"-string end-","-identifier-");
@@ -59,7 +60,8 @@ diff -ruNpw SOURCE/COMPILER/sc2.c SOURCE_patched/COMPILER/sc2.c
 +        lptr=stringize+1;
 +        *flags &= ~STRINGIZE;
 +        continue;
-+      } else if (*stringize==',' || *stringize==')' || *stringize=='}' || *stringize==';') { /* end */
++      } else if (*stringize==',' || *stringize==')' || *stringize=='}' ||
++                 *stringize==';' || *stringize==':') { /* end */
 +        lptr=stringize;
 +        break;
 +      } else if (*stringize=='\0') {
@@ -78,9 +80,9 @@ diff -ruNpw SOURCE/COMPILER/sc2.c SOURCE_patched/COMPILER/sc2.c
    } /* while */
 -  litadd(0);                    /* terminate string */
 +  litadd(0);
-+  
++
 +  if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';' ||
-+      *lptr=='\n' || *lptr=='\r')
++      *lptr==':' || *lptr=='\n' || *lptr=='\r')
 +    lptr=stringize;						/* backtrack to end of last string for closing " */
    return lptr;
  }
@@ -92,7 +94,7 @@ diff -ruNpw SOURCE/COMPILER/sc2.c SOURCE_patched/COMPILER/sc2.c
    ucell val,c;
 +  unsigned char *stringize;
 +  int instring=1;
-+  if (*flags & STRINGIZE)                     
++  if (*flags & STRINGIZE)
 +    while (*lptr==' ' || *lptr=='\t')
 +      lptr++;
  
@@ -113,7 +115,8 @@ diff -ruNpw SOURCE/COMPILER/sc2.c SOURCE_patched/COMPILER/sc2.c
 +        lptr--;
 +        instring=1;
 +        *flags |= STRINGIZE;
-+      } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' || *lptr=='\r' || *lptr=='\n') {
++      } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' ||
++                 *lptr==':' || *lptr=='\r' || *lptr=='\n') {
 +        break;
 +      } else if (*lptr!=' ' && *lptr!='\t') {
 +        error(1,"-string end-","-identifier-");
@@ -135,7 +138,8 @@ diff -ruNpw SOURCE/COMPILER/sc2.c SOURCE_patched/COMPILER/sc2.c
 +        lptr=stringize+1;
 +        *flags &= ~STRINGIZE;
 +        continue;
-+      } else if (*stringize==',' || *stringize==')' || *stringize=='}' || *stringize==';') { /* end */
++      } else if (*stringize==',' || *stringize==')' || *stringize=='}' |
++                 *stringize==';' || *stringize==':') { /* end */
 +        lptr=stringize;
 +        break;
 +      } else if (*stringize=='\0') {
@@ -167,7 +171,7 @@ diff -ruNpw SOURCE/COMPILER/sc2.c SOURCE_patched/COMPILER/sc2.c
      litadd(0);          /* add full cell of zeros */
 +
 +  if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';' ||
-+      *lptr=='\n' || *lptr=='\r')
++      *lptr==':' || *lptr=='\n' || *lptr=='\r')
 +    lptr=stringize;						/* backtrack to end of last string for closing " */
    return lptr;
  }
