@@ -14,5 +14,6 @@ mv pawn/SOURCE/LINUX pawn/SOURCE/linux
 
 # Build the code.
 mkdir build && cd build
-cmake ../pawn/SOURCE/COMPILER
+cmake ../pawn/SOURCE/COMPILER -G "Unix Makefiles" \
+      -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS=-m32
 make
