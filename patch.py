@@ -13,7 +13,7 @@ patches_compat = [
   'stringize.patch',
   'fix_md_array_init.patch',
   'fix_triple_state_crash.patch',
-  'increase_line_length_limit.patch',
+  'line_length.patch',
 ]
 
 # Incompatible patches (or patches that touch the VM).
@@ -36,5 +36,4 @@ os.chdir(args.source)
 patches = patches_all if args.all else patches_compat
 for p in patches:
   print('aplying patch: ' + p)
-  subprocess.call(['patch'] + patch_opcions +
-                  [os.path.join(home, 'patches', p)])
+  subprocess.call(['patch'] + patch_opcions + [os.path.join(home, p)])
