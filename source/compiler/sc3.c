@@ -1967,6 +1967,12 @@ static int nesting=0;
   lval_result->ident=iEXPRESSION; /* preset, may be changed later */
   lval_result->constval=0;
   lval_result->tag=sym->tag;
+  /* check whether we are inside a function */
+  if (curfunc==NULL) {
+    /* functions cannot be called at global scope */
+    error(29); /* invalid expression, assumed zero */
+    return;
+  }
   /* check whether this is a function that returns an array */
   symret=finddepend(sym);
   assert(symret==NULL || symret->ident==iREFARRAY);
