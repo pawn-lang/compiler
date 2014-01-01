@@ -1220,7 +1220,12 @@ static int command(void)
         if (sym==NULL || sym->ident!=iFUNCTN && sym->ident!=iREFFUNC && (sym->usage & uDEFINE)==0) {
           error(17,str);        /* undefined symbol */
         } else {
-          outval(sym->addr,FALSE);
+          if (strcmp(name, "call")==0) {
+            assert((sym->ident & iFUNCTN)!=0 || (sym->ident & iREFFUNC)!=0);
+            stgwrite(sym->name);
+          } else {
+            outval(sym->addr,FALSE);
+          } /* if */
           /* mark symbol as "used", unknown whether for read or write */
           markusage(sym,uREAD | uWRITTEN);
           code_idx+=opargs(1);
