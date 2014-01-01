@@ -5621,7 +5621,7 @@ static void doreturn(void)
     if ((rettype & uRETVALUE)!=0) {
       int retarray=(ident==iARRAY || ident==iREFARRAY);
       /* there was an earlier "return" statement in this function */
-      if (sub==NULL && retarray || sub!=NULL && !retarray)
+      if ((sub==NULL && retarray && sym!=NULL) || sub!=NULL && !retarray)
         error(79);                      /* mixing "return array;" and "return value;" */
       if (retarray && (curfunc->usage & uPUBLIC)!=0)
         error(90,curfunc->name);        /* public function may not return array */
@@ -5634,76 +5634,80 @@ static void doreturn(void)
     if (ident==iARRAY || ident==iREFARRAY) {
       int dim[sDIMEN_MAX],numdim;
       cell arraysize;
-      assert(sym!=NULL);
-      if (sub!=NULL) {
-        assert(sub->ident==iREFARRAY);
-        /* this function has an array attached already; check that the current
-         * "return" statement returns exactly the same array
-         */
-        level=sym->dim.array.level;
-        if (sub->dim.array.level!=level) {
-          error(48);                    /* array dimensions must match */
+      if (sym==NULL) {
+        /* array literals cannot be returned directly */
+        error(29); /* invalid expression, assumed zero */
+      } else {
+        if (sub!=NULL) {
+          assert(sub->ident==iREFARRAY);
+          /* this function has an array attached already; check that the current
+           * "return" statement returns exactly the same array
+           */
+          level=sym->dim.array.level;
+          if (sub->dim.array.level!=level) {
+            error(48);                    /* array dimensions must match */
+          } else {
+            for (numdim=0; numdim<=level; numdim++) {
+              dim[numdim]=(int)sub->dim.array.length;
+              if (sym->dim.array.length!=dim[numdim])
+                error(47);    /* array sizes must match */
+              if (numdim<level) {
+                sym=finddepend(sym);
+                sub=finddepend(sub);
+                assert(sym!=NULL && sub!=NULL);
+                /* ^^^ both arrays have the same dimensions (this was checked
+                 *     earlier) so the dependend should always be found
+                 */
+              } /* if */
+            } /* for */
+          } /* if */
         } else {
+          int idxtag[sDIMEN_MAX];
+          int argcount;
+          /* this function does not yet have an array attached; clone the
+           * returned symbol beneath the current function
+           */
+          sub=sym;
+          assert(sub!=NULL);
+          level=sub->dim.array.level;
           for (numdim=0; numdim<=level; numdim++) {
             dim[numdim]=(int)sub->dim.array.length;
-            if (sym->dim.array.length!=dim[numdim])
-              error(47);    /* array sizes must match */
+            idxtag[numdim]=sub->x.tags.index;
             if (numdim<level) {
-              sym=finddepend(sym);
               sub=finddepend(sub);
-              assert(sym!=NULL && sub!=NULL);
-              /* ^^^ both arrays have the same dimensions (this was checked
-               *     earlier) so the dependend should always be found
-               */
+              assert(sub!=NULL);
             } /* if */
+            /* check that all dimensions are known */
+            if (dim[numdim]<=0)
+              error(46,sym->name);
           } /* for */
+          /* the address of the array is stored in a hidden parameter; the address
+           * of this parameter is 1 + the number of parameters (times the size of
+           * a cell) + the size of the stack frame and the return address
+           *   base + 0*sizeof(cell)         == previous "base"
+           *   base + 1*sizeof(cell)         == function return address
+           *   base + 2*sizeof(cell)         == number of arguments
+           *   base + 3*sizeof(cell)         == first argument of the function
+           *   ...
+           *   base + ((n-1)+3)*sizeof(cell) == last argument of the function
+           *   base + (n+3)*sizeof(cell)     == hidden parameter with array address
+           */
+          assert(curfunc!=NULL);
+          assert(curfunc->dim.arglist!=NULL);
+          for (argcount=0; curfunc->dim.arglist[argcount].ident!=0; argcount++)
+            /* nothing */;
+          sub=addvariable(curfunc->name,(argcount+3)*sizeof(cell),iREFARRAY,sGLOBAL,curfunc->tag,dim,numdim,idxtag);
+          sub->parent=curfunc;
         } /* if */
-      } else {
-        int idxtag[sDIMEN_MAX];
-        int argcount;
-        /* this function does not yet have an array attached; clone the
-         * returned symbol beneath the current function
+        /* get the hidden parameter, copy the array (the array is on the heap;
+         * it stays on the heap for the moment, and it is removed -usually- at
+         * the end of the expression/statement, see expression() in SC3.C)
          */
-        sub=sym;
-        assert(sub!=NULL);
-        level=sub->dim.array.level;
-        for (numdim=0; numdim<=level; numdim++) {
-          dim[numdim]=(int)sub->dim.array.length;
-          idxtag[numdim]=sub->x.tags.index;
-          if (numdim<level) {
-            sub=finddepend(sub);
-            assert(sub!=NULL);
-          } /* if */
-          /* check that all dimensions are known */
-          if (dim[numdim]<=0)
-            error(46,sym->name);
-        } /* for */
-        /* the address of the array is stored in a hidden parameter; the address
-         * of this parameter is 1 + the number of parameters (times the size of
-         * a cell) + the size of the stack frame and the return address
-         *   base + 0*sizeof(cell)         == previous "base"
-         *   base + 1*sizeof(cell)         == function return address
-         *   base + 2*sizeof(cell)         == number of arguments
-         *   base + 3*sizeof(cell)         == first argument of the function
-         *   ...
-         *   base + ((n-1)+3)*sizeof(cell) == last argument of the function
-         *   base + (n+3)*sizeof(cell)     == hidden parameter with array address
-         */
-        assert(curfunc!=NULL);
-        assert(curfunc->dim.arglist!=NULL);
-        for (argcount=0; curfunc->dim.arglist[argcount].ident!=0; argcount++)
-          /* nothing */;
-        sub=addvariable(curfunc->name,(argcount+3)*sizeof(cell),iREFARRAY,sGLOBAL,curfunc->tag,dim,numdim,idxtag);
-        sub->parent=curfunc;
+        address(sub,sALT);                /* ALT = destination */
+        arraysize=calc_arraysize(dim,numdim,0);
+        memcopy(arraysize*sizeof(cell));  /* source already in PRI */
+        /* moveto1(); is not necessary, callfunction() does a popreg() */
       } /* if */
-      /* get the hidden parameter, copy the array (the array is on the heap;
-       * it stays on the heap for the moment, and it is removed -usually- at
-       * the end of the expression/statement, see expression() in SC3.C)
-       */
-      address(sub,sALT);                /* ALT = destination */
-      arraysize=calc_arraysize(dim,numdim,0);
-      memcopy(arraysize*sizeof(cell));  /* source already in PRI */
-      /* moveto1(); is not necessary, callfunction() does a popreg() */
     } /* if */
   } else {
     /* this return statement contains no expression */
