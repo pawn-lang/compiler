@@ -52,10 +52,10 @@ ADD_LIBRARY(pawnc SHARED ${PAWNC_SRCS})
 IF(WATCOM)  #Watcom C/C++ does not support a .DEF file for the exports
   SET_TARGET_PROPERTIES(pawnc PROPERTIES LINK_FLAGS "/exp=libpawnc")
 ENDIF(WATCOM)
-IF(UNIX)
+IF(UNIX AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
   # Unix exports all symbols by default; we want only a very select few exported symbols
   ADD_CUSTOM_COMMAND(TARGET pawnc POST_BUILD COMMAND strip ARGS -K pc_compile -K pc_addconstant -K pc_addtag -K pc_enablewarning ${CMAKE_BINARY_DIR}/libpawnc.so)
-ENDIF(UNIX)
+ENDIF(UNIX AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 
 # The Pawn compiler driver (console program)
