@@ -744,6 +744,7 @@ SC_FUNC void ffcall(symbol *sym,const char *label,int numargs)
       stgwrite("l.");
       stgwrite(label);
     } else {
+      stgwrite(".");
       stgwrite(sym->name);
     } /* if */
     if (sc_asmfile

@@ -1220,16 +1220,19 @@ static int command(void)
         if (sym==NULL || sym->ident!=iFUNCTN && sym->ident!=iREFFUNC && (sym->usage & uDEFINE)==0) {
           error(17,str);        /* undefined symbol */
         } else {
-          if (strcmp(name, "call")==0) {
-            assert((sym->ident & iFUNCTN)!=0 || (sym->ident & iREFFUNC)!=0);
-            stgwrite(sym->name);
+          if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
+            if ((sym->usage & uNATIVE)!=0) {
+              /* reserve a SYSREQ id if called for the first time  */
+              sym->addr=ntv_funcid++;
+              outval(sym->addr,FALSE);
+            } else {
+              /* normal function, write its name instead of the address
+               * so that the address will be resolved at assemble time
+               */
+              stgwrite(".");
+              stgwrite(sym->name);
+            } /* if */
           } else {
-            if ((sym->ident & iFUNCTN)!=0 && (sym->usage & uNATIVE)!=0) {
-              if (sc_status==statWRITE && (sym->usage & uREAD)==0 && sym->addr>=0) {
-                /* reserve a SYSREQ id if called for the first time  */
-                sym->addr=ntv_funcid++;
-              } /* if */
-            }
             outval(sym->addr,FALSE);
           } /* if */
           /* mark symbol as "used", unknown whether for read or write */

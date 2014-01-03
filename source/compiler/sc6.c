@@ -95,13 +95,32 @@ static ucell hex2long(const char *s,char **n)
 
 static ucell getparam(const char *s,char **n)
 {
+  int i;
   ucell result=0;
-  for ( ;; ) {
-    result+=hex2long(s,(char**)&s);
-    if (*s!='+')
-      break;
-    s++;
-  } /* for */
+  char name[sNAMEMAX+1];
+  symbol *sym;
+
+  if (*s=='.') {
+    /* this is a function, find it in the global symbol table */
+    for (i=0; !isspace(*(++s)); i++) {
+      assert(*s!='\0');
+      assert(i<sNAMEMAX);
+      name[i]=*s;
+    } /* for */
+    name[i]='\0';
+    sym=findglb(name,sGLOBAL);
+    assert(sym!=NULL);
+    assert(sym->ident==iFUNCTN || sym->ident==iREFFUNC);
+    assert(sym->vclass==sGLOBAL);
+    result=sym->addr;
+  } else {
+    for ( ;; ) {
+      result+=hex2long(s,(char**)&s);
+      if (*s!='+')
+        break;
+      s++;
+    } /* for */
+  } /* if */
   if (n!=NULL)
     *n=(char*)s;
   return result;
@@ -385,7 +404,8 @@ static cell do_call(FILE *fbin,char *params,cell opcode)
     /* look up the function address; note that the correct file number must
      * already have been set (in order for static globals to be found).
      */
-    sym=findglb(name,sGLOBAL);
+    assert(name[0]=='.');
+    sym=findglb(name+1,sGLOBAL);
     assert(sym!=NULL);
     assert(sym->ident==iFUNCTN || sym->ident==iREFFUNC);
     assert(sym->vclass==sGLOBAL);
