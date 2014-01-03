@@ -3257,6 +3257,23 @@ SC_FUNC char *funcdisplayname(char *dest,char *funcname)
   return dest;
 }
 
+static void check_reparse(symbol *sym)
+{
+  /* if the function was used before being declared, and it has a tag for the
+   * result, add a third pass (as second "skimming" parse) because the function
+   * result may have been used with user-defined operators, which have now
+   * been incorrectly flagged (as the return tag was unknown at the time of
+   * the call)
+   */
+  if ((sym->usage & (uPROTOTYPED | uREAD))==uREAD && sym->tag!=0) {
+    int curstatus=sc_status;
+    sc_status=statWRITE;  /* temporarily set status to WRITE, so the warning isn't blocked */
+    error(208);
+    sc_status=curstatus;
+    sc_reparse=TRUE;      /* must add another pass to "initial scan" phase */
+  } /* if */
+}
+
 static void funcstub(int fnative)
 {
   int tok,tag,fpublic;
@@ -3328,6 +3345,7 @@ static void funcstub(int fnative)
     sym->usage|=uPUBLIC;
   } /* if */
   sym->usage|=uFORWARD;
+  check_reparse(sym);
 
   declargs(sym,FALSE);
   /* "declargs()" found the ")" */
@@ -3454,19 +3472,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     sym->usage|=uPUBLIC;
   if (fstatic)
     sym->fnumber=filenum;
-  /* if the function was used before being declared, and it has a tag for the
-   * result, add a third pass (as second "skimming" parse) because the function
-   * result may have been used with user-defined operators, which have now
-   * been incorrectly flagged (as the return tag was unknown at the time of
-   * the call)
-   */
-  if ((sym->usage & (uPROTOTYPED | uREAD))==uREAD && sym->tag!=0) {
-    int curstatus=sc_status;
-    sc_status=statWRITE;  /* temporarily set status to WRITE, so the warning isn't blocked */
-    error(208);
-    sc_status=curstatus;
-    sc_reparse=TRUE;      /* must add another pass to "initial scan" phase */
-  } /* if */
+  check_reparse(sym);
   /* we want public functions to be explicitly prototyped, as they are called
    * from the outside
    */
