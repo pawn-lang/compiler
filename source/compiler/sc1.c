@@ -65,7 +65,7 @@
 #include "sc.h"
 #include "svnrev.h"
 #define VERSION_STR "3.2." SVN_REVSTR
-#define VERSION_INT 0x0302
+#define VERSION_INT 0x030A
 
 static void resetglobals(void);
 static void initglobals(void);
@@ -5606,7 +5606,7 @@ static symbol *fetchlab(char *name)
 }
 
 /* isvariadic
- * 
+ *
  * Checks if the function is variadic.
  */
 static int isvariadic(symbol *sym)
