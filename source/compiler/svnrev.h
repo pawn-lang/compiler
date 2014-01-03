@@ -9,7 +9,7 @@
 #define SVNREV_H
 
 #define SVN_REV		3664
-#define SVN_REVSTR	"3664"
+#define SVN_REVSTR	"3664.samp"
 #define SVN_REVDATE	"2006-11-08"
 #define SVN_REVSTAMP	20061108L
 
