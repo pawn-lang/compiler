@@ -649,8 +649,10 @@ int pc_compile(int argc, char *argv[])
     error(13);                  /* no entry point (no public functions) */
 
 cleanup:
-  if (inpf!=NULL)               /* main source file is not closed, do it now */
+  if (inpf!=NULL) {             /* main source file is not closed, do it now */
     pc_closesrc(inpf);
+    inpf=NULL;
+  }
   /* write the binary file (the file is already open) */
   if (!(sc_asmfile || sc_listing) && errnum==0 && jmpcode==0) {
     assert(binf!=NULL);

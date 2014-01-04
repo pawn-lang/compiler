@@ -211,6 +211,21 @@ static char *stripcomment(char *str)
   return str;
 }
 
+static char *stripwhitespace(char *str)
+{
+  if (*str!='\0') {
+    size_t len = strlen(str);
+    size_t i;
+    for (i=len-1; i>=0; i--) {
+      if (!isspace(str[i])) {
+        str[i+1]='\0';
+        break;
+      }
+    }
+  }
+  return str;
+}
+
 static void write_encoded(FILE *fbin,ucell *c,int num)
 {
   #if PAWN_CELL_SIZE == 16
@@ -1016,7 +1031,8 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
         /* nothing */;
       assert(params>instr);
       i=findopcode(instr,(int)(params-instr));
-      assert(opcodelist[i].name!=NULL);
+      if (opcodelist[i].name==NULL)
+        error(104, stripwhitespace(instr)); /* invalid assembler instruction */
       if (opcodelist[i].segment==pass)
         opcodelist[i].func(fout,skipwhitespace(params),opcodelist[i].opcode);
     } /* while */
