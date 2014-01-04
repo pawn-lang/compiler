@@ -1170,6 +1170,28 @@ static int command(void)
           } while (comma);
         } else if (strcmp(str,"naked")==0) {
           pc_naked=TRUE;
+        } else if (strcmp(str,"warning")==0) {
+          int ok=lex(&val,&str)==tSYMBOL;
+          if (ok) {
+            if (strcmp(str,"enable")==0) {
+              cell val;
+              preproc_expr(&val,NULL);
+              pc_enablewarning(val,1);
+            } else if (strcmp(str,"disable")==0) {
+              cell val;
+              preproc_expr(&val,NULL);
+              pc_enablewarning(val,0);
+            } else if (strcmp(str,"push")==0) {
+              pc_pushwarnings();
+            } else if (strcmp(str,"pop")==0) {
+              pc_popwarnings();
+            } else {
+              ok=FALSE;
+            }
+          }
+          if (!ok) {
+            error(207);         /* unknown #pragma */
+          }
         } else {
           error(207);           /* unknown #pragma */
         } /* if */

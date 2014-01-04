@@ -49,7 +49,10 @@
 #endif
 
 #define NUM_WARNINGS    (sizeof warnmsg / sizeof warnmsg[0])
-static unsigned char warndisable[(NUM_WARNINGS + 7) / 8]; /* 8 flags in a char */
+static struct s_warnstack {
+  unsigned char disable[(NUM_WARNINGS + 7) / 8]; /* 8 flags in a char */
+  struct s_warnstack *next;
+} warnstack;
 
 static int errflag;
 static int errstart;    /* line number at which the instruction started */
@@ -88,7 +91,7 @@ static short lastfile;
   if (number>=200) {
     int index=(number-200)/8;
     int mask=1 << ((number-200)%8);
-    if ((warndisable[index] & mask)!=0)
+    if ((warnstack.disable[index] & mask)!=0)
       return 0;
   } /* if */
 
@@ -187,7 +190,7 @@ SC_FUNC void errorset(int code,int line)
   } /* switch */
 }
 
-/* sc_enablewarning()
+/* pc_enablewarning()
  * Enables or disables a warning (errors cannot be disabled).
  * Initially all warnings are enabled. The compiler does this by setting bits
  * for the *disabled* warnings and relying on the array to be zero-initialized.
@@ -212,16 +215,46 @@ int pc_enablewarning(int number,int enable)
   mask=(unsigned char)(1 << (number%8));
   switch (enable) {
   case 0:
-    warndisable[index] |= mask;
+    warnstack.disable[index] |= mask;
     break;
   case 1:
-    warndisable[index] &= (unsigned char)~mask;
+    warnstack.disable[index] &= (unsigned char)~mask;
     break;
   case 2:
-    warndisable[index] ^= mask;
+    warnstack.disable[index] ^= mask;
     break;
   } /* switch */
 
+  return TRUE;
+}
+
+/* pc_pushwarnings()
+ * Saves currently disabled warnings, used to implement #pragma warning push
+ */
+int pc_pushwarnings()
+{
+  void *p;
+  p=calloc(sizeof(struct s_warnstack),1);
+  if (p==NULL) {
+    error(103); /* insufficient memory */
+    return FALSE;
+  }
+  memmove(p,&warnstack,sizeof(struct s_warnstack));
+  warnstack.next=p;
+  return TRUE;
+}
+
+/* pc_popwarnings()
+ * This function is the reverse of pc_pushwarnings()
+ */
+int pc_popwarnings()
+{
+  void *p;
+  if (warnstack.next==NULL)
+    return FALSE; /* nothing to do */
+  p=warnstack.next;
+  memmove(&warnstack,p,sizeof(struct s_warnstack));
+  free(p);
   return TRUE;
 }
 
