@@ -843,6 +843,7 @@ static void resetglobals(void)
   pc_deprecate=NULL;
   sc_curstates=0;
   pc_memflags=0;
+  pc_naked=FALSE;
 }
 
 static void initglobals(void)
@@ -3513,6 +3514,10 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     char *ptr= (sym->documentation!=NULL) ? sym->documentation : "";
     error(234,symbolname,ptr);  /* deprecated (probably a public function) */
   } /* if */
+  if (pc_naked) {
+    sym->flags|=flagNAKED;
+    pc_naked=FALSE;
+  } /* if */
   begcseg();
   sym->usage|=uDEFINE;  /* set the definition flag */
   if (stock)
@@ -3572,7 +3577,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   if ((lastst!=tRETURN) && (lastst!=tGOTO)){
     ldconst(0,sPRI);
     ffret(strcmp(sym->name,uENTRYFUNC)!=0);
-    if ((sym->usage & uRETVALUE)!=0) {
+    if ((sym->usage & uRETVALUE)!=0 && (sym->flags & flagNAKED)==0) {
       char symname[2*sNAMEMAX+16];  /* allow space for user defined operators */
       funcdisplayname(symname,sym->name);
       error(209,symname);       /* function should return a value */
@@ -5748,7 +5753,7 @@ static void doreturn(void)
   } else {
     /* this return statement contains no expression */
     ldconst(0,sPRI);
-    if ((rettype & uRETVALUE)!=0) {
+    if ((rettype & uRETVALUE)!=0 && (sym->flags & flagNAKED)==0) {
       char symname[2*sNAMEMAX+16];      /* allow space for user defined operators */
       assert(curfunc!=NULL);
       funcdisplayname(symname,curfunc->name);

@@ -433,7 +433,7 @@ static void checkfunction(value *lval)
     /* function is defined, can now check the return value (but make an
      * exception for directly recursive functions)
      */
-    if (sym!=curfunc && (sym->usage & uRETVALUE)==0) {
+    if (sym!=curfunc && (sym->usage & uRETVALUE)==0 && (sym->flags & flagNAKED)==0) {
       char symname[2*sNAMEMAX+16];  /* allow space for user defined operators */
       funcdisplayname(symname,sym->name);
       error(209,symname);       /* function should return a value */

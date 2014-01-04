@@ -1168,6 +1168,8 @@ static int command(void)
             if (comma)
               lptr++;
           } while (comma);
+        } else if (strcmp(str,"naked")==0) {
+          pc_naked=TRUE;
         } else {
           error(207);           /* unknown #pragma */
         } /* if */
