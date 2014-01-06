@@ -66,9 +66,6 @@
   #define DIRSEP_CHAR '/'   /* directory separator character */
 #endif
 
-/* system-independent directory separator */
-#define DIRSEP_CHAR_SI '/'
-
 /* _MAX_PATH is sometimes called differently and it may be in limits.h or
  * stdlib.h instead of stdio.h.
  */

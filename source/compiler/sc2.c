@@ -183,8 +183,7 @@ SC_FUNC int plungefile(char *name,int try_currentpath,int try_includepaths)
        * there is a (relative) path for the current file
        */
       char *ptr;
-      if ((ptr=strrchr(inpfname,DIRSEP_CHAR))!=0 |
-          (ptr=strrchr(inpfname,DIRSEP_CHAR_SI))!=0) {
+      if ((ptr=strrchr(inpfname,DIRSEP_CHAR))!=0) {
         int len=(int)(ptr-inpfname)+1;
         if (len+strlen(name)<_MAX_PATH) {
           char path[_MAX_PATH];
@@ -268,8 +267,6 @@ static void doinclude(int silent)
    */
   strcpy(symname,"_inc_");
   if ((ptr=strrchr(name,DIRSEP_CHAR))!=NULL)
-    strlcat(symname,ptr+1,sizeof symname);
-  else if ((ptr=strrchr(name,DIRSEP_CHAR_SI))!=NULL)
     strlcat(symname,ptr+1,sizeof symname);
   else
     strlcat(symname,name,sizeof symname);
