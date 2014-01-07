@@ -1652,6 +1652,7 @@ static void substallpatterns(unsigned char *line,int buffersize)
   unsigned char *start, *end;
   int prefixlen;
   stringpair *subst;
+  char *pattern, *substitution;
 
   start=line;
   while (*start!='\0') {
@@ -1689,10 +1690,28 @@ static void substallpatterns(unsigned char *line,int buffersize)
       end++;
     } /* while */
     assert(prefixlen>0);
-    subst=find_subst((char*)start,prefixlen);
-    if (subst!=NULL) {
+    pattern=NULL;
+    substitution="";
+    if (strncmp((char*)start,"__FUNCTION__",12)==0) {
+      pattern="__FUNCTION__";
+      if (curfunc!=NULL)
+        substitution=curfunc->name;
+    } else if (strncmp((char*)start,"__LINE__",8)==0) {
+      pattern="__LINE__";
+      substitution=itoh(fline);
+    } else if (strncmp((char*)start,"__FILE__",8)==0) {
+      pattern="__FILE__";
+      substitution=inpfname;
+    } else {
+      subst=find_subst((char*)start,prefixlen);
+      if (subst!=NULL) {
+        pattern=subst->first;
+        substitution=subst->second;
+      } /* if */
+    } /* if */
+    if (pattern!=NULL) {
       /* properly match the pattern and substitute */
-      if (!substpattern(start,buffersize-(int)(start-line),subst->first,subst->second))
+      if (!substpattern(start,buffersize-(int)(start-line),pattern,substitution))
         start=end;      /* match failed, skip this prefix */
       /* match succeeded: do not update "start", because the substitution text
        * may be matched by other macros
