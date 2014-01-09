@@ -290,7 +290,7 @@ typedef struct s_valuepair {
  */
 #define tFIRST      256 /* value of first multi-character operator */
 #define tMIDDLE     280 /* value of last multi-character operator */
-#define tLAST       328 /* value of last multi-character match-able token */
+#define tLAST       329 /* value of last multi-character match-able token */
 /* multi-character operators */
 #define taMULT      256 /* *= */
 #define taDIV       257 /* /= */
@@ -367,17 +367,18 @@ typedef struct s_valuepair {
 #define tpPRAGMA    326
 #define tpTRYINCLUDE 327
 #define tpUNDEF     328
+#define tpWARNING   329
 /* semicolon is a special case, because it can be optional */
-#define tTERM       329 /* semicolon or newline */
-#define tENDEXPR    330 /* forced end of expression */
+#define tTERM       330 /* semicolon or newline */
+#define tENDEXPR    331 /* forced end of expression */
 /* other recognized tokens */
-#define tNUMBER     331 /* integer number */
-#define tRATIONAL   332 /* rational number */
-#define tSYMBOL     333
-#define tLABEL      334
-#define tSTRING     335
-#define tEXPR       336 /* for assigment to "lastst" only (see SC1.C) */
-#define tENDLESS    337 /* endless loop, for assigment to "lastst" only */
+#define tNUMBER     332 /* integer number */
+#define tRATIONAL   333 /* rational number */
+#define tSYMBOL     334
+#define tLABEL      335
+#define tSTRING     336
+#define tEXPR       337 /* for assigment to "lastst" only (see SC1.C) */
+#define tENDLESS    338 /* endless loop, for assigment to "lastst" only */
 
 /* (reversed) evaluation of staging buffer */
 #define sSTARTREORDER 0x01
