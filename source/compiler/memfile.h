@@ -8,7 +8,7 @@
 #ifndef _INCLUDE_MEMFILE_H
 #define _INCLUDE_MEMFILE_H
 
-#ifdef MACOS
+#ifdef __APPLE__
   #include <malloc/malloc.h>
 #else
   #include <malloc.h>
