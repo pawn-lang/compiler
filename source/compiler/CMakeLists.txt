@@ -29,6 +29,15 @@ IF(UNIX)
   LINK_LIBRARIES(pthread) #CMake adds the "lib" prefix, so "pthread" becomes "libpthread"
 ENDIF(UNIX)
 
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_FORTIFY_SOURCE=0")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-logical-op-parentheses")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-ignored-attributes")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-incompatible-pointer-types-discards-qualifiers")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-format")
+ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+
 # The Pawn compiler shared library
 SET(PAWNC_SRCS sc1.c sc2.c sc3.c sc4.c sc5.c sc6.c sc7.c
 	scexpand.c sci18n.c sclist.c scmemfil.c scstate.c scvars.c
@@ -52,10 +61,10 @@ ADD_LIBRARY(pawnc SHARED ${PAWNC_SRCS})
 IF(WATCOM)  #Watcom C/C++ does not support a .DEF file for the exports
   SET_TARGET_PROPERTIES(pawnc PROPERTIES LINK_FLAGS "/exp=libpawnc")
 ENDIF(WATCOM)
-IF(UNIX AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+IF(UNIX AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # Unix exports all symbols by default; we want only a very select few exported symbols
   ADD_CUSTOM_COMMAND(TARGET pawnc POST_BUILD COMMAND strip ARGS -K pc_compile -K pc_addconstant -K pc_addtag -K pc_enablewarning ${CMAKE_BINARY_DIR}/libpawnc.so)
-ENDIF(UNIX AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+ENDIF(UNIX AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 
 # The Pawn compiler driver (console program)

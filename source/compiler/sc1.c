@@ -40,6 +40,10 @@
   #include <binreloc.h> /* from BinReloc, see www.autopackage.org */
 #endif
 
+#if defined __APPLE__
+  #include <unistd.h>
+#endif
+
 #if defined FORTIFY
   #include <alloc/fortify.h>
 #endif
@@ -472,19 +476,20 @@ int pc_compile(int argc, char *argv[])
     char *tname,*sname;
     FILE *ftmp,*fsrc;
     int fidx;
+	ftmp = NULL;
     #if defined	__WIN32__ || defined _WIN32
       tname=_tempnam(NULL,"pawn");
     #elif defined __MSDOS__ || defined _Windows
       tname=tempnam(NULL,"pawn");
-    #elif defined(MACOS) && !defined(__MACH__)
-      /* tempnam is not supported for the Macintosh CFM build. */
-      error(104,get_sourcefile(1));
-      tname=NULL;
-      sname=NULL;
+    #elif defined(__APPLE__)
+      int tfd;
+      tfd=mkstemp("/tmp/pawnXXXXXX");
+      ftmp=fdopen(tfd, "wt");
     #else
       tname=tempnam(NULL,"pawn");
     #endif
-    ftmp=(FILE*)pc_createsrc(tname);
+    if (ftmp==NULL)
+      ftmp=(FILE*)pc_createsrc(tname);
     for (fidx=0; (sname=get_sourcefile(fidx))!=NULL; fidx++) {
       unsigned char tstring[128];
       fsrc=(FILE*)pc_opensrc(sname);
