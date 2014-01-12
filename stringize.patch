@@ -37,7 +37,7 @@ diff -ruNpw SOURCE/COMPILER/sc2.c SOURCE_patched/COMPILER/sc2.c
 +        lptr--;
 +        instring=1;
 +        *flags |= STRINGIZE;
-+      } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' |
++      } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' ||
 +                 *lptr==':' || *lptr=='\r' || *lptr=='\n') {
 +        break;
 +      } else if (*lptr!=' ' && *lptr!='\t') {
@@ -138,7 +138,7 @@ diff -ruNpw SOURCE/COMPILER/sc2.c SOURCE_patched/COMPILER/sc2.c
 +        lptr=stringize+1;
 +        *flags &= ~STRINGIZE;
 +        continue;
-+      } else if (*stringize==',' || *stringize==')' || *stringize=='}' |
++      } else if (*stringize==',' || *stringize==')' || *stringize=='}' ||
 +                 *stringize==';' || *stringize==':') { /* end */
 +        lptr=stringize;
 +        break;
