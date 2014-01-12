@@ -1778,7 +1778,7 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
         lptr--;
         instring=1;
         *flags |= STRINGIZE;
-      } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' |
+      } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' ||
                  *lptr==':' || *lptr=='\r' || *lptr=='\n') {
         break;
       } else if (*lptr!=' ' && *lptr!='\t') {
@@ -1875,7 +1875,7 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
         lptr=stringize+1;
         *flags &= ~STRINGIZE;
         continue;
-      } else if (*stringize==',' || *stringize==')' || *stringize=='}' |
+      } else if (*stringize==',' || *stringize==')' || *stringize=='}' ||
                  *stringize==';' || *stringize==':') { /* end */
         lptr=stringize;
         break;
