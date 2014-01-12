@@ -5754,7 +5754,7 @@ static void doreturn(void)
   } else {
     /* this return statement contains no expression */
     ldconst(0,sPRI);
-    if ((rettype & uRETVALUE)!=0 && (sym->flags & flagNAKED)==0) {
+    if ((rettype & uRETVALUE)!=0 && (curfunc->flags & flagNAKED)==0) {
       char symname[2*sNAMEMAX+16];      /* allow space for user defined operators */
       assert(curfunc!=NULL);
       funcdisplayname(symname,curfunc->name);
