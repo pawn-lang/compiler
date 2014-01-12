@@ -40,6 +40,12 @@
 # define __BIG_ENDIAN    BIG_ENDIAN
 #endif
 
+#if defined __APPLE__
+# define __BYTE_ORDER    BYTE_ORDER
+# define __LITTLE_ENDIAN __DARWIN_LITTLE_ENDIAN
+# define __BIG_ENDIAN    __DARWIN_BIG_ENDIAN
+#endif
+
 #if !defined __BYTE_ORDER
 # error	"Can't figure computer byte order (__BYTE_ORDER macro not found)"
 #endif
