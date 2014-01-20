@@ -215,7 +215,7 @@ static char *stripwhitespace(char *str)
 {
   if (*str!='\0') {
     size_t len = strlen(str);
-    int i;
+    size_t i;
     for (i=len-1; i>=0; i--) {
       if (!isspace(str[i])) {
         str[i+1]='\0';
