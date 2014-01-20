@@ -75,7 +75,7 @@ typedef struct tagAMX_DBG_HDR {
   int16_t automatons    PACKED; /* number of entries in the "automaton" table */
   int16_t states        PACKED; /* number of entries in the "state" table */
 } PACKED AMX_DBG_HDR;
-#define AMX_DBG_MAGIC   0xf1ef
+#define AMX_DBG_MAGIC   0xf2ef
 
 typedef struct tagAMX_DBG_FILE {
   ucell   address       PACKED; /* address in the code segment where generated code (for this file) starts */
