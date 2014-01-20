@@ -43,15 +43,6 @@ endif()
 configure_file(svnrev.h.in svnrev.h)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_FORTIFY_SOURCE=0")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-logical-op-parentheses")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-ignored-attributes")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-incompatible-pointer-types-discards-qualifiers")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-format")
-ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-
 # The Pawn compiler shared library
 set(PAWNC_SRCS sc1.c sc2.c sc3.c sc4.c sc5.c sc6.c sc7.c
 	scexpand.c sci18n.c sclist.c scmemfil.c scstate.c scvars.c
