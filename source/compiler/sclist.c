@@ -135,71 +135,70 @@ static int delete_stringpair(stringpair *root,stringpair *item)
 }
 
 /* ----- string list functions ----------------------------------- */
-static stringlist *insert_string(stringlist *root,char *string)
+static stringlist *insert_string(stringlist *list,char *string)
 {
-  stringlist *cur;
-
+  stringlist newlist;
+  
+  assert(list!=NULL);
   assert(string!=NULL);
-  if ((cur=(stringlist*)malloc(sizeof(stringlist)))==NULL)
-    error(103);       /* insufficient memory (fatal error) */
-  if ((cur->line=duplicatestring(string))==NULL)
-    error(103);       /* insufficient memory (fatal error) */
-  /* insert as "last" */
-  assert(root!=NULL);
-  while (root->next!=NULL)
-    root=root->next;
-  cur->next=root->next;
-  root->next=cur;
-  return cur;
+  if (list->data==NULL) {
+    /* inserted for the first time */
+    newlist.length=0;
+    newlist.size=2;
+    newlist.data=calloc(newlist.size,sizeof(char*));
+    newlist.strings=newlist.data;
+    if (newlist.data==NULL)
+      error(103);       /* insufficient memory (fatal error) */
+    *list=newlist;
+  } else if (list->length==list->size ||
+             list->length==list->data+list->size-list->strings) {
+    /* allocate more elements */
+    newlist.length=list->length;
+    newlist.size=list->size+list->size/2;
+    newlist.data=realloc(list->data,newlist.size*sizeof(char*));
+    newlist.strings=newlist.data+(list->strings-list->data);
+    if (newlist.data==NULL)
+      error(103);       /* insufficient memory (fatal error) */
+    memset(newlist.data+list->size,0,list->size/2*sizeof(char*));
+    *list=newlist;
+  } /* if */
+  if ((list->strings[list->length]=duplicatestring(string))==NULL)
+    error(103);         /* insufficient memory (fatal error) */
+  list->length++;
+  return list;
 }
 
-static char *get_string(stringlist *root,int index)
+static char *get_string(stringlist *list,int index)
 {
-  stringlist *cur;
-
-  assert(root!=NULL);
-  cur=root->next;
-  while (cur!=NULL && index-->0)
-    cur=cur->next;
-  if (cur!=NULL) {
-    assert(cur->line!=NULL);
-    return cur->line;
-  } /* if */
+  assert(list!=NULL);
+  if (index>=0 && index<list->size)
+    return list->strings[index];
   return NULL;
 }
 
-static int delete_string(stringlist *root,int index)
+static int delete_string(stringlist *list,int index)
 {
-  stringlist *cur,*item;
-
-  assert(root!=NULL);
-  for (cur=root; cur->next!=NULL && index>0; cur=cur->next,index--)
-    /* nothing */;
-  if (cur->next!=NULL) {
-    item=cur->next;
-    cur->next=item->next;       /* unlink from list */
-    assert(item->line!=NULL);
-    free(item->line);
-    free(item);
+  assert(list!=NULL);
+  assert(index==0);
+  if (list->length>0) {
+    free(list->strings[0]);
+    list->strings[0]=NULL;
+    list->strings++;
+    list->length--;
     return TRUE;
   } /* if */
   return FALSE;
 }
 
-SC_FUNC void delete_stringtable(stringlist *root)
+SC_FUNC void delete_stringtable(stringlist *list)
 {
-  stringlist *cur,*next;
-
-  assert(root!=NULL);
-  cur=root->next;
-  while (cur!=NULL) {
-    next=cur->next;
-    assert(cur->line!=NULL);
-    free(cur->line);
-    free(cur);
-    cur=next;
-  } /* while */
-  memset(root,0,sizeof(stringlist));
+  int i;
+  
+  assert(list!=NULL);
+  for (i=0; i<list->size; i++)
+    free(list->data[i]);
+  free(list->data);
+  memset(list,0,sizeof(stringlist));
 }
 
 
@@ -235,7 +234,7 @@ SC_FUNC void delete_aliastable(void)
 }
 
 /* ----- include paths list -------------------------------------- */
-static stringlist includepaths = {NULL, NULL};  /* directory list for include files */
+static stringlist includepaths = {NULL, NULL, 0, 0};  /* directory list for include files */
 
 SC_FUNC stringlist *insert_path(char *path)
 {
@@ -250,7 +249,7 @@ SC_FUNC char *get_path(int index)
 SC_FUNC void delete_pathtable(void)
 {
   delete_stringtable(&includepaths);
-  assert(includepaths.next==NULL);
+  assert(includepaths.strings==NULL);
 }
 
 
@@ -323,7 +322,7 @@ SC_FUNC void delete_substtable(void)
 
 
 /* ----- input file list ----------------------------------------- */
-static stringlist sourcefiles = {NULL, NULL};
+static stringlist sourcefiles = {NULL, NULL, 0, 0};
 
 SC_FUNC stringlist *insert_sourcefile(char *string)
 {
@@ -338,13 +337,13 @@ SC_FUNC char *get_sourcefile(int index)
 SC_FUNC void delete_sourcefiletable(void)
 {
   delete_stringtable(&sourcefiles);
-  assert(sourcefiles.next==NULL);
+  assert(sourcefiles.strings==NULL);
 }
 
 
 /* ----- documentation tags -------------------------------------- */
 #if !defined SC_LIGHT
-static stringlist docstrings = {NULL, NULL};
+static stringlist docstrings = {NULL, NULL, 0, 0};
 
 SC_FUNC stringlist *insert_docstring(char *string)
 {
@@ -358,19 +357,20 @@ SC_FUNC char *get_docstring(int index)
 
 SC_FUNC void delete_docstring(int index)
 {
-  delete_string(&docstrings,index);
+  assert(index==0);
+  delete_string(&docstrings, index);
 }
 
 SC_FUNC void delete_docstringtable(void)
 {
   delete_stringtable(&docstrings);
-  assert(docstrings.next==NULL);
+  assert(docstrings.strings==NULL);
 }
 #endif /* !defined SC_LIGHT */
 
 
 /* ----- autolisting --------------------------------------------- */
-static stringlist autolist = {NULL, NULL};
+static stringlist autolist = {NULL, NULL, 0, 0};
 
 SC_FUNC stringlist *insert_autolist(char *string)
 {
@@ -385,7 +385,7 @@ SC_FUNC char *get_autolist(int index)
 SC_FUNC void delete_autolisttable(void)
 {
   delete_stringtable(&autolist);
-  assert(autolist.next==NULL);
+  assert(autolist.strings==NULL);
 }
 
 
@@ -462,11 +462,10 @@ SC_FUNC void delete_heaplisttable(void)
   #define PRIxC  "x"
 #endif
 
-static stringlist dbgstrings = {NULL, NULL};
+static stringlist dbgstrings = {NULL, NULL, 0, 0};
 
 SC_FUNC stringlist *insert_dbgfile(const char *filename)
 {
-
   if (sc_status==statWRITE && (sc_debug & sSYMBOLIC)!=0) {
     char string[_MAX_PATH+40];
     assert(filename!=NULL);
@@ -530,5 +529,5 @@ SC_FUNC char *get_dbgstring(int index)
 SC_FUNC void delete_dbgstringtable(void)
 {
   delete_stringtable(&dbgstrings);
-  assert(dbgstrings.next==NULL);
+  assert(dbgstrings.strings==NULL);
 }
