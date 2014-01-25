@@ -135,69 +135,71 @@ static int delete_stringpair(stringpair *root,stringpair *item)
 }
 
 /* ----- string list functions ----------------------------------- */
-static stringlist *insert_string(stringlist *list,char *string)
+static stringlist *insert_string(stringlist *root,char *string)
 {
-  char **newstrings;
-  int newsize;
-  int i;
+  stringlist *cur;
 
   assert(string!=NULL);
-  if (list->strings==NULL) {
-    /* list is used for the first time */
-    newsize=10;
-    if ((newstrings=calloc(newsize,sizeof(char*)))==NULL)
-      error(103);       /* insufficient memory (fatal error) */
-    list->strings=newstrings;
-    list->size=newsize;
-  } /* if */
-  for (i=0; i<list->size; i++)
-    if (list->strings[i]==NULL)
-      break;
-  if (i==list->size) {
-    /* double the size of the list */
-    newsize=list->size+list->size/2;
-    if ((newstrings=realloc(list->strings,newsize*sizeof(char*)))==NULL)
-      error(103);       /* insufficient memory (fatal error) */
-    memset(newstrings+list->size,0,list->size/2*sizeof(char*));
-    list->strings=newstrings;
-    list->size=newsize;
-  } /* if */
-  if ((list->strings[i]=duplicatestring(string))==NULL)
-    error(103);         /* insufficient memory (fatal error) */
+  if ((cur=(stringlist*)malloc(sizeof(stringlist)))==NULL)
+    error(103);       /* insufficient memory (fatal error) */
+  if ((cur->line=duplicatestring(string))==NULL)
+    error(103);       /* insufficient memory (fatal error) */
   /* insert as "last" */
-  return list;
+  assert(root!=NULL);
+  while (root->next!=NULL)
+    root=root->next;
+  cur->next=root->next;
+  root->next=cur;
+  return cur;
 }
 
-static char *get_string(stringlist *list,int index)
+static char *get_string(stringlist *root,int index)
 {
-  assert(list!=NULL);
-  if (index>=0 && index<list->size)
-    return list->strings[index];
+  stringlist *cur;
+
+  assert(root!=NULL);
+  cur=root->next;
+  while (cur!=NULL && index-->0)
+    cur=cur->next;
+  if (cur!=NULL) {
+    assert(cur->line!=NULL);
+    return cur->line;
+  } /* if */
   return NULL;
 }
 
-static int delete_string(stringlist *list,int index)
+static int delete_string(stringlist *root,int index)
 {
-  assert(list!=NULL);
-  if (index>=0 && index<list->size) {
-    if (list->strings[index]!=NULL) {
-      free(list->strings[index]);
-      list->strings[index]=NULL;
-      return TRUE;
-    } /* if */
+  stringlist *cur,*item;
+
+  assert(root!=NULL);
+  for (cur=root; cur->next!=NULL && index>0; cur=cur->next,index--)
+    /* nothing */;
+  if (cur->next!=NULL) {
+    item=cur->next;
+    cur->next=item->next;       /* unlink from list */
+    assert(item->line!=NULL);
+    free(item->line);
+    free(item);
+    return TRUE;
   } /* if */
   return FALSE;
 }
 
-SC_FUNC void delete_stringtable(stringlist *list)
+SC_FUNC void delete_stringtable(stringlist *root)
 {
-  int i;
-  
-  assert(list!=NULL);
-  for (i=0; i<list->size; i++)
-    free(list->strings[i]);
-  free(list->strings);
-  memset(list,0,sizeof(stringlist));
+  stringlist *cur,*next;
+
+  assert(root!=NULL);
+  cur=root->next;
+  while (cur!=NULL) {
+    next=cur->next;
+    assert(cur->line!=NULL);
+    free(cur->line);
+    free(cur);
+    cur=next;
+  } /* while */
+  memset(root,0,sizeof(stringlist));
 }
 
 
@@ -233,7 +235,7 @@ SC_FUNC void delete_aliastable(void)
 }
 
 /* ----- include paths list -------------------------------------- */
-static stringlist includepaths = {NULL, 0};  /* directory list for include files */
+static stringlist includepaths = {NULL, NULL};  /* directory list for include files */
 
 SC_FUNC stringlist *insert_path(char *path)
 {
@@ -248,7 +250,7 @@ SC_FUNC char *get_path(int index)
 SC_FUNC void delete_pathtable(void)
 {
   delete_stringtable(&includepaths);
-  assert(includepaths.strings==NULL);
+  assert(includepaths.next==NULL);
 }
 
 
@@ -321,7 +323,7 @@ SC_FUNC void delete_substtable(void)
 
 
 /* ----- input file list ----------------------------------------- */
-static stringlist sourcefiles = {NULL, 0};
+static stringlist sourcefiles = {NULL, NULL};
 
 SC_FUNC stringlist *insert_sourcefile(char *string)
 {
@@ -336,13 +338,13 @@ SC_FUNC char *get_sourcefile(int index)
 SC_FUNC void delete_sourcefiletable(void)
 {
   delete_stringtable(&sourcefiles);
-  assert(sourcefiles.strings==NULL);
+  assert(sourcefiles.next==NULL);
 }
 
 
 /* ----- documentation tags -------------------------------------- */
 #if !defined SC_LIGHT
-static stringlist docstrings = {NULL, 0};
+static stringlist docstrings = {NULL, NULL};
 
 SC_FUNC stringlist *insert_docstring(char *string)
 {
@@ -362,13 +364,13 @@ SC_FUNC void delete_docstring(int index)
 SC_FUNC void delete_docstringtable(void)
 {
   delete_stringtable(&docstrings);
-  assert(docstrings.strings==NULL);
+  assert(docstrings.next==NULL);
 }
 #endif /* !defined SC_LIGHT */
 
 
 /* ----- autolisting --------------------------------------------- */
-static stringlist autolist = {NULL, 0};
+static stringlist autolist = {NULL, NULL};
 
 SC_FUNC stringlist *insert_autolist(char *string)
 {
@@ -383,7 +385,7 @@ SC_FUNC char *get_autolist(int index)
 SC_FUNC void delete_autolisttable(void)
 {
   delete_stringtable(&autolist);
-  assert(autolist.strings==NULL);
+  assert(autolist.next==NULL);
 }
 
 
@@ -460,7 +462,7 @@ SC_FUNC void delete_heaplisttable(void)
   #define PRIxC  "x"
 #endif
 
-static stringlist dbgstrings = {NULL, 0};
+static stringlist dbgstrings = {NULL, NULL};
 
 SC_FUNC stringlist *insert_dbgfile(const char *filename)
 {
@@ -528,5 +530,5 @@ SC_FUNC char *get_dbgstring(int index)
 SC_FUNC void delete_dbgstringtable(void)
 {
   delete_stringtable(&dbgstrings);
-  assert(dbgstrings.strings==NULL);
+  assert(dbgstrings.next==NULL);
 }

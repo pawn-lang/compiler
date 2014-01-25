@@ -264,8 +264,8 @@ enum {
 };
 
 typedef struct s_stringlist {
-  char **strings;
-  int size;
+  struct s_stringlist *next;
+  char *line;
 } stringlist;
 
 typedef struct s_stringpair {
