@@ -155,10 +155,10 @@ static stringlist *insert_string(stringlist *list,char *string)
       break;
   if (i==list->size) {
     /* double the size of the list */
-    newsize=list->size*2;
+    newsize=list->size+list->size/2;
     if ((newstrings=realloc(list->strings,newsize*sizeof(char*)))==NULL)
       error(103);       /* insufficient memory (fatal error) */
-    memset(newstrings+list->size,0,list->size*sizeof(char*));
+    memset(newstrings+list->size,0,list->size/2*sizeof(char*));
     list->strings=newstrings;
     list->size=newsize;
   } /* if */
