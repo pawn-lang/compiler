@@ -231,7 +231,6 @@ static void check_empty(const unsigned char *lptr)
 static void doinclude(int silent)
 {
   char name[_MAX_PATH];
-  char *ptr;
   char c;
   int i, result;
 
@@ -1760,7 +1759,7 @@ SC_FUNC void preprocess(void)
 
 static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
 {
-  unsigned char *stringize;
+  const unsigned char *stringize;
   int instring=1;
   if (*flags & STRINGIZE)                 /* ignore leading spaces after the # */
     while (*lptr==' ' || *lptr=='\t')     /* this is as defines with parameters may add them */
@@ -1831,7 +1830,7 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
 {
   int i;
   ucell val,c;
-  unsigned char *stringize;
+  const unsigned char *stringize;
   int instring=1;
   if (*flags & STRINGIZE)
     while (*lptr==' ' || *lptr=='\t')
