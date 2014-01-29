@@ -1235,7 +1235,8 @@ static int command(void)
           if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
             if ((sym->usage & uNATIVE)!=0) {
               /* reserve a SYSREQ id if called for the first time  */
-              sym->addr=ntv_funcid++;
+              if (sc_status==statWRITE && (sym->usage & uREAD)==0 && sym->addr>=0)
+                sym->addr=ntv_funcid++;
               outval(sym->addr,FALSE);
             } else {
               /* normal function, write its name instead of the address
