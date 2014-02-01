@@ -2432,7 +2432,7 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
             break;
           ld=ld->next;
         } /* for */
-        if (d==dim[numdim-2])
+        if (d==dim[numdim-2] && d!=0)
           dim[numdim-1]=match;
       } /* if */
       /* after all arrays have been initalized, we know the (major) dimensions
@@ -2459,6 +2459,11 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
   assert(startlit>=0);
   assert(cur+2<=numdim);/* there must be 2 dimensions or more to do */
   assert(errorfound!=NULL && *errorfound==FALSE);
+  /* check for a quick exit */
+  if (matchtoken('}')) {
+    lexpush();
+    return 0;
+  } /* if */
   totalsize=0;
   needtoken('{');
   for (idx=0,abortparse=FALSE; !abortparse; idx++) {
@@ -2470,23 +2475,32 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
      * necessary at this point to reserve space for an extra cell in the
      * indirection vector.
      */
-    if (dim[cur]==0) {
+    if (dim[cur]==0)
       litinsert(0,startlit);
-    } else if (idx>=dim[cur]) {
-      error(18);            /* initialization data exceeds array size */
-      break;
-    } /* if */
     if (cur+2<numdim) {
       dsize=initarray(ident,tag,dim,numdim,cur+1,startlit,counteddim,
                       lastdim,enumroot,errorfound);
     } else {
       dsize=initvector(ident,tag,dim[cur+1],TRUE,enumroot,errorfound);
-      /* The final dimension may be variable length. We need to keep the
+      /* The final dimension may be variable length. We need to save the
        * lengths of the final dimensions in order to set the indirection
        * vectors for the next-to-last dimension.
        */
       append_constval(lastdim,itoh(idx),dsize,0);
     } /* if */
+    /* In a declaration like:
+     *    new a[2][2] = {
+     *                    {1, 2},
+     *                    {3, 4},
+     *                  }
+     * the final trailing comma (after the "4}") makes this loop attempt to
+     * parse one more initialization vector, but initvector() (and a recursive
+     * call to initarray()) quits with a size of zero while not setting
+     * "errorfound". Then, we must exit this loop without incrementing the
+     * dimension count.
+     */
+    if (dsize==0 && !*errorfound)
+      break;
     totalsize+=dsize;
     if (*errorfound || !matchtoken(','))
       abortparse=TRUE;
@@ -2551,7 +2565,7 @@ static cell initvector(int ident,int tag,cell size,int fillzero,
         error(227);             /* more initiallers than enum fields */
       rtag=tag;                 /* preset, may be overridden by enum field tag */
       if (enumfield!=NULL) {
-        cell step;
+        cell step, val;
         int cmptag=enumfield->index;
         symbol *symfield=findconst(enumfield->name,&cmptag);
         if (cmptag>1)
@@ -2561,14 +2575,15 @@ static cell initvector(int ident,int tag,cell size,int fillzero,
         if (litidx-fieldlit>symfield->dim.array.length)
           error(228);           /* length of initialler exceeds size of the enum field */
         if (ellips) {
+          val=prev1;
           step=prev1-prev2;
         } else {
           step=0;
-          prev1=0;
+          val=0;                /* fill up with zeros */
         } /* if */
         for (i=litidx-fieldlit; i<symfield->dim.array.length; i++) {
-          prev1+=step;
-          litadd(prev1);
+          val+=step;
+          litadd(val);
         } /* for */
         rtag=symfield->x.tags.index;  /* set the expected tag to the index tag */
         enumfield=enumfield->next;
@@ -2577,6 +2592,13 @@ static cell initvector(int ident,int tag,cell size,int fillzero,
         error(213);             /* tag mismatch */
     } while (matchtoken(',')); /* do */
     needtoken('}');
+  } else if (matchtoken('}')) {
+    /* this may be caused by a trailing comma in a declaration of a
+     * multi-dimensional array
+     */
+    lexpush();                  /* push back for later analysis */
+    size=0;                     /* avoid zero filling */
+    assert(!ellips);
   } else {
     init(ident,&ctag,errorfound);
     if (!matchtag(tag,ctag,TRUE))
