@@ -1220,6 +1220,7 @@ static int hier2(value *lval)
   symbol *sym;
   int saveresult;
 
+  sym=NULL;
   tok=lex(&val,&st);
   switch (tok) {
   case tINC:                    /* ++lval */
@@ -1392,7 +1393,7 @@ static int hier2(value *lval)
         return error(17,st);      /* undefined symbol (symbol is in the table, but it is "used" only) */
       tag=sym->tag;
     } /* if */
-    if (sym->ident==iARRAY || sym->ident==iREFARRAY) {
+    if (sym!=NULL && (sym->ident==iARRAY || sym->ident==iREFARRAY)) {
       int level;
       symbol *idxsym=NULL;
       symbol *subsym=sym;
@@ -1414,7 +1415,7 @@ static int hier2(value *lval)
       if (level>sym->dim.array.level+1)
         error(28,sym->name);  /* invalid subscript */
       else if (level==sym->dim.array.level+1 && idxsym!=NULL)
-        tag= idxsym->x.tags.index;
+        tag=idxsym->x.tags.index;
     } /* if */
     exporttag(tag);
     clear_value(lval);
