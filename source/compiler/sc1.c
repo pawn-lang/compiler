@@ -65,7 +65,8 @@
 #include "sc.h"
 #include "svnrev.h"
 #define VERSION_STR "3.2." SVN_REVSTR
-#define VERSION_INT 0x030A
+#define VERSION_INT        0x030A
+#define VERSION_INT_COMPAT 0x0302
 
 static void resetglobals(void);
 static void initglobals(void);
@@ -1128,6 +1129,9 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
             about();
         } /* if */
         break;
+      case 'Z':
+        pc_compat=toggle_option(ptr,pc_compat);
+        break;
       case '\\':                /* use \ instead for escape characters */
         sc_ctrlchar='\\';
         break;
@@ -1391,6 +1395,7 @@ static void about(void)
     pc_printf("         -w<num>  disable a specific warning by its number\n");
     pc_printf("         -X<num>  abstract machine size limit in bytes\n");
     pc_printf("         -XD<num> abstract machine data/stack size limit in bytes\n");
+    pc_printf("         -Z[+/-]  run in compatibility mode (default=%c)\n",pc_compat ? '+' : '-');
     pc_printf("         -\\       use '\\' for escape characters\n");
     pc_printf("         -^       use '^' for escape characters\n");
     pc_printf("         -;[+/-]  require a semicolon to end each statement (default=%c)\n", sc_needsemicolon ? '+' : '-');
@@ -1453,7 +1458,7 @@ static void setconstants(void)
   add_constant("charmax",~(-1 << sCHARBITS) - 1,sGLOBAL,0);
   add_constant("ucharmax",(1 << (sizeof(cell)-1)*8)-1,sGLOBAL,0);
 
-  add_constant("__Pawn",VERSION_INT,sGLOBAL,0);
+  add_constant("__Pawn",pc_compat ? VERSION_INT_COMPAT : VERSION_INT,sGLOBAL,0);
   add_constant("__line",0,sGLOBAL,0);
 
   debug=0;

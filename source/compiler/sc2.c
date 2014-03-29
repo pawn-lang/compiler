@@ -235,6 +235,7 @@ static void doinclude(int silent)
   char *ptr;
   char c;
   int i, result;
+  int included=FALSE;
 
   while (*lptr<=' ' && *lptr!='\0')         /* skip leading whitespace */
     lptr++;
@@ -262,15 +263,19 @@ static void doinclude(int silent)
   if (c!='\0')
     check_empty(lptr+1);        /* verify that the rest of the line is whitespace */
 
-  /* create a symbol from the name of the include file; this allows the system
-   * to test for multiple inclusions
-   */
-  strcpy(symname,"_inc_");
-  if ((ptr=strrchr(name,DIRSEP_CHAR))!=NULL)
-    strlcat(symname,ptr+1,sizeof symname);
-  else
-    strlcat(symname,name,sizeof symname);
-  if (find_symbol(&glbtab,symname,fcurrent,-1,NULL)==NULL) {
+  if (pc_compat) {
+    /* create a symbol from the name of the include file; this allows the system
+     * to test for multiple inclusions
+     */
+    strcpy(symname,"_inc_");
+    if ((ptr=strrchr(name,DIRSEP_CHAR))!=NULL)
+      strlcat(symname,ptr+1,sizeof symname);
+    else
+      strlcat(symname,name,sizeof symname);
+    included=find_symbol(&glbtab,symname,fcurrent,-1,NULL)!=NULL;
+  } /* if */
+
+  if (!included) {
     /* constant is not present, so this file has not been included yet */
 
     /* Include files between "..." or without quotes are read from the current
@@ -278,10 +283,10 @@ static void doinclude(int silent)
      * between <...> are only read from the list of include directories.
      */
     result=plungefile(name,(c!='>'),TRUE);
-    if (result)
+    if (result && pc_compat)
       add_constant(symname,1,sGLOBAL,0);
-    else if (!silent)
-      error(100,name);            /* cannot read from ... (fatal error) */
+    else if (!result && !silent)
+      error(100,name);          /* cannot read from ... (fatal error) */
   } /* if */
 }
 
