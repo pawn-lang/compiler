@@ -2472,6 +2472,11 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
   totalsize=0;
   needtoken('{');
   for (idx=0,abortparse=FALSE; !abortparse; idx++) {
+    /* check if there was a trailing comma */
+    if (matchtoken('}')) {
+      lexpush();
+      break;
+    }
     /* In case the major dimension is zero, we need to store the offset
      * to the newly detected sub-array into the indirection table; i.e.
      * this table needs to be expanded and updated.
@@ -2493,19 +2498,6 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
        */
       append_constval(lastdim,itoh(idx),dsize,0);
     } /* if */
-    /* In a declaration like:
-     *    new a[2][2] = {
-     *                    {1, 2},
-     *                    {3, 4},
-     *                  }
-     * the final trailing comma (after the "4}") makes this loop attempt to
-     * parse one more initialization vector, but initvector() (and a recursive
-     * call to initarray()) quits with a size of zero while not setting
-     * "errorfound". Then, we must exit this loop without incrementing the
-     * dimension count.
-     */
-    if (dsize==0 && !*errorfound)
-      break;
     if (dim[cur]!=0 && idx>=dim[cur]) {
       assert(dsize>0 || *errorfound);
       error(18);            /* initialization data exceeds array size */
