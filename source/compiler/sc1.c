@@ -2506,6 +2506,11 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
      */
     if (dsize==0 && !*errorfound)
       break;
+    if (dim[cur]!=0 && idx>=dim[cur]) {
+      assert(dsize>0 || *errorfound);
+      error(18);            /* initialization data exceeds array size */
+      break;                /* avoid incrementing "idx" */
+    } /* if */
     totalsize+=dsize;
     if (*errorfound || !matchtoken(','))
       abortparse=TRUE;
@@ -2640,14 +2645,16 @@ static cell initvector(int ident,int tag,cell size,int fillzero,
  */
 static cell init(int ident,int *tag,int *errorfound)
 {
+  int curlit=litidx;
   cell i = 0;
 
   if (matchtoken(tSTRING)){
     /* lex() automatically stores strings in the literal table (and
-     * increases "litidx") */
+     * increases "litidx")
+     */
     if (ident==iVARIABLE) {
       error(6);         /* must be assigned to an array */
-      litidx=1;         /* reset literal queue */
+      litidx=curlit+1;         /* reset literal queue */
     } /* if */
     *tag=0;
   } else if (constexpr(&i,tag,NULL)){
