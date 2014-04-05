@@ -171,7 +171,7 @@ static stringlist *insert_string(stringlist *list,char *string)
 static char *get_string(stringlist *list,int index)
 {
   assert(list!=NULL);
-  if (index>=0 && index<list->size)
+  if (index>=0 && index<list->length)
     return list->strings[index];
   return NULL;
 }
