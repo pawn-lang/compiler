@@ -45,7 +45,7 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
 
 static void substallpatterns(unsigned char *line,int buffersize);
 static int match(char *st,int end);
-static int alpha(unsigned char c);
+static int alpha(char c);
 
 #define SKIPMODE      1 /* bit field in "#if" stack */
 #define PARSEMODE     2 /* bit field in "#if" stack */
@@ -2502,7 +2502,7 @@ static cell litchar(const unsigned char **lptr,int flags)
  *  Test if character "c" is alphabetic ("a".."z"), an underscore ("_")
  *  or an "at" sign ("@"). The "@" is an extension to standard C.
  */
-static int alpha(unsigned char c)
+static int alpha(char c)
 {
   return (isalpha(c) || c=='_' || c==PUBLIC_CHAR);
 }
@@ -2511,7 +2511,7 @@ static int alpha(unsigned char c)
  *
  *  Test if character "c" is alphanumeric ("a".."z", "0".."9", "_" or "@")
  */
-SC_FUNC int alphanum(unsigned char c)
+SC_FUNC int alphanum(char c)
 {
   return (alpha(c) || isdigit(c));
 }
@@ -2520,7 +2520,7 @@ SC_FUNC int alphanum(unsigned char c)
  *
  *  Test if character "c" is a hexadecimal digit ("0".."9" or "a".."f").
  */
-SC_FUNC int ishex(unsigned char c)
+SC_FUNC int ishex(char c)
 {
   return (c>='0' && c<='9') || (c>='a' && c<='f') || (c>='A' && c<='F');
 }
