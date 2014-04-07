@@ -299,7 +299,7 @@ static char *warnmsg[] = {
 /*233*/  "state variable \"%s\" shadows a global variable\n",
 /*234*/  "function is deprecated (symbol \"%s\") %s\n",
 /*235*/  "public function lacks forward declaration (symbol \"%s\")\n",
-/*236*/  "unknown parameter in substitution (incorrect #define pattern)\n"
+/*236*/  "unknown parameter in substitution (incorrect #define pattern)\n",
 /*237*/  "user warning: %s\n"
 #else
   "\277 \272tr\244\224\235\306 %\206\275\333c\365\314",
