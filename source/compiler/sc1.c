@@ -1443,8 +1443,8 @@ static void setconstants(void)
       add_constant("cellmax",_I32_MAX,sGLOBAL,0);
       add_constant("cellmin",_I32_MIN,sGLOBAL,0);
     #else
-      add_constant("cellmax",LONG_MAX,sGLOBAL,0);
-      add_constant("cellmin",LONG_MIN,sGLOBAL,0);
+      add_constant("cellmax",INT_MAX,sGLOBAL,0);
+      add_constant("cellmin",INT_MIN,sGLOBAL,0);
     #endif
   #elif PAWN_CELL_SIZE==64
     #if !defined _I64_MIN
