@@ -2722,24 +2722,28 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
           || automaton<0 && sym->states==NULL
           || automaton>=0 && sym->states!=NULL && state_getfsa(sym->states->next->index)==automaton)
       {
-        if (cmptag==NULL)
-          return sym;   /* return first match */
+        if (cmptag==NULL && sym->fnumber==fnumber)
+          return sym;     /* return first match */
         /* return closest match or first match; count number of matches */
         if (firstmatch==NULL)
           firstmatch=sym;
-        assert(cmptag!=NULL);
-        if (*cmptag==0)
+        if (cmptag!=NULL && *cmptag==0)
           count++;
-        if (*cmptag==sym->tag) {
-          *cmptag=1;    /* good match found, set number of matches to 1 */
-          return sym;
+        if (cmptag!=NULL && *cmptag==sym->tag) {
+          firstmatch=sym; /* good match found */
+          if (sym->fnumber==fnumber)
+            break;
         } /* if */
       } /* if */
     } /*  */
     sym=sym->next;
   } /* while */
-  if (cmptag!=NULL && firstmatch!=NULL)
-    *cmptag=count;
+  if (cmptag!=NULL && firstmatch!=NULL) {
+    if (*cmptag==0)
+      *cmptag=count;
+    else
+      *cmptag=1;          /* set number of matches to 1 */
+  } /* if */
   return firstmatch;
 }
 
