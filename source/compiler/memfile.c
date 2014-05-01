@@ -76,7 +76,7 @@ size_t memfile_read(memfile_t *mf, void *buffer, size_t maxsize)
 
 	memcpy(buffer, mf->base + mf->offs, maxsize);
 
-	mf->offs += maxsize;
+	mf->offs += (long)maxsize;
 
 	return maxsize;
 }
@@ -98,7 +98,7 @@ int memfile_write(memfile_t *mf, const void *buffer, size_t size)
 		mf->size = newsize;
 	}
 	memcpy(mf->base + mf->offs, buffer, size);
-	mf->offs += size;
+	mf->offs += (long)size;
 
 	if (mf->offs > mf->usedoffs)
 	{

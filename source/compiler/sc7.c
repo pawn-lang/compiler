@@ -203,10 +203,10 @@ SC_FUNC void stgwrite(const char *st)
     CHECK_STGBUFFER(stgidx);
     stgbuf[stgidx++]='\0';
   } else {
-    len=(stgbuf!=NULL) ? strlen(stgbuf) : 0;
-    CHECK_STGBUFFER(len+strlen(st)+1);
+    len=(stgbuf!=NULL) ? (int)strlen(stgbuf) : 0;
+    CHECK_STGBUFFER(len+(int)strlen(st)+1);
     strcat(stgbuf,st);
-    len=strlen(stgbuf);
+    len=(int)strlen(stgbuf);
     if (len>0 && stgbuf[len-1]=='\n') {
       filewrite(stgbuf);
       stgbuf[0]='\0';
@@ -246,7 +246,7 @@ SC_FUNC void stgout(int index)
       /* there is no sense in re-optimizing if the order of the sub-expressions
        * did not change; so output directly
        */
-      for (idx=0; idx<pipeidx; idx+=strlen(stgpipe+idx)+1)
+      for (idx=0; idx<pipeidx; idx+=(int)strlen(stgpipe+idx)+1)
         filewrite(stgpipe+idx);
     } /* if */
   } /* if */
@@ -569,7 +569,7 @@ static char *replacesequence(char *pattern,char symbols[MAX_OPT_VARS][MAX_ALIAS+
       var=atoi(lptr) - 1;
       assert(var>=0 && var<MAX_OPT_VARS);
       assert(symbols[var][0]!='\0');    /* variable should be defined */
-      *repl_length+=strlen(symbols[var]);
+      *repl_length+=(int)strlen(symbols[var]);
       break;
     case '!':
       *repl_length+=3;  /* '\t', '\n' & '\0' */

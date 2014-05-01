@@ -1310,7 +1310,7 @@ static int hier2(value *lval)
     if (sym!=NULL && sym->ident!=iFUNCTN && sym->ident!=iREFFUNC && (sym->usage & uDEFINE)==0)
       sym=NULL;                 /* symbol is not a function, it is in the table, but not "defined" */
     val= (sym!=NULL);
-    if (!val && find_subst(st,strlen(st))!=NULL)
+    if (!val && find_subst(st,(int)strlen(st))!=NULL)
       val=1;
     clear_value(lval);
     lval->ident=iCONSTEXPR;

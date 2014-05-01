@@ -213,14 +213,14 @@ SC_FUNC stringpair *insert_alias(char *name,char *alias)
   assert(strlen(name)<=sNAMEMAX);
   assert(alias!=NULL);
   assert(strlen(alias)<=sNAMEMAX);
-  if ((cur=insert_stringpair(&alias_tab,name,alias,strlen(name)))==NULL)
+  if ((cur=insert_stringpair(&alias_tab,name,alias,(int)strlen(name)))==NULL)
     error(103);       /* insufficient memory (fatal error) */
   return cur;
 }
 
 SC_FUNC int lookup_alias(char *target,char *name)
 {
-  stringpair *cur=find_stringpair(alias_tab.next,name,strlen(name));
+  stringpair *cur=find_stringpair(alias_tab.next,name,(int)strlen(name));
   if (cur!=NULL) {
     assert(strlen(cur->second)<=sNAMEMAX);
     strcpy(target,cur->second);

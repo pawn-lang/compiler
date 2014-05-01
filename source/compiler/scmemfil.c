@@ -113,7 +113,7 @@ unsigned int mfwrite(MEMFILE *mf,const unsigned char *buffer,unsigned int size)
 
 unsigned int mfread(MEMFILE *mf,unsigned char *buffer,unsigned int size)
 {
-  return memfile_read(mf, buffer, size);
+  return (unsigned int)memfile_read(mf, buffer, size);
 }
 
 char *mfgets(MEMFILE *mf,char *string,unsigned int size)
@@ -159,7 +159,7 @@ int mfputs(MEMFILE *mf,const char *string)
 
   assert(mf!=NULL);
 
-  length=strlen(string);
+  length=(unsigned int)strlen(string);
   written=mfwrite(mf,(unsigned char *)string,length);
   return written==length;
 }

@@ -1043,7 +1043,7 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
 #endif
       case 'i':
         strlcpy(str,option_value(ptr),sizeof str);  /* set name of include directory */
-        i=strlen(str);
+        i=(int)strlen(str);
         if (i>0) {
           if (str[i-1]!=DIRSEP_CHAR) {
             str[i]=DIRSEP_CHAR;
@@ -1316,7 +1316,7 @@ static void setconfig(char *root)
       *(ptr+1)='\0';
       base=ptr;
       strcat(path,"include");
-      len=strlen(path);
+      len=(int)strlen(path);
       path[len]=DIRSEP_CHAR;
       path[len+1]='\0';
       /* see if it exists */
@@ -1329,7 +1329,7 @@ static void setconfig(char *root)
         if ((ptr=strrchr(path,DIRSEP_CHAR))!=NULL) {
           *(ptr+1)='\0';
           strcat(path,"include");
-          len=strlen(path);
+          len=(int)strlen(path);
           path[len]=DIRSEP_CHAR;
           path[len+1]='\0';
         } else {
@@ -4008,9 +4008,9 @@ static int find_xmltag(char *source,char *xmltag,char *xmlparam,char *xmlvalue,
   /* both NULL or both non-NULL */
   assert(xmlvalue!=NULL && xmlparam!=NULL || xmlvalue==NULL && xmlparam==NULL);
 
-  xmltag_len=strlen(xmltag);
-  xmlparam_len= (xmlparam!=NULL) ? strlen(xmlparam) : 0;
-  xmlvalue_len= (xmlvalue!=NULL) ? strlen(xmlvalue) : 0;
+  xmltag_len=(int)strlen(xmltag);
+  xmlparam_len= (xmlparam!=NULL) ? (int)strlen(xmlparam) : 0;
+  xmlvalue_len= (xmlvalue!=NULL) ? (int)strlen(xmlvalue) : 0;
   ptr=source;
   /* find an opening '<' */
   while ((ptr=strchr(ptr,'<'))!=NULL) {
@@ -5924,10 +5924,10 @@ static void dostate(void)
         listid=-1;
       } /* if */
       listindex=0;
-      length=strlen(name)+70; /* +70 for the fixed part "<transition ... />\n" */
+      length=(int)strlen(name)+70; /* +70 for the fixed part "<transition ... />\n" */
       /* see if there are any condition strings to attach */
       for (index=0; (str=get_autolist(index))!=NULL; index++)
-        length+=strlen(str);
+        length+=(int)strlen(str);
       if ((doc=(char*)malloc(length*sizeof(char)))!=NULL) {
         do {
           sprintf(doc,"<transition target=\"%s\"",name);
