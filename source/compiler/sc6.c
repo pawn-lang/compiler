@@ -395,14 +395,14 @@ static cell do_dump(FILE *fbin,char *params,cell opcode)
 
 static cell do_call(FILE *fbin,char *params,cell opcode)
 {
-  char name[sNAMEMAX+1];
+  char name[sNAMEMAX+2]; /* +1 for a possible leading dot */
   int i;
   symbol *sym;
   ucell p;
 
   for (i=0; !isspace(*params); i++,params++) {
     assert(*params!='\0');
-    assert(i<sNAMEMAX);
+    assert(i<sNAMEMAX+1);
     name[i]=*params;
   } /* for */
   name[i]='\0';

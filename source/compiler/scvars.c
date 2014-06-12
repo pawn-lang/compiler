@@ -91,6 +91,7 @@ SC_VDEFINE int sc_curstates=0;     /* ID of the current state list */
 SC_VDEFINE int pc_optimize=sOPTIMIZE_NOMACRO; /* (peephole) optimization level */
 SC_VDEFINE int pc_memflags=0;      /* special flags for the stack/heap usage */
 SC_VDEFINE int pc_naked=FALSE;     /* if true mark following function as naked */
+SC_VDEFINE int pc_compat=FALSE;    /* running in compatibility mode? */
 
 SC_VDEFINE constvalue sc_automaton_tab = { NULL, "", 0, 0}; /* automaton table */
 SC_VDEFINE constvalue sc_state_tab = { NULL, "", 0, 0};   /* state table */

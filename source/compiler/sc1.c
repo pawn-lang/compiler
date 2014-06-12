@@ -65,7 +65,8 @@
 #include "sc.h"
 #include "svnrev.h"
 #define VERSION_STR "3.2." SVN_REVSTR
-#define VERSION_INT 0x030A
+#define VERSION_INT        0x030A
+#define VERSION_INT_COMPAT 0x0302
 
 static void resetglobals(void);
 static void initglobals(void);
@@ -1097,7 +1098,11 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
         skipinput=atoi(option_value(ptr));
         break;
       case 't':
-        sc_tabsize=atoi(option_value(ptr));
+        i=atoi(option_value(ptr));
+        if (i>0)
+          sc_tabsize=i;
+        else
+          about();
         break;
       case 'v':
         verbosity= isdigit(*option_value(ptr)) ? atoi(option_value(ptr)) : 2;
@@ -1127,6 +1132,9 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
           else
             about();
         } /* if */
+        break;
+      case 'Z':
+        pc_compat=toggle_option(ptr,pc_compat);
         break;
       case '\\':                /* use \ instead for escape characters */
         sc_ctrlchar='\\';
@@ -1391,6 +1399,7 @@ static void about(void)
     pc_printf("         -w<num>  disable a specific warning by its number\n");
     pc_printf("         -X<num>  abstract machine size limit in bytes\n");
     pc_printf("         -XD<num> abstract machine data/stack size limit in bytes\n");
+    pc_printf("         -Z[+/-]  run in compatibility mode (default=%c)\n",pc_compat ? '+' : '-');
     pc_printf("         -\\       use '\\' for escape characters\n");
     pc_printf("         -^       use '^' for escape characters\n");
     pc_printf("         -;[+/-]  require a semicolon to end each statement (default=%c)\n", sc_needsemicolon ? '+' : '-');
@@ -1434,8 +1443,8 @@ static void setconstants(void)
       add_constant("cellmax",_I32_MAX,sGLOBAL,0);
       add_constant("cellmin",_I32_MIN,sGLOBAL,0);
     #else
-      add_constant("cellmax",LONG_MAX,sGLOBAL,0);
-      add_constant("cellmin",LONG_MIN,sGLOBAL,0);
+      add_constant("cellmax",INT_MAX,sGLOBAL,0);
+      add_constant("cellmin",INT_MIN,sGLOBAL,0);
     #endif
   #elif PAWN_CELL_SIZE==64
     #if !defined _I64_MIN
@@ -1453,7 +1462,7 @@ static void setconstants(void)
   add_constant("charmax",~(-1 << sCHARBITS) - 1,sGLOBAL,0);
   add_constant("ucharmax",(1 << (sizeof(cell)-1)*8)-1,sGLOBAL,0);
 
-  add_constant("__Pawn",VERSION_INT,sGLOBAL,0);
+  add_constant("__Pawn",pc_compat ? VERSION_INT_COMPAT : VERSION_INT,sGLOBAL,0);
   add_constant("__line",0,sGLOBAL,0);
 
   debug=0;
@@ -2432,7 +2441,7 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
             break;
           ld=ld->next;
         } /* for */
-        if (d==dim[numdim-2] && d!=0)
+        if (d==dim[numdim-2])
           dim[numdim-1]=match;
       } /* if */
       /* after all arrays have been initalized, we know the (major) dimensions
@@ -2459,11 +2468,6 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
   assert(startlit>=0);
   assert(cur+2<=numdim);/* there must be 2 dimensions or more to do */
   assert(errorfound!=NULL && *errorfound==FALSE);
-  /* check for a quick exit */
-  if (matchtoken('}')) {
-    lexpush();
-    return 0;
-  } /* if */
   totalsize=0;
   needtoken('{');
   for (idx=0,abortparse=FALSE; !abortparse; idx++) {
@@ -2475,8 +2479,12 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
      * necessary at this point to reserve space for an extra cell in the
      * indirection vector.
      */
-    if (dim[cur]==0)
+    if (dim[cur]==0) {
       litinsert(0,startlit);
+    } else if (idx>=dim[cur]) {
+      error(18);            /* initialization data exceeds array size */
+      break;
+    } /* if */
     if (cur+2<numdim) {
       dsize=initarray(ident,tag,dim,numdim,cur+1,startlit,counteddim,
                       lastdim,enumroot,errorfound);
@@ -2488,19 +2496,6 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
        */
       append_constval(lastdim,itoh(idx),dsize,0);
     } /* if */
-    /* In a declaration like:
-     *    new a[2][2] = {
-     *                    {1, 2},
-     *                    {3, 4},
-     *                  }
-     * the final trailing comma (after the "4}") makes this loop attempt to
-     * parse one more initialization vector, but initvector() (and a recursive
-     * call to initarray()) quits with a size of zero while not setting
-     * "errorfound". Then, we must exit this loop without incrementing the
-     * dimension count.
-     */
-    if (dsize==0 && !*errorfound)
-      break;
     totalsize+=dsize;
     if (*errorfound || !matchtoken(','))
       abortparse=TRUE;
@@ -2565,7 +2560,7 @@ static cell initvector(int ident,int tag,cell size,int fillzero,
         error(227);             /* more initiallers than enum fields */
       rtag=tag;                 /* preset, may be overridden by enum field tag */
       if (enumfield!=NULL) {
-        cell step, val;
+        cell step;
         int cmptag=enumfield->index;
         symbol *symfield=findconst(enumfield->name,&cmptag);
         if (cmptag>1)
@@ -2575,30 +2570,22 @@ static cell initvector(int ident,int tag,cell size,int fillzero,
         if (litidx-fieldlit>symfield->dim.array.length)
           error(228);           /* length of initialler exceeds size of the enum field */
         if (ellips) {
-          val=prev1;
           step=prev1-prev2;
         } else {
           step=0;
-          val=0;                /* fill up with zeros */
+          prev1=0;
         } /* if */
         for (i=litidx-fieldlit; i<symfield->dim.array.length; i++) {
-          val+=step;
-          litadd(val);
+          prev1+=step;
+          litadd(prev1);
         } /* for */
         rtag=symfield->x.tags.index;  /* set the expected tag to the index tag */
         enumfield=enumfield->next;
       } /* if */
       if (!matchtag(rtag,ctag,TRUE))
-        error(213);             /* tag mismatch */
+        error(213);            /* tag mismatch */
     } while (matchtoken(',')); /* do */
     needtoken('}');
-  } else if (matchtoken('}')) {
-    /* this may be caused by a trailing comma in a declaration of a
-     * multi-dimensional array
-     */
-    lexpush();                  /* push back for later analysis */
-    size=0;                     /* avoid zero filling */
-    assert(!ellips);
   } else {
     init(ident,&ctag,errorfound);
     if (!matchtag(tag,ctag,TRUE))
@@ -2639,7 +2626,8 @@ static cell init(int ident,int *tag,int *errorfound)
 
   if (matchtoken(tSTRING)){
     /* lex() automatically stores strings in the literal table (and
-     * increases "litidx") */
+     * increases "litidx")
+     */
     if (ident==iVARIABLE) {
       error(6);         /* must be assigned to an array */
       litidx=1;         /* reset literal queue */
@@ -4737,7 +4725,7 @@ static constvalue *insert_constval(constvalue *prev,constvalue *next,const char 
     error(103);       /* insufficient memory (fatal error) */
   memset(cur,0,sizeof(constvalue));
   if (name!=NULL) {
-    assert(strlen(name)<sNAMEMAX);
+    assert(strlen(name)<sNAMEMAX+1);
     strcpy(cur->name,name);
   } /* if */
   cur->value=val;
@@ -5177,7 +5165,7 @@ static int test(int label,int parens,int invert)
   if (endtok!=0)
     needtoken(endtok);
   if (ident==iARRAY || ident==iREFARRAY) {
-    char *ptr=(sym->name!=NULL) ? sym->name : "-unknown-";
+    char *ptr=(sym!=NULL) ? sym->name : "-unknown-";
     error(33,ptr);              /* array must be indexed */
   } /* if */
   if (ident==iCONSTEXPR) {      /* constant expression */

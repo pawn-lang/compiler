@@ -231,8 +231,11 @@ static void check_empty(const unsigned char *lptr)
 static void doinclude(int silent)
 {
   char name[_MAX_PATH];
+  char symname[sNAMEMAX];
+  char *ptr;
   char c;
   int i, result;
+  int included=FALSE;
 
   while (*lptr<=' ' && *lptr!='\0')         /* skip leading whitespace */
     lptr++;
@@ -260,9 +263,31 @@ static void doinclude(int silent)
   if (c!='\0')
     check_empty(lptr+1);        /* verify that the rest of the line is whitespace */
 
-  result=plungefile(name,(c!='>'),TRUE);
-  if (!result && !silent)
-    error(100,name);            /* cannot read from ... (fatal error) */
+  if (pc_compat) {
+    /* create a symbol from the name of the include file; this allows the system
+     * to test for multiple inclusions
+     */
+    strcpy(symname,"_inc_");
+    if ((ptr=strrchr(name,DIRSEP_CHAR))!=NULL)
+      strlcat(symname,ptr+1,sizeof symname);
+    else
+      strlcat(symname,name,sizeof symname);
+    included=find_symbol(&glbtab,symname,fcurrent,-1,NULL)!=NULL;
+  } /* if */
+
+  if (!included) {
+    /* constant is not present, so this file has not been included yet */
+
+    /* Include files between "..." or without quotes are read from the current
+     * directory, or from a list of "include directories". Include files
+     * between <...> are only read from the list of include directories.
+     */
+    result=plungefile(name,(c!='>'),TRUE);
+    if (result && pc_compat)
+      add_constant(symname,1,sGLOBAL,0);
+    else if (!result && !silent)
+      error(100,name);          /* cannot read from ... (fatal error) */
+  } /* if */
 }
 
 /*  readline
@@ -1119,7 +1144,8 @@ static int command(void)
         } else if (strcmp(str,"tabsize")==0) {
           cell val;
           preproc_expr(&val,NULL);
-          sc_tabsize=(int)val;
+          if (val>0)
+            sc_tabsize=(int)val;
         } else if (strcmp(str,"align")==0) {
           sc_alignnext=TRUE;
         } else if (strcmp(str,"unused")==0) {
@@ -2696,24 +2722,28 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
           || automaton<0 && sym->states==NULL
           || automaton>=0 && sym->states!=NULL && state_getfsa(sym->states->next->index)==automaton)
       {
-        if (cmptag==NULL)
-          return sym;   /* return first match */
+        if (cmptag==NULL && sym->fnumber==fnumber)
+          return sym;     /* return first match */
         /* return closest match or first match; count number of matches */
         if (firstmatch==NULL)
           firstmatch=sym;
-        assert(cmptag!=NULL);
-        if (*cmptag==0)
+        if (cmptag!=NULL && *cmptag==0)
           count++;
-        if (*cmptag==sym->tag) {
-          *cmptag=1;    /* good match found, set number of matches to 1 */
-          return sym;
+        if (cmptag!=NULL && *cmptag==sym->tag) {
+          firstmatch=sym; /* good match found */
+          if (sym->fnumber==fnumber)
+            break;
         } /* if */
       } /* if */
     } /*  */
     sym=sym->next;
   } /* while */
-  if (cmptag!=NULL && firstmatch!=NULL)
-    *cmptag=count;
+  if (cmptag!=NULL && firstmatch!=NULL) {
+    if (*cmptag==0)
+      *cmptag=count;
+    else
+      *cmptag=1;          /* set number of matches to 1 */
+  } /* if */
   return firstmatch;
 }
 
