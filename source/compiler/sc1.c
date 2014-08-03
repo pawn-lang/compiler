@@ -2310,7 +2310,6 @@ static int base;
   if (cur==numdim-1)
     return 0;
   /* 2 or more dimensions left, fill in an indirection vector */
-  assert(dim[cur]>0);
   if (dim[cur+1]>0) {
     for (d=0; d<dim[cur]; d++)
       litq[base++]=(dim[cur]+d*(dim[cur+1]-1)+increment) * sizeof(cell);
