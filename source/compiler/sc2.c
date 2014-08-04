@@ -1015,6 +1015,7 @@ static int command(void)
         inpfname=duplicatestring(pathname);
         if (inpfname==NULL)
           error(103);           /* insufficient memory */
+        insert_dbgfile(inpfname);
       } /* if */
     } /* if */
     check_empty(lptr);
