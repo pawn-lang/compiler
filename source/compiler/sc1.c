@@ -493,9 +493,9 @@ int pc_compile(int argc, char *argv[])
         strcpy(inpfname,sname); /* avoid invalid filename */
         error(100,sname);
       } /* if */
-      pc_writesrc(ftmp,(unsigned char*)"#file ");
+      pc_writesrc(ftmp,(unsigned char*)"#file \"");
       pc_writesrc(ftmp,(unsigned char*)sname);
-      pc_writesrc(ftmp,(unsigned char*)"\n");
+      pc_writesrc(ftmp,(unsigned char*)"\"\n");
       while (!pc_eofsrc(fsrc)) {
         pc_readsrc(fsrc,tstring,sizeof tstring);
         pc_writesrc(ftmp,tstring);
