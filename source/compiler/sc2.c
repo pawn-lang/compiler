@@ -1829,7 +1829,7 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
         *flags &= ~STRINGIZE;
         continue;
       } else if (*stringize==',' || *stringize==')' || *stringize=='}' ||
-                 *stringize==';' || *stringize==':') { /* end */
+                 *stringize==';') { /* end */
         lptr=stringize;
         break;
       } else if (*stringize=='\0') {
@@ -1903,7 +1903,7 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
         *flags &= ~STRINGIZE;
         continue;
       } else if (*stringize==',' || *stringize==')' || *stringize=='}' ||
-                 *stringize==';' || *stringize==':') { /* end */
+                 *stringize==';') { /* end */
         lptr=stringize;
         break;
       } else if (*stringize=='\0') {
