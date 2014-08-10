@@ -1015,6 +1015,7 @@ static int command(void)
         inpfname=duplicatestring(pathname);
         if (inpfname==NULL)
           error(103);           /* insufficient memory */
+        insert_dbgfile(inpfname);
       } /* if */
     } /* if */
     check_empty(lptr);
@@ -1828,7 +1829,7 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
         *flags &= ~STRINGIZE;
         continue;
       } else if (*stringize==',' || *stringize==')' || *stringize=='}' ||
-                 *stringize==';' || *stringize==':') { /* end */
+                 *stringize==';') { /* end */
         lptr=stringize;
         break;
       } else if (*stringize=='\0') {
@@ -1902,7 +1903,7 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
         *flags &= ~STRINGIZE;
         continue;
       } else if (*stringize==',' || *stringize==')' || *stringize=='}' ||
-                 *stringize==';' || *stringize==':') { /* end */
+                 *stringize==';') { /* end */
         lptr=stringize;
         break;
       } else if (*stringize=='\0') {
