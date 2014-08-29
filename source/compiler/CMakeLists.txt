@@ -77,4 +77,5 @@ ADD_EXECUTABLE(pawncc ${PAWNCC_SRCS})
 TARGET_LINK_LIBRARIES(pawncc pawnc)
 
 # The Pawn disassembler
-ADD_EXECUTABLE(pawndisasm pawndisasm.c)
+SET(PAWNDISASM_SRCS pawndisasm.c ../amx/amxdbg.c ../amx/amx.c)
+ADD_EXECUTABLE(pawndisasm ${PAWNDISASM_SRCS})

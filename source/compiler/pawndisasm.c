@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../amx/amx.h"
+#include "../amx/amxdbg.h"
 
 static FILE *fpamx;
 static AMX_HEADER amxhdr;
@@ -488,6 +489,10 @@ int main(int argc,char *argv[])
   int codesize,count;
   cell *code,*cip;
   OPCODE_PROC func;
+  AMX_DBG dbg;
+  int dbgloaded;
+  const char *filename;
+  long line,prevline;
 
   if (argc<2 || argc>3) {
     printf("Usage: pawndisasm <input> [output]\n");
@@ -511,7 +516,11 @@ int main(int argc,char *argv[])
     return 1;
   } /* if */
 
+  /* load debug info */
+  dbgloaded=(dbg_LoadInfo(&dbg, fpamx)==AMX_ERR_NONE);
+
   /* load header */
+  fseek(fpamx,0,SEEK_SET);
   fread(&amxhdr,sizeof amxhdr,1,fpamx);
   if (amxhdr.magic!=AMX_MAGIC) {
     printf("Not a valid AMX file\n");
@@ -543,7 +552,16 @@ int main(int argc,char *argv[])
   /* browse through the code */
   cip=code;
   codesize=amxhdr.dat-amxhdr.cod;
+  prevline=0;
   while (((unsigned char*)cip-(unsigned char*)code)<codesize) {
+    if (dbgloaded) {
+      dbg_LookupFile(&dbg,(cell)(cip-code)*sizeof(cell),&filename);
+      dbg_LookupLine(&dbg,(cell)(cip-code)*sizeof(cell),&line);
+      if (filename!=NULL && line != prevline) {
+        fprintf(fplist,"%s:%d\n",filename,line+1);
+        prevline=line;
+      }
+    } /* if */
     func=opcodelist[(int)(*cip&0x0000ffff)].func;
     cip+=func(fplist,cip+1,*cip,(cell)(cip-code)*sizeof(cell));
   } /* while */
@@ -570,6 +588,10 @@ int main(int argc,char *argv[])
   if (strlen(name)>0) {
     fprintf(fplist," %s",name);
     name[0]='\0';
+  } /* if */
+
+  if (dbgloaded) {
+    dbg_FreeInfo(&dbg);
   } /* if */
 
   free(code);
