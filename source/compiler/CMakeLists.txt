@@ -61,7 +61,6 @@ IF(UNIX AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
   ADD_CUSTOM_COMMAND(TARGET pawnc POST_BUILD COMMAND strip ARGS -K pc_compile -K pc_addconstant -K pc_addtag -K pc_enablewarning ${CMAKE_BINARY_DIR}/libpawnc.so)
 ENDIF(UNIX AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
 
-
 # The Pawn compiler driver (console program)
 SET(PAWNCC_SRCS pawncc.c)
 IF(WIN32)
@@ -76,3 +75,6 @@ IF(WIN32)
 ENDIF(WIN32)
 ADD_EXECUTABLE(pawncc ${PAWNCC_SRCS})
 TARGET_LINK_LIBRARIES(pawncc pawnc)
+
+# The Pawn disassembler
+ADD_EXECUTABLE(pawndisasm pawndisasm.c)
