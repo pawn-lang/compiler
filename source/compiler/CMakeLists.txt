@@ -79,3 +79,6 @@ TARGET_LINK_LIBRARIES(pawncc pawnc)
 # The Pawn disassembler
 SET(PAWNDISASM_SRCS pawndisasm.c ../amx/amxdbg.c ../amx/amx.c)
 ADD_EXECUTABLE(pawndisasm ${PAWNDISASM_SRCS})
+IF(UNIX)
+  TARGET_LINK_LIBRARIES(pawndisasm dl)
+ENDIF(UNIX)

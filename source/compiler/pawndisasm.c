@@ -484,7 +484,7 @@ static void addchars(char *str,cell value,int pos)
 
 int main(int argc,char *argv[])
 {
-  char name[_MAX_PATH];
+  char name[FILENAME_MAX];
   FILE *fplist;
   int codesize,count;
   cell *code,*cip;
