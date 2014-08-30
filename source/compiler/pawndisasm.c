@@ -322,9 +322,9 @@ cell casetbl(FILE *ftxt,const cell *params,cell opcode,cell cip)
 
   print_opcode(ftxt,opcode,cip);
   num=params[0]+1;
-  fprintf(ftxt,"%08lx %08lx\n",params[0],params[1]+cip+sizeof(cell));
+  fprintf(ftxt,"%08lx %08lx\n",params[0],params[1]);
   for (idx=1; idx<num; idx++)
-    fprintf(ftxt,"                  %08lx %08lx\n",params[2*idx],params[2*idx+1]+cip+(2*idx+1)*sizeof(cell));
+    fprintf(ftxt,"                  %08lx %08lx\n",params[2*idx],params[2*idx+1]);
   return 2*num+1;
 }
 
