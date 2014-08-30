@@ -214,61 +214,6 @@ static OPCODE opcodelist[] = {
   {155, "load.s.both",parm2 },        /* version 9 */
   {156, "const",      parm2 },        /* version 9 */
   {157, "const.s",    parm2 },        /* version 9 */
-  {158, "icall",      parm1 },        /* version 10 */
-  {159, "iretn",      parm0 },
-  {160, "iswitch",    do_switch },    /* version 10 */
-  {161, "icasetbl",   icasetbl },     /* version 10 */
-  {162, "load.p.pri", parm1_p },
-  {163, "load.p.alt", parm1_p },
-  {164, "load.p.s.pri",parm1_p },
-  {165, "load.p.s.alt",parm1_p },
-  {166, "lref.p.pri", parm1_p },
-  {167, "lref.p.alt", parm1_p },
-  {168, "lref.p.s.pri",parm1_p },
-  {169, "lodb.p.i",   parm1_p },
-  {169, "lref.p.s.alt",parm1_p },
-  {170, "sref.p.pri", parm1_p },
-  {171, "const.p.pri",parm1_p },
-  {172, "const.p.alt",parm1_p },
-  {173, "addr.p.pri", parm1_p },
-  {174, "addr.p.alt", parm1_p },
-  {175, "stor.p.pri", parm1_p },
-  {176, "stor.p.alt", parm1_p },
-  {177, "stor.p.s.pri",parm1_p },
-  {178, "stor.p.s.alt",parm1_p },
-  {180, "sref.p.alt", parm1_p },
-  {181, "sref.p.s.pri",parm1_p },
-  {182, "sref.p.s.alt",parm1_p },
-  {183, "strb.p.i",   parm1_p },
-  {184, "lidx.p.b",   parm1_p },
-  {185, "align.p.pri",parm1_p },
-  {186, "idxaddr.p.b",parm1_p },
-  {187, "align.p.alt",parm1_p },
-  {188, "push.p.c",   parm1_p },
-  {189, "push.p",     parm1_p },
-  {190, "push.p.s",   parm1_p },
-  {191, "stack.p",    parm1_p },
-  {192, "heap.p",     parm1_p },
-  {193, "shl.p.c.pri",parm1_p },
-  {194, "shl.p.c.alt",parm1_p },
-  {195, "shr.p.c.pri",parm1_p },
-  {196, "shr.p.c.alt",parm1_p },
-  {197, "add.p.c",    parm1_p },
-  {198, "smul.p.c",   parm1_p },
-  {199, "zero.p",     parm1_p },
-  {200, "zero.p.s",   parm1_p },
-  {201, "eq.p.c.pri", parm1_p },
-  {202, "eq.p.c.alt", parm1_p },
-  {203, "inc.p",      parm1_p },
-  {204, "inc.p.s",    parm1_p },
-  {205, "dec.p",      parm1_p },
-  {206, "dec.p.s",    parm1_p },
-  {207, "movs.p",     parm1_p },
-  {208, "cmps.p",     parm1_p },
-  {209, "fill.p",     parm1_p },
-  {210, "halt.p",     parm1_p },
-  {211, "bounds.p",   parm1_p },
-  {212, "push.p.adr", parm1_p },
 };
 
 void print_opcode(FILE *ftxt,cell opcode,cell cip)
@@ -316,13 +261,6 @@ cell parm5(FILE *ftxt,const cell *params,cell opcode,cell cip)
   print_opcode(ftxt,opcode,cip);
   fprintf(ftxt,"%08lx %08lx %08lx %08lx %08lx\n",params[0],params[1],params[2],params[3],params[4]);
   return 6;
-}
-
-cell parm1_p(FILE *ftxt,const cell *params,cell opcode,cell cip)
-{
-  print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08lx\n",opcode>>16);
-  return 1;
 }
 
 cell do_proc(FILE *ftxt,const cell *params,cell opcode,cell cip)
@@ -387,19 +325,6 @@ cell casetbl(FILE *ftxt,const cell *params,cell opcode,cell cip)
   fprintf(ftxt,"%08lx %08lx\n",params[0],params[1]+cip+sizeof(cell));
   for (idx=1; idx<num; idx++)
     fprintf(ftxt,"                  %08lx %08lx\n",params[2*idx],params[2*idx+1]+cip+(2*idx+1)*sizeof(cell));
-  return 2*num+1;
-}
-
-cell icasetbl(FILE *ftxt,const cell *params,cell opcode,cell cip)
-{
-  cell num;
-  int idx;
-
-  print_opcode(ftxt,opcode,cip);
-  num=params[0]+1;
-  fprintf(ftxt,"%08lx %08lx\n",params[0],params[1]);
-  for (idx=1; idx<num; idx++)
-    fprintf(ftxt,"                  %08lx %08lx\n",params[2*idx],params[2*idx+1]);
   return 2*num+1;
 }
 
