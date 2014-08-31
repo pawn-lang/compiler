@@ -41,6 +41,7 @@ cell parm5(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell do_proc(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell do_call(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell do_jump(FILE *ftxt,const cell *params,cell opcode,cell cip);
+cell do_sysreq(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell do_switch(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell casetbl(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell do_file(FILE *ftxt,const cell *params,cell opcode,cell cip);
@@ -177,7 +178,7 @@ static OPCODE opcodelist[] = {
   {120, "halt",       parm1 },
   {121, "bounds",     parm1 },
   {122, "sysreq.pri", parm0 },
-  {123, "sysreq.c",   parm1 },
+  {123, "sysreq.c",   do_sysreq },
   {124, "file",       do_file },
   {125, "line",       parm2 },
   {126, "symbol",     do_symbol },
@@ -303,6 +304,36 @@ cell do_jump(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
   fprintf(ftxt,"%08lx\n",*params+cip);
+  return 2;
+}
+
+cell do_sysreq(FILE *ftxt,const cell *params,cell opcode,cell cip)
+{
+  int idx,numnatives,nameoffset;
+  AMX_FUNCSTUBNT func;
+  char name[sNAMEMAX+1];
+
+  /* find the procedure in the table (only works for a public function) */
+  nameoffset=-1;
+  name[0]='\0';
+  /* find the address in the public function table */
+  numnatives=(amxhdr.libraries-amxhdr.natives)/sizeof(AMX_FUNCSTUBNT);
+  fseek(fpamx,amxhdr.natives,SEEK_SET);
+  for (idx=0; idx<numnatives && nameoffset<0; idx++) {
+    fread(&func,sizeof func,1,fpamx);
+    if (idx==*params)
+      nameoffset=func.nameofs;
+  } /* for */
+  if (nameoffset>=0) {
+    fseek(fpamx,nameoffset,SEEK_SET);
+    fread(name,1,sNAMEMAX+1,fpamx);
+  } /* if */
+
+  print_opcode(ftxt,opcode,cip);
+  fprintf(ftxt,"%08lx",*params);
+  if (strlen(name)>0)
+    fprintf(ftxt,"\t; %s",name);
+  fprintf(ftxt,"\n");
   return 2;
 }
 
