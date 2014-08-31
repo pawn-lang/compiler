@@ -38,13 +38,11 @@ cell parm2(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell parm3(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell parm4(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell parm5(FILE *ftxt,const cell *params,cell opcode,cell cip);
-cell parm1_p(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell do_proc(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell do_call(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell do_jump(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell do_switch(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell casetbl(FILE *ftxt,const cell *params,cell opcode,cell cip);
-cell icasetbl(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell do_file(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell do_symbol(FILE *ftxt,const cell *params,cell opcode,cell cip);
 
