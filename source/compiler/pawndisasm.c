@@ -296,14 +296,14 @@ cell do_proc(FILE *ftxt,const cell *params,cell opcode,cell cip)
 cell do_call(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08lx\n",*params+cip);
+  fprintf(ftxt,"%08lx\n",*params);
   return 2;
 }
 
 cell do_jump(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08lx\n",*params+cip);
+  fprintf(ftxt,"%08lx\n",*params);
   return 2;
 }
 
