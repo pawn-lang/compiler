@@ -1228,72 +1228,74 @@ static int command(void)
     break;
 #if !defined NOEMIT
   case tpEMIT: {
-    /* write opcode to output file */
-    char name[40];
-    int i;
-    while (*lptr<=' ' && *lptr!='\0')
-      lptr++;
-    for (i=0; i<40 && (isalpha(*lptr) || *lptr=='.'); i++,lptr++)
-      name[i]=(char)tolower(*lptr);
-    name[i]='\0';
-    stgwrite("\t");
-    stgwrite(name);
-    stgwrite(" ");
-    code_idx+=opcodes(1);
-    /* write parameter (if any) */
-    while (*lptr<=' ' && *lptr!='\0')
-      lptr++;
-    if (*lptr!='\0') {
-      symbol *sym;
-      tok=lex(&val,&str);
-      switch (tok) {
-      case tNUMBER:
-      case tRATIONAL:
-        outval(val,FALSE);
-        code_idx+=opargs(1);
-        break;
-      case tSYMBOL:
-        sym=findloc(str);
-        if (sym==NULL)
-          sym=findglb(str,sSTATEVAR);
-        if (sym==NULL || sym->ident!=iFUNCTN && sym->ident!=iREFFUNC && (sym->usage & uDEFINE)==0) {
-          error(17,str);        /* undefined symbol */
-        } else {
-          if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
-            if ((sym->usage & uNATIVE)!=0) {
-              /* reserve a SYSREQ id if called for the first time  */
-              if (sc_status==statWRITE && (sym->usage & uREAD)==0 && sym->addr>=0)
-                sym->addr=ntv_funcid++;
-              outval(sym->addr,FALSE);
-            } else {
-              /* normal function, write its name instead of the address
-               * so that the address will be resolved at assemble time
-               */
-              stgwrite(".");
-              stgwrite(sym->name);
-            } /* if */
-          } else {
-            outval(sym->addr,FALSE);
-          } /* if */
-          /* mark symbol as "used", unknown whether for read or write */
-          markusage(sym,uREAD | uWRITTEN);
+    if (!SKIPPING) {
+      /* write opcode to output file */
+      char name[40];
+      int i;
+      while (*lptr<=' ' && *lptr!='\0')
+        lptr++;
+      for (i=0; i<40 && (isalpha(*lptr) || *lptr=='.'); i++,lptr++)
+        name[i]=(char)tolower(*lptr);
+      name[i]='\0';
+      stgwrite("\t");
+      stgwrite(name);
+      stgwrite(" ");
+      code_idx+=opcodes(1);
+      /* write parameter (if any) */
+      while (*lptr<=' ' && *lptr!='\0')
+        lptr++;
+      if (*lptr!='\0') {
+        symbol *sym;
+        tok=lex(&val,&str);
+        switch (tok) {
+        case tNUMBER:
+        case tRATIONAL:
+          outval(val,FALSE);
           code_idx+=opargs(1);
-        } /* if */
-        break;
-      default: {
-        char s2[20];
-        extern char *sc_tokens[];/* forward declaration */
-        if (tok<256)
-          sprintf(s2,"%c",(char)tok);
-        else
-          strcpy(s2,sc_tokens[tok-tFIRST]);
-        error(1,sc_tokens[tSYMBOL-tFIRST],s2);
-        break;
-      } /* case */
-      } /* switch */
+          break;
+        case tSYMBOL:
+          sym=findloc(str);
+          if (sym==NULL)
+            sym=findglb(str,sSTATEVAR);
+          if (sym==NULL || sym->ident!=iFUNCTN && sym->ident!=iREFFUNC && (sym->usage & uDEFINE)==0) {
+            error(17,str);        /* undefined symbol */
+          } else {
+            if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
+              if ((sym->usage & uNATIVE)!=0) {
+                /* reserve a SYSREQ id if called for the first time  */
+                if (sc_status==statWRITE && (sym->usage & uREAD)==0 && sym->addr>=0)
+                  sym->addr=ntv_funcid++;
+                outval(sym->addr,FALSE);
+              } else {
+                /* normal function, write its name instead of the address
+                 * so that the address will be resolved at assemble time
+                 */
+                stgwrite(".");
+                stgwrite(sym->name);
+              } /* if */
+            } else {
+              outval(sym->addr,FALSE);
+            } /* if */
+            /* mark symbol as "used", unknown whether for read or write */
+            markusage(sym,uREAD | uWRITTEN);
+            code_idx+=opargs(1);
+          } /* if */
+          break;
+        default: {
+          char s2[20];
+          extern char *sc_tokens[];/* forward declaration */
+          if (tok<256)
+            sprintf(s2,"%c",(char)tok);
+          else
+            strcpy(s2,sc_tokens[tok-tFIRST]);
+          error(1,sc_tokens[tSYMBOL-tFIRST],s2);
+          break;
+        } /* case */
+        } /* switch */
+      } /* if */
+      stgwrite("\n");
+      check_empty(lptr);
     } /* if */
-    stgwrite("\n");
-    check_empty(lptr);
     break;
   } /* case */
 #endif
