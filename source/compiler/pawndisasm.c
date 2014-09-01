@@ -487,6 +487,10 @@ int main(int argc,char *argv[])
     fprintf(fplist,"compact-encoding ");
   if ((amxhdr.flags & AMX_FLAG_DEBUG)!=0)
     fprintf(fplist,"debug-info ");
+  if ((amxhdr.flags & AMX_FLAG_NOCHECKS)!=0)
+    fprintf(fplist,"no-checks ");
+  if ((amxhdr.flags & AMX_FLAG_SLEEP)!=0)
+    fprintf(fplist,"sleep ");
   fprintf(fplist,"\n\n");
   /* load the code block */
   if ((code=malloc(codesize))==NULL) {
