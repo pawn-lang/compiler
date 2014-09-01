@@ -1232,6 +1232,7 @@ static int command(void)
       /* write opcode to output file */
       char name[40];
       int i;
+      insert_dbgline(fline);
       while (*lptr<=' ' && *lptr!='\0')
         lptr++;
       for (i=0; i<40 && (isalpha(*lptr) || *lptr=='.'); i++,lptr++)
