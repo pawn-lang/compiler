@@ -268,9 +268,6 @@ cell do_proc(FILE *ftxt,const cell *params,cell opcode,cell cip)
   AMX_FUNCSTUBNT func;
   char name[sNAMEMAX+1];
 
-  fprintf(ftxt,"\n");
-
-  /* find the procedure in the table (only works for a public function) */
   nameoffset=-1;
   name[0]='\0';
   /* find the address in the public function table */
@@ -313,10 +310,9 @@ cell do_sysreq(FILE *ftxt,const cell *params,cell opcode,cell cip)
   AMX_FUNCSTUBNT func;
   char name[sNAMEMAX+1];
 
-  /* find the procedure in the table (only works for a public function) */
   nameoffset=-1;
   name[0]='\0';
-  /* find the address in the public function table */
+  /* find the address in the native function table */
   numnatives=(amxhdr.libraries-amxhdr.natives)/sizeof(AMX_FUNCSTUBNT);
   fseek(fpamx,amxhdr.natives,SEEK_SET);
   for (idx=0; idx<numnatives && nameoffset<0; idx++) {
@@ -510,12 +506,17 @@ int main(int argc,char *argv[])
   /* browse through the code */
   cip=code;
   codesize=amxhdr.dat-amxhdr.cod;
-  prevline=0;
+  prevline=-1;
   while (((unsigned char*)cip-(unsigned char*)code)<codesize) {
+    if (*cip==46) {
+      /* beginning of a new function */
+      fprintf(fplist,"\n");
+    } /* if */
     if (dbgloaded) {
+      /* print the location of this instruction */
       dbg_LookupFile(&dbg,(cell)(cip-code)*sizeof(cell),&filename);
       dbg_LookupLine(&dbg,(cell)(cip-code)*sizeof(cell),&line);
-      if (filename!=NULL && line != prevline) {
+      if (filename!=NULL && line!=prevline) {
         fprintf(fplist,"%s:%d\n",filename,line+1);
         prevline=line;
       }
