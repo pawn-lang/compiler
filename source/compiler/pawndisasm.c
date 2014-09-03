@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "sc.h"
 #include "../amx/amx.h"
 #include "../amx/amxdbg.h"
 
@@ -442,7 +443,10 @@ int main(int argc,char *argv[])
   AMX_DBG dbg;
   int dbgloaded;
   const char *filename;
-  long line,prevline;
+  long nline,nprevline;
+  FILE *fpsrc;
+  int i,j;
+  char line[sLINEMAX];
 
   if (argc<2 || argc>3) {
     printf("Usage: pawndisasm <input> [output]\n");
@@ -506,7 +510,7 @@ int main(int argc,char *argv[])
   /* browse through the code */
   cip=code;
   codesize=amxhdr.dat-amxhdr.cod;
-  prevline=-1;
+  nprevline=-1;
   while (((unsigned char*)cip-(unsigned char*)code)<codesize) {
     if (*cip==46) {
       /* beginning of a new function */
@@ -515,11 +519,24 @@ int main(int argc,char *argv[])
     if (dbgloaded) {
       /* print the location of this instruction */
       dbg_LookupFile(&dbg,(cell)(cip-code)*sizeof(cell),&filename);
-      dbg_LookupLine(&dbg,(cell)(cip-code)*sizeof(cell),&line);
-      if (filename!=NULL && line!=prevline) {
-        fprintf(fplist,"%s:%d\n",filename,line+1);
-        prevline=line;
-      }
+      dbg_LookupLine(&dbg,(cell)(cip-code)*sizeof(cell),&nline);
+      if (filename!=NULL && nline!=nprevline) {
+        fprintf(fplist,"%s:%d\n",filename,nline+1);
+        /* print the source code for lines in (nprevline,line] */
+        fpsrc=fopen(filename,"r");
+        if (fpsrc!=NULL) {
+          for (i=0; i<=nline; i++) {
+            if (fgets(line,sizeof(line),fpsrc)==NULL)
+              break;
+            for (j=0; line[j]<=' ' && line[j]!='\0'; j++)
+              continue;
+            if (line[j]!='\0' && i>nprevline)
+              fputs(line,fplist);
+          } /* for */
+          fclose(fpsrc);
+        } /* if */
+        nprevline=nline;
+      } /* if */
     } /* if */
     func=opcodelist[(int)(*cip&0x0000ffff)].func;
     cip+=func(fplist,cip+1,*cip,(cell)(cip-code)*sizeof(cell));
