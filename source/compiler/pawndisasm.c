@@ -30,6 +30,8 @@
 
 static FILE *fpamx;
 static AMX_HEADER amxhdr;
+static int dbgloaded;
+static AMX_DBG amxdbg;
 
 typedef cell (*OPCODE_PROC)(FILE *ftxt,const cell *params,cell opcode,cell cip);
 
@@ -221,6 +223,33 @@ void print_opcode(FILE *ftxt,cell opcode,cell cip)
   fprintf(ftxt,"%08lx  %s ",cip,opcodelist[(int)(opcode &0x0000ffff)].name);
 }
 
+void print_funcname(FILE *ftxt,cell address)
+{
+  int idx,numpublics;
+  AMX_FUNCSTUBNT func;
+  char name[sNAMEMAX+1]={'\0'};
+  char *dbgname;
+
+  /* first look up the address in the debug info and, if failed, find it
+   * in the public function table */
+  if (dbgloaded && dbg_LookupFunction(&amxdbg,address,&dbgname)==AMX_ERR_NONE) {
+    strncpy(name,dbgname,sizeof name);
+  } else {
+    numpublics=(amxhdr.natives-amxhdr.publics)/sizeof(AMX_FUNCSTUBNT);
+    fseek(fpamx,amxhdr.publics,SEEK_SET);
+    for (idx=0; idx<numpublics; idx++) {
+      fread(&func,sizeof func,1,fpamx);
+      if (func.address==address) {
+        fseek(fpamx,func.nameofs,SEEK_SET);
+        fread(name,1,sizeof name,fpamx);
+        break;
+      } /* if */
+    } /* for */
+  } /* if */
+  if (strlen(name)>0)
+    fprintf(ftxt,"\t; %s",name);
+}
+
 cell parm0(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
@@ -265,28 +294,8 @@ cell parm5(FILE *ftxt,const cell *params,cell opcode,cell cip)
 
 cell do_proc(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
-  int idx,numpublics,nameoffset;
-  AMX_FUNCSTUBNT func;
-  char name[sNAMEMAX+1];
-
-  nameoffset=-1;
-  name[0]='\0';
-  /* find the address in the public function table */
-  numpublics=(amxhdr.natives-amxhdr.publics)/sizeof(AMX_FUNCSTUBNT);
-  fseek(fpamx,amxhdr.publics,SEEK_SET);
-  for (idx=0; idx<numpublics && nameoffset<0; idx++) {
-    fread(&func,sizeof func,1,fpamx);
-    if (func.address==cip)
-      nameoffset=func.nameofs;
-  } /* for */
-  if (nameoffset>=0) {
-    fseek(fpamx,nameoffset,SEEK_SET);
-    fread(name,1,sNAMEMAX+1,fpamx);
-  } /* if */
-
   print_opcode(ftxt,opcode,cip);
-  if (strlen(name)>0)
-    fprintf(ftxt,"\t; %s",name);
+  print_funcname(ftxt,cip);
   fprintf(ftxt,"\n");
   return 1;
 }
@@ -294,7 +303,9 @@ cell do_proc(FILE *ftxt,const cell *params,cell opcode,cell cip)
 cell do_call(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08lx\n",*params);
+  fprintf(ftxt,"%08lx",*params);
+  print_funcname(ftxt,*params);
+  fputs("\n",ftxt);
   return 2;
 }
 
@@ -440,8 +451,6 @@ int main(int argc,char *argv[])
   int codesize,count;
   cell *code,*cip;
   OPCODE_PROC func;
-  AMX_DBG dbg;
-  int dbgloaded;
   const char *filename;
   long nline,nprevline;
   FILE *fpsrc;
@@ -471,7 +480,7 @@ int main(int argc,char *argv[])
   } /* if */
 
   /* load debug info */
-  dbgloaded=(dbg_LoadInfo(&dbg, fpamx)==AMX_ERR_NONE);
+  dbgloaded=(dbg_LoadInfo(&amxdbg, fpamx)==AMX_ERR_NONE);
 
   /* load header */
   fseek(fpamx,0,SEEK_SET);
@@ -518,8 +527,8 @@ int main(int argc,char *argv[])
     } /* if */
     if (dbgloaded) {
       /* print the location of this instruction */
-      dbg_LookupFile(&dbg,(cell)(cip-code)*sizeof(cell),&filename);
-      dbg_LookupLine(&dbg,(cell)(cip-code)*sizeof(cell),&nline);
+      dbg_LookupFile(&amxdbg,(cell)(cip-code)*sizeof(cell),&filename);
+      dbg_LookupLine(&amxdbg,(cell)(cip-code)*sizeof(cell),&nline);
       if (filename!=NULL && nline!=nprevline) {
         fprintf(fplist,"%s:%d\n",filename,nline+1);
         /* print the source code for lines in (nprevline,line] */
@@ -567,7 +576,7 @@ int main(int argc,char *argv[])
   } /* if */
 
   if (dbgloaded) {
-    dbg_FreeInfo(&dbg);
+    dbg_FreeInfo(&amxdbg);
   } /* if */
 
   free(code);
