@@ -56,6 +56,7 @@ int AMXAPI dbg_LoadInfo(AMX_DBG *amxdbg, FILE *fp)
   AMX_DBG_HDR dbghdr;
   unsigned char *ptr;
   int index, dim;
+  AMX_DBG_LINE *line;
   AMX_DBG_SYMDIM *symdim;
 
   assert(fp != NULL);
@@ -67,6 +68,7 @@ int AMXAPI dbg_LoadInfo(AMX_DBG *amxdbg, FILE *fp)
   #if BYTE_ORDER==BIG_ENDIAN
     amx_Align32((uint32_t*)&amxhdr.size);
     amx_Align16(&amxhdr.magic);
+    amx_Align16(&dbghdr.flags);
   #endif
   if (amxhdr.magic != AMX_MAGIC)
     return AMX_ERR_FORMAT;
@@ -143,6 +145,20 @@ int AMXAPI dbg_LoadInfo(AMX_DBG *amxdbg, FILE *fp)
     } /* for */
   #endif
   ptr += dbghdr.lines * sizeof(AMX_DBG_LINE);
+
+  /* detect dbghdr.lines overflow */
+  while ((line = (AMX_DBG_LINE *)ptr)
+         && (cell)line->address > (cell)(line - 1)->address) {
+    dbghdr.lines = -1;
+    #if BYTE_ORDER==BIG_ENDIAN
+      for (index = 0; index <= dbghdr.lines; index++) {
+        amx_AlignCell(&linetbl[index].address);
+        amx_Align32((uint32_t*)&linetbl[index].line);
+        line++;
+      } /* for */
+    #endif
+    ptr += ((uint32_t)dbghdr.lines + 1) * sizeof(AMX_DBG_LINE);
+  } /* while */
 
   /* symbol table (plus index tags) */
   for (index = 0; index < dbghdr.symbols; index++) {
@@ -257,7 +273,8 @@ int AMXAPI dbg_LookupFunction(AMX_DBG *amxdbg, ucell address, const char **funcn
   for (index = 0; index < amxdbg->hdr->symbols; index++) {
     if (amxdbg->symboltbl[index]->ident == iFUNCTN
         && amxdbg->symboltbl[index]->codestart <= address
-        && amxdbg->symboltbl[index]->codeend > address)
+        && amxdbg->symboltbl[index]->codeend > address
+        && amxdbg->symboltbl[index]->name[0] != '@')
       break;
   } /* for */
   if (index >= amxdbg->hdr->symbols)
