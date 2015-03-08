@@ -1,0 +1,17 @@
+version: '{build}'
+
+configuration:
+  - Release
+
+before_build:
+  - cmake source/compiler
+
+build_script:
+  - cmake --build . --config %CONFIGURATION%
+
+artifacts:
+  - path: pawncc.exe
+    name: Compiler executable
+
+  - path: pawnc.dll
+    name: Compiler library
