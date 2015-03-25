@@ -2948,7 +2948,7 @@ SC_FUNC symbol *addvariable(const char *name,cell addr,int ident,int vclass,int 
    * the symbol without states if no symbol with states exists).
    */
   assert(vclass!=sGLOBAL || (sym=findglb(name,sGLOBAL))==NULL || (sym->usage & uDEFINE)==0
-         || sym->ident==iFUNCTN && sym==curfunc
+         || (sym->ident==iFUNCTN && sym==curfunc)
          || sym->states==NULL && sc_curstates>0);
 
   if (ident==iARRAY || ident==iREFARRAY) {
