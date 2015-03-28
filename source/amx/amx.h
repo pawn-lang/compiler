@@ -393,7 +393,7 @@ enum {
 
 uint16_t * AMXAPI amx_Align16(uint16_t *v);
 uint32_t * AMXAPI amx_Align32(uint32_t *v);
-#if defined _I64_MAX || defined HAVE_I64
+#if defined _I64_MAX || defined HAVE_I64 || defined __LP64__
   uint64_t * AMXAPI amx_Align64(uint64_t *v);
 #endif
 int AMXAPI amx_Allot(AMX *amx, int cells, cell *amx_addr, cell **phys_addr);
@@ -442,10 +442,15 @@ int AMXAPI amx_UTF8Put(char *string, char **endptr, int maxchars, cell value);
   #define amx_AlignCell(v) amx_Align16(v)
 #elif PAWN_CELL_SIZE==32
   #define amx_AlignCell(v) amx_Align32(v)
-#elif PAWN_CELL_SIZE==64 && (defined _I64_MAX || defined HAVE_I64)
+#elif PAWN_CELL_SIZE==64 && (defined _I64_MAX || defined HAVE_I64 || defined __LP64__)
   #define amx_AlignCell(v) amx_Align64(v)
 #else
-  #error Unsupported cell size
+  #ifdef __GNUC__
+    #define STR_HELPER(x) #x
+    #define STR(x) STR_HELPER(x)
+    #pragma message "PAWN_CELL_SIZE=" STR(PAWN_CELL_SIZE)
+    #error Unsupported cell size
+  #endif
 #endif
 
 #define amx_RegisterFunc(amx, name, func) \
