@@ -1,7 +1,7 @@
 version: '{build}'
 
 configuration:
-  - Release
+  - RelWithDebInfo
 
 before_build:
   - cmake source/compiler
@@ -10,8 +10,8 @@ build_script:
   - cmake --build . --config %CONFIGURATION%
 
 artifacts:
-  - path: pawncc.exe
+  - path: RelWithDebInfo/pawncc.exe
     name: Compiler executable
 
-  - path: pawnc.dll
+  - path: RelWithDebInfo/pawnc.dll
     name: Compiler library
