@@ -10,13 +10,14 @@ What is this?
 -------------
 
 This is a modified copy of the Pawn compiler version 3.2.3664 by Compuphase that
-fixes some bugs and adds a few new features.
+fixes some bugs and adds a few features.
 
 Changes
 -------
 
-See [Known compiler bugs](../../wiki/Known-compiler-bugs) for the list of fixed bugs
-and [What's new](../../wiki/What's-new) for the list of other notable changes.
+See [Known compiler bugs](../../wiki/Known-compiler-bugs) for the list of fixed
+bugs and [What's new](../../wiki/What's-new) for the list of features and other
+notable changes.
 
 Background
 ----------
