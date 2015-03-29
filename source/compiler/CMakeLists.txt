@@ -33,6 +33,10 @@ IF(UNIX)
   LINK_LIBRARIES(pthread) #CMake adds the "lib" prefix, so "pthread" becomes "libpthread"
 ENDIF(UNIX)
 
+IF(PAWN_CELL_SIZE)
+  ADD_DEFINITIONS(-DPAWN_CELL_SIZE=${PAWN_CELL_SIZE})
+ENDIF(PAWN_CELL_SIZE)
+
 # The Pawn compiler shared library
 SET(PAWNC_SRCS sc1.c sc2.c sc3.c sc4.c sc5.c sc6.c sc7.c
 	scexpand.c sci18n.c sclist.c scmemfil.c scstate.c scvars.c

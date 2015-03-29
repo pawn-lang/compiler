@@ -357,7 +357,7 @@ typedef enum {
   }
 #endif
 
-#if (BYTE_ORDER==BIG_ENDIAN || PAWN_CELL_SIZE==64) && (defined _I64_MAX || defined HAVE_I64)
+#if (BYTE_ORDER==BIG_ENDIAN || PAWN_CELL_SIZE==64) && (defined _I64_MAX || defined HAVE_I64 || __LP64__)
   static void swap64(uint64_t *v)
   {
     unsigned char *s = (unsigned char *)v;
@@ -404,7 +404,7 @@ uint32_t * AMXAPI amx_Align32(uint32_t *v)
   return v;
 }
 
-#if defined _I64_MAX || defined HAVE_I64
+#if defined _I64_MAX || defined HAVE_I64 || defined __LP64__
 uint64_t * AMXAPI amx_Align64(uint64_t *v)
 {
   assert(sizeof(*v)==8);
@@ -421,7 +421,7 @@ uint64_t * AMXAPI amx_Align64(uint64_t *v)
   #define swapcell  swap16
 #elif PAWN_CELL_SIZE==32
   #define swapcell  swap32
-#elif PAWN_CELL_SIZE==64 && (defined _I64_MAX || defined HAVE_I64)
+#elif PAWN_CELL_SIZE==64 && (defined _I64_MAX || defined HAVE_I64 || defined __LP64__)
   #define swapcell  swap64
 #else
   #error Unsupported cell size

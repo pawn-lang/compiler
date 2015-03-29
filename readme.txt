@@ -158,6 +158,30 @@ Linux / Unix
 4. Press the "g" button for "generate and quit". Then build the program by
    typing "make". The programs will be built in the subdirectory "bin".
 
+Linux / Unix (from git)
+-----------------------
+
+(Tested using Debian wheezy)
+
+1. Change to the clone directory top
+2. mkdir build_compiler && cd build_compiler && cmake ../source/compiler && make && cd ..
+3. mkdir build_amx && cd build_amx && cmake ../source/amc && make
+4. cp build_compiler/{pawncc,pawndisasm,libpawnc.so} source/bin
+5. cp build_amx/{*.so,pawndbg,pawnrun} source/bin
+
+For 64 bit host:
+
+1. Change to the clone directory top
+2. mkdir -p build_compiler && cd build_compiler && cmake -DPAWN_CELL_SIZE=64 ../source/compiler && make && cd ..
+3. mkdir -p build_amx && cd build_amx && cmake -DPAWN_CELL_SIZE=64 ../source/amx && make && cd ..
+4. cp build_compiler/{pawncc,pawndisasm,libpawnc.so} bin
+5. cp build_amx/{*.so,pawndbg,pawnrun} source/bin
+
+Execution:
+
+1. cd source/bin
+2. ./pawncc ../../examples/hello.p
+3. ./pawnrun hello.amx
 
 Acknowledgements
 ================
