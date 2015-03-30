@@ -264,6 +264,15 @@ static void doinclude(int silent)
     check_empty(lptr+1);        /* verify that the rest of the line is whitespace */
 
   if (pc_compat) {
+    /* convert backslash to native directory separators for maximum
+     * compatibility for the Windows compiler
+     */
+    #if DIRSEP_CHAR!='\\'
+      ptr=name;
+      while ((ptr=strchr(ptr,'\\'))!=NULL)
+        *ptr++=DIRSEP_CHAR;
+    #endif
+
     /* create a symbol from the name of the include file; this allows the system
      * to test for multiple inclusions
      */
@@ -3020,4 +3029,3 @@ static char itohstr[30];
   *ptr='\0';            /* and a zero-terminator */
   return itohstr;
 }
-
