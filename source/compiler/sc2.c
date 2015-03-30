@@ -27,6 +27,9 @@
 #include <ctype.h>
 #include <math.h>
 #include <sys/stat.h>
+#if defined __WIN32__ || defined _WIN32 || defined _Windows
+  #define S_ISDIR(m) (((m) & _S_IFDIR) == _S_IFDIR)
+#endif
 #include "lstring.h"
 #include "sc.h"
 #if defined LINUX || defined __FreeBSD__ || defined __OpenBSD__
