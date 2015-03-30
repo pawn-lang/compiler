@@ -26,6 +26,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include <sys/stat.h>
 #include "lstring.h"
 #include "sc.h"
 #if defined LINUX || defined __FreeBSD__ || defined __OpenBSD__
@@ -125,24 +126,36 @@ SC_FUNC void clearstk(void)
 SC_FUNC int plungequalifiedfile(char *name)
 {
 static char *extensions[] = { ".inc", ".p", ".pawn" };
+  int found;
+  struct stat st;
   FILE *fp;
   char *ext;
   int ext_idx;
 
   ext_idx=0;
   do {
-    fp=(FILE*)pc_opensrc(name);
+    found=TRUE;
+    stat(name, &st);
+    if (S_ISDIR(st.st_mode)) {
+      found=FALSE;              /* ignore directories with the same name */
+    } else {
+      fp=(FILE*)pc_opensrc(name);
+      if (fp==NULL)
+        found=FALSE;
+    } /* if */
     ext=strchr(name,'\0');      /* save position */
-    if (fp==NULL) {
+    if (!found) {
       /* try to append an extension */
       strcpy(ext,extensions[ext_idx]);
       fp=(FILE*)pc_opensrc(name);
-      if (fp==NULL)
+      if (fp==NULL) {
         *ext='\0';              /* on failure, restore filename */
+        found=FALSE;
+      }
     } /* if */
     ext_idx++;
-  } while (fp==NULL && ext_idx<(sizeof extensions / sizeof extensions[0]));
-  if (fp==NULL) {
+  } while (!found && ext_idx<(sizeof extensions / sizeof extensions[0]));
+  if (!found) {
     *ext='\0';                  /* restore filename */
     return FALSE;
   } /* if */
