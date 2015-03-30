@@ -33,7 +33,7 @@ So the main goal of the project is to re-create changes that were
 previously made by the devs as well as fix all known compiler bugs.
 
 [1] It's worth noting that the version of the AMX embedded into the SA-MP server
-seems to be based on a newer release of the Pawn toolkit.
+seems to be based on an older release of Pawn.
 
 [build]: https://travis-ci.org/Zeex/pawn
 [build_status]: https://travis-ci.org/Zeex/pawn.svg?branch=master
