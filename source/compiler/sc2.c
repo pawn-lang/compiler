@@ -281,7 +281,7 @@ static void doinclude(int silent)
 
   if (pc_compat) {
     /* convert backslash to native directory separators for maximum
-     * compatibility for the Windows compiler
+     * compatibility with the Windows compiler
      */
     #if DIRSEP_CHAR!='\\'
       ptr=name;
