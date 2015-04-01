@@ -1232,6 +1232,10 @@ static int command(void)
           if (!ok) {
             error(207);         /* unknown #pragma */
           }
+        } else if (strcmp(str,"compat")==0) {
+          cell val;
+          preproc_expr(&val,NULL);
+          pc_compat=(int)val;   /* switch compatibility mode on/off */
         } else {
           error(207);           /* unknown #pragma */
         } /* if */
