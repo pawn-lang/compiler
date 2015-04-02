@@ -65,8 +65,7 @@
 #include "sc.h"
 #include "svnrev.h"
 #define VERSION_STR "3.2." SVN_REVSTR
-#define VERSION_INT        0x030A
-#define VERSION_INT_COMPAT 0x0302
+#define VERSION_INT 0x030A
 
 static void resetglobals(void);
 static void initglobals(void);
@@ -1462,7 +1461,7 @@ static void setconstants(void)
   add_constant("charmax",~(-1 << sCHARBITS) - 1,sGLOBAL,0);
   add_constant("ucharmax",(1 << (sizeof(cell)-1)*8)-1,sGLOBAL,0);
 
-  add_constant("__Pawn",pc_compat ? VERSION_INT_COMPAT : VERSION_INT,sGLOBAL,0);
+  add_constant("__Pawn",VERSION_INT,sGLOBAL,0);
   add_constant("__line",0,sGLOBAL,0);
 
   debug=0;
@@ -5992,4 +5991,3 @@ static int *readwhile(void)
     return (wqptr-wqSIZE);
   } /* if */
 }
-
