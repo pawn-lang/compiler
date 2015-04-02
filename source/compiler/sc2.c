@@ -638,7 +638,7 @@ static int htoi(cell *val,const unsigned char *curptr)
 }
 
 #if defined __GNUC__
-static double pow10(int value)
+static double pow10(double value)
 {
   double res=1.0;
   while (value>=4) {

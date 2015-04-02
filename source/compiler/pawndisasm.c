@@ -220,7 +220,7 @@ static OPCODE opcodelist[] = {
 
 void print_opcode(FILE *ftxt,cell opcode,cell cip)
 {
-  fprintf(ftxt,"%08lx  %s ",cip,opcodelist[(int)(opcode &0x0000ffff)].name);
+  fprintf(ftxt,"%08"PRIxC"  %s ",cip,opcodelist[(int)(opcode &0x0000ffff)].name);
 }
 
 void print_funcname(FILE *ftxt,cell address)
@@ -228,7 +228,7 @@ void print_funcname(FILE *ftxt,cell address)
   int idx,numpublics;
   AMX_FUNCSTUBNT func;
   char name[sNAMEMAX+1]={'\0'};
-  char *dbgname;
+  const char *dbgname;
 
   /* first look up the address in the debug info and, if failed, find it
    * in the public function table */
@@ -260,35 +260,38 @@ cell parm0(FILE *ftxt,const cell *params,cell opcode,cell cip)
 cell parm1(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08lx\n",*params);
+  fprintf(ftxt,"%08"PRIxC"\n",*params);
   return 2;
 }
 
 cell parm2(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08lx %08lx\n",params[0],params[1]);
+  fprintf(ftxt,"%08"PRIxC" %08"PRIxC"\n",params[0],params[1]);
   return 3;
 }
 
 cell parm3(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08lx %08lx %08lx\n",params[0],params[1],params[2]);
+  fprintf(ftxt,"%08"PRIxC" %08"PRIxC" %08"PRIxC"\n",
+          params[0],params[1],params[2]);
   return 4;
 }
 
 cell parm4(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08lx %08lx %08lx %08lx\n",params[0],params[1],params[2],params[3]);
+  fprintf(ftxt,"%08"PRIxC" %08"PRIxC" %08"PRIxC" %08"PRIxC"\n",
+          params[0],params[1],params[2],params[3]);
   return 5;
 }
 
 cell parm5(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08lx %08lx %08lx %08lx %08lx\n",params[0],params[1],params[2],params[3],params[4]);
+  fprintf(ftxt,"%08"PRIxC" %08"PRIxC" %08"PRIxC" %08"PRIxC" %08"PRIxC"\n",
+          params[0],params[1],params[2],params[3],params[4]);
   return 6;
 }
 
@@ -303,7 +306,7 @@ cell do_proc(FILE *ftxt,const cell *params,cell opcode,cell cip)
 cell do_call(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08lx",*params);
+  fprintf(ftxt,"%08"PRIxC,*params);
   print_funcname(ftxt,*params);
   fputs("\n",ftxt);
   return 2;
@@ -312,7 +315,7 @@ cell do_call(FILE *ftxt,const cell *params,cell opcode,cell cip)
 cell do_jump(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08lx\n",*params);
+  fprintf(ftxt,"%08"PRIxC"\n",*params);
   return 2;
 }
 
@@ -338,7 +341,7 @@ cell do_sysreq(FILE *ftxt,const cell *params,cell opcode,cell cip)
   } /* if */
 
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08lx",*params);
+  fprintf(ftxt,"%08"PRIxC,*params);
   if (strlen(name)>0)
     fprintf(ftxt,"\t; %s",name);
   fprintf(ftxt,"\n");
@@ -348,7 +351,7 @@ cell do_sysreq(FILE *ftxt,const cell *params,cell opcode,cell cip)
 cell do_switch(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08lx\n",*params+cip);
+  fprintf(ftxt,"%08"PRIxC"\n",*params+cip);
   return 2;
 }
 
@@ -359,9 +362,10 @@ cell casetbl(FILE *ftxt,const cell *params,cell opcode,cell cip)
 
   print_opcode(ftxt,opcode,cip);
   num=params[0]+1;
-  fprintf(ftxt,"%08lx %08lx\n",params[0],params[1]);
+  fprintf(ftxt,"%08"PRIxC" %08"PRIxC"\n",params[0],params[1]);
   for (idx=1; idx<num; idx++)
-    fprintf(ftxt,"                  %08lx %08lx\n",params[2*idx],params[2*idx+1]);
+    fprintf(ftxt,"                  %08"PRIxC" %08"PRIxC"\n",
+            params[2*idx],params[2*idx+1]);
   return 2*num+1;
 }
 
@@ -530,7 +534,7 @@ int main(int argc,char *argv[])
       dbg_LookupFile(&amxdbg,(cell)(cip-code)*sizeof(cell),&filename);
       dbg_LookupLine(&amxdbg,(cell)(cip-code)*sizeof(cell),&nline);
       if (filename!=NULL && nline!=nprevline) {
-        fprintf(fplist,"%s:%d\n",filename,nline+1);
+        fprintf(fplist,"%s:%ld\n",filename,nline+1);
         /* print the source code for lines in (nprevline,line] */
         fpsrc=fopen(filename,"r");
         if (fpsrc!=NULL) {
@@ -563,9 +567,9 @@ int main(int argc,char *argv[])
         fprintf(fplist," %s",name);
         name[0]='\0';
       } /* if */
-      fprintf(fplist,"\n%08lx  ",(cell)(cip-code)*sizeof(cell)-(amxhdr.dat-amxhdr.cod));
+      fprintf(fplist,"\n%08"PRIxC"  ",(cell)(cip-code)*sizeof(cell)-(amxhdr.dat-amxhdr.cod));
     } /* if */
-    fprintf(fplist,"%08lx ",*cip);
+    fprintf(fplist,"%08"PRIxC" ",*cip);
     addchars(name,*cip,count);
     count=(count+1) % 4;
     cip++;

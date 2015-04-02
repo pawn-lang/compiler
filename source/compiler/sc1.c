@@ -4171,7 +4171,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
       continue;
     if ((sym->usage & uREAD)==0)
       continue;
-    fprintf(log,"\t\t<member name=\"T:%s\" value=\"%ld\">\n",funcdisplayname(symname,sym->name),sym->addr);
+    fprintf(log,"\t\t<member name=\"T:%s\" value=\"%"PRIdC"\">\n",funcdisplayname(symname,sym->name),sym->addr);
     if (sym->tag!=0) {
       tagsym=find_tag_byval(sym->tag);
       assert(tagsym!=NULL);
@@ -4181,7 +4181,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
     if ((enumroot=sym->dim.enumlist)!=NULL) {
       enumroot=enumroot->next;  /* skip root */
       while (enumroot!=NULL) {
-        fprintf(log,"\t\t\t<member name=\"C:%s\" value=\"%ld\">\n",funcdisplayname(symname,enumroot->name),enumroot->value);
+        fprintf(log,"\t\t\t<member name=\"C:%s\" value=\"%"PRIdC"\">\n",funcdisplayname(symname,enumroot->name),enumroot->value);
         /* find the constant with this name and get the tag */
         ref=findglb(enumroot->name,sGLOBAL);
         if (ref!=NULL) {
@@ -4217,7 +4217,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
       continue;
     if ((sym->usage & uREAD)==0 || (sym->usage & (uENUMFIELD | uENUMROOT))!=0)
       continue;
-    fprintf(log,"\t\t<member name=\"C:%s\" value=\"%ld\">\n",funcdisplayname(symname,sym->name),sym->addr);
+    fprintf(log,"\t\t<member name=\"C:%s\" value=\"%"PRIdC"\">\n",funcdisplayname(symname,sym->name),sym->addr);
     if (sym->tag!=0) {
       tagsym=find_tag_byval(sym->tag);
       assert(tagsym!=NULL);

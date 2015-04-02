@@ -832,4 +832,26 @@ SC_VDECL jmp_buf errbuf;      /* target of longjmp() on a fatal error */
 
 #endif /* SC_SKIP_VDECL */
 
+/* These macros are adapted from LibDGG libdgg-int64.h, see
+ * http://www.dennougedougakkai-ndd.org/pub/libdgg/
+ */
+#if defined(__STDC_VERSION__) && __STDC_VERSION__>=199901L
+  #define __STDC_FORMAT_MACROS
+  #define __STDC_CONSTANT_MACROS
+  #include <inttypes.h>         /* automatically includes stdint.h */
+#elif (defined _MSC_VER || defined __BORLANDC__) && (defined _I64_MAX || defined HAVE_I64)
+  #define PRId64 "I64d"
+  #define PRIx64 "I64x"
+#else
+  #define PRId64 "lld"
+  #define PRIx64 "llx"
+#endif
+#if PAWN_CELL_SIZE==64
+  #define PRIdC  PRId64
+  #define PRIxC  PRIx64
+#else
+  #define PRIdC  "d"
+  #define PRIxC  "x"
+#endif
+
 #endif /* SC_H_INCLUDED */

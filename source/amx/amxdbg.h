@@ -43,6 +43,14 @@ extern  "C" {
 #endif
 
 #if defined __GNUC__
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wattributes"
+#elif defined __clang__
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wignored-attributes"
+#endif
+
+#if defined __GNUC__
   #define PACKED        __attribute__((packed))
 #else
   #define PACKED
@@ -154,7 +162,6 @@ int AMXAPI dbg_GetTagName(AMX_DBG *amxdbg, int tag, const char **name);
 int AMXAPI dbg_GetVariable(AMX_DBG *amxdbg, const char *symname, ucell scopeaddr, const AMX_DBG_SYMBOL **sym);
 int AMXAPI dbg_GetArrayDim(AMX_DBG *amxdbg, const AMX_DBG_SYMBOL *sym, const AMX_DBG_SYMDIM **symdim);
 
-
 #if !defined AMX_NO_ALIGN
   #if defined LINUX || defined __FreeBSD__
     #pragma pack()    /* reset default packing */
@@ -163,6 +170,12 @@ int AMXAPI dbg_GetArrayDim(AMX_DBG *amxdbg, const AMX_DBG_SYMBOL *sym, const AMX
   #else
     #pragma pack(pop) /* reset previous packing */
   #endif
+#endif
+
+#if defined __GNUC__
+  #pragma GCC diagnostic pop
+#elif defined __clang__
+  #pragma clang diagnostic pop
 #endif
 
 #ifdef  __cplusplus
