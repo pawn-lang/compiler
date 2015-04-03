@@ -844,7 +844,6 @@ static void resetglobals(void)
   sc_curstates=0;
   pc_memflags=0;
   pc_naked=FALSE;
-  pc_compat=FALSE;
 }
 
 static void initglobals(void)
