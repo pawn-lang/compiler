@@ -2460,18 +2460,14 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
                       int startlit,int counteddim[],constvalue *lastdim,
                       constvalue *enumroot,int *errorfound)
 {
-  cell dsize,totalsize;
-  int idx,numvectors,abortparse,ellips;
-  const char *initptr,*prev_initptr;
+  cell dsize,totalsize=0;
+  int idx=0,vec_idx,abortparse=FALSE;
+  cell *prev1=NULL,*prev2=NULL;
 
   assert(cur>=0 && cur<numdim);
   assert(startlit>=0);
   assert(cur+2<=numdim);        /* there must be 2 dimensions or more to do */
   assert(errorfound!=NULL && *errorfound==FALSE);
-  idx=0;
-  prev_initptr=NULL;
-  totalsize=0;
-  abortparse=FALSE;
   needtoken('{');
   do {
     int ellips=FALSE;
@@ -2493,28 +2489,29 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
       dsize=initarray(ident,tag,dim,numdim,cur+1,startlit,counteddim,
                       lastdim,enumroot,errorfound);
     } else {
-      initptr=lptr;
-      numvectors=idx+1;
-      if ((ellips=matchtoken(tELLIPS))!=0)
-        numvectors=dim[cur];
-      dsize=0;
-      while (idx<numvectors) {
-        if (ellips && prev_initptr!=NULL)
-          lptr=prev_initptr;    /* go back to array initializer */
-        dsize+=initvector(ident,tag,dim[cur+1],TRUE,enumroot,errorfound);
-        if (*errorfound)
-          break;
+      if (matchtoken(tELLIPS)!=0) {
+        if (prev1!=NULL)
+          while (idx < dim[cur]) {
+            for (vec_idx=0; vec_idx < dsize; vec_idx++) {
+              if (prev2!=NULL)
+                litadd(prev1[vec_idx]+(prev1[vec_idx]-prev2[vec_idx]));
+              else
+                litadd(prev1[vec_idx]);
+            } /* for */
+            append_constval(lastdim,itoh(idx++),dsize,0);
+          } /* while */
+        else
+          error(41);            /* invalid ellipsis, array size unknown */
+      } else {
+        prev2=prev1;
+        prev1=&litq[litidx];
+        dsize=initvector(ident,tag,dim[cur+1],TRUE,enumroot,errorfound);
         /* The final dimension may be variable length. We need to save the
          * lengths of the final dimensions in order to set the indirection
          * vectors for the next-to-last dimension.
          */
         append_constval(lastdim,itoh(idx++),dsize,0);
-      } /* for */
-      if (ellips) {
-        needtoken(',');
-        needtoken(tELLIPS);
       } /* if */
-      prev_initptr=initptr;
     } /* if */
     totalsize+=dsize;
     if (*errorfound || !matchtoken(','))
