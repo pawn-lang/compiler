@@ -1,6 +1,8 @@
 project(pawnc)
 cmake_minimum_required(VERSION 2.8)
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake)
+
 # check for optional include files
 include(CheckIncludeFile)
 check_include_file("unistd.h" HAVE_UNISTD_H)
@@ -29,6 +31,17 @@ if(UNIX)
   include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../linux)
   link_libraries(pthread) #CMake adds the "lib" prefix, so "pthread" becomes "libpthread"
 endif()
+
+# Append git branch and commit hash to the version string
+include(GetGitRevisionDescription)
+git_describe(GIT_COMMIT --always)
+if(GIT_COMMIT)
+  set(GIT_COMMIT_SUFFIX ".${GIT_COMMIT}")
+else()
+  set(GIT_COMMIT_SUFFIX "")
+endif()
+configure_file(svnrev.h.in svnrev.h)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # The Pawn compiler shared library
 set(PAWNC_SRCS sc1.c sc2.c sc3.c sc4.c sc5.c sc6.c sc7.c
