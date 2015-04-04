@@ -2460,7 +2460,7 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
                       constvalue *enumroot,int *errorfound)
 {
   cell dsize,totalsize=0;
-  int idx=0,vec_idx,abortparse=FALSE;
+  int idx=0,idx_ellips,vidx,abortparse=FALSE;
   cell *prev1=NULL,*prev2=NULL;
 
   assert(cur>=0 && cur<numdim);
@@ -2469,7 +2469,6 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
   assert(errorfound!=NULL && *errorfound==FALSE);
   needtoken('{');
   do {
-    int ellips=FALSE;
     /* In case the major dimension is zero, we need to store the offset
      * to the newly detected sub-array into the indirection table; i.e.
      * this table needs to be expanded and updated.
@@ -2489,17 +2488,19 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
                       lastdim,enumroot,errorfound);
     } else {
       if (matchtoken(tELLIPS)!=0) {
-        if (prev1!=NULL)
+        if (prev1!=NULL) {
+          idx_ellips=1;
           while (idx < dim[cur]) {
-            for (vec_idx=0; vec_idx < dsize; vec_idx++) {
+            for (vidx=0; vidx < dsize; vidx++)
               if (prev2!=NULL)
-                litadd(prev1[vec_idx]+(prev1[vec_idx]-prev2[vec_idx]));
+                litadd(prev1[vidx]+idx_ellips*(prev1[vidx]-prev2[vidx]));
               else
-                litadd(prev1[vec_idx]);
-            } /* for */
-            append_constval(lastdim,itoh(idx++),dsize,0);
+                litadd(prev1[vidx]);
+            append_constval(lastdim,itoh(idx),dsize,0);
+            idx++;
+            idx_ellips++;
           } /* while */
-        else
+        } else
           error(41);            /* invalid ellipsis, array size unknown */
       } else {
         prev2=prev1;
