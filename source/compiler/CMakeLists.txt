@@ -1,4 +1,4 @@
-project(pawnc)
+project(pawnc C)
 cmake_minimum_required(VERSION 2.8)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake)
@@ -20,6 +20,17 @@ endif()
 check_include_file("alloca.h" HAVE_ALLOCA_H)
 if(HAVE_ALLOCA_H)
   add_definitions(-DHAVE_ALLOCA_H)
+endif()
+
+# check for optional library functions
+include(CheckFunctionExists)
+check_function_exists(strlcpy HAVE_STRLCPY)
+if(HAVE_STRLCPY)
+  add_definitions(-DHAVE_STRLCPY)
+endif()
+check_function_exists(strlcat HAVE_STRLCAT)
+if(HAVE_STRLCAT)
+  add_definitions(-DHAVE_STRLCAT)
 endif()
 
 if(MSVC)
@@ -65,10 +76,6 @@ endif()
 add_library(pawnc SHARED ${PAWNC_SRCS})
 if(WATCOM)  #Watcom C/C++ does not support a .DEF file for the exports
   set_target_properties(pawnc PROPERTIES LINK_FLAGS "/exp=libpawnc")
-endif()
-if(UNIX AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-  # Unix exports all symbols by default; we want only a very select few exported symbols
-  add_custom_command(TARGET pawnc POST_BUILD COMMAND strip ARGS -K pc_compile -K pc_addconstant -K pc_addtag -K pc_enablewarning ${CMAKE_BINARY_DIR}/libpawnc.so)
 endif()
 
 # The Pawn compiler driver (console program)

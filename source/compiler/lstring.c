@@ -7,7 +7,7 @@
 
 #include "lstring.h"
 
-#if !defined HAVE_SAFESTR
+#if !defined HAVE_STRLCPY
 
 /*	$OpenBSD: strlcpy.c,v 1.10 2005/08/08 08:05:37 espie Exp $	*/
 
@@ -62,6 +62,10 @@ strlcpy(char *dst, const char *src, size_t siz)
 
 	return(s - src - 1);	/* count does not include NUL */
 }
+
+#endif /* if !defined HAVE_STRLCPY */
+
+#if !defined HAVE_STRLCAT
 
 /*	$OpenBSD: strlcat.c,v 1.13 2005/08/08 08:05:37 espie Exp $	*/
 
@@ -121,4 +125,4 @@ strlcat(char *dst, const char *src, size_t siz)
 	return(dlen + (s - src));	/* count does not include NUL */
 }
 
-#endif /* #if !defined HAVE_SAFESTR */
+#endif /* #if !defined HAVE_STRLCAT */
