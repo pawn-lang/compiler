@@ -50,9 +50,6 @@ if(WIN32)
     set_target_properties(amxArgs PROPERTIES LINK_FLAGS "/export:amx_ArgsInit /export:amx_ArgsCleanup /export:amx_ArgsSetCmdLine")
   endif()
 endif()
-if(UNIX)
-  add_custom_command(TARGET amxArgs POST_BUILD COMMAND strip ARGS -K amx_ArgsInit -K amx_ArgsCleanup -K amx_ArgsSetCmdLine ${CMAKE_BINARY_DIR}/amxArgs.so)
-endif()
 
 # amxDGram
 set(DGRAM_SRCS amxdgram.c amx.c)
@@ -66,9 +63,6 @@ if(WIN32)
     set_target_properties(amxDGram PROPERTIES LINK_FLAGS "/export:amx_DGramInit /export:amx_DGramCleanup")
   endif()
 endif()
-if(UNIX)
-  add_custom_command(TARGET amxDGram POST_BUILD COMMAND strip ARGS -K amx_DGramInit -K amx_DGramCleanup ${CMAKE_BINARY_DIR}/amxDGram.so)
-endif()
 
 # amxFile
 set(FILE_SRCS amxfile.c amx.c)
@@ -81,9 +75,6 @@ if(WIN32)
   else()
     set_target_properties(amxFile PROPERTIES LINK_FLAGS "/export:amx_FileInit /export:amx_FileCleanup")
   endif()
-endif()
-if(UNIX)
-  add_custom_command(TARGET amxFile POST_BUILD COMMAND strip ARGS -K amx_FileInit -K amx_FileCleanup ${CMAKE_BINARY_DIR}/amxFile.so)
 endif()
 
 # amxFixed
@@ -100,7 +91,6 @@ if(WIN32)
 endif()
 if(UNIX)
   target_link_libraries(amxFixed m)
-  add_custom_command(TARGET amxFixed POST_BUILD COMMAND strip ARGS -K amx_FixedInit -K amx_FixedCleanup ${CMAKE_BINARY_DIR}/amxFixed.so)
 endif()
 
 # amxFloat
@@ -117,7 +107,6 @@ if(WIN32)
 endif()
 if(UNIX)
   target_link_libraries(amxFloat m)
-  add_custom_command(TARGET amxFloat POST_BUILD COMMAND strip ARGS -K amx_FloatInit -K amx_FloatInit ${CMAKE_BINARY_DIR}/amxFloat.so)
 endif()
 
 # amxProcess
@@ -143,7 +132,6 @@ if(WIN32)
 endif()
 if(UNIX)
   target_link_libraries(amxProcess dl)
-  add_custom_command(TARGET amxProcess POST_BUILD COMMAND strip ARGS -K amx_ProcessInit -K amx_ProcessCleanup ${CMAKE_BINARY_DIR}/amxProcess.so)
 endif()
 
 # amxString
@@ -158,9 +146,6 @@ if(WIN32)
     set_target_properties(amxString PROPERTIES LINK_FLAGS "/export:amx_StringInit /export:amx_StringCleanup")
   endif()
 endif()
-if(UNIX)
-  add_custom_command(TARGET amxString POST_BUILD COMMAND strip ARGS -K amx_StringInit -K amx_StringCleanup ${CMAKE_BINARY_DIR}/amxString.so)
-endif()
 
 # amxTime
 set(TIME_SRCS amxtime.c amx.c)
@@ -173,9 +158,6 @@ if(WIN32)
   else()
     set_target_properties(amxTime PROPERTIES LINK_FLAGS "/export:amx_TimeInit /export:amx_TimeCleanup")
   endif()
-endif()
-if(UNIX)
-  add_custom_command(TARGET amxTime POST_BUILD COMMAND strip ARGS -K amx_TimeInit -K amx_TimeCleanup ${CMAKE_BINARY_DIR}/amxTime.so)
 endif()
 
 # --------------------------------------------------------------------------
