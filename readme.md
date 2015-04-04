@@ -1,10 +1,9 @@
 Pawn
 ====
 
-[![Join the chat at https://gitter.im/Zeex/pawn](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Zeex/pawn?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
 [![Build Status][build_status]][build]
 [![Build Status - Windows][build_status_win]][build_win]
+[![Gitter][gitter_badge]][gitter]
 
 [Original readme](readme.txt)
 
@@ -41,3 +40,5 @@ seems to be based on an older release of Pawn.
 [build_status]: https://travis-ci.org/Zeex/pawn.svg?branch=master
 [build_win]: https://ci.appveyor.com/project/Zeex/pawn/branch/master
 [build_status_win]: https://ci.appveyor.com/api/projects/status/s1gb9p8dsy7hy1nw?svg=true
+[gitter]: https://gitter.im/Zeex/pawn?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+[gitter_badge]: https://badges.gitter.im/Join%20Chat.svg
