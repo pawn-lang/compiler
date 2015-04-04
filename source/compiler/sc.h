@@ -477,6 +477,7 @@ int pc_error(int number,char *message,char *filename,int firstline,int lastline,
 /* input from source file */
 void *pc_opensrc(char *filename); /* reading only */
 void *pc_createsrc(char *filename);
+void *pc_createtmpsrc(char **filename);
 void pc_closesrc(void *handle);   /* never delete */
 void pc_resetsrc(void *handle,void *position);  /* reset to a position marked earlier */
 char *pc_readsrc(void *handle,unsigned char *target,int maxchars);
