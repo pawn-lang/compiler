@@ -22,6 +22,17 @@ if(HAVE_ALLOCA_H)
   add_definitions(-DHAVE_ALLOCA_H)
 endif()
 
+# check for optional library functions
+include(CheckFunctionExists)
+check_function_exists(strlcpy HAVE_STRLCPY)
+if(HAVE_STRLCPY)
+  add_definitions(-DHAVE_STRLCPY)
+endif()
+check_function_exists(strlcat HAVE_STRLCAT)
+if(HAVE_STRLCAT)
+  add_definitions(-DHAVE_STRLCAT)
+endif()
+
 if(MSVC)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS /J)
 endif()
