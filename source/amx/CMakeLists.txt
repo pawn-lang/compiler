@@ -1,4 +1,4 @@
-project(pawnamx)
+project(pawnamx C)
 cmake_minimum_required(VERSION 2.8)
 
 # check for optional include files
