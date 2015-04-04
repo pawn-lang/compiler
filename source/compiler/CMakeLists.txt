@@ -32,7 +32,7 @@ if(UNIX)
   link_libraries(pthread) #CMake adds the "lib" prefix, so "pthread" becomes "libpthread"
 endif()
 
-# Append git branch and commit hash to the version string
+# Append git commit hash to the version string
 include(GetGitRevisionDescription)
 git_describe(GIT_COMMIT --always)
 if(GIT_COMMIT)
