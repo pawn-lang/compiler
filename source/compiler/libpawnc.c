@@ -178,6 +178,43 @@ void *pc_createsrc(char *filename)
   return fopen(filename,"wt");
 }
 
+/* pc_createtmpsrc()
+ * Creates a temporary source file with a unique name for writing.
+ * Return:
+ *    The function must return a pointer, which is used as a "magic cookie" to
+ *    all I/O functions. When failing to open the file for reading, the
+ *    function must return NULL.
+ */
+void *pc_createtmpsrc(char **filename)
+{
+  char *tname=NULL;
+  FILE *ftmp=NULL;
+
+  #if defined	__WIN32__ || defined _WIN32
+    tname=_tempnam(NULL,"pawn");
+    ftmp=fopen(tname,"wt");
+  #elif defined __MSDOS__ || defined _Windows
+    tname=tempnam(NULL,"pawn");
+    ftmp=fopen(tname,"wt");
+  #else
+    static const char template[]="/tmp/pawnXXXXXX";
+    ftmp=NULL;
+    if ((tname=malloc(sizeof(template)))!=NULL) {
+      int fdtmp;
+      strncpy(tname,template,sizeof(template));
+      if ((fdtmp=mkstemp(tname)) >= 0) {
+        ftmp=fdopen(fdtmp,"wt");
+      } else {
+        free(tname);
+        tname=NULL;
+      } /* if */
+    } /* if */
+  #endif
+  if (filename!=NULL)
+    *filename=tname;
+  return ftmp;
+}
+
 /* pc_closesrc()
  * Closes a source file (or include file). The "handle" parameter has the
  * value that pc_opensrc() returned in an earlier call.
