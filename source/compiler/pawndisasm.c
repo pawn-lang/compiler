@@ -21,6 +21,7 @@
  *  Version: $Id$
  */
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -227,7 +228,8 @@ void print_funcname(FILE *ftxt,cell address)
 {
   int idx,numpublics;
   AMX_FUNCSTUBNT func;
-  char name[sNAMEMAX+1]={'\0'};
+  char name[sNAMEMAX+1];
+  size_t namelen=0;
   const char *dbgname;
 
   /* first look up the address in the debug info and, if failed, find it
@@ -238,15 +240,16 @@ void print_funcname(FILE *ftxt,cell address)
     numpublics=(amxhdr.natives-amxhdr.publics)/sizeof(AMX_FUNCSTUBNT);
     fseek(fpamx,amxhdr.publics,SEEK_SET);
     for (idx=0; idx<numpublics; idx++) {
-      fread(&func,sizeof func,1,fpamx);
+      if (fread(&func,sizeof func,1,fpamx)==0)
+        break;
       if (func.address==address) {
         fseek(fpamx,func.nameofs,SEEK_SET);
-        fread(name,1,sizeof name,fpamx);
+        namelen=fread(name,1,sizeof name,fpamx);
         break;
       } /* if */
     } /* for */
   } /* if */
-  if (strlen(name)>0)
+  if (namelen>0)
     fprintf(ftxt,"\t; %s",name);
 }
 
@@ -324,25 +327,26 @@ cell do_sysreq(FILE *ftxt,const cell *params,cell opcode,cell cip)
   int idx,numnatives,nameoffset;
   AMX_FUNCSTUBNT func;
   char name[sNAMEMAX+1];
+  size_t namelen=0;
 
   nameoffset=-1;
-  name[0]='\0';
   /* find the address in the native function table */
   numnatives=(amxhdr.libraries-amxhdr.natives)/sizeof(AMX_FUNCSTUBNT);
   fseek(fpamx,amxhdr.natives,SEEK_SET);
   for (idx=0; idx<numnatives && nameoffset<0; idx++) {
-    fread(&func,sizeof func,1,fpamx);
+    if (fread(&func,sizeof func,1,fpamx)==0)
+      break;
     if (idx==*params)
       nameoffset=func.nameofs;
   } /* for */
   if (nameoffset>=0) {
     fseek(fpamx,nameoffset,SEEK_SET);
-    fread(name,1,sNAMEMAX+1,fpamx);
+    namelen=fread(name,1,sNAMEMAX+1,fpamx);
   } /* if */
 
   print_opcode(ftxt,opcode,cip);
   fprintf(ftxt,"%08"PRIxC,*params);
-  if (strlen(name)>0)
+  if (namelen>0)
     fprintf(ftxt,"\t; %s",name);
   fprintf(ftxt,"\n");
   return 2;
@@ -381,7 +385,7 @@ cell do_symbol(FILE *ftxt,const cell *params,cell opcode,cell cip)
   return 0;
 }
 
-static void expand(unsigned char *code, long codesize, long memsize)
+static void expand(unsigned char *code,long codesize,long memsize)
 {
   ucell c;
   struct {
@@ -488,7 +492,11 @@ int main(int argc,char *argv[])
 
   /* load header */
   fseek(fpamx,0,SEEK_SET);
-  fread(&amxhdr,sizeof amxhdr,1,fpamx);
+  if (fread(&amxhdr,sizeof amxhdr,1,fpamx)==0) {
+    printf("Unable to read AMX header: %s\n",
+           feof(fpamx) ? "End of file reached" : strerror(errno));
+    return 1;
+  } /* if */
   if (amxhdr.magic!=AMX_MAGIC) {
     printf("Not a valid AMX file\n");
     return 1;
@@ -513,9 +521,13 @@ int main(int argc,char *argv[])
 
   /* read and expand the file */
   fseek(fpamx,amxhdr.cod,SEEK_SET);
-  fread(code,1,codesize,fpamx);
+  if (fread(code,1,codesize,fpamx)<amxhdr.size-amxhdr.cod) {
+    printf("Unable to read code: %s\n",
+           feof(fpamx) ? "End of file reached" : strerror(errno));
+    return 1;
+  } /* if */
   if ((amxhdr.flags & AMX_FLAG_COMPACT)!=0)
-     expand((unsigned char *)code, amxhdr.size - amxhdr.cod, amxhdr.hea - amxhdr.cod);
+     expand((unsigned char *)code,amxhdr.size-amxhdr.cod,amxhdr.hea-amxhdr.cod);
 
   /* do a first run through the code to get jump targets (for labels) */
   //???

@@ -64,7 +64,8 @@ int AMXAPI dbg_LoadInfo(AMX_DBG *amxdbg, FILE *fp)
 
   memset(&amxhdr, 0, sizeof amxhdr);
   fseek(fp, 0L, SEEK_SET);
-  fread(&amxhdr, sizeof amxhdr, 1, fp);
+  if (fread(&amxhdr, sizeof amxhdr, 1, fp) == 0)
+    return AMX_ERR_FORMAT;
   #if BYTE_ORDER==BIG_ENDIAN
     amx_Align32((uint32_t*)&amxhdr.size);
     amx_Align16(&amxhdr.magic);
@@ -77,7 +78,8 @@ int AMXAPI dbg_LoadInfo(AMX_DBG *amxdbg, FILE *fp)
 
   fseek(fp, amxhdr.size, SEEK_SET);
   memset(&dbghdr, 0, sizeof(AMX_DBG_HDR));
-  fread(&dbghdr, sizeof(AMX_DBG_HDR), 1, fp);
+  if (fread(&dbghdr, sizeof(AMX_DBG_HDR), 1, fp) == 0)
+    return AMX_ERR_FORMAT;
 
   #if BYTE_ORDER==BIG_ENDIAN
     amx_Align32((uint32_t*)&dbghdr.size);
@@ -119,7 +121,10 @@ int AMXAPI dbg_LoadInfo(AMX_DBG *amxdbg, FILE *fp)
 
   /* load the entire symbolic information block into memory */
   memcpy(amxdbg->hdr, &dbghdr, sizeof dbghdr);
-  fread(amxdbg->hdr + 1, 1, (size_t)(dbghdr.size - sizeof dbghdr), fp);
+  if (fread(amxdbg->hdr + 1, 1, (size_t)(dbghdr.size - sizeof dbghdr), fp) == 0) {
+    dbg_FreeInfo(amxdbg);
+    return AMX_ERR_FORMAT;
+  } /* if */
 
   /* run through the file, fix alignment issues and set up table pointers */
   ptr = (unsigned char *)(amxdbg->hdr + 1);
