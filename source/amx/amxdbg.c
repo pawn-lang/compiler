@@ -54,6 +54,7 @@ int AMXAPI dbg_LoadInfo(AMX_DBG *amxdbg, FILE *fp)
 {
   AMX_HEADER amxhdr;
   AMX_DBG_HDR dbghdr;
+  size_t size;
   unsigned char *ptr;
   int index, dim;
   AMX_DBG_LINE *line;
@@ -121,7 +122,8 @@ int AMXAPI dbg_LoadInfo(AMX_DBG *amxdbg, FILE *fp)
 
   /* load the entire symbolic information block into memory */
   memcpy(amxdbg->hdr, &dbghdr, sizeof dbghdr);
-  if (fread(amxdbg->hdr + 1, 1, (size_t)(dbghdr.size - sizeof dbghdr), fp) == 0) {
+  size=(size_t)(dbghdr.size - sizeof dbghdr);
+  if (fread(amxdbg->hdr + 1, 1, size, fp) < size) {
     dbg_FreeInfo(amxdbg);
     return AMX_ERR_FORMAT;
   } /* if */

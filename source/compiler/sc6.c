@@ -1119,7 +1119,7 @@ static void append_dbginfo(FILE *fout)
         if (prevstr!=NULL) {
           assert(prevname!=NULL);
           dbghdr.files++;
-          dbghdr.size+=sizeof(cell)+strlen(prevname)+1;
+          dbghdr.size+=sizeof(AMX_DBG_FILE)+strlen(prevname);
         } /* if */
         previdx=codeidx;
       } /* if */
@@ -1130,7 +1130,7 @@ static void append_dbginfo(FILE *fout)
   if (prevstr!=NULL) {
     assert(prevname!=NULL);
     dbghdr.files++;
-    dbghdr.size+=sizeof(cell)+strlen(prevname)+1;
+    dbghdr.size+=sizeof(AMX_DBG_FILE)+strlen(prevname);
   } /* if */
 
   /* line number table */
@@ -1149,9 +1149,12 @@ static void append_dbginfo(FILE *fout)
     assert(str[0]!='\0' && str[1]==':');
     if (str[0]=='S') {
       dbghdr.symbols++;
-      name=strchr(str+2,':');
+      name=skipwhitespace(strchr(str+2,':')+1);
       assert(name!=NULL);
-      dbghdr.size+=sizeof(AMX_DBG_SYMBOL)+strlen(skipwhitespace(name+1));
+      str=strchr(name,' ');
+      assert(str!=NULL);
+      assert((int)(str-name)<sizeof symname);
+      dbghdr.size+=sizeof(AMX_DBG_SYMBOL)+(str-name);
       if ((prevstr=strchr(name,'['))!=NULL)
         while ((prevstr=strchr(prevstr+1,':'))!=NULL)
           dbghdr.size+=sizeof(AMX_DBG_SYMDIM);
