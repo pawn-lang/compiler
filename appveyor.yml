@@ -11,7 +11,10 @@ build_script:
 
 artifacts:
   - path: RelWithDebInfo/pawncc.exe
-    name: Compiler executable
+    name: Pawn compiler
 
   - path: RelWithDebInfo/pawnc.dll
-    name: Compiler library
+    name: Pawn compiler library
+
+  - path: RelWithDebInfo/pawndisasm.exe
+    name: Pawn disassembler
