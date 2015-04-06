@@ -95,7 +95,7 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
 static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
                       int startlit,int counteddim[],constvalue *lastdim,
                       constvalue *enumroot,int *errorfound);
-static cell initvector(int ident,int tag,cell size,int fillzero,
+static cell initvector(int ident,int tag,cell size,int startlit,int fillzero,
                        constvalue *enumroot,int *errorfound);
 static cell init(int ident,int *tag,int *errorfound);
 static int getstates(const char *funcname);
@@ -2423,7 +2423,7 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
   } else {
     assert(numdim>0);
     if (numdim==1) {
-      *size=initvector(ident,tag,dim[0],FALSE,enumroot,NULL);
+      *size=initvector(ident,tag,dim[0],litidx,FALSE,enumroot,NULL);
     } else {
       int errorfound=FALSE;
       int counteddim[sDIMEN_MAX];
@@ -2522,22 +2522,25 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
     } else {
       curlit=litidx;
       if (matchtoken(tELLIPS)!=0) {
+        /* found an ellipsis; fill up the rest of the array with a series
+         * of one-dimensional arrays ("2d ellipsis")
+         */
         if (prev1!=NULL) {
           for (idx_ellips=1; idx < dim[cur]; idx++, idx_ellips++) {
-            for (vidx=0; vidx < dsize; vidx++)
+            for (vidx=0; vidx < dsize; vidx++) {
               if (prev2!=NULL)
                 litadd(prev1[vidx]+idx_ellips*(prev1[vidx]-prev2[vidx]));
               else
                 litadd(prev1[vidx]);
+            } /* for */
             append_constval(lastdim,itoh(idx),dsize,0);
           } /* for */
         } else
           error(41);            /* invalid ellipsis, array size unknown */
       } else {
-        litidx=curlit;          /* reset literal queue (could match a string token instead) */
         prev2=prev1;
         prev1=&litq[litidx];
-        dsize=initvector(ident,tag,dim[cur+1],TRUE,enumroot,errorfound);
+        dsize=initvector(ident,tag,dim[cur+1],curlit,TRUE,enumroot,errorfound);
         /* The final dimension may be variable length. We need to save the
          * lengths of the final dimensions in order to set the indirection
          * vectors for the next-to-last dimension.
@@ -2565,12 +2568,11 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
 /*  initvector
  *  Initialize a single dimensional array
  */
-static cell initvector(int ident,int tag,cell size,int fillzero,
+static cell initvector(int ident,int tag,cell size,int startlit,int fillzero,
                        constvalue *enumroot,int *errorfound)
 {
   cell prev1=0,prev2=0;
   int ellips=FALSE;
-  int curlit=litidx;
   int rtag,ctag;
 
   assert(ident==iARRAY || ident==iREFARRAY);
@@ -2642,25 +2644,25 @@ static cell initvector(int ident,int tag,cell size,int fillzero,
   } /* if */
   /* fill up the literal queue with a series */
   if (ellips) {
-    cell step=((litidx-curlit)==1) ? (cell)0 : prev1-prev2;
-    if (size==0 || (litidx-curlit)==0)
+    cell step=((litidx-startlit)==1) ? (cell)0 : prev1-prev2;
+    if (size==0 || (litidx-startlit)==0)
       error(41);                /* invalid ellipsis, array size unknown */
-    else if ((litidx-curlit)==(int)size)
+    else if ((litidx-startlit)==(int)size)
       error(18);                /* initialisation data exceeds declared size */
-    while ((litidx-curlit)<(int)size) {
+    while ((litidx-startlit)<(int)size) {
       prev1+=step;
       litadd(prev1);
     } /* while */
   } /* if */
   if (fillzero && size>0) {
-    while ((litidx-curlit)<(int)size)
+    while ((litidx-startlit)<(int)size)
       litadd(0);
   } /* if */
   if (size==0) {
-    size=litidx-curlit;                 /* number of elements defined */
-  } else if (litidx-curlit>(int)size) { /* e.g. "myvar[3]={1,2,3,4};" */
+    size=litidx-startlit;         /* number of elements defined */
+  } else if (litidx-startlit>(int)size) { /* e.g. "myvar[3]={1,2,3,4};" */
     error(18);                  /* initialisation data exceeds declared size */
-    litidx=(int)size+curlit;    /* avoid overflow in memory moves */
+    litidx=(int)size+startlit;    /* avoid overflow in memory moves */
   } /* if */
   return size;
 }
