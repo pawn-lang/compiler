@@ -2489,16 +2489,19 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
                       int startlit,int counteddim[],constvalue *lastdim,
                       constvalue *enumroot,int *errorfound)
 {
-  cell dsize,totalsize=0;
-  int idx=0,idx_ellips,vidx,abortparse=FALSE;
+  cell dsize,totalsize;
+  int idx,idx_ellips,vidx;
+  int abortparse;
+  int curlit;
   cell *prev1=NULL,*prev2=NULL;
 
   assert(cur>=0 && cur<numdim);
   assert(startlit>=0);
   assert(cur+2<=numdim);        /* there must be 2 dimensions or more to do */
   assert(errorfound!=NULL && *errorfound==FALSE);
+  totalsize=0;
   needtoken('{');
-  do {
+  for (idx=0,abortparse=FALSE; !abortparse; idx++) {
     /* In case the major dimension is zero, we need to store the offset
      * to the newly detected sub-array into the indirection table; i.e.
      * this table needs to be expanded and updated.
@@ -2517,22 +2520,21 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
       dsize=initarray(ident,tag,dim,numdim,cur+1,startlit,counteddim,
                       lastdim,enumroot,errorfound);
     } else {
+      curlit=litidx;
       if (matchtoken(tELLIPS)!=0) {
         if (prev1!=NULL) {
-          idx_ellips=1;
-          while (idx < dim[cur]) {
+          for (idx_ellips=1; idx < dim[cur]; idx++, idx_ellips++) {
             for (vidx=0; vidx < dsize; vidx++)
               if (prev2!=NULL)
                 litadd(prev1[vidx]+idx_ellips*(prev1[vidx]-prev2[vidx]));
               else
                 litadd(prev1[vidx]);
             append_constval(lastdim,itoh(idx),dsize,0);
-            idx++;
-            idx_ellips++;
-          } /* while */
+          } /* for */
         } else
           error(41);            /* invalid ellipsis, array size unknown */
       } else {
+        litidx=curlit;          /* reset literal queue (could match a string token instead) */
         prev2=prev1;
         prev1=&litq[litidx];
         dsize=initvector(ident,tag,dim[cur+1],TRUE,enumroot,errorfound);
@@ -2540,13 +2542,13 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
          * lengths of the final dimensions in order to set the indirection
          * vectors for the next-to-last dimension.
          */
-        append_constval(lastdim,itoh(idx++),dsize,0);
+        append_constval(lastdim,itoh(idx),dsize,0);
       } /* if */
     } /* if */
     totalsize+=dsize;
     if (*errorfound || !matchtoken(','))
       abortparse=TRUE;
-  } while (!abortparse);
+  } /* for */
   needtoken('}');
   assert(counteddim!=NULL);
   if (counteddim[cur]>0) {
