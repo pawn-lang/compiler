@@ -1495,6 +1495,7 @@ static void setconstants(void)
 
   add_constant("__Pawn",VERSION_INT,sGLOBAL,0);
   add_constant("__line",0,sGLOBAL,0);
+  add_constant("__compat",pc_compat,sGLOBAL,0);
 
   debug=0;
   if ((sc_debug & (sCHKBOUNDS | sSYMBOLIC))==(sCHKBOUNDS | sSYMBOLIC))

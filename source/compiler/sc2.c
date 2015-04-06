@@ -1237,8 +1237,12 @@ static int command(void)
           }
         } else if (strcmp(str,"compat")==0) {
           cell val;
+          symbol *sym;
           preproc_expr(&val,NULL);
           pc_compat=(int)val;   /* switch compatibility mode on/off */
+          sym=findconst("__compat",NULL);
+          assert(sym!=NULL);
+          sym->addr=pc_compat;
         } else {
           error(207);           /* unknown #pragma */
         } /* if */
