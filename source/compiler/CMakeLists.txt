@@ -64,7 +64,7 @@ if(WIN32)
   set_source_files_properties(libpawnc.c COMPILE_FLAGS -DPAWNC_DLL)
   if(BORLAND)
     # Borland linker uses a DEF file if one is in the output directory
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/libpawnc.def.borland ${CMAKE_BINARY_DIR}/pawnc.def COPY_ONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/libpawnc.def.borland ${CMAKE_BINARY_DIR}/pawnc.def COPYONLY)
   else()
     # Microsoft Visual C/C++ supports a DEF file as if it were a source file
     set(PAWNC_SRCS ${PAWNC_SRCS} libpawnc.def)
@@ -86,7 +86,7 @@ if(WIN32)
   set(PAWNCC_SRCS ${PAWNCC_SRCS} libpawnc.rc)
   if(BORLAND)
     # Borland linker uses a DEF file if one is in the output directory
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pawncc.def.borland ${CMAKE_BINARY_DIR}/pawncc.def COPY_ONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pawncc.def.borland ${CMAKE_BINARY_DIR}/pawncc.def COPYONLY)
   else()
     # Microsoft Visual C/C++ supports a DEF file as if it were a source file
     set(PAWNC_SRCS ${PAWNC_SRCS} pawncc.def)
