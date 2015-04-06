@@ -274,7 +274,6 @@ void *pc_createtmpsrc(char **filename)
     ftmp=fopen(tname,"wt");
   #else
     static const char template[]="/tmp/pawnXXXXXX";
-    ftmp=NULL;
     if ((tname=malloc(sizeof(template)))!=NULL) {
       int fdtmp;
       strncpy(tname,template,sizeof(template));
