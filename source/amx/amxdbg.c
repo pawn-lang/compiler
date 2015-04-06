@@ -157,13 +157,13 @@ int AMXAPI dbg_LoadInfo(AMX_DBG *amxdbg, FILE *fp)
   while ((line = (AMX_DBG_LINE *)ptr)
          && (cell)line->address > (cell)(line - 1)->address) {
     #if BYTE_ORDER==BIG_ENDIAN
-      for (index = 0; index <= UINT16_MAX; index++) {
+      for (index = 0; index <= (uint32_t)(1u << 16) - 1; index++) {
         amx_AlignCell(&linetbl[index].address);
         amx_Align32((uint32_t*)&linetbl[index].line);
         line++;
       } /* for */
     #endif
-    ptr += ((uint32_t)UINT16_MAX + 1) * sizeof(AMX_DBG_LINE);
+    ptr += (uint32_t)(1u << 16) * sizeof(AMX_DBG_LINE);
   } /* while */
 
   /* symbol table (plus index tags) */
