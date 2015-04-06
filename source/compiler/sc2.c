@@ -131,34 +131,47 @@ SC_FUNC void clearstk(void)
 
 SC_FUNC int plungequalifiedfile(char *name)
 {
-static char *extensions[] = { ".inc", ".p", ".pawn" };
+static char extensions[][6] = { "", ".inc", ".p", ".pawn" };
   int found;
   struct stat st;
   FILE *fp;
+  char *path;
+  char *real_path;
   char *ext;
+  char *ptr;
   int ext_idx;
 
+  fp=NULL;
   ext_idx=0;
+  path=(char *)malloc(strlen(name)+sizeof(extensions[0]));
+  if (path==NULL)
+    error(103);                 /* insufficient memory */
+  strcpy(path,name);
+  real_path=(char *)malloc(strlen(name)+sizeof(extensions[0]));
+  if (real_path==NULL)
+    error(103);                 /* insufficient memory */
   do {
     found=TRUE;
-    stat(name, &st);
-    if (S_ISDIR(st.st_mode)) {
-      found=FALSE;              /* ignore directories with the same name */
-    } else {
-      fp=(FILE*)pc_opensrc(name);
-      if (fp==NULL)
-        found=FALSE;
-    } /* if */
-    ext=strchr(name,'\0');      /* save position */
-    if (!found) {
-      /* try to append an extension */
-      strcpy(ext,extensions[ext_idx]);
-      fp=(FILE*)pc_opensrc(name);
-      if (fp==NULL) {
-        *ext='\0';              /* on failure, restore filename */
-        found=FALSE;
+    ext=strchr(path,'\0');      /* save position */
+    strcpy(ext,extensions[ext_idx]);
+    strcpy(real_path,path);
+    #if DIRSEP_CHAR!='\\'
+      if (pc_compat) {
+        /* convert backslashes to native directory separators for maximum
+         * compatibility with the Windows compiler
+         */
+        for (ptr=real_path; *ptr!='\0'; ptr++)
+          if (*ptr=='\\')
+            *ptr=DIRSEP_CHAR;
       }
-    } /* if */
+    #endif
+    stat(real_path, &st);
+    if (!S_ISDIR(st.st_mode))   /* ignore directories with the same name */
+      fp=(FILE*)pc_opensrc(real_path);
+    if (fp==NULL) {
+      *ext='\0';                /* on failure, restore filename */
+      found=FALSE;
+    }
     ext_idx++;
   } while (!found && ext_idx<(sizeof extensions / sizeof extensions[0]));
   if (!found) {
@@ -175,7 +188,7 @@ static char *extensions[] = { ".inc", ".p", ".pawn" };
   PUSHSTK_I(icomment);
   PUSHSTK_I(fcurrent);
   PUSHSTK_I(fline);
-  inpfname=duplicatestring(name);/* set name of include file */
+  inpfname=duplicatestring(path);/* set name of include file */
   if (inpfname==NULL)
     error(103);             /* insufficient memory */
   inpf=fp;                  /* set input file pointer to include file */
@@ -186,12 +199,21 @@ static char *extensions[] = { ".inc", ".p", ".pawn" };
   insert_dbgfile(inpfname);
   setfiledirect(inpfname);
   listline=-1;              /* force a #line directive when changing the file */
-  sc_is_utf8=(short)scan_utf8(inpf,name);
+  sc_is_utf8=(short)scan_utf8(inpf,real_path);
+  free(real_path);
   return TRUE;
 }
 
 SC_FUNC int plungefile(char *name,int try_currentpath,int try_includepaths)
 {
+  char dirsep=
+    #if DIRSEP_CHAR!='\\'
+      /* use Windows directory separators in compatibility mode and
+       * native separators otherwise */
+      pc_compat ? '\\' : DIRSEP_CHAR;
+    #else
+      DIRSEP_CHAR;
+    #endif
   int result=FALSE;
 
   if (try_currentpath) {
@@ -202,7 +224,7 @@ SC_FUNC int plungefile(char *name,int try_currentpath,int try_includepaths)
        * there is a (relative) path for the current file
        */
       char *ptr;
-      if ((ptr=strrchr(inpfname,DIRSEP_CHAR))!=0) {
+      if ((ptr=strrchr(inpfname,dirsep))!=0) {
         int len=(int)(ptr-inpfname)+1;
         if (len+strlen(name)<_MAX_PATH) {
           char path[_MAX_PATH];
@@ -214,7 +236,7 @@ SC_FUNC int plungefile(char *name,int try_currentpath,int try_includepaths)
     } /* if */
   } /* if */
 
-  if (try_includepaths && name[0]!=DIRSEP_CHAR) {
+  if (try_includepaths && name[0]!=dirsep) {
     int i;
     char *ptr;
     for (i=0; !result && (ptr=get_path(i))!=NULL; i++) {
@@ -283,20 +305,17 @@ static void doinclude(int silent)
     check_empty(lptr+1);        /* verify that the rest of the line is whitespace */
 
   if (pc_compat) {
-    /* convert backslash to native directory separators for maximum
-     * compatibility with the Windows compiler
-     */
-    #if DIRSEP_CHAR!='\\'
-      ptr=name;
-      while ((ptr=strchr(ptr,'\\'))!=NULL)
-        *ptr++=DIRSEP_CHAR;
-    #endif
-
     /* create a symbol from the name of the include file; this allows the system
      * to test for multiple inclusions
      */
+    char dirsep=
+      #if DIRSEP_CHAR!='\\'
+        '\\';
+      #else
+        DIRSEP_CHAR;
+      #endif
     strcpy(symname,"_inc_");
-    if ((ptr=strrchr(name,DIRSEP_CHAR))!=NULL)
+    if ((ptr=strrchr(name,dirsep))!=NULL)
       strlcat(symname,ptr+1,sizeof symname);
     else
       strlcat(symname,name,sizeof symname);
