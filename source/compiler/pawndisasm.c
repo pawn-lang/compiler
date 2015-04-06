@@ -521,7 +521,7 @@ int main(int argc,char *argv[])
 
   /* read and expand the file */
   fseek(fpamx,amxhdr.cod,SEEK_SET);
-  if (fread(code,1,codesize,fpamx)<amxhdr.size-amxhdr.cod) {
+  if ((int32_t)fread(code,1,codesize,fpamx)<amxhdr.size-amxhdr.cod) {
     printf("Unable to read code: %s\n",
            feof(fpamx) ? "End of file reached" : strerror(errno));
     return 1;

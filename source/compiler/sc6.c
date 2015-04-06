@@ -34,6 +34,8 @@
 #include "../amx/amxdbg.h"
 #if defined LINUX || defined __FreeBSD__ || defined __OpenBSD__
   #include <sclinux.h>
+#elif defined _MSC_VER && defined _WIN32
+  #define stricmp _stricmp
 #endif
 
 

@@ -12,6 +12,9 @@
 #if defined FORTIFY
   #include <alloc/fortify.h>
 #endif
+#if defined _MSC_VER && defined _WIN32
+  #define strdup _strdup
+#endif
 
 memfile_t *memfile_creat(const char *name, size_t init)
 {

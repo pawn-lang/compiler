@@ -55,6 +55,9 @@
 #elif defined _MSC_VER && defined _WIN32
   #include <direct.h>           /* for _chdrive() */
   #define dos_setdrive(i)       _chdrive(i)
+  #define stricmp _stricmp
+  #define chdir   _chdir
+  #define access  _access
 #endif
 #if defined __BORLANDC__
   #include <dir.h>              /* for chdir() */
@@ -1245,7 +1248,7 @@ static void parserespf(char *filename,char *oname,char *ename,char *pname,
    * a single '\n', so the string size may be smaller than the file
    * size. */
   memset(string,0,(int)size+1);
-  if (fread(string,1,(int)size,fp)<size)
+  if (fread(string,1,(int)size,fp)<(size_t)size)
     error(100,filename);        /* error reading input file */
   fclose(fp);
   /* allocate table for option pointers */
