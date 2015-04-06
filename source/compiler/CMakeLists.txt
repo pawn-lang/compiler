@@ -76,6 +76,8 @@ endif()
 add_library(pawnc SHARED ${PAWNC_SRCS})
 if(WATCOM)  #Watcom C/C++ does not support a .DEF file for the exports
   set_target_properties(pawnc PROPERTIES LINK_FLAGS "/exp=libpawnc")
+elseif(MINGW)
+  set_target_properties(pawnc PROPERTIES LINK_FLAGS "-Wl,--enable-stdcall-fixup")
 endif()
 
 # The Pawn compiler driver (console program)
