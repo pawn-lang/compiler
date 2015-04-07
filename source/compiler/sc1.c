@@ -2538,6 +2538,7 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
             } /* for */
             append_constval(lastdim,itoh(idx),dsize,0);
           } /* for */
+          idx--;
         } else
           error(41);            /* invalid ellipsis, array size unknown */
       } else {
