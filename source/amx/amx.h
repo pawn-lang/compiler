@@ -205,14 +205,6 @@ typedef int (AMXAPI *AMX_IDLE)(struct tagAMX *amx, int AMXAPI Exec(struct tagAMX
 #endif
 
 #if defined __GNUC__
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wattributes"
-#elif defined __clang__
-  #pragma clang diagnostic push
-  #pragma clang diagnostic ignored "-Wignored-attributes"
-#endif
-
-#if defined __GNUC__
   #define PACKED        __attribute__((packed))
 #else
   #define PACKED
@@ -233,7 +225,7 @@ typedef int (AMXAPI *AMX_IDLE)(struct tagAMX *amx, int AMXAPI Exec(struct tagAMX
 #endif
 
 typedef struct tagAMX_NATIVE_INFO {
-  const char _FAR *name PACKED;
+  const char _FAR *name;
   AMX_NATIVE func       PACKED;
 } AMX_NATIVE_INFO;
 
@@ -467,12 +459,6 @@ int AMXAPI amx_UTF8Put(char *string, char **endptr, int maxchars, cell value);
   #else
     #pragma pack(pop) /* reset previous packing */
   #endif
-#endif
-
-#if defined __GNUC__
-  #pragma GCC diagnostic pop
-#elif defined __clang__
-  #pragma clang diagnostic pop
 #endif
 
 #ifdef  __cplusplus
