@@ -138,7 +138,6 @@ static char extensions[][6] = { "", ".inc", ".p", ".pawn" };
   char *path;
   char *real_path;
   char *ext;
-  char *ptr;
   int ext_idx;
 
   fp=NULL;
@@ -157,6 +156,7 @@ static char extensions[][6] = { "", ".inc", ".p", ".pawn" };
     strcpy(real_path,path);
     #if DIRSEP_CHAR!='\\'
       if (pc_compat) {
+        char *ptr;
         /* convert backslashes to native directory separators for maximum
          * compatibility with the Windows compiler
          */
