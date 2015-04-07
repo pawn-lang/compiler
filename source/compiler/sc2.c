@@ -188,7 +188,7 @@ static char extensions[][6] = { "", ".inc", ".p", ".pawn" };
   PUSHSTK_I(icomment);
   PUSHSTK_I(fcurrent);
   PUSHSTK_I(fline);
-  inpfname=duplicatestring(path);/* set name of include file */
+  inpfname=path;            /* set name of include file */
   if (inpfname==NULL)
     error(103);             /* insufficient memory */
   inpf=fp;                  /* set input file pointer to include file */
