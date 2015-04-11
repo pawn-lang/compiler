@@ -478,8 +478,6 @@ int pc_compile(int argc, char *argv[])
   litq=(cell*)malloc(litmax*sizeof(cell));
   if (litq==NULL)
     error(103);         /* insufficient memory */
-  if (!phopt_init())
-    error(103);         /* insufficient memory */
 
   setopt(argc,argv,outfname,errfname,incfname,reportname,codepage);
   strcpy(binfname,outfname);
@@ -742,7 +740,6 @@ cleanup:
   } /* if */
   if (litq!=NULL)
     free(litq);
-  phopt_cleanup();
   stgbuffer_cleanup();
   clearstk();
   assert(jmpcode!=0 || loctab.next==NULL);/* on normal flow, local symbols

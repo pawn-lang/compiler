@@ -64,7 +64,7 @@ typedef struct {
   int savesize;         /* number of bytes saved (in bytecode) */
 } SEQUENCE;
 
-static SEQUENCE sequences_cmp[] = {
+static SEQUENCE sequences[] = {
   /* A very common sequence in four varieties
    *    load.s.pri n1           load.s.pri n2
    *    push.pri                load.s.alt n1
@@ -1566,53 +1566,6 @@ SC_FUNC void stgset(int onoff)
       filewrite(stgbuf);
   } /* if */
   stgbuf[0]='\0';
-}
-
-/* phopt_init
- * Initialize all sequence strings of the peehole optimizer. The strings
- * are embedded in the .EXE file in compressed format, here we expand
- * them (and allocate memory for the sequences).
- */
-static SEQUENCE *sequences;
-
-SC_FUNC int phopt_init(void)
-{
-  int number, i;
-
-  /* count number of sequences */
-  for (number=0; sequences_cmp[number].find!=NULL; number++)
-    /* nothing */;
-  number++;             /* include an item for the NULL terminator */
-
-  if ((sequences=(SEQUENCE*)malloc(number * sizeof(SEQUENCE)))==NULL)
-    return FALSE;
-
-  /* pre-initialize all to NULL (in case of failure) */
-  for (i=0; i<number; i++) {
-    sequences[i].find=NULL;
-    sequences[i].replace=NULL;
-    sequences[i].savesize=0;
-  } /* for */
-
-  return TRUE;
-}
-
-SC_FUNC int phopt_cleanup(void)
-{
-  int i;
-  if (sequences!=NULL) {
-    i=0;
-    while (sequences[i].find!=NULL || sequences[i].replace!=NULL) {
-      if (sequences[i].find!=NULL)
-        free(sequences[i].find);
-      if (sequences[i].replace!=NULL)
-        free(sequences[i].replace);
-      i++;
-    } /* while */
-    free(sequences);
-    sequences=NULL;
-  } /* if */
-  return FALSE;
 }
 
 #define MAX_OPT_VARS    5
