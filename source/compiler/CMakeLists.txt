@@ -126,3 +126,18 @@ add_executable(pawndisasm ${PAWNDISASM_SRCS})
 if(UNIX)
   target_link_libraries(pawndisasm dl)
 endif()
+
+# Install compiler and disassembler binaries
+install(TARGETS pawnc pawncc pawndisasm
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)
+if(MSVC)
+  # If building with Microsoft Visual C++ also install corresponding
+  # Program Database files (for debugging)
+  install(
+    FILES ${PROJECT_BINARY_DIR}/\${CMAKE_INSTALL_CONFIG_NAME}/pawnc.pdb
+          ${PROJECT_BINARY_DIR}/\${CMAKE_INSTALL_CONFIG_NAME}/pawncc.pdb
+          ${PROJECT_BINARY_DIR}/\${CMAKE_INSTALL_CONFIG_NAME}/pawndisasm.pdb
+    DESTINATION bin)
+endif()
