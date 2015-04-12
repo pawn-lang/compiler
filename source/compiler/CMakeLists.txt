@@ -3,6 +3,19 @@ cmake_minimum_required(VERSION 2.8)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake)
 
+set(VERSION_MAJOR 3)
+set(VERSION_MINOR 10)
+set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR})
+set(VERSION_STR ${VERSION}.samp)
+math(EXPR VERSION_INT "${VERSION_MAJOR} << 8 | ${VERSION_MINOR}")
+
+# Append git commit hash to the version string
+include(GetGitRevisionDescription)
+git_describe(GIT_COMMIT --always)
+if(GIT_COMMIT)
+  set(VERSION_STR ${VERSION_STR}.${GIT_COMMIT})
+endif()
+
 # check for optional include files
 include(CheckIncludeFile)
 check_include_file("unistd.h" HAVE_UNISTD_H)
@@ -43,15 +56,7 @@ if(UNIX)
   link_libraries(pthread)
 endif()
 
-# Append git commit hash to the version string
-include(GetGitRevisionDescription)
-git_describe(GIT_COMMIT --always)
-if(GIT_COMMIT)
-  set(GIT_COMMIT_SUFFIX ".${GIT_COMMIT}")
-else()
-  set(GIT_COMMIT_SUFFIX "")
-endif()
-configure_file(svnrev.h.in svnrev.h)
+configure_file(version.h.in version.h)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # The Pawn compiler shared library
@@ -143,12 +148,10 @@ if(MSVC)
 endif()
 
 # Generate a binary package with CPack
-if(CMAKE_SYSTEM_NAME)
-  string(TOLOWER "${CMAKE_SYSTEM_NAME}" SYSTEM_NAME_LOWER)
-  set(SYSTEM_NAME_SUFFIX -${SYSTEM_NAME_LOWER})
-endif()
-if(GIT_COMMIT)
-  set(GIT_COMMIT_SUFFIX -${GIT_COMMIT})
-endif()
-set(CPACK_PACKAGE_FILE_NAME pawnc${GIT_COMMIT_SUFFIX}${SYSTEM_NAME_SUFFIX})
+string(TOLOWER ${CMAKE_SYSTEM_NAME} SYSTEM_NAME_LOWER)
+set(CPACK_PACKAGE_VERSION_MAJOR ${VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION ${VERSION_STR})
+set(CPACK_PACKAGE_FILE_NAME pawnc-${VERSION_STR}-${SYSTEM_NAME_LOWER})
+set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/../../license.txt)
 include(CPack)

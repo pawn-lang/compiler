@@ -4,7 +4,7 @@
 #else
 #  include <ver.h>
 #endif
-#include "svnrev.h"
+#include "version.h"
 
 AppIcon ICON "../bin/pawn.ico"
 
@@ -13,10 +13,7 @@ AppIcon ICON "../bin/pawn.ico"
  *  All strings MUST have an explicit \0. See the Windows SDK documentation
  *  for details on version information and the VERSIONINFO structure.
  */
-#define VERSION              3
-#define REVISION             2
-#define BUILD                SVN_REV
-#define VERSIONSTR           "3.2." SVN_REVSTR "\0"
+#define VERSIONSTR           VERSION_STR "\0"
 #if defined STAND_ALONE
 #define VERSIONNAME          "pawncc.exe\0"
 #define VERSIONDESCRIPTION   "Pawn Compiler\0"
@@ -30,8 +27,8 @@ AppIcon ICON "../bin/pawn.ico"
 #define VERSIONCOPYRIGHT     "Copyright \251 1998-2006 ITB CompuPhase\0"
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION    VERSION, REVISION, BUILD, 0
-PRODUCTVERSION VERSION, REVISION, BUILD, 0
+FILEVERSION    VERSION_MAJOR, VERSION_MINOR, 0, 0
+PRODUCTVERSION VERSION_MAJOR, VERSION_MINOR, 0, 0
 FILEFLAGSMASK  0x0000003FL
 FILEFLAGS      0
 #if defined(WIN32)

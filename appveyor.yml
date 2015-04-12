@@ -11,5 +11,5 @@ build_script:
   - cmake --build . --config %CONFIGURATION% --target package
 
 artifacts:
-  - path: pawnc-*-win32.zip
+  - path: pawnc-*-windows.zip
     name: Binary package

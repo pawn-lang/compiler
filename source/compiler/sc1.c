@@ -70,9 +70,7 @@
 
 #include "lstring.h"
 #include "sc.h"
-#include "svnrev.h"
-#define VERSION_STR "3.2." SVN_REVSTR
-#define VERSION_INT 0x030A
+#include "version.h"
 
 static void resetglobals(void);
 static void initglobals(void);
