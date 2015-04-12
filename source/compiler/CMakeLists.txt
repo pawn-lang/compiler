@@ -141,3 +141,14 @@ if(MSVC)
           ${PROJECT_BINARY_DIR}/\${CMAKE_INSTALL_CONFIG_NAME}/pawndisasm.pdb
     DESTINATION bin)
 endif()
+
+# Generate a binary package with CPack
+if(CMAKE_SYSTEM_NAME)
+  string(TOLOWER "${CMAKE_SYSTEM_NAME}" SYSTEM_NAME_LOWER)
+  set(SYSTEM_NAME_SUFFIX -${SYSTEM_NAME_LOWER})
+endif()
+if(GIT_COMMIT)
+  set(GIT_COMMIT_SUFFIX -${GIT_COMMIT})
+endif()
+set(CPACK_PACKAGE_FILE_NAME pawnc${GIT_COMMIT_SUFFIX}${SYSTEM_NAME_SUFFIX})
+include(CPack)

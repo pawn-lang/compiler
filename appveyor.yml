@@ -4,23 +4,12 @@ configuration:
   - RelWithDebInfo
 
 before_build:
-  - cmake -G "Visual Studio 10 2010" source/compiler
+  - cmake -G "Visual Studio 10 2010" source/compiler -DCPACK_GENERATOR=ZIP
 
 build_script:
   - cmake --build . --config %CONFIGURATION%
+  - cmake --build . --config %CONFIGURATION% --target package
 
 artifacts:
-  - path: RelWithDebInfo/pawncc.exe
-    name: Compiler
-  - path: RelWithDebInfo/pawncc.pdb
-    name: Compiler - debug info
-
-  - path: RelWithDebInfo/pawnc.dll
-    name: Compiler library
-  - path: RelWithDebInfo/pawnc.pdb
-    name: Compiler library - debug info
-
-  - path: RelWithDebInfo/pawndisasm.exe
-    name: Disassembler
-  - path: RelWithDebInfo/pawndisasm.pdb
-    name: Disassembler - debug info
+  - path: pawnc-*-win32.zip
+    name: Binary package
