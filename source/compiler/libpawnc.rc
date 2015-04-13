@@ -13,6 +13,9 @@ AppIcon ICON "../bin/pawn.ico"
  *  All strings MUST have an explicit \0. See the Windows SDK documentation
  *  for details on version information and the VERSIONINFO structure.
  */
+#define VERSION              VERSION_MAJOR
+#define REVISION             VERSION_MINOR
+#define BUILD                0
 #define VERSIONSTR           VERSION_STR "\0"
 #if defined STAND_ALONE
 #define VERSIONNAME          "pawncc.exe\0"
@@ -27,8 +30,8 @@ AppIcon ICON "../bin/pawn.ico"
 #define VERSIONCOPYRIGHT     "Copyright \251 1998-2006 ITB CompuPhase\0"
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION    VERSION_MAJOR, VERSION_MINOR, 0, 0
-PRODUCTVERSION VERSION_MAJOR, VERSION_MINOR, 0, 0
+FILEVERSION    VERSION, REVISION, BUILD, 0
+PRODUCTVERSION VERSION, REVISION, BUILD, 0
 FILEFLAGSMASK  0x0000003FL
 FILEFLAGS      0
 #if defined(WIN32)
