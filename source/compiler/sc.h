@@ -564,7 +564,7 @@ SC_FUNC symbol *finddepend(const symbol *parent);
 SC_FUNC symbol *addsym(const char *name,cell addr,int ident,int vclass,int tag,
                        int usage);
 SC_FUNC symbol *addvariable(const char *name,cell addr,int ident,int vclass,int tag,
-                            int dim[],int numdim,int idxtag[],int nestlevel);
+                            int dim[],int numdim,int idxtag[],int compound);
 SC_FUNC int getlabel(void);
 SC_FUNC char *itoh(ucell val);
 

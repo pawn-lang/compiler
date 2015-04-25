@@ -2092,7 +2092,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
     } /* if */
     litidx=0;
     if (sym==NULL) {    /* define only if not yet defined */
-      sym=addvariable(name,address,ident,sGLOBAL,tag,dim,numdim,idxtag,nestlevel);
+      sym=addvariable(name,address,ident,sGLOBAL,tag,dim,numdim,idxtag,0);
       if (sc_curstates>0)
         attachstatelist(sym,sc_curstates);
     } else {            /* if declared but not yet defined, adjust the variable's address */
@@ -3454,7 +3454,7 @@ static void funcstub(int fnative)
   /* attach the array to the function symbol */
   if (numdim>0) {
     assert(sym!=NULL);
-    sub=addvariable(symbolname,0,iARRAY,sGLOBAL,tag,dim,numdim,idxtag,nestlevel);
+    sub=addvariable(symbolname,0,iARRAY,sGLOBAL,tag,dim,numdim,idxtag,0);
     sub->parent=sym;
   } /* if */
 
@@ -4016,8 +4016,7 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
     /* add details of type and address */
     assert(numtags>0);
     argsym=addvariable(name,offset,ident,sLOCAL,tags[0],
-                       arg->dim,arg->numdim,arg->idxtag,nestlevel);
-    argsym->compound=0;
+                       arg->dim,arg->numdim,arg->idxtag,0);
     if (ident==iREFERENCE)
       argsym->usage|=uREAD;     /* because references are passed back */
     if (fpublic)
@@ -5786,7 +5785,7 @@ static void doreturn(void)
           for (argcount=0; curfunc->dim.arglist[argcount].ident!=0; argcount++)
             /* nothing */;
           sub=addvariable(curfunc->name,(argcount+3)*sizeof(cell),iREFARRAY,sGLOBAL,
-                          curfunc->tag,dim,numdim,idxtag,nestlevel);
+                          curfunc->tag,dim,numdim,idxtag,0);
           sub->parent=curfunc;
         } /* if */
         /* get the hidden parameter, copy the array (the array is on the heap;
