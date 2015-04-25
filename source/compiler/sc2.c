@@ -2991,7 +2991,7 @@ SC_FUNC symbol *addsym(const char *name,cell addr,int ident,int vclass,int tag,i
 }
 
 SC_FUNC symbol *addvariable(const char *name,cell addr,int ident,int vclass,int tag,
-                            int dim[],int numdim,int idxtag[])
+                            int dim[],int numdim,int idxtag[],int nestlevel)
 {
   symbol *sym;
 
@@ -3016,6 +3016,7 @@ SC_FUNC symbol *addvariable(const char *name,cell addr,int ident,int vclass,int 
       top->dim.array.level=(short)(numdim-level-1);
       top->x.tags.index=idxtag[level];
       top->parent=parent;
+      top->compound=nestlevel;  /* for multiple declaration/shadowing check */
       parent=top;
       if (level==0)
         sym=top;
