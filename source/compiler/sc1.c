@@ -2513,7 +2513,7 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
       error(18);                /* initialization data exceeds array size */
       break;
     } /* if */
-    if (cur<numdim-2) {
+    if (cur+2<numdim) {
       dsize=initarray(ident,tag,dim,numdim,cur+1,startlit,counteddim,
                       lastdim,enumroot,errorfound);
     } else {
