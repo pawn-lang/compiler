@@ -2321,52 +2321,47 @@ static cell calc_arraysize(int dim[],int numdim,int cur)
   return newsize;
 }
 
-static cell adjust_indirectiontables(int dim[],int numdim,int cur,cell increment,
-                                     int startlit,constvalue *lastdim,int *skipdim)
+static void adjust_indirectiontables(int dim[],int numdim,int startlit,
+                                     constvalue *lastdim,int *skipdim)
 {
 static int base;
-  int d;
+  int cur;
+  int i,d;
   cell accum;
+  cell size;
 
-  assert(cur>=0 && cur<numdim);
-  assert(increment>=0);
   assert(cur>0 && startlit==-1 || startlit>=0 && startlit<=litidx);
-  if (cur==0)
-    base=startlit;
-  if (cur==numdim-1)
-    return 0;
-  /* 2 or more dimensions left, fill in an indirection vector */
-  if (dim[cur+1]>0) {
-    for (d=0; d<dim[cur]; d++)
-      litq[base++]=(dim[cur]+d*(dim[cur+1]-1)+increment) * sizeof(cell);
-    accum=dim[cur]*(dim[cur+1]-1);
-  } else {
-    /* final dimension is variable length */
-    constvalue *ld;
-    assert(dim[cur+1]==0);
-    assert(lastdim!=NULL);
-    assert(skipdim!=NULL);
-    accum=0;
-    /* skip the final dimension sizes for all earlier major dimensions */
-    for (d=0,ld=lastdim->next; d<*skipdim; d++,ld=ld->next) {
-      assert(ld!=NULL);
+  base=startlit;
+  size=1;
+  for (cur=0; cur<numdim-1; cur++) {
+    for (i=0; i<size; i++) {
+      /* 2 or more dimensions left, fill in an indirection vector */
+      if (dim[cur+1]>0) {
+        for (d=0; d<dim[cur]; d++)
+          litq[base++]=((size+i)*dim[cur]+d*(dim[cur+1]-1)) * sizeof(cell);
+      } else {
+        /* final dimension is variable length */
+        constvalue *ld;
+        assert(dim[cur+1]==0);
+        assert(lastdim!=NULL);
+        assert(skipdim!=NULL);
+        accum=0;
+        /* skip the final dimension sizes for all earlier major dimensions */
+        for (d=0,ld=lastdim->next; d<*skipdim; d++,ld=ld->next) {
+          assert(ld!=NULL);
+        } /* for */
+        for (d=0; d<dim[cur]; d++) {
+          assert(ld!=NULL);
+          assert(strtol(ld->name,NULL,16)==d);
+          litq[base++]=((size+i)*dim[cur]+accum) * sizeof(cell);
+          accum+=ld->value-1;
+          *skipdim+=1;
+          ld=ld->next;
+        } /* for */
+      } /* if */
     } /* for */
-    for (d=0; d<dim[cur]; d++) {
-      assert(ld!=NULL);
-      assert(strtol(ld->name,NULL,16)==d);
-      litq[base++]=(dim[cur]+accum+increment) * sizeof(cell);
-      accum+=ld->value-1;
-      *skipdim+=1;
-      ld=ld->next;
-    } /* for */
-  } /* if */
-  /* create the indirection tables for the lower level */
-  if (cur+2<numdim) {   /* are there at least 2 dimensions below this one? */
-    increment+=(dim[cur]-1)*dim[cur+1]; /* this many indirection tables follow */
-    for (d=0; d<dim[cur]; d++)
-      increment+=adjust_indirectiontables(dim,numdim,cur+1,increment,-1,lastdim,skipdim);
-  } /* if */
-  return accum;
+    size*=dim[cur];
+  } /* for */
 }
 
 /*  initials
@@ -2407,7 +2402,7 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
       for (tablesize=calc_arraysize(dim,numdim-1,0); tablesize>0; tablesize--)
         litadd(0);
       if (dim[numdim-1]!=0)     /* error 9 has already been given */
-        adjust_indirectiontables(dim,numdim,0,0,curlit,NULL,NULL);
+        adjust_indirectiontables(dim,numdim,curlit,NULL,NULL);
     } /* if */
     return;
   } /* if */
@@ -2473,7 +2468,7 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
        * of the array and we can properly adjust the indirection vectors
        */
       if (err==0)
-        adjust_indirectiontables(dim,numdim,0,0,curlit,&lastdim,&skipdim);
+        adjust_indirectiontables(dim,numdim,curlit,&lastdim,&skipdim);
       delete_consttable(&lastdim);  /* clear list of minor dimension sizes */
     } /* if */
   } /* if */
