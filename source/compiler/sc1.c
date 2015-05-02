@@ -2330,7 +2330,7 @@ static int base;
   cell accum;
   cell size;
 
-  assert(cur>0 && startlit==-1 || startlit>=0 && startlit<=litidx);
+  assert(startlit==-1 || startlit>=0 && startlit<=litidx);
   base=startlit;
   size=1;
   for (cur=0; cur<numdim-1; cur++) {
