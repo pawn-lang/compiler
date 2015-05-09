@@ -2334,18 +2334,19 @@ static int base;
   base=startlit;
   size=1;
   for (cur=0; cur<numdim-1; cur++) {
-    for (i=0; i<size; i++) {
-      /* 2 or more dimensions left, fill in an indirection vector */
-      if (dim[cur+1]>0) {
+    /* 2 or more dimensions left, fill in an indirection vector */
+    if (dim[cur+1]>0) {
+      for (i=0; i<size; i++)
         for (d=0; d<dim[cur]; d++)
-          litq[base++]=((size+i)*dim[cur]+d*(dim[cur+1]-1)) * sizeof(cell);
-      } else {
-        /* final dimension is variable length */
-        constvalue *ld;
-        assert(dim[cur+1]==0);
-        assert(lastdim!=NULL);
-        assert(skipdim!=NULL);
-        accum=0;
+          litq[base++]=(size*dim[cur]+(dim[cur+1]-1)*(dim[cur]*i+d)) * sizeof(cell);
+    } else {
+      /* final dimension is variable length */  
+      constvalue *ld;
+      assert(dim[cur+1]==0);
+      assert(lastdim!=NULL);
+      assert(skipdim!=NULL);
+      accum=0;
+      for (i=0; i<size; i++) {
         /* skip the final dimension sizes for all earlier major dimensions */
         for (d=0,ld=lastdim->next; d<*skipdim; d++,ld=ld->next) {
           assert(ld!=NULL);
@@ -2353,13 +2354,13 @@ static int base;
         for (d=0; d<dim[cur]; d++) {
           assert(ld!=NULL);
           assert(strtol(ld->name,NULL,16)==d);
-          litq[base++]=((size+i)*dim[cur]+accum) * sizeof(cell);
+          litq[base++]=(size*dim[cur]+accum) * sizeof(cell);
           accum+=ld->value-1;
           *skipdim+=1;
           ld=ld->next;
         } /* for */
-      } /* if */
-    } /* for */
+      } /* for */
+    } /* if */
     size*=dim[cur];
   } /* for */
 }
