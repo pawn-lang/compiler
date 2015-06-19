@@ -1860,8 +1860,13 @@ static void declfuncvar(int fpublic,int fstatic,int fstock,int fconst)
     /* only variables can be "const" or both "public" and "stock" */
     invalidfunc= fconst || (fpublic && fstock);
     if (invalidfunc || !newfunc(name,tag,fpublic,fstatic,fstock)) {
-      /* if not a function, try a global variable */
-      declglb(name,tag,fpublic,fstatic,fstock,fconst);
+      /* if not a function, try a global constant/variable */
+      if (fconst) {
+        lexpush();
+        decl_const(sGLOBAL);
+      } else {
+        declglb(name,tag,fpublic,fstatic,fstock,fconst);
+      } /* if */
     } /* if */
   } /* if */
 }
@@ -4948,8 +4953,14 @@ static void statement(int *lastindent,int allow_decl)
     break;
   case tSTATIC:
     if (allow_decl) {
-      declloc(TRUE);
-      lastst=tNEW;
+      tok=lex(&val,&st);
+      if (tok==tCONST) {
+        decl_const(sSTATIC);
+      } else {
+        lexpush();
+        declloc(TRUE);
+        lastst=tNEW;
+      } /* if */
     } else {
       error(3);                 /* declaration only valid in a block */
     } /* if */
