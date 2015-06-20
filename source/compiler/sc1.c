@@ -1861,7 +1861,7 @@ static void declfuncvar(int fpublic,int fstatic,int fstock,int fconst)
     invalidfunc= fconst || (fpublic && fstock);
     if (invalidfunc || !newfunc(name,tag,fpublic,fstatic,fstock)) {
       /* if not a function, try a global constant/variable */
-      if (fconst) {
+      if (fconst && !fpublic) {
         lexpush();
         decl_const(sGLOBAL);
       } else {
@@ -2345,7 +2345,7 @@ static int base;
         for (d=0; d<dim[cur]; d++)
           litq[base++]=(size*dim[cur]+(dim[cur+1]-1)*(dim[cur]*i+d)) * sizeof(cell);
     } else {
-      /* final dimension is variable length */  
+      /* final dimension is variable length */
       constvalue *ld;
       assert(dim[cur+1]==0);
       assert(lastdim!=NULL);
