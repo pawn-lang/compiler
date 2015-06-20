@@ -747,7 +747,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
         mainaddr=sym->addr;
       } /* if */
     } else if (sym->ident==iVARIABLE) {
-      if ((sym->usage & uPUBLIC)!=0 && (sym->usage & (uREAD | uWRITTEN))!=0)
+      if ((sym->usage & uPUBLIC)!=0)
         match=++numpubvars;
     } /* if */
     if (match) {
@@ -924,7 +924,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
   /* write the public variables table */
   count=0;
   for (sym=glbtab.next; sym!=NULL; sym=sym->next) {
-    if (sym->ident==iVARIABLE && (sym->usage & uPUBLIC)!=0 && (sym->usage & (uREAD | uWRITTEN))!=0) {
+    if (sym->ident==iVARIABLE && (sym->usage & uPUBLIC)!=0) {
       assert((sym->usage & uDEFINE)!=0);
       assert(sym->vclass==sGLOBAL);
       func.address=sym->addr;

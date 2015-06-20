@@ -1976,7 +1976,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
      * second stage), shut off code generation
      */
     cidx=0;             /* only to avoid a compiler warning */
-    if (sc_status==statWRITE && sym!=NULL && (sym->usage & (uREAD | uWRITTEN))==0) {
+    if (sc_status==statWRITE && sym!=NULL && (sym->usage & (uREAD | uWRITTEN | uPUBLIC))==0) {
       sc_status=statSKIP;
       cidx=code_idx;
       #if !defined NDEBUG
