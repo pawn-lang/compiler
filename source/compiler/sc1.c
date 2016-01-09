@@ -1028,14 +1028,14 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
       case 'c':
         strlcpy(codepage,option_value(ptr),MAXCODEPAGE);  /* set name of codepage */
         break;
-#if defined dos_setdrive
       case 'D':                 /* set active directory */
         ptr=option_value(ptr);
+#if defined dos_setdrive
         if (ptr[1]==':')
           dos_setdrive(toupper(*ptr)-'A'+1);    /* set active drive */
+#endif
         chdir(ptr);
         break;
-#endif
       case 'd':
         switch (*option_value(ptr)) {
         case '0':
@@ -1395,9 +1395,7 @@ static void about(void)
     pc_printf("         -C[+/-]  compact encoding for output file (default=%c)\n", sc_compress ? '+' : '-');
 #endif
     pc_printf("         -c<name> codepage name or number; e.g. 1252 for Windows Latin-1\n");
-#if defined dos_setdrive
     pc_printf("         -Dpath   active directory path\n");
-#endif
     pc_printf("         -d<num>  debugging level (default=-d%d)\n",sc_debug);
     pc_printf("             0    no symbolic information, no run-time checks\n");
     pc_printf("             1    run-time checks, no symbolic information\n");
