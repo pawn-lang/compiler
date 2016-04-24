@@ -442,6 +442,11 @@ static unsigned long IL_StandardRandom_seed = INITIAL_SEED; /* always use a non-
 #if defined __BORLANDC__ || defined __WATCOMC__
   #pragma argsused
 #endif
+static cell AMX_NATIVE_CALL core_srandom(AMX *amx,const cell *params)
+{
+    IL_StandardRandom_seed = (unsigned long)params[1];
+    return 1;
+}
 static cell AMX_NATIVE_CALL core_random(AMX *amx,const cell *params)
 {
     unsigned long lo, hi, ll, lh, hh, hl;
@@ -488,6 +493,7 @@ const AMX_NATIVE_INFO core_Natives[] = {
   { "clamp",         core_clamp },
 #if !defined AMX_NORANDOM
   { "random",        core_random },
+  { "srandom",       core_srandom },
 #endif
 #if !defined AMX_NOPROPLIST
   { "getproperty",   getproperty },
