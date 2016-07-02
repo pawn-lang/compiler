@@ -1,20 +1,33 @@
 language: c
-compiler:
-  - gcc
-install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -y gcc-multilib g++-multilib cmake
+
+os:
+  - linux
+  - osx
+
+addons:
+  apt:
+    packages:
+      - gcc-multilib
+      - cmake
+  brew:
+    packages:
+      - cmake
+
 before_script:
-  - cmake source/compiler -DCMAKE_C_FLAGS=-m32 -DCPACK_GENERATOR=TGZ
+  - cmake source/compiler -DCMAKE_C_FLAGS=-m32 -DCPACK_GENERATOR="TGZ;ZIP"
+
 script:
   - make
   - make package
+
 deploy:
   provider: releases
   api_key:
     secure: gDAuRNlF2uVhVHyZtJrX6MwNxnkfkQzohrC/6UcKAgqt+NKs4vZyq5FzTUceiDAkB0se70ZVx08e9ibAiXP/b7D1MPkAEiRxt9J6Vu3x6Bi1kPPuK5RfjFeT3gc1SbrULAP8Nz0NdU0chUhei6/V5NGhTegwp925DJOISq7+Ibw=
   file_glob: true
-  file: 'pawnc-*-linux.tar.gz'
+  file:
+    - 'pawnc-*-linux.tar.gz'
+    - 'pawnc-*-darwin.zip'
   skip_cleanup: true
   on:
     tags: true
