@@ -40,7 +40,7 @@
   #include <binreloc.h> /* from BinReloc, see www.autopackage.org */
 #endif
 
-#if defined __APPLE__
+#if defined LINUX || defined __APPLE__
   #include <unistd.h>
 #endif
 
