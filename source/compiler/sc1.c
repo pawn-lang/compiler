@@ -477,6 +477,9 @@ int pc_compile(int argc, char *argv[])
   if (litq==NULL)
     error(103);         /* insufficient memory */
 
+  /* inptfname may be used in error(), fill it with zeros */
+  memset(inpfname,0,_MAX_PATH);
+
   setopt(argc,argv,outfname,errfname,incfname,reportname,codepage);
   strcpy(binfname,outfname);
   ptr=get_extension(binfname);
