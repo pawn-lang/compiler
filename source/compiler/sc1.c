@@ -1037,7 +1037,8 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
         if (ptr[1]==':')
           dos_setdrive(toupper(*ptr)-'A'+1);    /* set active drive */
 #endif
-        chdir(ptr);
+        if (chdir(ptr)==-1)
+          ; /* silently ignore chdir() errors */
         break;
       case 'd':
         switch (*option_value(ptr)) {
