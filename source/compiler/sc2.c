@@ -1330,11 +1330,15 @@ static int command(void)
                 stgwrite(".");
                 stgwrite(sym->name);
               } /* if */
+              /* mark function as "used" */
+              /* do NOT mark it as written as that has a different meaning for
+               * functions (marks them as "should return a value") */
+              markusage(sym,uREAD);
             } else {
               outval(sym->addr,FALSE);
+              /* mark symbol as "used", unknown whether for read or write */
+              markusage(sym,uREAD | uWRITTEN);
             } /* if */
-            /* mark symbol as "used", unknown whether for read or write */
-            markusage(sym,uREAD | uWRITTEN);
             code_idx+=opargs(1);
           } /* if */
           break;
