@@ -1246,8 +1246,7 @@ static void parserespf(char *filename,char *oname,char *ename,char *pname,
    * a single '\n', so the string size may be smaller than the file
    * size. */
   memset(string,0,(int)size+1);
-  if (fread(string,1,(int)size,fp)<(size_t)size)
-    error(100,filename);        /* error reading input file */
+  fread(string,1,(int)size,fp);
   fclose(fp);
   /* allocate table for option pointers */
   if ((argv=(char **)malloc(MAX_OPTIONS*sizeof(char*)))==NULL)
