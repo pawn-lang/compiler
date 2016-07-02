@@ -1233,7 +1233,7 @@ static void parserespf(char *filename,char *oname,char *ename,char *pname,
   int argc;
   long size;
 
-  if ((fp=fopen(filename,"r"))==NULL)
+  if ((fp=fopen(filename,"rb"))==NULL)
     error(100,filename);        /* error reading input file */
   /* load the complete file into memory */
   fseek(fp,0L,SEEK_END);
