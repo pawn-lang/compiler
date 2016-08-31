@@ -28,6 +28,7 @@ deploy:
   file:
     - 'pawnc-*-linux.tar.gz'
     - 'pawnc-*-darwin.zip'
+  draft: true
   skip_cleanup: true
   on:
     tags: true
