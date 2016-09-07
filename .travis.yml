@@ -14,7 +14,9 @@ addons:
       - cmake
 
 before_script:
-  - cmake source/compiler -DCMAKE_C_FLAGS=-m32 -DCPACK_GENERATOR="TGZ;ZIP"
+  - cmake source/compiler -DCMAKE_BUILD_TYPE=RelWithDebInfo
+                          -DCMAKE_C_FLAGS=-m32
+                          -DCPACK_GENERATOR="TGZ;ZIP"
 
 script:
   - make
