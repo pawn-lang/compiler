@@ -2074,6 +2074,8 @@ static int nesting=0;
          */
       } else {
         arglist[argpos]=ARG_DONE; /* flag argument as "present" */
+        if (arg[argidx].ident!=0 && arg[argidx].numtags==1)
+          lval.cmptag=arg[argidx].tags[0];  /* set the expected tag, if any */
         lvalue=hier14(&lval);
         assert(sc_status==statFIRST || arg[argidx].ident== 0 || arg[argidx].tags!=NULL);
         switch (arg[argidx].ident) {
