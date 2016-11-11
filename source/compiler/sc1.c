@@ -1097,6 +1097,9 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
       case 'p':
         strlcpy(pname,option_value(ptr),_MAX_PATH); /* set name of implicit include file */
         break;
+      case 'R':
+        pc_recursion=toggle_option(ptr,pc_recursion);
+        break;
 #if !defined SC_LIGHT
       case 'r':
         strlcpy(rname,option_value(ptr),_MAX_PATH); /* set name of report file */
@@ -1417,6 +1420,7 @@ static void about(void)
     pc_printf("             1    JIT-compatible optimizations only\n");
     pc_printf("             2    full optimizations\n");
     pc_printf("         -p<name> set name of \"prefix\" file\n");
+    pc_printf("         -R[+/-]  add detailed recursion report with call chains (default=%c)\n",pc_recursion ? '+' : '-');
 #if !defined SC_LIGHT
     pc_printf("         -r[name] write cross reference report to console or to specified file\n");
 #endif
@@ -4606,7 +4610,7 @@ static long max_stacksize(symbol *root,int *recursion)
     assert(symstack[1]==NULL);
     recursion_detected=0;
     size=max_stacksize_recurse(symstack,sym,rsymstack,0L,&maxparams,&recursion_detected);
-    if (recursion_detected) {
+    if (recursion_detected && pc_recursion) {
       if (rsymstack[1]==NULL) {
         pc_printf("recursion detected: function %s directly calls itself\n", sym->name);
       } else {
