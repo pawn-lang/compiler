@@ -747,8 +747,13 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
         mainaddr=sym->addr;
       } /* if */
     } else if (sym->ident==iVARIABLE) {
-      if ((sym->usage & uPUBLIC)!=0)
-        match=++numpubvars;
+	if ((sym->usage & uPUBLIC) != 0) {
+		if ((sym->usage & uSTOCK) != 0) {
+			if ((sym->usage & (uREAD | uWRITTEN)) != 0)
+				match = ++numpubvars;
+		}
+		else match = ++numpubvars;					
+	} /* if */
     } /* if */
     if (match) {
       char alias[sNAMEMAX+1];
@@ -925,6 +930,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
   count=0;
   for (sym=glbtab.next; sym!=NULL; sym=sym->next) {
     if (sym->ident==iVARIABLE && (sym->usage & uPUBLIC)!=0) {
+	if (((sym->usage & uSTOCK) != 0) && ((sym->usage & (uREAD | uWRITTEN)) == 0)) continue;
       assert((sym->usage & uDEFINE)!=0);
       assert(sym->vclass==sGLOBAL);
       func.address=sym->addr;
