@@ -584,7 +584,7 @@ static int btoi(cell *val,const unsigned char *curptr)
   ptr=curptr;
   if (*ptr=='0' && *(ptr+1)=='b') {
     ptr+=2;
-    while (*ptr=='0' || *ptr=='1' || *ptr=='_') {
+    while (*ptr=='0' || *ptr=='1' || *ptr==  ) {
       if (*ptr!='_')
         *val=(*val<<1) | (*ptr-'0');
       ptr++;
@@ -1348,8 +1348,13 @@ static int command(void)
 			outval(-val, FALSE);
 				code_idx += opargs(1);
 				break;
-			} /* if */						
+		} else {
+			char s2[33] = "-";
+			strcpy((s2 + 1), str);
+			error(1, sc_tokens[tSYMBOL - tFIRST], s2);
+			break;
 		}/* if */
+	  }/* if */
           char s2[20];
           extern char *sc_tokens[];/* forward declaration */
           if (tok<256)
