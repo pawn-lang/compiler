@@ -1343,6 +1343,13 @@ static int command(void)
           } /* if */
           break;
         default: {
+          if ((char)tok == '-')	{
+						if (lex(&val, &str) == tNUMBER)	{
+							outval(-val, FALSE);
+							code_idx += opargs(1);
+							break;
+						}						
+					}
           char s2[20];
           extern char *sc_tokens[];/* forward declaration */
           if (tok<256)
