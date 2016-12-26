@@ -1344,12 +1344,12 @@ static int command(void)
           break;
         default: {
           if ((char)tok == '-')	{
-						if (lex(&val, &str) == tNUMBER)	{
-							outval(-val, FALSE);
-							code_idx += opargs(1);
-							break;
-						}						
-					}
+		if (lex(&val, &str) == tNUMBER)	{
+			outval(-val, FALSE);
+				code_idx += opargs(1);
+				break;
+			} /* if */						
+		}/* if */
           char s2[20];
           extern char *sc_tokens[];/* forward declaration */
           if (tok<256)
