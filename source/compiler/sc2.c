@@ -584,7 +584,7 @@ static int btoi(cell *val,const unsigned char *curptr)
   ptr=curptr;
   if (*ptr=='0' && *(ptr+1)=='b') {
     ptr+=2;
-    while (*ptr=='0' || *ptr=='1' || *ptr==  ) {
+    while (*ptr=='0' || *ptr=='1' || *ptr== '_') {
       if (*ptr!='_')
         *val=(*val<<1) | (*ptr-'0');
       ptr++;
