@@ -1493,6 +1493,31 @@ static int command(void)
     if (!SKIPPING)
       error(237,lptr);  /* user warning */
     break;
+  case tpIFDEF:
+  case tpIFNDEF:
+    ret = CMD_IF;
+    assert(iflevel >= 0);
+    iflevel++;
+    if (SKIPPING)
+      break;
+    skiplevel = iflevel;
+    int ttok = lex(&val, &str);
+    symbol *sym = NULL;
+    if (ttok != tSYMBOL)
+      return error(20, str);
+    sym = findloc(str);
+    if (sym == NULL)
+      sym = findglb(str, sSTATEVAR);
+    if (sym != NULL && sym->ident != iFUNCTN && sym->ident != iREFFUNC &&
+      (sym->usage & uDEFINE) == 0)
+      sym = NULL;
+    if ((tok == tpIFNDEF && sym == NULL) ||
+      (tok == tpIFDEF && sym != NULL)) {
+      preproc_expr(&val, NULL);
+    }
+    ifstack[iflevel - 1] = (char)(val ? PARSEMODE : SKIPMODE);
+    check_empty(lptr);
+    break;
   default:
     error(31);          /* unknown compiler directive */
     ret=SKIPPING ? CMD_CONDFALSE : CMD_NONE;  /* process as normal line */
@@ -2078,7 +2103,7 @@ char *sc_tokens[] = {
          "sleep", "state", "static", "stock", "switch", "tagof", "*then", "while",
          "#assert", "#define", "#else", "#elseif", "#emit", "#endif", "#endinput",
          "#endscript", "#error", "#file", "#if", "#include", "#line", "#pragma",
-         "#tryinclude", "#undef", "#warning",
+         "#tryinclude", "#undef", "#warning", "#ifdef", "#ifndef",
          ";", ";", "-integer value-", "-rational value-", "-identifier-",
          "-label-", "-string-"
        };
