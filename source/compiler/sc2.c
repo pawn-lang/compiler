@@ -1512,9 +1512,9 @@ static int command(void)
       sym = NULL;
     val = (sym != NULL);
     if (tok == tpIFNDEF)
-      val
-      if (!val && find_subst(str, strlen(str)) != NULL)
-        val = 1;
+      val = !val;
+    if (!val && find_subst(str, strlen(str)) != NULL)
+      val = 1;
     ifstack[iflevel - 1] = (char)(val ? PARSEMODE : SKIPMODE);
     check_empty(lptr);
     break;
