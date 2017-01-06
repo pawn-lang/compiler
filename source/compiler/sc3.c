@@ -1370,7 +1370,7 @@ static int hier2(value *lval)
         error(224,st);          /* indeterminate array size in "sizeof" expression */
     } /* if */
     ldconst(lval->constval,sPRI);
-    sym->usage |= uREAD;
+    markusage(sym, uREAD);
     while (paranthese--)
       needtoken(')');
     return FALSE;
@@ -1423,7 +1423,7 @@ static int hier2(value *lval)
     lval->ident=iCONSTEXPR;
     lval->constval=tag | PUBLICTAG;
     ldconst(lval->constval,sPRI);
-    sym->usage |= uREAD;
+    markusage(sym, uREAD);
     while (paranthese--)
       needtoken(')');
     return FALSE;
