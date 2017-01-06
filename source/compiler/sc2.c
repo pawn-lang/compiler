@@ -1349,7 +1349,7 @@ static int command(void)
             if (ttok == tNUMBER || ttok == tRATIONAL) {
               outval(ttok == tNUMBER ? -val : val | 0x80000000,
                 FALSE);
-              code_idx += dpargs(1);
+              code_idx += opargs(1);
               break;
             } else {
               char s2[33] = "-";
