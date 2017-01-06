@@ -1343,8 +1343,22 @@ static int command(void)
           } /* if */
           break;
         default: {
+          extern char *sc_tokens[]; /* forward declaration */
+          if ((char)tok == '-') {
+            int ttok = lex(&val, &str);
+            if (ttok == tNUMBER || ttok == tRATIONAL) {
+              outval(ttok == tNUMBER ? -val : val | 0x80000000,
+                FALSE);
+              code_idx += dpargs(1);
+              break;
+            } else {
+              char s2[33] = "-";
+              strcpy(s2 + 1, str);
+              error(1, sc_tokens[tSYMBOL - tFIRST], s2);
+              break;
+            }  /* if */
+          }  /* if */
           char s2[20];
-          extern char *sc_tokens[];/* forward declaration */
           if (tok<256)
             sprintf(s2,"%c",(char)tok);
           else
