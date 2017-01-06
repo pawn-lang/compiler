@@ -1494,6 +1494,7 @@ static int command(void)
       error(237,lptr);  /* user warning */
     break;
   case tpIFDEF:
+  case tpIFNDEF:
     ret = CMD_IF;
     assert(iflevel >= 0);
     iflevel++;
@@ -2103,7 +2104,7 @@ char *sc_tokens[] = {
          "sleep", "state", "static", "stock", "switch", "tagof", "*then", "while",
          "#assert", "#define", "#else", "#elseif", "#emit", "#endif", "#endinput",
          "#endscript", "#error", "#file", "#if", "#include", "#line", "#pragma",
-         "#tryinclude", "#undef", "#warning", "#ifdef",
+         "#tryinclude", "#undef", "#warning", "#ifdef", "#ifndef",
          ";", ";", "-integer value-", "-rational value-", "-identifier-",
          "-label-", "-string-"
        };
