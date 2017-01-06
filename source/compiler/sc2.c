@@ -1497,6 +1497,8 @@ static int command(void)
   case tpIFNDEF:
     ret = CMD_IF;
     assert(iflevel >= 0);
+    if (iflevel >= sCOMP_STACK)
+      error(102, "Conditional compilation stack"); /* table overflow */
     iflevel++;
     if (SKIPPING)
       break;
