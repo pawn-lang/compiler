@@ -20,6 +20,7 @@
  *
  *  Version: $Id: sc2.c 3655 2006-10-23 20:17:52Z thiadmer $
  */
+#include <time.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -432,6 +433,9 @@ static void readline(unsigned char *line)
     sym=findconst("__line",NULL);
     assert(sym!=NULL);
     sym->addr=fline;
+    sym=findconst("__timestamp", NULL);
+    time_t t=time(NULL);
+    sym->addr=(cell)t;
   } while (num>=0 && cont);
 }
 
