@@ -747,12 +747,12 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
         mainaddr=sym->addr;
       } /* if */
     } else if (sym->ident==iVARIABLE) {
-	if ((sym->usage & uPUBLIC) != 0) {
-		if ((sym->usage & uSTOCK) != 0) {
-			if ((sym->usage & (uREAD | uWRITTEN)) != 0)
-				match = ++numpubvars;
-		}
-		else match = ++numpubvars;					
+        if ((sym->usage & uPUBLIC) != 0) {
+	  if ((sym->usage & uSTOCK) != 0) {
+	    if ((sym->usage & (uREAD | uWRITTEN)) != 0)
+	      match = ++numpubvars;
+	  } /* if */
+	  else match = ++numpubvars;					
 	} /* if */
     } /* if */
     if (match) {
