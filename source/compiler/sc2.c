@@ -1343,8 +1343,19 @@ static int command(void)
           } /* if */
           break;
         default: {
-          char s2[20];
           extern char *sc_tokens[];/* forward declaration */
+          char s2[33]="-";
+          if ((char)tok=='-') {
+            if (lex(&val,&str)==tNUMBER) {
+              outval(-val,FALSE);
+              code_idx+=opargs(1);
+              break;
+            } else {              
+              strcpy(s2+1, str);
+              error(1,sc_tokens[tSYMBOL-tFIRST],s2);
+              break;
+            } /* if */
+          } /* if */          
           if (tok<256)
             sprintf(s2,"%c",(char)tok);
           else

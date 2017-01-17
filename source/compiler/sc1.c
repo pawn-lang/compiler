@@ -4690,7 +4690,7 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
       /* a variable */
       if (sym->parent!=NULL)
         break;                      /* hierarchical data type */
-      if ((sym->usage & (uWRITTEN | uREAD | uSTOCK))==0) {
+      if ((sym->usage & (uWRITTEN | uREAD | uSTOCK | uPUBLIC))==0) {
         if (testconst)
           errorset(sSETPOS,sym->lnumber);
         error(203,sym->name,sym->lnumber);  /* symbol isn't used (and not stock) */
