@@ -160,26 +160,26 @@ static uint32_t *align32(uint32_t *v)
 #if PAWN_CELL_SIZE>=64
 static uint64_t *align64(uint64_t *v)
 {
-	unsigned char *s = (unsigned char *)v;
-	unsigned char t;
+  unsigned char *s = (unsigned char *)v;
+  unsigned char t;
 
-	t=s[0];
-	s[0]=s[7];
-	s[7]=t;
+  t=s[0];
+  s[0]=s[7];
+  s[7]=t;
 
-	t=s[1];
-	s[1]=s[6];
-	s[6]=t;
+  t=s[1];
+  s[1]=s[6];
+  s[6]=t;
 
-	t=s[2];
-	s[2]=s[5];
-	s[5]=t;
+  t=s[2];
+  s[2]=s[5];
+  s[5]=t;
 
-	t=s[3];
-	s[3]=s[4];
-	s[4]=t;
+  t=s[3];
+  s[3]=s[4];
+  s[4]=t;
 
-	return v;
+  return v;
 }
 #endif
 
@@ -747,13 +747,9 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
         mainaddr=sym->addr;
       } /* if */
     } else if (sym->ident==iVARIABLE) {
-        if ((sym->usage & uPUBLIC) != 0) {
-	  if ((sym->usage & uSTOCK) != 0) {
-	    if ((sym->usage & (uREAD | uWRITTEN)) != 0)
-	      match = ++numpubvars;
-	  } /* if */
-	  else match = ++numpubvars;					
-	} /* if */
+      if ((sym->usage & uPUBLIC)!=0
+          && ((sym->usage & uSTOCK)==0 || (sym->usage & (uREAD | uWRITTEN))!=0))
+        match=++numpubvars;
     } /* if */
     if (match) {
       char alias[sNAMEMAX+1];
@@ -930,7 +926,8 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
   count=0;
   for (sym=glbtab.next; sym!=NULL; sym=sym->next) {
     if (sym->ident==iVARIABLE && (sym->usage & uPUBLIC)!=0) {
-	if (((sym->usage & uSTOCK) != 0) && ((sym->usage & (uREAD | uWRITTEN)) == 0)) continue;
+      if ((sym->usage & uSTOCK)!=0 && (sym->usage & (uREAD | uWRITTEN))==0)
+        continue;
       assert((sym->usage & uDEFINE)!=0);
       assert(sym->vclass==sGLOBAL);
       func.address=sym->addr;
