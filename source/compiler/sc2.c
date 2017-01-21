@@ -352,12 +352,13 @@ static void readline(unsigned char *line)
   int i,num,cont;
   unsigned char *ptr;
   symbol *sym;
+  time_t cur_time;
 
   if (lptr==term_expr)
     return;
   num=sLINEMAX;
   cont=FALSE;
-  cell cur_time=(cell)time(NULL);
+  cur_time=time(NULL);
   do {
     if (inpf==NULL || pc_eofsrc(inpf)) {
       pc_writeasm(outf,"\n");   /* insert a newline at the end of file */
@@ -435,7 +436,7 @@ static void readline(unsigned char *line)
     assert(sym!=NULL);
     sym->addr=fline;
     sym=findconst("__timestamp",NULL);
-    sym->addr=cur_time;
+    sym->addr=(cell)cur_time;
   } while (num>=0 && cont);
 }
 
@@ -1498,29 +1499,30 @@ static int command(void)
     break;
   case tpIFDEF:
   case tpIFNDEF:
-    ret = CMD_IF;
-    assert(iflevel >= 0);
+    ret=CMD_IF;
+    assert(iflevel>=0);
     iflevel++;
-    if (SKIPPING)
-      break;
-    skiplevel = iflevel;
-    int ttok = lex(&val, &str);
-    if (ttok != tSYMBOL)
-      return error(20, str);
-    symbol *sym;
-    sym = findloc(str);
-    if (sym == NULL)
-      sym = findglb(str, sSTATEVAR);
-    if (sym != NULL && sym->ident != iFUNCTN && sym->ident != iREFFUNC &&
-      (sym->usage & uDEFINE) == 0)
-      sym = NULL;
-    val = (sym != NULL);
-    if (tok == tpIFNDEF)
-      val = !val;
-    if (!val && find_subst(str, strlen(str)) != NULL)
-      val = 1;
-    ifstack[iflevel - 1] = (char)(val ? PARSEMODE : SKIPMODE);
-    check_empty(lptr);
+    if (!SKIPPING) {
+      int ttok;
+      symbol *sym;
+      skiplevel=iflevel;
+      ttok=lex(&val,&str);
+      if (ttok!=tSYMBOL)
+        return error(20,str);
+      sym=findloc(str);
+      if (sym==NULL)
+        sym=findglb(str,sSTATEVAR);
+      if (sym!=NULL && sym->ident!=iFUNCTN && sym->ident!=iREFFUNC &&
+        (sym->usage & uDEFINE) == 0)
+        sym=NULL;
+      val=(sym!=NULL);
+      if (tok==tpIFNDEF)
+        val=!val;
+      if (!val && find_subst(str,strlen(str)) != NULL)
+        val=1;
+      ifstack[iflevel-1] = (char)(val ? PARSEMODE : SKIPMODE);
+      check_empty(lptr);
+    }
     break;
   default:
     error(31);          /* unknown compiler directive */
