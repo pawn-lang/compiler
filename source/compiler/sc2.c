@@ -20,6 +20,7 @@
  *
  *  Version: $Id: sc2.c 3655 2006-10-23 20:17:52Z thiadmer $
  */
+#include <time.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -351,11 +352,13 @@ static void readline(unsigned char *line)
   int i,num,cont;
   unsigned char *ptr;
   symbol *sym;
+  time_t cur_time;
 
   if (lptr==term_expr)
     return;
   num=sLINEMAX;
   cont=FALSE;
+  cur_time=time(NULL);
   do {
     if (inpf==NULL || pc_eofsrc(inpf)) {
       pc_writeasm(outf,"\n");   /* insert a newline at the end of file */
@@ -432,6 +435,8 @@ static void readline(unsigned char *line)
     sym=findconst("__line",NULL);
     assert(sym!=NULL);
     sym->addr=fline;
+    sym=findconst("__timestamp",NULL);
+    sym->addr=(cell)cur_time;
   } while (num>=0 && cont);
 }
 
@@ -1343,19 +1348,21 @@ static int command(void)
           } /* if */
           break;
         default: {
-          extern char *sc_tokens[];/* forward declaration */
-          char s2[33]="-";
-          if ((char)tok=='-') {
-            if (lex(&val,&str)==tNUMBER) {
-              outval(-val,FALSE);
-              code_idx+=opargs(1);
+          extern char *sc_tokens[]; /* forward declaration */
+          char s2[33] = "-";
+          if ((char)tok == '-') {
+            int ttok = lex(&val, &str);
+            if (ttok == tNUMBER || ttok == tRATIONAL) {
+              outval(ttok == tNUMBER ? -val : val | 0x80000000,
+                FALSE);
+              code_idx += opargs(1);
               break;
-            } else {              
-              strcpy(s2+1, str);
-              error(1,sc_tokens[tSYMBOL-tFIRST],s2);
+            } else {
+              strcpy(s2 + 1, str);
+              error(1, sc_tokens[tSYMBOL - tFIRST], s2);
               break;
-            } /* if */
-          } /* if */          
+            }  /* if */
+          }  /* if */
           if (tok<256)
             sprintf(s2,"%c",(char)tok);
           else
@@ -1489,6 +1496,33 @@ static int command(void)
       lptr++;
     if (!SKIPPING)
       error(237,lptr);  /* user warning */
+    break;
+  case tpIFDEF:
+  case tpIFNDEF:
+    ret=CMD_IF;
+    assert(iflevel>=0);
+    iflevel++;
+    if (!SKIPPING) {
+      int ttok;
+      symbol *sym;
+      skiplevel=iflevel;
+      ttok=lex(&val,&str);
+      if (ttok!=tSYMBOL)
+        return error(20,str);
+      sym=findloc(str);
+      if (sym==NULL)
+        sym=findglb(str,sSTATEVAR);
+      if (sym!=NULL && sym->ident!=iFUNCTN && sym->ident!=iREFFUNC &&
+        (sym->usage & uDEFINE) == 0)
+        sym=NULL;
+      val=(sym!=NULL);
+      if (tok==tpIFNDEF)
+        val=!val;
+      if (!val && find_subst(str,strlen(str)) != NULL)
+        val=1;
+      ifstack[iflevel-1] = (char)(val ? PARSEMODE : SKIPMODE);
+      check_empty(lptr);
+    }
     break;
   default:
     error(31);          /* unknown compiler directive */
@@ -2075,7 +2109,7 @@ char *sc_tokens[] = {
          "sleep", "state", "static", "stock", "switch", "tagof", "*then", "while",
          "#assert", "#define", "#else", "#elseif", "#emit", "#endif", "#endinput",
          "#endscript", "#error", "#file", "#if", "#include", "#line", "#pragma",
-         "#tryinclude", "#undef", "#warning",
+         "#tryinclude", "#undef", "#warning", "#ifdef", "#ifndef",
          ";", ";", "-integer value-", "-rational value-", "-identifier-",
          "-label-", "-string-"
        };
