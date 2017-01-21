@@ -1346,8 +1346,14 @@ static int command(void)
           extern char *sc_tokens[];/* forward declaration */
           char s2[33]="-";
           if ((char)tok=='-') {
-            if (lex(&val,&str)==tNUMBER) {
+            int current_token=lex(&val,&str);
+            if (current_token==tNUMBER) {
               outval(-val,FALSE);
+              code_idx+=opargs(1);
+              break;
+            } else if (current_token==tRATIONAL) {
+              /* change the first bit to make the number negative */
+              outval(val | 0x80000000,FALSE);
               code_idx+=opargs(1);
               break;
             } else {              
