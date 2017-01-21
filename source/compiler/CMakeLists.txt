@@ -63,7 +63,10 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 set(PAWNC_SRCS
   libpawnc.c
   lstring.c
+  lstring.h
   memfile.c
+  memfile.h
+  sc.h
   sc1.c
   sc2.c
   sc3.c
@@ -75,7 +78,8 @@ set(PAWNC_SRCS
   sclist.c
   scmemfil.c
   scstate.c
-  scvars.c)
+  scvars.c
+  ${CMAKE_BINARY_DIR}/version.h)
 set_source_files_properties(sc1.c COMPILE_FLAGS -DNO_MAIN)
 if(WIN32)
   set(PAWNC_SRCS ${PAWNC_SRCS} libpawnc.rc)
