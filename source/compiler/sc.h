@@ -218,7 +218,7 @@ typedef struct s_symbol {
  */
 #define uRETNONE  0x10
 
-#define flgDEPRICATED 0x01  /* symbol is deprecated (avoid use) */
+#define flgDEPRECATED 0x01  /* symbol is deprecated (avoid use) */
 #define flagNAKED     0x10  /* function is naked */
 
 #define uTAGOF    0x40  /* set in the "hasdefault" field of the arginfo struct */

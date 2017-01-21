@@ -2001,7 +2001,7 @@ static int nesting=0;
   #endif
   sc_allowproccall=FALSE;       /* parameters may not use procedure call syntax */
 
-  if ((sym->flags & flgDEPRICATED)!=0) {
+  if ((sym->flags & flgDEPRECATED)!=0) {
     char *ptr= (sym->documentation!=NULL) ? sym->documentation : "";
     error(234,sym->name,ptr);   /* deprecated (probably a native function) */
   } /* if */
