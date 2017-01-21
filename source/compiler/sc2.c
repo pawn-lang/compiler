@@ -1352,7 +1352,7 @@ static int command(void)
               code_idx+=opargs(1);
               break;
             } else if (current_token==tRATIONAL) {
-              /* change the first bit to make the number negative */
+              /* change the first bit to make float negative value */
               outval(val | 0x80000000,FALSE);
               code_idx+=opargs(1);
               break;
