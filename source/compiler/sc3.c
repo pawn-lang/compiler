@@ -2077,7 +2077,9 @@ static int nesting=0;
         if (arg[argidx].ident!=0 && arg[argidx].numtags==1)
           lval.cmptag=arg[argidx].tags[0];  /* set the expected tag, if any */
         lvalue=hier14(&lval);
-        assert(sc_status==statFIRST || arg[argidx].ident== 0 || arg[argidx].tags!=NULL);
+        assert(sc_status==statFIRST || arg[argidx].ident==0 || arg[argidx].tags!=NULL);
+        if (lval.sym!=NULL && lval.sym->ident==iVARIABLE && lval.sym->vclass==sGLOBAL)
+          sym->usage|=uGLOBALARGS;
         switch (arg[argidx].ident) {
         case 0:
           error(202);             /* argument count mismatch */
