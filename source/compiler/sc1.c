@@ -2777,6 +2777,12 @@ static void decl_enum(int vclass)
   cell increment,multiplier;
   constvalue *enumroot;
   symbol *enumsym;
+  int static_token=matchtoken(tSTATIC);
+  short filenum;
+
+  filenum=fcurrent;
+  if (static_token && vclass==sLOCAL)
+    error(92);
 
   /* get an explicit tag, if any (we need to remember whether an explicit
    * tag was passed, even if that explicit tag was "_:", so we cannot call
@@ -2820,8 +2826,13 @@ static void decl_enum(int vclass)
   if (strlen(enumname)>0) {
     /* already create the root symbol, so the fields can have it as their "parent" */
     enumsym=add_constant(enumname,0,vclass,tag);
-    if (enumsym!=NULL)
+    if (enumsym!=NULL) {
       enumsym->usage |= uENUMROOT;
+
+      /* for enum static */
+      if (static_token)
+        enumsym->fnumber=filenum;
+    }
     /* start a new list for the element names */
     if ((enumroot=(constvalue*)malloc(sizeof(constvalue)))==NULL)
       error(103);                       /* insufficient memory (fatal error) */
@@ -2830,6 +2841,7 @@ static void decl_enum(int vclass)
     enumsym=NULL;
     enumroot=NULL;
   } /* if */
+
 
   needtoken('{');
   /* go through all constants */
@@ -2868,6 +2880,11 @@ static void decl_enum(int vclass)
     sym->dim.array.length=size;
     sym->dim.array.level=0;
     sym->parent=enumsym;
+
+    /* for enum static */
+    if (static_token)
+      sym->fnumber=filenum;
+
     /* add the constant to a separate list as well */
     if (enumroot!=NULL) {
       sym->usage |= uENUMFIELD;
