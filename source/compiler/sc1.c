@@ -1495,6 +1495,7 @@ static void setconstants(void)
   add_constant("ucharmax",(1 << (sizeof(cell)-1)*8)-1,sGLOBAL,0);
 
   add_constant("__Pawn",VERSION_INT,sGLOBAL,0);
+  add_constant("__PawnBuild",VERSION_BUILD,sGLOBAL,0);
   add_constant("__line",0,sGLOBAL,0);
   add_constant("__compat",pc_compat,sGLOBAL,0);
 
@@ -3337,8 +3338,14 @@ static void check_reparse(symbol *sym)
    *   be marked as read (uREAD) and may therefore be omitted from the
    *   resulting P-code
    */
-  if ((sym->usage & (uPROTOTYPED | uREAD))==uREAD)
-    sc_reparse=TRUE; /* must add another pass to "initial scan" phase */
+  if ((sym->usage & (uPROTOTYPED | uREAD))==uREAD
+      && (sym->tag!=0 || (sym->usage & uGLOBALARGS)!=0)) {
+    int curstatus=sc_status;
+    sc_status=statWRITE;  /* temporarily set status to WRITE, so the warning isn't blocked */
+    error(208);
+    sc_status=curstatus;
+    sc_reparse=TRUE;      /* must add another pass to "initial scan" phase */
+  } /* if */
 }
 
 static void funcstub(int fnative)
@@ -3741,7 +3748,7 @@ static int declargs(symbol *sym,int chkshadow)
   ident=iVARIABLE;
   numtags=0;
   fconst=FALSE;
-  fpublic=(sym->usage & uPUBLIC)!=0;
+  fpublic= (sym->usage & uPUBLIC)!=0;
   /* the '(' parantheses has already been parsed */
   if (!matchtoken(')')){
     do {                                /* there are arguments; process them */

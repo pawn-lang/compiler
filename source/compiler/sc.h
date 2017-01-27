@@ -189,6 +189,7 @@ typedef struct s_symbol {
  *        6     (uSTOCK) the function is discardable (without warning)
  *        7     (uMISSING) the function is not implemented in this source file
  *        8     (uFORWARD) the function is explicitly forwardly declared
+ *        9     (uGLOBALARGS) the function is called with global variables as arguments
  *
  *  CONSTANT
  *  bits: 0     (uDEFINE) the symbol is defined in the source file
@@ -212,6 +213,7 @@ typedef struct s_symbol {
 #define uENUMFIELD 0x040
 #define uMISSING  0x080
 #define uFORWARD  0x100
+#define uGLOBALARGS 0x200
 /* uRETNONE is not stored in the "usage" field of a symbol. It is
  * used during parsing a function, to detect a mix of "return;" and
  * "return value;" in a few special cases.
