@@ -5,16 +5,10 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake)
 
 set(VERSION_MAJOR 3)
 set(VERSION_MINOR 10)
-set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR})
+set(VERSION_BUILD 1)
+set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD})
 set(VERSION_STR ${VERSION})
 math(EXPR VERSION_INT "${VERSION_MAJOR} << 8 | ${VERSION_MINOR}")
-
-# Append git commit hash to the version string
-include(GetGitRevisionDescription)
-git_describe(GIT_COMMIT --always)
-if(GIT_COMMIT)
-  set(VERSION_STR ${VERSION_STR}.${GIT_COMMIT})
-endif()
 
 # check for optional include files
 include(CheckIncludeFile)

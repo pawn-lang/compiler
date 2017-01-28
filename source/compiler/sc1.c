@@ -89,7 +89,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,
                     int stock,int fconst);
 static int declloc(int fstatic);
 static void decl_const(int table);
-static void decl_enum(int table,int enum_static);
+static void decl_enum(int table,int fstatic);
 static cell needsub(int *tag,constvalue **enumroot);
 static void initials(int ident,int tag,cell *size,int dim[],int numdim,
                      constvalue *enumroot);
@@ -1495,6 +1495,7 @@ static void setconstants(void)
   add_constant("ucharmax",(1 << (sizeof(cell)-1)*8)-1,sGLOBAL,0);
 
   add_constant("__Pawn",VERSION_INT,sGLOBAL,0);
+  add_constant("__PawnBuild",VERSION_BUILD,sGLOBAL,0);
   add_constant("__line",0,sGLOBAL,0);
   add_constant("__compat",pc_compat,sGLOBAL,0);
 
@@ -2772,7 +2773,7 @@ static void decl_const(int vclass)
 /*  decl_enum   - declare enumerated constants
  *
  */
-static void decl_enum(int vclass,int enum_static)
+static void decl_enum(int vclass,int fstatic)
 {
   char enumname[sNAMEMAX+1],constname[sNAMEMAX+1];
   cell val,value,size;
@@ -2784,7 +2785,7 @@ static void decl_enum(int vclass,int enum_static)
   short filenum;
 
   filenum=fcurrent;
-  if (enum_static && vclass==sLOCAL)
+  if (fstatic && vclass==sLOCAL)
     error(92);
 
   /* get an explicit tag, if any (we need to remember whether an explicit
@@ -2831,9 +2832,7 @@ static void decl_enum(int vclass,int enum_static)
     enumsym=add_constant(enumname,0,vclass,tag);
     if (enumsym!=NULL) {
       enumsym->usage |= uENUMROOT;
-
-      /* for enum static */
-      if (enum_static)
+      if (fstatic)
         enumsym->fnumber=filenum;
     }
     /* start a new list for the element names */
@@ -2844,7 +2843,6 @@ static void decl_enum(int vclass,int enum_static)
     enumsym=NULL;
     enumroot=NULL;
   } /* if */
-
 
   needtoken('{');
   /* go through all constants */
@@ -2884,8 +2882,7 @@ static void decl_enum(int vclass,int enum_static)
     sym->dim.array.level=0;
     sym->parent=enumsym;
 
-    /* for enum static */
-    if (enum_static)
+    if (fstatic)
       sym->fnumber=filenum;
 
     /* add the constant to a separate list as well */
@@ -3344,21 +3341,19 @@ SC_FUNC char *funcdisplayname(char *dest,char *funcname)
 
 static void check_reparse(symbol *sym)
 {
-  /* if the function was used before being declared, add a third pass (as
-   * second "skimming" parse) because:
-   *
-   * - the function result may have been used with user-defined operators,
-   *   which have now been incorrectly flagged (as the return tag was unknown
-   *   at the time of the call)
-   *
-   * - one or more of the function's arguments involve global variables that
-   *   have been declared before the function; in this situation the arguments
-   *   are uknown at the time the funtion is called, so the variable may not
-   *   be marked as read (uREAD) and may therefore be omitted from the
-   *   resulting P-code
+  /* if the function was used before being declared, and it has a tag for the
+   * result, add a third pass (as second "skimming" parse) because the function
+   * result may have been used with user-defined operators, which have now
+   * been incorrectly flagged (as the return tag was unknown at the time of
+   * the call)
    */
-  if ((sym->usage & (uPROTOTYPED | uREAD))==uREAD)
-    sc_reparse=TRUE; /* must add another pass to "initial scan" phase */
+  if ((sym->usage & (uPROTOTYPED | uREAD))==uREAD && sym->tag!=0) {
+    int curstatus=sc_status;
+    sc_status=statWRITE;  /* temporarily set status to WRITE, so the warning isn't blocked */
+    error(208);
+    sc_status=curstatus;
+    sc_reparse=TRUE;      /* must add another pass to "initial scan" phase */
+  } /* if */
 }
 
 static void funcstub(int fnative)
@@ -3761,7 +3756,7 @@ static int declargs(symbol *sym,int chkshadow)
   ident=iVARIABLE;
   numtags=0;
   fconst=FALSE;
-  fpublic=(sym->usage & uPUBLIC)!=0;
+  fpublic= (sym->usage & uPUBLIC)!=0;
   /* the '(' parantheses has already been parsed */
   if (!matchtoken(')')){
     do {                                /* there are arguments; process them */
