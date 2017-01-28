@@ -161,7 +161,7 @@ static char *warnmsg[] = {
 /*205*/  "redundant code: constant expression is zero\n",
 /*206*/  "redundant test: constant expression is non-zero\n",
 /*207*/  "unknown #pragma\n",
-/*208*/  "function with tag result or global variables as arguments is used before definition, forcing reparse\n",
+/*208*/  "function with tag result used before definition, forcing reparse\n",
 /*209*/  "function \"%s\" should return a value\n",
 /*210*/  "possible use of symbol before initialization: \"%s\"\n",
 /*211*/  "possibly unintended assignment\n",
