@@ -89,7 +89,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,
                     int stock,int fconst);
 static int declloc(int fstatic);
 static void decl_const(int table);
-static void decl_enum(int table);
+static void decl_enum(int table,int fstatic);
 static cell needsub(int *tag,constvalue **enumroot);
 static void initials(int ident,int tag,cell *size,int dim[],int numdim,
                      constvalue *enumroot);
@@ -1601,22 +1601,26 @@ static void parse(void)
         declglb(NULL,0,fpublic,fstatic,fstock,fconst);
       break;
     case tSTATIC:
-      /* This can be a static function or a static global variable; we know
-       * which of the two as soon as we have parsed up to the point where an
-       * opening paranthesis of a function would be expected. To back out after
-       * deciding it was a declaration of a static variable after all, we have
-       * to store the symbol name and tag.
-       */
-      if (getclassspec(tok,&fpublic,&fstatic,&fstock,&fconst)) {
-        assert(!fpublic);
-        declfuncvar(fpublic,fstatic,fstock,fconst);
+      if (matchtoken(tENUM)) {
+        decl_enum(sGLOBAL,TRUE);
+      } else {
+        /* This can be a static function or a static global variable; we know
+         * which of the two as soon as we have parsed up to the point where an
+         * opening paranthesis of a function would be expected. To back out after
+         * deciding it was a declaration of a static variable after all, we have
+         * to store the symbol name and tag.
+         */
+        if (getclassspec(tok,&fpublic,&fstatic,&fstock,&fconst)) {
+          assert(!fpublic);
+          declfuncvar(fpublic,fstatic,fstock,fconst);
+        } /* if */
       } /* if */
       break;
     case tCONST:
       decl_const(sGLOBAL);
       break;
     case tENUM:
-      decl_enum(sGLOBAL);
+      decl_enum(sGLOBAL,matchtoken(tSTATIC));
       break;
     case tPUBLIC:
       /* This can be a public function or a public variable; see the comment
@@ -2769,7 +2773,7 @@ static void decl_const(int vclass)
 /*  decl_enum   - declare enumerated constants
  *
  */
-static void decl_enum(int vclass)
+static void decl_enum(int vclass,int fstatic)
 {
   char enumname[sNAMEMAX+1],constname[sNAMEMAX+1];
   cell val,value,size;
@@ -2778,6 +2782,11 @@ static void decl_enum(int vclass)
   cell increment,multiplier;
   constvalue *enumroot;
   symbol *enumsym;
+  short filenum;
+
+  filenum=fcurrent;
+  if (fstatic && vclass==sLOCAL)
+    error(92);
 
   /* get an explicit tag, if any (we need to remember whether an explicit
    * tag was passed, even if that explicit tag was "_:", so we cannot call
@@ -2821,8 +2830,11 @@ static void decl_enum(int vclass)
   if (strlen(enumname)>0) {
     /* already create the root symbol, so the fields can have it as their "parent" */
     enumsym=add_constant(enumname,0,vclass,tag);
-    if (enumsym!=NULL)
+    if (enumsym!=NULL) {
       enumsym->usage |= uENUMROOT;
+      if (fstatic)
+        enumsym->fnumber=filenum;
+    }
     /* start a new list for the element names */
     if ((enumroot=(constvalue*)malloc(sizeof(constvalue)))==NULL)
       error(103);                       /* insufficient memory (fatal error) */
@@ -2869,6 +2881,10 @@ static void decl_enum(int vclass)
     sym->dim.array.length=size;
     sym->dim.array.level=0;
     sym->parent=enumsym;
+
+    if (fstatic)
+      sym->fnumber=filenum;
+
     /* add the constant to a separate list as well */
     if (enumroot!=NULL) {
       sym->usage |= uENUMFIELD;
@@ -5052,7 +5068,7 @@ static void statement(int *lastindent,int allow_decl)
     decl_const(sLOCAL);
     break;
   case tENUM:
-    decl_enum(sLOCAL);
+    decl_enum(sLOCAL,FALSE);
     break;
   default:          /* non-empty expression */
     sc_allowproccall=optproccall;
