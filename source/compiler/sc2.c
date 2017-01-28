@@ -198,6 +198,7 @@ static char extensions[][6] = { "", ".inc", ".p", ".pawn" };
   icomment=0;               /* not in a comment */
   insert_dbgfile(inpfname);
   setfiledirect(inpfname);
+  setfileconst(inpfname);
   listline=-1;              /* force a #line directive when changing the file */
   sc_is_utf8=(short)scan_utf8(inpf,real_path);
   free(real_path);
@@ -350,7 +351,6 @@ static void readline(unsigned char *line)
 {
   int i,num,cont;
   unsigned char *ptr;
-  symbol *sym;
 
   if (lptr==term_expr)
     return;
@@ -429,9 +429,7 @@ static void readline(unsigned char *line)
       line+=strlen((char*)line);
     } /* if */
     fline+=1;
-    sym=findconst("__line",NULL);
-    assert(sym!=NULL);
-    sym->addr=fline;
+    setlineconst(fline);
   } while (num>=0 && cont);
 }
 
@@ -2203,8 +2201,8 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
     } else if (*lptr=='\"' || *lptr=='#' || *lptr==sc_ctrlchar && (*(lptr+1)=='\"' || *(lptr+1)=='#'))
   {                                     /* unpacked string literal */
     _lextok=tSTRING;
-    stringflags= (*lptr==sc_ctrlchar) ? RAWMODE : 0;
-    stringflags |= (*lptr=='#' || (*lptr==sc_ctrlchar && *(lptr+1)=='#')) ? STRINGIZE : 0;
+    stringflags=(*lptr==sc_ctrlchar) ? RAWMODE : 0;
+    stringflags|=(*lptr=='#' || (*lptr==sc_ctrlchar && *(lptr+1)=='#')) ? STRINGIZE : 0;
     *lexvalue=_lexval=litidx;
     lptr+=1;            /* skip double quote */
     if ((stringflags & RAWMODE)!=0)
@@ -2711,7 +2709,7 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
     case iVARIABLE:
     case iARRAY:
       /* do not delete global variables if functions are preserved */
-      mustdelete=delete_functions;
+      mustdelete=delete_functions || (sym->usage & uPREDEF)==0;
       break;
     case iREFERENCE:
       /* always delete references (only exist as function parameters) */
