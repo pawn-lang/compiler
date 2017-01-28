@@ -3325,21 +3325,13 @@ SC_FUNC char *funcdisplayname(char *dest,char *funcname)
 
 static void check_reparse(symbol *sym)
 {
-  /* if the function was used before being declared, add a third pass (as
-   * second "skimming" parse) because:
-   *
-   * - the function result may have been used with user-defined operators,
-   *   which have now been incorrectly flagged (as the return tag was unknown
-   *   at the time of the call)
-   *
-   * - one or more of the function's arguments involve global variables that
-   *   have been declared before the function; in this situation the arguments
-   *   are uknown at the time the funtion is called, so the variable may not
-   *   be marked as read (uREAD) and may therefore be omitted from the
-   *   resulting P-code
+  /* if the function was used before being declared, and it has a tag for the
+   * result, add a third pass (as second "skimming" parse) because the function
+   * result may have been used with user-defined operators, which have now
+   * been incorrectly flagged (as the return tag was unknown at the time of
+   * the call)
    */
-  if ((sym->usage & (uPROTOTYPED | uREAD))==uREAD
-      && (sym->tag!=0 || (sym->usage & uGLOBALARGS)!=0)) {
+  if ((sym->usage & (uPROTOTYPED | uREAD))==uREAD && sym->tag!=0) {
     int curstatus=sc_status;
     sc_status=statWRITE;  /* temporarily set status to WRITE, so the warning isn't blocked */
     error(208);

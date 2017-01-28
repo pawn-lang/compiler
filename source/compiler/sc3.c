@@ -2077,9 +2077,14 @@ static int nesting=0;
         if (arg[argidx].ident!=0 && arg[argidx].numtags==1)
           lval.cmptag=arg[argidx].tags[0];  /* set the expected tag, if any */
         lvalue=hier14(&lval);
+        /* Mark the symbol as "read" so it won't be omitted from P-code.
+         * Native functions are marked as read at the point of their call,
+         * so we don't handle them here; see ffcall().
+         */
+        if (lval.sym!=NULL && (lval.sym->usage & uNATIVE)==0) {
+          markusage(lval.sym,uREAD);
+        } /* if */
         assert(sc_status==statFIRST || arg[argidx].ident==0 || arg[argidx].tags!=NULL);
-        if (lval.sym!=NULL && lval.sym->ident==iVARIABLE && lval.sym->vclass==sGLOBAL)
-          sym->usage|=uGLOBALARGS;
         switch (arg[argidx].ident) {
         case 0:
           error(202);             /* argument count mismatch */
