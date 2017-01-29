@@ -2786,8 +2786,6 @@ static void decl_enum(int vclass,int fstatic)
   short filenum;
 
   filenum=fcurrent;
-  if (fstatic && vclass==sLOCAL)
-    error(92);
 
   /* get an explicit tag, if any (we need to remember whether an explicit
    * tag was passed, even if that explicit tag was "_:", so we cannot call
@@ -5034,7 +5032,9 @@ static void statement(int *lastindent,int allow_decl)
     } /* if */
     break;
   case tSTATIC:
-    if (allow_decl) {
+    if (matchtoken(tENUM))
+      decl_enum(sLOCAL,FALSE);
+    else if (allow_decl) {
       declloc(TRUE);
       lastst=tNEW;
     } else {
@@ -5111,6 +5111,7 @@ static void statement(int *lastindent,int allow_decl)
     decl_const(sLOCAL);
     break;
   case tENUM:
+    matchtoken(tSTATIC);
     decl_enum(sLOCAL,FALSE);
     break;
   default:          /* non-empty expression */
