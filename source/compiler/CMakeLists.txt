@@ -50,7 +50,8 @@ if(UNIX)
   link_libraries(pthread)
 endif()
 
-configure_file(version.h.in version.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
+               ${CMAKE_CURRENT_BINARY_DIR}/version.h)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # The Pawn compiler shared library
@@ -73,7 +74,7 @@ set(PAWNC_SRCS
   scmemfil.c
   scstate.c
   scvars.c
-  ${CMAKE_BINARY_DIR}/version.h)
+  version.h)
 set_source_files_properties(sc1.c COMPILE_FLAGS -DNO_MAIN)
 if(WIN32)
   set(PAWNC_SRCS ${PAWNC_SRCS} libpawnc.rc)
@@ -81,7 +82,7 @@ if(WIN32)
   if(BORLAND)
     # Borland linker uses a DEF file if one is in the output directory
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/libpawnc.def.borland
-                   ${CMAKE_BINARY_DIR}/pawnc.def
+                   ${CMAKE_CURRENT_BINARY_DIR}/pawnc.def
                    COPYONLY)
   else()
     # Microsoft Visual C/C++ supports a DEF file as if it were a source file
@@ -100,6 +101,7 @@ if(WATCOM)  #Watcom C/C++ does not support a .DEF file for the exports
 elseif(MINGW)
   set_target_properties(pawnc PROPERTIES LINK_FLAGS
     "-Wl,--enable-stdcall-fixup")
+  set_target_properties(pawnc PROPERTIES PREFIX "")
 endif()
 
 # The Pawn compiler driver (console program)
@@ -109,7 +111,7 @@ if(WIN32)
   if(BORLAND)
     # Borland linker uses a DEF file if one is in the output directory
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pawncc.def.borland
-                   ${CMAKE_BINARY_DIR}/pawncc.def
+                   ${CMAKE_CURRENT_BINARY_DIR}/pawncc.def
                    COPYONLY)
   else()
     # Microsoft Visual C/C++ supports a DEF file as if it were a source file
