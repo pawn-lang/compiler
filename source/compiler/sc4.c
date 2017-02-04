@@ -270,6 +270,14 @@ SC_FUNC void setfiledirect(char *name)
   } /* if */
 }
 
+SC_FUNC void setfileconst(char *name)
+{
+  symbol *sym;
+
+  sym=add_builtin_string_constant("__file",name,sGLOBAL);
+  sym->fnumber=fcurrent;
+}
+
 SC_FUNC void setlinedirect(int line)
 {
   if (sc_status==statFIRST && sc_listing) {
@@ -277,6 +285,15 @@ SC_FUNC void setlinedirect(int line)
     sprintf(string,"#line %d\n",line);
     pc_writeasm(outf,string);
   } /* if */
+}
+
+SC_FUNC void setlineconst(int line)
+{
+  symbol *sym;
+
+  sym=findconst("__line",NULL);
+  assert(sym!=NULL);
+  sym->addr=fline;
 }
 
 /*  setlabel

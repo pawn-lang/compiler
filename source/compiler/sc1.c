@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #if defined	__WIN32__ || defined _WIN32 || defined __MSDOS__
   #include <conio.h>
@@ -81,6 +82,7 @@ static void setconfig(char *root);
 static void setcaption(void);
 static void about(void);
 static void setconstants(void);
+static void setstringconstants(void);
 static void parse(void);
 static void dumplits(void);
 static void dumpzero(int count);
@@ -570,8 +572,8 @@ int pc_compile(int argc, char *argv[])
             sc_needsemicolon ? "true" : "false",
             sc_tabsize);
     pc_writeasm(outf,string);
-    setfiledirect(inpfname);
   } /* if */
+  setfiledirect(inpfname);
   /* do the first pass through the file (or possibly two or more "first passes") */
   sc_parsenum=0;
   inpfmark=pc_getpossrc(inpf_org);
@@ -596,7 +598,8 @@ int pc_compile(int argc, char *argv[])
     fline=skipinput;            /* reset line number */
     sc_reparse=FALSE;           /* assume no extra passes */
     sc_status=statFIRST;        /* resetglobals() resets it to IDLE */
-
+    setstringconstants();
+    setfileconst(inpfname);
     if (strlen(incfname)>0) {
       if (strcmp(incfname,sDEF_PREFIX)==0) {
         plungefile(incfname,FALSE,TRUE);    /* parse "default.inc" */
@@ -660,7 +663,9 @@ int pc_compile(int argc, char *argv[])
   fline=skipinput;              /* reset line number */
   lexinit();                    /* clear internal flags of lex() */
   sc_status=statWRITE;          /* allow to write --this variable was reset by resetglobals() */
+  setstringconstants();
   writeleader(&glbtab);
+  setfileconst(inpfname);
   insert_dbgfile(inpfname);
   if (strlen(incfname)>0) {
     if (strcmp(incfname,sDEF_PREFIX)==0)
@@ -1457,56 +1462,72 @@ static void setconstants(void)
   append_constval(&tagname_tab,"_",0,0);/* "untagged" */
   append_constval(&tagname_tab,"bool",1,0);
 
-  add_constant("true",1,sGLOBAL,1);     /* boolean flags */
-  add_constant("false",0,sGLOBAL,1);
-  add_constant("EOS",0,sGLOBAL,0);      /* End Of String, or '\0' */
+  add_builtin_constant("true",1,sGLOBAL,1);     /* boolean flags */
+  add_builtin_constant("false",0,sGLOBAL,1);
+  add_builtin_constant("EOS",0,sGLOBAL,0);      /* End Of String, or '\0' */
   #if PAWN_CELL_SIZE==16
-    add_constant("cellbits",16,sGLOBAL,0);
+  add_builtin_constant("cellbits",16,sGLOBAL,0);
     #if defined _I16_MAX
-      add_constant("cellmax",_I16_MAX,sGLOBAL,0);
-      add_constant("cellmin",_I16_MIN,sGLOBAL,0);
+      add_builtin_constant("cellmax",_I16_MAX,sGLOBAL,0);
+      add_builtin_constant("cellmin",_I16_MIN,sGLOBAL,0);
     #else
-      add_constant("cellmax",SHRT_MAX,sGLOBAL,0);
-      add_constant("cellmin",SHRT_MIN,sGLOBAL,0);
+      add_builtin_constant("cellmax",SHRT_MAX,sGLOBAL,0);
+      add_builtin_constant("cellmin",SHRT_MIN,sGLOBAL,0);
     #endif
   #elif PAWN_CELL_SIZE==32
-    add_constant("cellbits",32,sGLOBAL,0);
+    add_builtin_constant("cellbits",32,sGLOBAL,0);
     #if defined _I32_MAX
-      add_constant("cellmax",_I32_MAX,sGLOBAL,0);
-      add_constant("cellmin",_I32_MIN,sGLOBAL,0);
+      add_builtin_constant("cellmax",_I32_MAX,sGLOBAL,0);
+      add_builtin_constant("cellmin",_I32_MIN,sGLOBAL,0);
     #else
-      add_constant("cellmax",INT_MAX,sGLOBAL,0);
-      add_constant("cellmin",INT_MIN,sGLOBAL,0);
+      add_builtin_constant("cellmax",INT_MAX,sGLOBAL,0);
+      add_builtin_constant("cellmin",INT_MIN,sGLOBAL,0);
     #endif
   #elif PAWN_CELL_SIZE==64
     #if !defined _I64_MIN
       #define _I64_MIN  (-9223372036854775807ULL - 1)
       #define _I64_MAX    9223372036854775807ULL
     #endif
-    add_constant("cellbits",64,sGLOBAL,0);
-    add_constant("cellmax",_I64_MAX,sGLOBAL,0);
-    add_constant("cellmin",_I64_MIN,sGLOBAL,0);
+    add_builtin_constant("cellbits",64,sGLOBAL,0);
+    add_builtin_constant("cellmax",_I64_MAX,sGLOBAL,0);
+    add_builtin_constant("cellmin",_I64_MIN,sGLOBAL,0);
   #else
     #error Unsupported cell size
   #endif
-  add_constant("charbits",sCHARBITS,sGLOBAL,0);
-  add_constant("charmin",0,sGLOBAL,0);
-  add_constant("charmax",~(-1 << sCHARBITS) - 1,sGLOBAL,0);
-  add_constant("ucharmax",(1 << (sizeof(cell)-1)*8)-1,sGLOBAL,0);
+  add_builtin_constant("charbits",sCHARBITS,sGLOBAL,0);
+  add_builtin_constant("charmin",0,sGLOBAL,0);
+  add_builtin_constant("charmax",~(-1 << sCHARBITS) - 1,sGLOBAL,0);
+  add_builtin_constant("ucharmax",(1 << (sizeof(cell)-1)*8)-1,sGLOBAL,0);
 
-  add_constant("__Pawn",VERSION_INT,sGLOBAL,0);
-  add_constant("__PawnBuild",VERSION_BUILD,sGLOBAL,0);
-  add_constant("__line",0,sGLOBAL,0);
-  add_constant("__compat",pc_compat,sGLOBAL,0);
+  add_builtin_constant("__Pawn",VERSION_INT,sGLOBAL,0);
+  add_builtin_constant("__PawnBuild",VERSION_BUILD,sGLOBAL,0);
+  add_builtin_constant("__line",0,sGLOBAL,0);
+  add_builtin_constant("__compat",pc_compat,sGLOBAL,0);
 
   debug=0;
   if ((sc_debug & (sCHKBOUNDS | sSYMBOLIC))==(sCHKBOUNDS | sSYMBOLIC))
     debug=2;
   else if ((sc_debug & sCHKBOUNDS)==sCHKBOUNDS)
     debug=1;
-  add_constant("debug",debug,sGLOBAL,0);
+  add_builtin_constant("debug",debug,sGLOBAL,0);
 
   append_constval(&sc_automaton_tab,"",0,0);    /* anonymous automaton */
+}
+
+static void setstringconstants()
+{
+  time_t now;
+  char timebuf[sizeof("11:22:33")];
+  char datebuf[sizeof("10 Jan 2017")];
+
+  assert(sc_status!=statIDLE);
+  add_builtin_string_constant("__file","",sGLOBAL);
+
+  now = time(NULL);
+  strftime(timebuf,sizeof(timebuf),"%H:%M:%S",localtime(&now));
+  add_builtin_string_constant("__time",timebuf,sGLOBAL);
+  strftime(datebuf,sizeof(datebuf),"%d %b %Y",localtime(&now));
+  add_builtin_string_constant("__date",datebuf,sGLOBAL);
 }
 
 static int getclassspec(int initialtok,int *fpublic,int *fstatic,int *fstock,int *fconst)
@@ -4898,9 +4919,9 @@ SC_FUNC symbol *add_constant(char *name,cell val,int vclass,int tag)
    * constants are stored in the symbols table, this also finds previously
    * defind constants. */
   sym=findglb(name,sSTATEVAR);
-  if (!sym)
+  if (sym==NULL)
     sym=findloc(name);
-  if (sym) {
+  if (sym!=NULL) {
     int redef=0;
     if (sym->ident!=iCONSTEXPR)
       redef=1;                  /* redefinition a function/variable to a constant is not allowed */
@@ -4942,8 +4963,62 @@ SC_FUNC symbol *add_constant(char *name,cell val,int vclass,int tag)
 redef_enumfield:
   sym=addsym(name,val,iCONSTEXPR,vclass,tag,uDEFINE);
   assert(sym!=NULL);            /* fatal error 103 must be given on error */
-  if (sc_status == statIDLE)
-    sym->usage |= uPREDEF;
+  return sym;
+}
+
+/* add_builtin_constant
+ *
+ * Adds a predefined constant to the symbol table.
+ */
+SC_FUNC symbol *add_builtin_constant(char *name,cell val,int vclass,int tag)
+{
+  symbol *sym;
+
+  sym=add_constant(name,val,vclass,tag);
+  sym->flags|=flagPREDEF;
+  return sym;
+}
+
+/*  add_builtin_string_constant
+ *
+ *  Adds a predefined string constant to the symbol table.
+ */
+SC_FUNC symbol *add_builtin_string_constant(char *name,const char *val,
+                                            int vclass)
+{
+  symbol *sym;
+
+  /* Test whether a global or local symbol with the same name exists. Since
+   * constants are stored in the symbols table, this also finds previously
+   * defind constants. */
+  sym=findglb(name,sSTATEVAR);
+  if (sym==NULL)
+    sym=findloc(name);
+  if (sym!=NULL) {
+    int redef=0;
+    if (sym->ident!=iARRAY) {
+      error(21,name);           /* symbol already defined */
+      return NULL;
+    } /* if */
+  } else {
+    sym=addsym(name,0,iARRAY,vclass,0,uDEFINE | uSTOCK);
+  } /* if */
+  sym->addr=(litidx+glb_declared)*sizeof(cell);
+  /* Store this constant only if it's used somewhere. This can be detected
+   * in the second stage. */
+  if (sc_status==statIDLE
+      || (sc_status==statWRITE && (sym->usage & uREAD)!=0)) {
+    assert(litidx==0);
+    begdseg();
+    while (*val!='\0')
+      litadd(*val++);
+    litadd(0);
+    glb_declared+=litidx;
+    dumplits();
+    litidx=0;
+  }
+  sym->usage|=uDEFINE;
+  sym->flags|=flagPREDEF;
   return sym;
 }
 

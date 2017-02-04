@@ -198,6 +198,7 @@ static char extensions[][6] = { "", ".inc", ".p", ".pawn" };
   icomment=0;               /* not in a comment */
   insert_dbgfile(inpfname);
   setfiledirect(inpfname);
+  setfileconst(inpfname);
   listline=-1;              /* force a #line directive when changing the file */
   sc_is_utf8=(short)scan_utf8(inpf,real_path);
   free(real_path);
@@ -350,7 +351,6 @@ static void readline(unsigned char *line)
 {
   int i,num,cont;
   unsigned char *ptr;
-  symbol *sym;
 
   if (lptr==term_expr)
     return;
@@ -429,9 +429,7 @@ static void readline(unsigned char *line)
       line+=strlen((char*)line);
     } /* if */
     fline+=1;
-    sym=findconst("__line",NULL);
-    assert(sym!=NULL);
-    sym->addr=fline;
+    setlineconst(fline);
   } while (num>=0 && cont);
 }
 
@@ -1356,12 +1354,12 @@ static int command(void)
               outval(val | 0x80000000,FALSE);
               code_idx+=opargs(1);
               break;
-            } else {              
+            } else {
               strcpy(s2+1, str);
               error(1,sc_tokens[tSYMBOL-tFIRST],s2);
               break;
             } /* if */
-          } /* if */          
+          } /* if */
           if (tok<256)
             sprintf(s2,"%c",(char)tok);
           else
@@ -2203,8 +2201,8 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
     } else if (*lptr=='\"' || *lptr=='#' || *lptr==sc_ctrlchar && (*(lptr+1)=='\"' || *(lptr+1)=='#'))
   {                                     /* unpacked string literal */
     _lextok=tSTRING;
-    stringflags= (*lptr==sc_ctrlchar) ? RAWMODE : 0;
-    stringflags |= (*lptr=='#' || (*lptr==sc_ctrlchar && *(lptr+1)=='#')) ? STRINGIZE : 0;
+    stringflags=(*lptr==sc_ctrlchar) ? RAWMODE : 0;
+    stringflags|=(*lptr=='#' || (*lptr==sc_ctrlchar && *(lptr+1)=='#')) ? STRINGIZE : 0;
     *lexvalue=_lexval=litidx;
     lptr+=1;            /* skip double quote */
     if ((stringflags & RAWMODE)!=0)
@@ -2748,7 +2746,7 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
       assert(0);
       break;
     } /* switch */
-    if (mustdelete) {
+    if (mustdelete && (sym->flags & flagPREDEF)==0) {
       root->next=sym->next;
       free_symbol(sym);
     } else {
@@ -2757,7 +2755,8 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
        */
       if (sym->ident==iFUNCTN && (sym->usage & uDEFINE)==0)
         sym->usage |= uMISSING;
-      if (sym->ident==iFUNCTN || sym->ident==iVARIABLE || sym->ident==iARRAY)
+      if ((sym->ident==iFUNCTN || sym->ident==iVARIABLE || sym->ident==iARRAY)
+          && (sym->flags & flagPREDEF)==0)
         sym->usage &= ~uDEFINE; /* clear "defined" flag */
       /* set all states as "undefined" too */
       if (sym->states!=NULL)
@@ -2770,7 +2769,7 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
         sym->usage &= ~uPROTOTYPED;
       root=sym;                 /* skip the symbol */
     } /* if */
-  } /* if */
+  } /* while */
 }
 
 /* The purpose of the hash is to reduce the frequency of a "name"
