@@ -1496,7 +1496,7 @@ static void setconstants(void)
   #endif
   add_builtin_constant("charbits",sCHARBITS,sGLOBAL,0);
   add_builtin_constant("charmin",0,sGLOBAL,0);
-  add_builtin_constant("charmax",~(-1 << sCHARBITS) - 1,sGLOBAL,0);
+  add_builtin_constant("charmax",~((ucell)-1 << sCHARBITS) - 1,sGLOBAL,0);
   add_builtin_constant("ucharmax",(1 << (sizeof(cell)-1)*8)-1,sGLOBAL,0);
 
   add_builtin_constant("__Pawn",VERSION_INT,sGLOBAL,0);
@@ -2207,7 +2207,7 @@ static int declloc(int fstatic)
      * of a global variable or to that of a local variable at a lower
      * level might indicate a bug.
      */
-    if ((sym=findloc(name))!=NULL && sym->compound!=nestlevel || findglb(name,sGLOBAL)!=NULL)
+    if (((sym=findloc(name))!=NULL && sym->compound!=nestlevel) || findglb(name,sGLOBAL)!=NULL)
       error(219,name);                  /* variable shadows another symbol */
     while (matchtoken('[')){
       ident=iARRAY;
@@ -3215,7 +3215,7 @@ static int operatoradjust(int opertok,symbol *sym,char *opername,int resulttag)
       error(62);      /* number or placement of the operands does not fit the operator */
   } /* switch */
 
-  if (tags[0]==0 && (opertok!='=' && tags[1]==0 || opertok=='=' && resulttag==0))
+  if (tags[0]==0 && ((opertok!='=' && tags[1]==0) || (opertok=='=' && resulttag==0)))
     error(64);        /* cannot change predefined operators */
 
   /* change the operator name */
@@ -3415,7 +3415,7 @@ static void funcstub(int fnative)
   tok=lex(&val,&str);
   fpublic=(tok==tPUBLIC) || (tok==tSYMBOL && str[0]==PUBLIC_CHAR);
   if (fnative) {
-    if (fpublic || tok==tSTOCK || tok==tSTATIC || tok==tSYMBOL && *str==PUBLIC_CHAR)
+    if (fpublic || tok==tSTOCK || tok==tSTATIC || (tok==tSYMBOL && *str==PUBLIC_CHAR))
       error(42);                /* invalid combination of class specifiers */
   } else {
     if (tok==tPUBLIC || tok==tSTOCK || tok==tSTATIC)
@@ -3540,7 +3540,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     tag= (firsttag>=0) ? firsttag : pc_addtag(NULL);
     tok=lex(&val,&str);
     assert(!fpublic);
-    if (tok==tNATIVE || tok==tPUBLIC && stock)
+    if (tok==tNATIVE || (tok==tPUBLIC && stock))
       error(42);                /* invalid combination of class specifiers */
     if (tok==tOPERATOR) {
       opertok=operatorname(symbolname);
@@ -3889,7 +3889,7 @@ static int declargs(symbol *sym,int chkshadow)
         error(10);                      /* illegal function or declaration */
       } /* switch */
     } while (tok=='&' || tok==tLABEL || tok==tCONST
-             || tok!=tELLIPS && matchtoken(',')); /* more? */
+             || (tok!=tELLIPS && matchtoken(','))); /* more? */
     /* if the next token is not ",", it should be ")" */
     needtoken(')');
   } /* if */
@@ -4995,7 +4995,6 @@ SC_FUNC symbol *add_builtin_string_constant(char *name,const char *val,
   if (sym==NULL)
     sym=findloc(name);
   if (sym!=NULL) {
-    int redef=0;
     if (sym->ident!=iARRAY) {
       error(21,name);           /* symbol already defined */
       return NULL;
@@ -5825,7 +5824,7 @@ static void doreturn(void)
     if ((rettype & uRETVALUE)!=0) {
       int retarray=(ident==iARRAY || ident==iREFARRAY);
       /* there was an earlier "return" statement in this function */
-      if ((sub==NULL && retarray && sym!=NULL) || sub!=NULL && !retarray)
+      if ((sub==NULL && retarray && sym!=NULL) || (sub!=NULL && !retarray))
         error(79);                      /* mixing "return array;" and "return value;" */
       if (retarray && (curfunc->usage & uPUBLIC)!=0)
         error(90,curfunc->name);        /* public function may not return array */
@@ -5836,7 +5835,7 @@ static void doreturn(void)
     if (!matchtag(curfunc->tag,tag,TRUE))
       error(213);                       /* tagname mismatch */
     if (ident==iARRAY || ident==iREFARRAY) {
-      int dim[sDIMEN_MAX],numdim;
+      int dim[sDIMEN_MAX],numdim=0;
       cell arraysize;
       if (sym==NULL) {
         /* array literals cannot be returned directly */

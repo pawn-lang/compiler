@@ -592,8 +592,8 @@ static void plnge2(void (*oper)(void),
      * has no side effects. This may not be accurate, but it does allow
      * the compiler to check the effect of the entire expression.
      */
-    if (lval1->sym!=NULL && (lval1->sym->ident==iFUNCTN || lval1->sym->ident==iREFFUNC)
-        || lval2->sym!=NULL && (lval2->sym->ident==iFUNCTN || lval2->sym->ident==iREFFUNC))
+    if ((lval1->sym!=NULL && (lval1->sym->ident==iFUNCTN || lval1->sym->ident==iREFFUNC))
+        || (lval2->sym!=NULL && (lval2->sym->ident==iFUNCTN || lval2->sym->ident==iREFFUNC)))
       pc_sideeffect=FALSE;
     if (lval1->ident==iARRAY || lval1->ident==iREFARRAY) {
       char *ptr=(lval1->sym!=NULL) ? lval1->sym->name : "-unknown-";
@@ -820,7 +820,7 @@ static int hier14(value *lval1)
    * negative value would do).
    */
   for (i=0; i<sDIMEN_MAX; i++)
-    arrayidx1[i]=arrayidx2[i]=(cell)(-1L << (sizeof(cell)*8-1));
+    arrayidx1[i]=arrayidx2[i]=(cell)CELL_MAX;
   org_arrayidx=lval1->arrayidx; /* save current pointer, to reset later */
   if (lval1->arrayidx==NULL)
     lval1->arrayidx=arrayidx1;
@@ -1001,7 +1001,7 @@ static int hier14(value *lval1)
     } /* if */
     if (lval3.sym->dim.array.level!=level)
       return error(48); /* array dimensions must match */
-    else if (ltlength<val || exactmatch && ltlength>val || val==0)
+    else if (ltlength<val || (exactmatch && ltlength>val) || val==0)
       return error(47); /* array sizes must match */
     else if (lval3.ident!=iARRAYCELL && !matchtag(lval3.sym->x.tags.index,idxtag,TRUE))
       error(229,(lval2.sym!=NULL) ? lval2.sym->name : lval3.sym->name); /* index tag mismatch */
@@ -1588,7 +1588,7 @@ restart:
         } /* if */
         if (close==']') {
           /* normal array index */
-          if (lval2.constval<0 || sym->dim.array.length!=0 && sym->dim.array.length<=lval2.constval)
+          if (lval2.constval<0 || (sym->dim.array.length!=0 && sym->dim.array.length<=lval2.constval))
             error(32,sym->name);        /* array index out of bounds */
           if (lval2.constval!=0) {
             /* don't add offsets for zero subscripts */
@@ -1605,8 +1605,9 @@ restart:
           } /* if */
         } else {
           /* character index */
-          if (lval2.constval<0 || sym->dim.array.length!=0
-              && sym->dim.array.length*((8*sizeof(cell))/sCHARBITS)<=(ucell)lval2.constval)
+            if (lval2.constval<0
+                || (sym->dim.array.length!=0
+                    && sym->dim.array.length*((8*sizeof(cell))/sCHARBITS)<=(ucell)lval2.constval))
             error(32,sym->name);        /* array index out of bounds */
           if (lval2.constval!=0) {
             /* don't add offsets for zero subscripts */
@@ -2197,8 +2198,8 @@ static int nesting=0;
                  * function argument; a literal string may be smaller than
                  * the function argument.
                  */
-                if (lval.constval>0 && arg[argidx].dim[0]!=lval.constval
-                    || lval.constval<0 && arg[argidx].dim[0] < -lval.constval)
+                if ((lval.constval>0 && arg[argidx].dim[0]!=lval.constval)
+                    || (lval.constval<0 && arg[argidx].dim[0] < -lval.constval))
                   error(47);      /* array sizes must match */
               } /* if */
             } /* if */

@@ -1642,7 +1642,7 @@ static int matchsequence(char *start,char *end,char *pattern,
       assert(*(start+1)=='\0');
       start+=2;                 /* skip '\n' and '\0' */
       if (*(pattern+1)!='\0')
-        while (start<end && *start=='\t' || *start==' ')
+        while ((start<end && *start=='\t') || *start==' ')
           start++;              /* skip leading white space of next instruction */
       break;
     default:
@@ -1691,8 +1691,10 @@ static char *replacesequence(char *pattern,char symbols[MAX_OPT_VARS][MAX_ALIAS+
   } /* while */
 
   /* allocate a buffer to replace the sequence in */
-  if ((buffer=(char*)malloc(*repl_length))==NULL)
-    return (char*)error(103);
+  if ((buffer=(char*)malloc(*repl_length))==NULL) {
+    error(103);
+    return NULL;
+  } /* if */
 
   /* replace the pattern into this temporary buffer */
   lptr=buffer;
