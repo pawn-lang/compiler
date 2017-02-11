@@ -7,11 +7,11 @@
 #define SCLINUX_H
 
 /* getchar() is not a 'cool' replacement for MSDOS getch: Linux/unix depends on the features activated or not about the
- * controlling terminal's tty. This means that ioctl(2) calls must be performed, for instance to have the controlling 
- * terminal tty's in 'raw' mode, if we want to be able to fetch a single character. This also means that everything must 
+ * controlling terminal's tty. This means that ioctl(2) calls must be performed, for instance to have the controlling
+ * terminal tty's in 'raw' mode, if we want to be able to fetch a single character. This also means that everything must
  * be put back correctly when the function ends. See GETCH.C for an implementation.
  *
- * For interactive use of SRUN/SDBG if would be much better to use GNU's readline package: the user would be able to 
+ * For interactive use of SRUN/SDBG if would be much better to use GNU's readline package: the user would be able to
  * have a complete emacs/vi like line editing system.
  */
 #include "getch.h"
@@ -24,6 +24,10 @@
  */
 #define	DIRECTORY_SEP_CHAR      '/'
 #define	DIRECTORY_SEP_STR       "/"
+
+#if defined HAVE_ENDIAN_H
+# include <endian.h>
+#endif
 
 /*
  * SC assumes that a computer is Little Endian unless told otherwise. It uses

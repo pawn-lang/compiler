@@ -28,6 +28,10 @@ check_include_file("alloca.h" HAVE_ALLOCA_H)
 if(HAVE_ALLOCA_H)
   add_definitions(-DHAVE_ALLOCA_H)
 endif()
+check_include_file("endian.h" HAVE_ENDIAN_H)
+if(HAVE_ENDIAN_H)
+  add_definitions(-DHAVE_ENDIAN_H)
+endif()
 
 # check for optional library functions
 include(CheckFunctionExists)
