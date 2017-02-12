@@ -358,7 +358,6 @@ static void readline(unsigned char *line)
   cont=FALSE;
   do {
     if (inpf==NULL || pc_eofsrc(inpf)) {
-      pc_writeasm(outf,"\n");   /* insert a newline at the end of file */
       if (cont)
         error(49);        /* invalid line continuation */
       if (inpf!=NULL && inpf!=inpf_org)

@@ -264,7 +264,7 @@ SC_FUNC void setfiledirect(char *name)
 {
   if (sc_status==statFIRST && sc_listing) {
     assert(name!=NULL);
-    pc_writeasm(outf,"#file \"");
+    pc_writeasm(outf,"\n#file \"");
     pc_writeasm(outf,name);
     pc_writeasm(outf,"\"\n");
   } /* if */
