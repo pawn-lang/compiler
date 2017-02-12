@@ -922,7 +922,7 @@ static int hier14(value *lval1)
       int same=TRUE;
       assert(lval2.arrayidx==arrayidx2);
       for (i=0; i<sDIMEN_MAX; i++)
-        same=same && (lval3.arrayidx[i]==lval2.arrayidx[i]);
+        same=same && !lval2.value_modified && (lval3.arrayidx[i]==lval2.arrayidx[i]);
         if (same)
           error(226,lval3.sym->name);   /* self-assignment */
     } /* if */
@@ -1245,11 +1245,12 @@ static int hier2(value *lval)
     rvalue(lval);               /* and read the result into PRI */
     pc_sideeffect=TRUE;
     return FALSE;               /* result is no longer lvalue */
-  case '~':                     /* ~ (one's complement) */
+  case '~':                     /* ~ (one's complement) */    
     if (hier2(lval))
       rvalue(lval);
     invert();                   /* bitwise NOT */
     lval->constval=~lval->constval;
+    lval->value_modified = TRUE;
     return FALSE;
   case '!':                     /* ! (logical negate) */
     if (hier2(lval))
@@ -1262,6 +1263,7 @@ static int hier2(value *lval)
       lval->constval=!lval->constval;
       lval->tag=pc_addtag("bool");
     } /* if */
+    lval->value_modified = TRUE;
     return FALSE;
   case '-':                     /* unary - (two's complement) */
     if (hier2(lval))
@@ -1290,6 +1292,7 @@ static int hier2(value *lval)
       neg();                    /* arithmic negation */
       lval->constval=-lval->constval;
     } /* if */
+    lval->value_modified = TRUE;
     return FALSE;
   case tLABEL:                  /* tagname override */
     tag=pc_addtag(st);
@@ -1861,6 +1864,7 @@ static void clear_value(value *lval)
   lval->constval=0L;
   lval->tag=0;
   lval->ident=0;
+  lval->value_modified = FALSE;
   lval->boolresult=FALSE;
   /* do not clear lval->arrayidx, it is preset in hier14() */
   /* do not clear lval->cmptag */
