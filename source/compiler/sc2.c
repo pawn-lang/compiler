@@ -1318,7 +1318,7 @@ static int command(void)
             error(17,str);        /* undefined symbol */
           } else {
             if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
-              int count;
+              int count; /* number of references on the function  */
 
               if ((sym->usage & uNATIVE)!=0) {
                 /* reserve a SYSREQ id if called for the first time  */
@@ -1336,8 +1336,10 @@ static int command(void)
               /* do NOT mark it as written as that has a different meaning for
                * functions (marks them as "should return a value") */
 
+              /* compute the number of references on the function */
               for (count=0; count<curfunc->numrefers && curfunc->refer[count]; count++)
                 /* nothing */;
+              /* if there's references on the function or/and this function was declared as public */
               if (count!=0 || (curfunc->usage & uPUBLIC)!=0)
                 markusage(sym,uREAD);
             } else {
