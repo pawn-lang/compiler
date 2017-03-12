@@ -1335,12 +1335,7 @@ static int command(void)
               /* mark function as "used" */
               /* do NOT mark it as written as that has a different meaning for
                * functions (marks them as "should return a value") */
-
-              /* compute the number of references on the function */
-              for (count=0; count<curfunc->numrefers && curfunc->refer[count]; count++)
-                /* nothing */;
-              /* if there's references on the function or/and this function was declared as public */
-              if (count!=0 || (curfunc->usage & uPUBLIC)!=0)
+              if (!curfunc->func_skipped)
                 markusage(sym,uREAD);
             } else {
               outval(sym->addr,FALSE);

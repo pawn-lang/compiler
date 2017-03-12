@@ -145,6 +145,7 @@ typedef struct s_symbol {
   struct s_symbol **refer;  /* referrer list, functions that "use" this symbol */
   int numrefers;        /* number of entries in the referrer list */
   char *documentation;  /* optional documentation string */
+  int func_skipped;
 } symbol;
 
 
