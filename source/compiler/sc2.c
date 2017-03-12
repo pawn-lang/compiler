@@ -1318,8 +1318,6 @@ static int command(void)
             error(17,str);        /* undefined symbol */
           } else {
             if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
-              int count; /* number of references on the function  */
-
               if ((sym->usage & uNATIVE)!=0) {
                 /* reserve a SYSREQ id if called for the first time  */
                 if (sc_status==statWRITE && (sym->usage & uREAD)==0 && sym->addr>=0)
