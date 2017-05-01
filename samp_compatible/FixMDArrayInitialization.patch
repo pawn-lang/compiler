@@ -1,0 +1,12 @@
+diff -ruNpw SOURCE/COMPILER/sc1.c SOURCE_patched/COMPILER/sc1.c
+--- SOURCE/COMPILER/sc1.c	Wed Nov  8 13:09:32 2006
++++ SOURCE_patched/COMPILER/sc1.c	Sun Jan 22 20:05:57 2012
+@@ -2274,6 +2274,8 @@ static cell calc_arraysize(int dim[],int
+     return 0;
+   subsize=calc_arraysize(dim,numdim,cur+1);
+   newsize=dim[cur]+dim[cur]*subsize;
++  if (newsize==0)
++    return 0;
+   if ((ucell)subsize>=CELL_MAX || newsize>=CELL_MAX || newsize<(ucell)subsize
+       || newsize*sizeof(cell)>=CELL_MAX)
+     return CELL_MAX;
