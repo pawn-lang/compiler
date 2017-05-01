@@ -2521,7 +2521,7 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
                       constvalue *enumroot,int *errorfound)
 {
   cell dsize,totalsize;
-  int idx,idx_ellips,vidx;
+  int idx,idx_ellips,vidx,do_insert;
   int abortparse;
   int curlit;
   cell *prev1=NULL,*prev2=NULL;
@@ -2531,7 +2531,13 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
   assert(cur+2<=numdim);        /* there must be 2 dimensions or more to do */
   assert(errorfound!=NULL && *errorfound==FALSE);
   totalsize=0;
-  needtoken('{');
+  needtoken('{');  
+  for (do_insert=0,idx=0; idx<=cur; idx++) {
+    if (dim[idx]==0) {
+      do_insert=TRUE;
+      break;
+    } /* if */
+  } /* for */  
   for (idx=0,abortparse=FALSE; !abortparse; idx++) {
     /* In case the major dimension is zero, we need to store the offset
      * to the newly detected sub-array into the indirection table; i.e.
@@ -2541,7 +2547,7 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
      * necessary at this point to reserve space for an extra cell in the
      * indirection vector.
      */
-    if (dim[cur]==0) {
+    if (do_insert) {
       litinsert(0,startlit);
     } else if (idx>=dim[cur]) {
       error(18);                /* initialization data exceeds array size */
