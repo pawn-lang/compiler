@@ -242,6 +242,7 @@ typedef struct s_value {
   int cmptag;           /* for searching symbols: choose the one with the matching tag */
   char ident;           /* iCONSTEXPR, iVARIABLE, iARRAY, iARRAYCELL,
                          * iEXPRESSION or iREFERENCE */
+  char value_modified;	/* set to TRUE when value is negated/inverted */
   char boolresult;      /* boolean result for relational operators */
   cell *arrayidx;       /* last used array indices, for checking self assignment */
 } value;
