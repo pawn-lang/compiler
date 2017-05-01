@@ -1315,6 +1315,8 @@ static int command(void)
             error(17,str);        /* undefined symbol */
           } else {
             if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
+              int count;
+
               if ((sym->usage & uNATIVE)!=0) {
                 /* reserve a SYSREQ id if called for the first time  */
                 if (sc_status==statWRITE && (sym->usage & uREAD)==0 && sym->addr>=0)
@@ -1330,7 +1332,11 @@ static int command(void)
               /* mark function as "used" */
               /* do NOT mark it as written as that has a different meaning for
                * functions (marks them as "should return a value") */
-              markusage(sym,uREAD);
+
+              for (count=0; count<curfunc->numrefers && curfunc->refer[count]; count++)
+                /* nothing */;
+              if (count!=0 || (curfunc->usage & uPUBLIC)!=0)
+                markusage(sym,uREAD);
             } else {
               outval(sym->addr,FALSE);
               /* mark symbol as "used", unknown whether for read or write */
