@@ -2456,12 +2456,18 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
       constvalue lastdim={NULL,"",0,0};     /* sizes of the final dimension */
       int skipdim=0;
 
-      if (dim[numdim-1]!=0)
-        *size=calc_arraysize(dim,numdim,0); /* calc. full size, if known */
+      /* check if size specified for all dimensions */
+      for (idx=0; idx<numdim; idx++)
+        if (dim[idx]==0)
+          break;
       /* already reserve space for the indirection tables (for an array with
        * known dimensions)
        * (do not use dumpzero(), as it bypasses the literal queue)
        */
+      if(idx==numdim) 
+        *size=calc_arraysize(dim,numdim,0);
+      else 
+        *size=0; /* size of one or more dimensions is unknown */
       for (tablesize=calc_arraysize(dim,numdim-1,0); tablesize>0; tablesize--)
         litadd(0);
       /* now initialize the sub-arrays */
