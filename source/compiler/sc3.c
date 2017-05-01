@@ -921,27 +921,28 @@ static int hier14(value *lval1)
     {
       int same=TRUE;
       assert(lval2.arrayidx==arrayidx2);
-      for (i=0; i<sDIMEN_MAX; i++)
+      for (i=0; i<sDIMEN_MAX; i++) {
         same=same && (lval3.arrayidx[i]==lval2.arrayidx[i]);
-        if (same)
-          error(226,lval3.sym->name);   /* self-assignment */
+      } /* for */
+      if (same)
+        error(226,lval3.sym->name);   /* self-assignment */
     } /* if */
   } else {
-    if (oper){
+    if (oper) {
       rvalue(lval1);
       plnge2(oper,hier14,lval1,&lval2);
     } else {
       /* if direct fetch and simple assignment: no "push"
        * and "pop" needed -> call hier14() directly, */
       if (hier14(&lval2))
-        rvalue(&lval2);         /* instead of plnge2(). */
+        rvalue(&lval2);               /* instead of plnge2(). */
       else if (lval2.ident==iVARIABLE)
-        lval2.ident=iEXPRESSION;/* mark as "rvalue" if it is not an "lvalue" */
+        lval2.ident=iEXPRESSION;      /* mark as "rvalue" if it is not an "lvalue" */
       checkfunction(&lval2);
       /* check whether lval2 and lval3 (old lval1) refer to the same variable */
       if (lval2.ident==iVARIABLE && lval3.ident==lval2.ident && lval3.sym==lval2.sym) {
         assert(lval3.sym!=NULL);
-        error(226,lval3.sym->name);     /* self-assignment */
+        error(226,lval3.sym->name);   /* self-assignment */
       } /* if */
     } /* if */
   } /* if */
@@ -1250,6 +1251,8 @@ static int hier2(value *lval)
       rvalue(lval);
     invert();                   /* bitwise NOT */
     lval->constval=~lval->constval;
+    if (lval->ident==iVARIABLE || lval->ident==iARRAYCELL)
+      lval->ident=iEXPRESSION;
     return FALSE;
   case '!':                     /* ! (logical negate) */
     if (hier2(lval))
@@ -1261,6 +1264,8 @@ static int hier2(value *lval)
       lneg();                   /* 0 -> 1,  !0 -> 0 */
       lval->constval=!lval->constval;
       lval->tag=pc_addtag("bool");
+      if (lval->ident==iVARIABLE || lval->ident==iARRAYCELL)
+        lval->ident=iEXPRESSION;
     } /* if */
     return FALSE;
   case '-':                     /* unary - (two's complement) */
@@ -1289,6 +1294,8 @@ static int hier2(value *lval)
     } else {
       neg();                    /* arithmic negation */
       lval->constval=-lval->constval;
+      if (lval->ident==iVARIABLE || lval->ident==iARRAYCELL)
+        lval->ident=iEXPRESSION;
     } /* if */
     return FALSE;
   case tLABEL:                  /* tagname override */
