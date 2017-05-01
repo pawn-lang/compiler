@@ -24,8 +24,7 @@ Background
 ----------
 
 The project was originally started as a set of patches aimed to create a compiler
-that would be compatible with the compiler used in [SA-MP (San Andreas Multiplayer)]
-(http://sa-mp.com/).
+that would be compatible with the compiler used in [SA-MP (San Andreas Multiplayer)](http://sa-mp.com/).
 
 SA-MP uses a modified version of Pawn 3.2.3664 [1] with Windows-only executables,
 and the developers said that they lost the source code for it which means it can't
