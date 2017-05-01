@@ -139,8 +139,7 @@ endif()
 # Install compiler and disassembler binaries
 install(TARGETS pawnc pawncc pawndisasm
         RUNTIME DESTINATION bin
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib)
+        LIBRARY DESTINATION lib)
 if(MSVC)
   # If building with Microsoft Visual C++ also install corresponding
   # Program Database files (for debugging)
