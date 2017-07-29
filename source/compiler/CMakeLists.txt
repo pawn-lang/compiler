@@ -5,16 +5,10 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake)
 
 set(VERSION_MAJOR 3)
 set(VERSION_MINOR 10)
-set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR})
+set(VERSION_BUILD 2)
+set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD})
 set(VERSION_STR ${VERSION})
 math(EXPR VERSION_INT "${VERSION_MAJOR} << 8 | ${VERSION_MINOR}")
-
-# Append git commit hash to the version string
-include(GetGitRevisionDescription)
-git_describe(GIT_COMMIT --always)
-if(GIT_COMMIT)
-  set(VERSION_STR ${VERSION_STR}.${GIT_COMMIT})
-endif()
 
 # check for optional include files
 include(CheckIncludeFile)
@@ -33,6 +27,10 @@ endif()
 check_include_file("alloca.h" HAVE_ALLOCA_H)
 if(HAVE_ALLOCA_H)
   add_definitions(-DHAVE_ALLOCA_H)
+endif()
+check_include_file("endian.h" HAVE_ENDIAN_H)
+if(HAVE_ENDIAN_H)
+  add_definitions(-DHAVE_ENDIAN_H)
 endif()
 
 # check for optional library functions
@@ -56,7 +54,8 @@ if(UNIX)
   link_libraries(pthread)
 endif()
 
-configure_file(version.h.in version.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
+               ${CMAKE_CURRENT_BINARY_DIR}/version.h)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # The Pawn compiler shared library
@@ -79,7 +78,7 @@ set(PAWNC_SRCS
   scmemfil.c
   scstate.c
   scvars.c
-  ${CMAKE_BINARY_DIR}/version.h)
+  version.h)
 set_source_files_properties(sc1.c COMPILE_FLAGS -DNO_MAIN)
 if(WIN32)
   set(PAWNC_SRCS ${PAWNC_SRCS} libpawnc.rc)
@@ -87,7 +86,7 @@ if(WIN32)
   if(BORLAND)
     # Borland linker uses a DEF file if one is in the output directory
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/libpawnc.def.borland
-                   ${CMAKE_BINARY_DIR}/pawnc.def
+                   ${CMAKE_CURRENT_BINARY_DIR}/pawnc.def
                    COPYONLY)
   else()
     # Microsoft Visual C/C++ supports a DEF file as if it were a source file
@@ -106,6 +105,7 @@ if(WATCOM)  #Watcom C/C++ does not support a .DEF file for the exports
 elseif(MINGW)
   set_target_properties(pawnc PROPERTIES LINK_FLAGS
     "-Wl,--enable-stdcall-fixup")
+  set_target_properties(pawnc PROPERTIES PREFIX "")
 endif()
 
 # The Pawn compiler driver (console program)
@@ -115,7 +115,7 @@ if(WIN32)
   if(BORLAND)
     # Borland linker uses a DEF file if one is in the output directory
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pawncc.def.borland
-                   ${CMAKE_BINARY_DIR}/pawncc.def
+                   ${CMAKE_CURRENT_BINARY_DIR}/pawncc.def
                    COPYONLY)
   else()
     # Microsoft Visual C/C++ supports a DEF file as if it were a source file
@@ -139,8 +139,7 @@ endif()
 # Install compiler and disassembler binaries
 install(TARGETS pawnc pawncc pawndisasm
         RUNTIME DESTINATION bin
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib)
+        LIBRARY DESTINATION lib)
 if(MSVC)
   # If building with Microsoft Visual C++ also install corresponding
   # Program Database files (for debugging)

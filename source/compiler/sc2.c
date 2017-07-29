@@ -198,6 +198,7 @@ static char extensions[][6] = { "", ".inc", ".p", ".pawn" };
   icomment=0;               /* not in a comment */
   insert_dbgfile(inpfname);
   setfiledirect(inpfname);
+  setfileconst(inpfname);
   listline=-1;              /* force a #line directive when changing the file */
   sc_is_utf8=(short)scan_utf8(inpf,real_path);
   free(real_path);
@@ -350,7 +351,6 @@ static void readline(unsigned char *line)
 {
   int i,num,cont;
   unsigned char *ptr;
-  symbol *sym;
 
   if (lptr==term_expr)
     return;
@@ -358,7 +358,6 @@ static void readline(unsigned char *line)
   cont=FALSE;
   do {
     if (inpf==NULL || pc_eofsrc(inpf)) {
-      pc_writeasm(outf,"\n");   /* insert a newline at the end of file */
       if (cont)
         error(49);        /* invalid line continuation */
       if (inpf!=NULL && inpf!=inpf_org)
@@ -429,9 +428,7 @@ static void readline(unsigned char *line)
       line+=strlen((char*)line);
     } /* if */
     fline+=1;
-    sym=findconst("__line",NULL);
-    assert(sym!=NULL);
-    sym->addr=fline;
+    setlineconst(fline);
   } while (num>=0 && cont);
 }
 
@@ -484,7 +481,7 @@ static void stripcom(unsigned char *line)
         #if !defined SC_LIGHT
           /* collect the comment characters in a string */
           if (icomment==2) {
-            if (skipstar && (*line!='\0' && *line<=' ' || *line=='*')) {
+            if (skipstar && ((*line!='\0' && *line<=' ') || *line=='*')) {
               /* ignore leading whitespace and '*' characters */
             } else if (commentidx<COMMENT_LIMIT+COMMENT_MARGIN-1) {
               comment[commentidx++]=(char)((*line!='\n') ? *line : ' ');
@@ -1314,7 +1311,7 @@ static int command(void)
           sym=findloc(str);
           if (sym==NULL)
             sym=findglb(str,sSTATEVAR);
-          if (sym==NULL || sym->ident!=iFUNCTN && sym->ident!=iREFFUNC && (sym->usage & uDEFINE)==0) {
+          if (sym==NULL || (sym->ident!=iFUNCTN && sym->ident!=iREFFUNC && (sym->usage & uDEFINE)==0)) {
             error(17,str);        /* undefined symbol */
           } else {
             if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
@@ -1357,12 +1354,12 @@ static int command(void)
               outval(val | 0x80000000,FALSE);
               code_idx+=opargs(1);
               break;
-            } else {              
+            } else {
               strcpy(s2+1, str);
               error(1,sc_tokens[tSYMBOL-tFIRST],s2);
               break;
             } /* if */
-          } /* if */          
+          } /* if */
           if (tok<256)
             sprintf(s2,"%c",(char)tok);
           else
@@ -1787,7 +1784,7 @@ static void substallpatterns(unsigned char *line,int buffersize)
     if (strncmp((char*)start,"defined",7)==0 && *(start+7)<=' ') {
       start+=7;         /* skip "defined" */
       /* skip white space & parantheses */
-      while (*start<=' ' && *start!='\0' || *start=='(')
+      while ((*start<=' ' && *start!='\0') || *start=='(')
         start++;
       /* skip the symbol behind it */
       while (alphanum(*start))
@@ -2201,11 +2198,11 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
         error(220);
       } /* if */
     } /* if */
-    } else if (*lptr=='\"' || *lptr=='#' || *lptr==sc_ctrlchar && (*(lptr+1)=='\"' || *(lptr+1)=='#'))
+    } else if (*lptr=='\"' || *lptr=='#' || (*lptr==sc_ctrlchar && (*(lptr+1)=='\"' || *(lptr+1)=='#')))
   {                                     /* unpacked string literal */
     _lextok=tSTRING;
-    stringflags= (*lptr==sc_ctrlchar) ? RAWMODE : 0;
-    stringflags |= (*lptr=='#' || (*lptr==sc_ctrlchar && *(lptr+1)=='#')) ? STRINGIZE : 0;
+    stringflags=(*lptr==sc_ctrlchar) ? RAWMODE : 0;
+    stringflags|=(*lptr=='#' || (*lptr==sc_ctrlchar && *(lptr+1)=='#')) ? STRINGIZE : 0;
     *lexvalue=_lexval=litidx;
     lptr+=1;            /* skip double quote */
     if ((stringflags & RAWMODE)!=0)
@@ -2215,9 +2212,9 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
       lptr+=1;          /* skip final quote */
     else if (!(stringflags & STRINGIZE))
       error(37);        /* invalid (non-terminated) string */
-  } else if (*lptr=='!' && (*(lptr+1)=='\"' || *(lptr+1)=='#')
-             || *lptr=='!' && *(lptr+1)==sc_ctrlchar && (*(lptr+2)=='\"'  || *(lptr+2)=='#')
-             || *lptr==sc_ctrlchar && *(lptr+1)=='!' && (*(lptr+2)=='\"'  || *(lptr+2)=='#'))
+  } else if ((*lptr=='!' && (*(lptr+1)=='\"' || *(lptr+1)=='#'))
+             || (*lptr=='!' && *(lptr+1)==sc_ctrlchar && (*(lptr+2)=='\"'  || *(lptr+2)=='#'))
+             || (*lptr==sc_ctrlchar && *(lptr+1)=='!' && (*(lptr+2)=='\"'  || *(lptr+2)=='#')))
   {                                     /* packed string literal */
     _lextok=tSTRING;
     stringflags=0;
@@ -2315,7 +2312,7 @@ SC_FUNC int matchtoken(int token)
   int tok;
 
   tok=lex(&val,&str);
-  if (tok==token || token==tTERM && (tok==';' || tok==tENDEXPR)) {
+  if (tok==token || (token==tTERM && (tok==';' || tok==tENDEXPR))) {
     return 1;
   } else if (!sc_needsemicolon && token==tTERM && (_lexnewline || !freading)) {
     /* Push "tok" back, because it is the token following the implicit statement
@@ -2749,7 +2746,7 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
       assert(0);
       break;
     } /* switch */
-    if (mustdelete) {
+    if (mustdelete && (sym->flags & flagPREDEF)==0) {
       root->next=sym->next;
       free_symbol(sym);
     } else {
@@ -2758,7 +2755,8 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
        */
       if (sym->ident==iFUNCTN && (sym->usage & uDEFINE)==0)
         sym->usage |= uMISSING;
-      if (sym->ident==iFUNCTN || sym->ident==iVARIABLE || sym->ident==iARRAY)
+      if ((sym->ident==iFUNCTN || sym->ident==iVARIABLE || sym->ident==iARRAY)
+          && (sym->flags & flagPREDEF)==0)
         sym->usage &= ~uDEFINE; /* clear "defined" flag */
       /* set all states as "undefined" too */
       if (sym->states!=NULL)
@@ -2771,7 +2769,7 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
         sym->usage &= ~uPROTOTYPED;
       root=sym;                 /* skip the symbol */
     } /* if */
-  } /* if */
+  } /* while */
 }
 
 /* The purpose of the hash is to reduce the frequency of a "name"
@@ -2801,8 +2799,8 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
     {
       assert(sym->states==NULL || sym->states->next!=NULL); /* first element of the state list is the "root" */
       if (sym->ident==iFUNCTN
-          || automaton<0 && sym->states==NULL
-          || automaton>=0 && sym->states!=NULL && state_getfsa(sym->states->next->index)==automaton)
+          || (automaton<0 && sym->states==NULL)
+          || (automaton>=0 && sym->states!=NULL && state_getfsa(sym->states->next->index)==automaton))
       {
         if (cmptag==NULL && sym->fnumber==fnumber)
           return sym;     /* return first match */

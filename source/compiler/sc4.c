@@ -249,7 +249,7 @@ SC_FUNC void setline(int chkbounds)
     stgwrite("\t; line ");
     outval(fline,TRUE);
   } /* if */
-  if ((sc_debug & sSYMBOLIC)!=0 || chkbounds && (sc_debug & sCHKBOUNDS)!=0) {
+  if ((sc_debug & sSYMBOLIC)!=0 || (chkbounds && (sc_debug & sCHKBOUNDS)!=0)) {
     /* generate a "break" (start statement) opcode rather than a "line" opcode
      * because earlier versions of Small/Pawn have an incompatible version of the
      * line opcode
@@ -264,10 +264,18 @@ SC_FUNC void setfiledirect(char *name)
 {
   if (sc_status==statFIRST && sc_listing) {
     assert(name!=NULL);
-    pc_writeasm(outf,"#file \"");
+    pc_writeasm(outf,"\n#file \"");
     pc_writeasm(outf,name);
     pc_writeasm(outf,"\"\n");
   } /* if */
+}
+
+SC_FUNC void setfileconst(char *name)
+{
+  symbol *sym;
+
+  sym=add_builtin_string_constant("__file",name,sGLOBAL);
+  sym->fnumber=fcurrent;
 }
 
 SC_FUNC void setlinedirect(int line)
@@ -277,6 +285,15 @@ SC_FUNC void setlinedirect(int line)
     sprintf(string,"#line %d\n",line);
     pc_writeasm(outf,string);
   } /* if */
+}
+
+SC_FUNC void setlineconst(int line)
+{
+  symbol *sym;
+
+  sym=findconst("__line",NULL);
+  assert(sym!=NULL);
+  sym->addr=fline;
 }
 
 /*  setlabel
@@ -758,7 +775,7 @@ SC_FUNC void ffcall(symbol *sym,const char *label,int numargs)
       stgwrite(sym->name);
     } /* if */
     if (sc_asmfile
-        && (label!=NULL || !isalpha(sym->name[0]) && sym->name[0]!='_'  && sym->name[0]!=sc_ctrlchar))
+        && (label!=NULL || (!isalpha(sym->name[0]) && sym->name[0]!='_'  && sym->name[0]!=sc_ctrlchar)))
     {
       stgwrite("\t; ");
       stgwrite(symname);

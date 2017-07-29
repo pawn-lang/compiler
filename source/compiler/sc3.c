@@ -592,8 +592,8 @@ static void plnge2(void (*oper)(void),
      * has no side effects. This may not be accurate, but it does allow
      * the compiler to check the effect of the entire expression.
      */
-    if (lval1->sym!=NULL && (lval1->sym->ident==iFUNCTN || lval1->sym->ident==iREFFUNC)
-        || lval2->sym!=NULL && (lval2->sym->ident==iFUNCTN || lval2->sym->ident==iREFFUNC))
+    if ((lval1->sym!=NULL && (lval1->sym->ident==iFUNCTN || lval1->sym->ident==iREFFUNC))
+        || (lval2->sym!=NULL && (lval2->sym->ident==iFUNCTN || lval2->sym->ident==iREFFUNC)))
       pc_sideeffect=FALSE;
     if (lval1->ident==iARRAY || lval1->ident==iREFARRAY) {
       char *ptr=(lval1->sym!=NULL) ? lval1->sym->name : "-unknown-";
@@ -820,7 +820,7 @@ static int hier14(value *lval1)
    * negative value would do).
    */
   for (i=0; i<sDIMEN_MAX; i++)
-    arrayidx1[i]=arrayidx2[i]=(cell)(-1L << (sizeof(cell)*8-1));
+    arrayidx1[i]=arrayidx2[i]=(cell)CELL_MAX;
   org_arrayidx=lval1->arrayidx; /* save current pointer, to reset later */
   if (lval1->arrayidx==NULL)
     lval1->arrayidx=arrayidx1;
@@ -921,27 +921,28 @@ static int hier14(value *lval1)
     {
       int same=TRUE;
       assert(lval2.arrayidx==arrayidx2);
-      for (i=0; i<sDIMEN_MAX; i++)
+      for (i=0; i<sDIMEN_MAX; i++) {
         same=same && (lval3.arrayidx[i]==lval2.arrayidx[i]);
-        if (same)
-          error(226,lval3.sym->name);   /* self-assignment */
+      } /* for */
+      if (same)
+        error(226,lval3.sym->name);   /* self-assignment */
     } /* if */
   } else {
-    if (oper){
+    if (oper) {
       rvalue(lval1);
       plnge2(oper,hier14,lval1,&lval2);
     } else {
       /* if direct fetch and simple assignment: no "push"
        * and "pop" needed -> call hier14() directly, */
       if (hier14(&lval2))
-        rvalue(&lval2);         /* instead of plnge2(). */
+        rvalue(&lval2);               /* instead of plnge2(). */
       else if (lval2.ident==iVARIABLE)
-        lval2.ident=iEXPRESSION;/* mark as "rvalue" if it is not an "lvalue" */
+        lval2.ident=iEXPRESSION;      /* mark as "rvalue" if it is not an "lvalue" */
       checkfunction(&lval2);
       /* check whether lval2 and lval3 (old lval1) refer to the same variable */
       if (lval2.ident==iVARIABLE && lval3.ident==lval2.ident && lval3.sym==lval2.sym) {
         assert(lval3.sym!=NULL);
-        error(226,lval3.sym->name);     /* self-assignment */
+        error(226,lval3.sym->name);   /* self-assignment */
       } /* if */
     } /* if */
   } /* if */
@@ -1001,7 +1002,7 @@ static int hier14(value *lval1)
     } /* if */
     if (lval3.sym->dim.array.level!=level)
       return error(48); /* array dimensions must match */
-    else if (ltlength<val || exactmatch && ltlength>val || val==0)
+    else if (ltlength<val || (exactmatch && ltlength>val) || val==0)
       return error(47); /* array sizes must match */
     else if (lval3.ident!=iARRAYCELL && !matchtag(lval3.sym->x.tags.index,idxtag,TRUE))
       error(229,(lval2.sym!=NULL) ? lval2.sym->name : lval3.sym->name); /* index tag mismatch */
@@ -1250,6 +1251,8 @@ static int hier2(value *lval)
       rvalue(lval);
     invert();                   /* bitwise NOT */
     lval->constval=~lval->constval;
+    if (lval->ident==iVARIABLE || lval->ident==iARRAYCELL)
+      lval->ident=iEXPRESSION;
     return FALSE;
   case '!':                     /* ! (logical negate) */
     if (hier2(lval))
@@ -1261,6 +1264,8 @@ static int hier2(value *lval)
       lneg();                   /* 0 -> 1,  !0 -> 0 */
       lval->constval=!lval->constval;
       lval->tag=pc_addtag("bool");
+      if (lval->ident==iVARIABLE || lval->ident==iARRAYCELL)
+        lval->ident=iEXPRESSION;
     } /* if */
     return FALSE;
   case '-':                     /* unary - (two's complement) */
@@ -1289,6 +1294,8 @@ static int hier2(value *lval)
     } else {
       neg();                    /* arithmic negation */
       lval->constval=-lval->constval;
+      if (lval->ident==iVARIABLE || lval->ident==iARRAYCELL)
+        lval->ident=iEXPRESSION;
     } /* if */
     return FALSE;
   case tLABEL:                  /* tagname override */
@@ -1588,7 +1595,7 @@ restart:
         } /* if */
         if (close==']') {
           /* normal array index */
-          if (lval2.constval<0 || sym->dim.array.length!=0 && sym->dim.array.length<=lval2.constval)
+          if (lval2.constval<0 || (sym->dim.array.length!=0 && sym->dim.array.length<=lval2.constval))
             error(32,sym->name);        /* array index out of bounds */
           if (lval2.constval!=0) {
             /* don't add offsets for zero subscripts */
@@ -1605,8 +1612,9 @@ restart:
           } /* if */
         } else {
           /* character index */
-          if (lval2.constval<0 || sym->dim.array.length!=0
-              && sym->dim.array.length*((8*sizeof(cell))/sCHARBITS)<=(ucell)lval2.constval)
+            if (lval2.constval<0
+                || (sym->dim.array.length!=0
+                    && sym->dim.array.length*((8*sizeof(cell))/sCHARBITS)<=(ucell)lval2.constval))
             error(32,sym->name);        /* array index out of bounds */
           if (lval2.constval!=0) {
             /* don't add offsets for zero subscripts */
@@ -2077,7 +2085,14 @@ static int nesting=0;
         if (arg[argidx].ident!=0 && arg[argidx].numtags==1)
           lval.cmptag=arg[argidx].tags[0];  /* set the expected tag, if any */
         lvalue=hier14(&lval);
-        assert(sc_status==statFIRST || arg[argidx].ident== 0 || arg[argidx].tags!=NULL);
+        /* Mark the symbol as "read" so it won't be omitted from P-code.
+         * Native functions are marked as read at the point of their call,
+         * so we don't handle them here; see ffcall().
+         */
+        if (lval.sym!=NULL && (lval.sym->usage & uNATIVE)==0) {
+          markusage(lval.sym,uREAD);
+        } /* if */
+        assert(sc_status==statFIRST || arg[argidx].ident==0 || arg[argidx].tags!=NULL);
         switch (arg[argidx].ident) {
         case 0:
           error(202);             /* argument count mismatch */
@@ -2190,8 +2205,8 @@ static int nesting=0;
                  * function argument; a literal string may be smaller than
                  * the function argument.
                  */
-                if (lval.constval>0 && arg[argidx].dim[0]!=lval.constval
-                    || lval.constval<0 && arg[argidx].dim[0] < -lval.constval)
+                if ((lval.constval>0 && arg[argidx].dim[0]!=lval.constval)
+                    || (lval.constval<0 && arg[argidx].dim[0] < -lval.constval))
                   error(47);      /* array sizes must match */
               } /* if */
             } /* if */

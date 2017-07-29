@@ -218,9 +218,9 @@ static char *stripwhitespace(char *str)
   if (*str!='\0') {
     size_t len = strlen(str);
     size_t i;
-    for (i=len-1; i>=0; i--) {
-      if (!isspace(str[i])) {
-        str[i+1]='\0';
+    for (i=len; i>=1; i--) {
+      if (!isspace(str[i-1])) {
+        str[i]='\0';
         break;
       }
     }
@@ -1027,7 +1027,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
       instr=skipwhitespace(line);
       /* ignore empty lines and labels (labels have a special syntax, so these
        * must be parsed separately) */
-      if (*instr=='\0' || tolower(*instr)=='l' && *(instr+1)=='.')
+      if (*instr=='\0' || (tolower(*instr)=='l') && *(instr+1)=='.')
         continue;
       /* get to the end of the instruction (make use of the '\n' that fgets()
        * added at the end of the line; this way we will *always* drop on a

@@ -283,7 +283,7 @@ static short lastfile;
   } /* if */
   va_end(argptr);
 
-  if (number>=100 && number<200 || errnum>25){
+  if ((number>=100 && number<200) || errnum>25){
     if (strlen(errfname)==0) {
       va_start(argptr,number);
       pc_error(0,"\nCompilation aborted.\n\n",NULL,0,0,argptr);

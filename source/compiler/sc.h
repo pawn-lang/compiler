@@ -198,28 +198,29 @@ typedef struct s_symbol {
  *        5     (uENUMROOT) the constant is the "root" of an enumeration
  *        6     (uENUMFIELD) the constant is a field in a named enumeration
  */
-#define uDEFINE   0x001
-#define uREAD     0x002
-#define uWRITTEN  0x004
-#define uRETVALUE 0x004 /* function returns (or should return) a value */
-#define uCONST    0x008
+#define uDEFINE     0x001
+#define uREAD       0x002
+#define uWRITTEN    0x004
+#define uRETVALUE   0x004 /* function returns (or should return) a value */
+#define uCONST      0x008
 #define uPROTOTYPED 0x008
-#define uPREDEF   0x008 /* constant is pre-defined */
-#define uPUBLIC   0x010
-#define uNATIVE   0x020
-#define uENUMROOT 0x020
-#define uSTOCK    0x040
-#define uENUMFIELD 0x040
-#define uMISSING  0x080
-#define uFORWARD  0x100
+#define uPREDEF     0x008 /* constant is pre-defined */
+#define uPUBLIC     0x010
+#define uNATIVE     0x020
+#define uENUMROOT   0x020
+#define uSTOCK      0x040
+#define uENUMFIELD  0x040
+#define uMISSING    0x080
+#define uFORWARD    0x100
 /* uRETNONE is not stored in the "usage" field of a symbol. It is
  * used during parsing a function, to detect a mix of "return;" and
  * "return value;" in a few special cases.
  */
-#define uRETNONE  0x10
+#define uRETNONE    0x10
 
 #define flgDEPRECATED 0x01  /* symbol is deprecated (avoid use) */
 #define flagNAKED     0x10  /* function is naked */
+#define flagPREDEF    0x20  /* symbol is pre-defined; successor of uPREDEF */
 
 #define uTAGOF    0x40  /* set in the "hasdefault" field of the arginfo struct */
 #define uSIZEOF   0x80  /* set in the "hasdefault" field of the arginfo struct */
@@ -527,6 +528,8 @@ SC_FUNC constvalue *append_constval(constvalue *table,const char *name,cell val,
 SC_FUNC constvalue *find_constval(constvalue *table,char *name,int index);
 SC_FUNC void delete_consttable(constvalue *table);
 SC_FUNC symbol *add_constant(char *name,cell val,int vclass,int tag);
+SC_FUNC symbol *add_builtin_constant(char *name,cell val,int vclass,int tag);
+SC_FUNC symbol *add_builtin_string_constant(char *name,const char *val,int vclass);
 SC_FUNC void exporttag(int tag);
 SC_FUNC void sc_attachdocumentation(symbol *sym);
 
@@ -583,7 +586,9 @@ SC_FUNC void begcseg(void);
 SC_FUNC void begdseg(void);
 SC_FUNC void setline(int chkbounds);
 SC_FUNC void setfiledirect(char *name);
+SC_FUNC void setfileconst(char *name);
 SC_FUNC void setlinedirect(int line);
+SC_FUNC void setlineconst(int line);
 SC_FUNC void setlabel(int index);
 SC_FUNC void markexpr(optmark type,const char *name,cell offset);
 SC_FUNC void startfunc(char *fname);

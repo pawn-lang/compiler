@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #if defined	__WIN32__ || defined _WIN32 || defined __MSDOS__
   #include <conio.h>
@@ -81,6 +82,7 @@ static void setconfig(char *root);
 static void setcaption(void);
 static void about(void);
 static void setconstants(void);
+static void setstringconstants(void);
 static void parse(void);
 static void dumplits(void);
 static void dumpzero(int count);
@@ -89,7 +91,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,
                     int stock,int fconst);
 static int declloc(int fstatic);
 static void decl_const(int table);
-static void decl_enum(int table);
+static void decl_enum(int table,int fstatic);
 static cell needsub(int *tag,constvalue **enumroot);
 static void initials(int ident,int tag,cell *size,int dim[],int numdim,
                      constvalue *enumroot);
@@ -570,8 +572,8 @@ int pc_compile(int argc, char *argv[])
             sc_needsemicolon ? "true" : "false",
             sc_tabsize);
     pc_writeasm(outf,string);
-    setfiledirect(inpfname);
   } /* if */
+  setfiledirect(inpfname);
   /* do the first pass through the file (or possibly two or more "first passes") */
   sc_parsenum=0;
   inpfmark=pc_getpossrc(inpf_org);
@@ -596,7 +598,8 @@ int pc_compile(int argc, char *argv[])
     fline=skipinput;            /* reset line number */
     sc_reparse=FALSE;           /* assume no extra passes */
     sc_status=statFIRST;        /* resetglobals() resets it to IDLE */
-
+    setstringconstants();
+    setfileconst(inpfname);
     if (strlen(incfname)>0) {
       if (strcmp(incfname,sDEF_PREFIX)==0) {
         plungefile(incfname,FALSE,TRUE);    /* parse "default.inc" */
@@ -660,7 +663,9 @@ int pc_compile(int argc, char *argv[])
   fline=skipinput;              /* reset line number */
   lexinit();                    /* clear internal flags of lex() */
   sc_status=statWRITE;          /* allow to write --this variable was reset by resetglobals() */
+  setstringconstants();
   writeleader(&glbtab);
+  setfileconst(inpfname);
   insert_dbgfile(inpfname);
   if (strlen(incfname)>0) {
     if (strcmp(incfname,sDEF_PREFIX)==0)
@@ -1457,55 +1462,72 @@ static void setconstants(void)
   append_constval(&tagname_tab,"_",0,0);/* "untagged" */
   append_constval(&tagname_tab,"bool",1,0);
 
-  add_constant("true",1,sGLOBAL,1);     /* boolean flags */
-  add_constant("false",0,sGLOBAL,1);
-  add_constant("EOS",0,sGLOBAL,0);      /* End Of String, or '\0' */
+  add_builtin_constant("true",1,sGLOBAL,1);     /* boolean flags */
+  add_builtin_constant("false",0,sGLOBAL,1);
+  add_builtin_constant("EOS",0,sGLOBAL,0);      /* End Of String, or '\0' */
   #if PAWN_CELL_SIZE==16
-    add_constant("cellbits",16,sGLOBAL,0);
+  add_builtin_constant("cellbits",16,sGLOBAL,0);
     #if defined _I16_MAX
-      add_constant("cellmax",_I16_MAX,sGLOBAL,0);
-      add_constant("cellmin",_I16_MIN,sGLOBAL,0);
+      add_builtin_constant("cellmax",_I16_MAX,sGLOBAL,0);
+      add_builtin_constant("cellmin",_I16_MIN,sGLOBAL,0);
     #else
-      add_constant("cellmax",SHRT_MAX,sGLOBAL,0);
-      add_constant("cellmin",SHRT_MIN,sGLOBAL,0);
+      add_builtin_constant("cellmax",SHRT_MAX,sGLOBAL,0);
+      add_builtin_constant("cellmin",SHRT_MIN,sGLOBAL,0);
     #endif
   #elif PAWN_CELL_SIZE==32
-    add_constant("cellbits",32,sGLOBAL,0);
+    add_builtin_constant("cellbits",32,sGLOBAL,0);
     #if defined _I32_MAX
-      add_constant("cellmax",_I32_MAX,sGLOBAL,0);
-      add_constant("cellmin",_I32_MIN,sGLOBAL,0);
+      add_builtin_constant("cellmax",_I32_MAX,sGLOBAL,0);
+      add_builtin_constant("cellmin",_I32_MIN,sGLOBAL,0);
     #else
-      add_constant("cellmax",INT_MAX,sGLOBAL,0);
-      add_constant("cellmin",INT_MIN,sGLOBAL,0);
+      add_builtin_constant("cellmax",INT_MAX,sGLOBAL,0);
+      add_builtin_constant("cellmin",INT_MIN,sGLOBAL,0);
     #endif
   #elif PAWN_CELL_SIZE==64
     #if !defined _I64_MIN
       #define _I64_MIN  (-9223372036854775807ULL - 1)
       #define _I64_MAX    9223372036854775807ULL
     #endif
-    add_constant("cellbits",64,sGLOBAL,0);
-    add_constant("cellmax",_I64_MAX,sGLOBAL,0);
-    add_constant("cellmin",_I64_MIN,sGLOBAL,0);
+    add_builtin_constant("cellbits",64,sGLOBAL,0);
+    add_builtin_constant("cellmax",_I64_MAX,sGLOBAL,0);
+    add_builtin_constant("cellmin",_I64_MIN,sGLOBAL,0);
   #else
     #error Unsupported cell size
   #endif
-  add_constant("charbits",sCHARBITS,sGLOBAL,0);
-  add_constant("charmin",0,sGLOBAL,0);
-  add_constant("charmax",~(-1 << sCHARBITS) - 1,sGLOBAL,0);
-  add_constant("ucharmax",(1 << (sizeof(cell)-1)*8)-1,sGLOBAL,0);
+  add_builtin_constant("charbits",sCHARBITS,sGLOBAL,0);
+  add_builtin_constant("charmin",0,sGLOBAL,0);
+  add_builtin_constant("charmax",~((ucell)-1 << sCHARBITS) - 1,sGLOBAL,0);
+  add_builtin_constant("ucharmax",(1 << (sizeof(cell)-1)*8)-1,sGLOBAL,0);
 
-  add_constant("__Pawn",VERSION_INT,sGLOBAL,0);
-  add_constant("__line",0,sGLOBAL,0);
-  add_constant("__compat",pc_compat,sGLOBAL,0);
+  add_builtin_constant("__Pawn",VERSION_INT,sGLOBAL,0);
+  add_builtin_constant("__PawnBuild",VERSION_BUILD,sGLOBAL,0);
+  add_builtin_constant("__line",0,sGLOBAL,0);
+  add_builtin_constant("__compat",pc_compat,sGLOBAL,0);
 
   debug=0;
   if ((sc_debug & (sCHKBOUNDS | sSYMBOLIC))==(sCHKBOUNDS | sSYMBOLIC))
     debug=2;
   else if ((sc_debug & sCHKBOUNDS)==sCHKBOUNDS)
     debug=1;
-  add_constant("debug",debug,sGLOBAL,0);
+  add_builtin_constant("debug",debug,sGLOBAL,0);
 
   append_constval(&sc_automaton_tab,"",0,0);    /* anonymous automaton */
+}
+
+static void setstringconstants()
+{
+  time_t now;
+  char timebuf[sizeof("11:22:33")];
+  char datebuf[sizeof("10 Jan 2017")];
+
+  assert(sc_status!=statIDLE);
+  add_builtin_string_constant("__file","",sGLOBAL);
+
+  now = time(NULL);
+  strftime(timebuf,sizeof(timebuf),"%H:%M:%S",localtime(&now));
+  add_builtin_string_constant("__time",timebuf,sGLOBAL);
+  strftime(datebuf,sizeof(datebuf),"%d %b %Y",localtime(&now));
+  add_builtin_string_constant("__date",datebuf,sGLOBAL);
 }
 
 static int getclassspec(int initialtok,int *fpublic,int *fstatic,int *fstock,int *fconst)
@@ -1600,22 +1622,26 @@ static void parse(void)
         declglb(NULL,0,fpublic,fstatic,fstock,fconst);
       break;
     case tSTATIC:
-      /* This can be a static function or a static global variable; we know
-       * which of the two as soon as we have parsed up to the point where an
-       * opening paranthesis of a function would be expected. To back out after
-       * deciding it was a declaration of a static variable after all, we have
-       * to store the symbol name and tag.
-       */
-      if (getclassspec(tok,&fpublic,&fstatic,&fstock,&fconst)) {
-        assert(!fpublic);
-        declfuncvar(fpublic,fstatic,fstock,fconst);
+      if (matchtoken(tENUM)) {
+        decl_enum(sGLOBAL,TRUE);
+      } else {
+        /* This can be a static function or a static global variable; we know
+         * which of the two as soon as we have parsed up to the point where an
+         * opening paranthesis of a function would be expected. To back out after
+         * deciding it was a declaration of a static variable after all, we have
+         * to store the symbol name and tag.
+         */
+        if (getclassspec(tok,&fpublic,&fstatic,&fstock,&fconst)) {
+          assert(!fpublic);
+          declfuncvar(fpublic,fstatic,fstock,fconst);
+        } /* if */
       } /* if */
       break;
     case tCONST:
       decl_const(sGLOBAL);
       break;
     case tENUM:
-      decl_enum(sGLOBAL);
+      decl_enum(sGLOBAL,matchtoken(tSTATIC));
       break;
     case tPUBLIC:
       /* This can be a public function or a public variable; see the comment
@@ -2181,7 +2207,7 @@ static int declloc(int fstatic)
      * of a global variable or to that of a local variable at a lower
      * level might indicate a bug.
      */
-    if ((sym=findloc(name))!=NULL && sym->compound!=nestlevel || findglb(name,sGLOBAL)!=NULL)
+    if (((sym=findloc(name))!=NULL && sym->compound!=nestlevel) || findglb(name,sGLOBAL)!=NULL)
       error(219,name);                  /* variable shadows another symbol */
     while (matchtoken('[')){
       ident=iARRAY;
@@ -2430,12 +2456,18 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
       constvalue lastdim={NULL,"",0,0};     /* sizes of the final dimension */
       int skipdim=0;
 
-      if (dim[numdim-1]!=0)
-        *size=calc_arraysize(dim,numdim,0); /* calc. full size, if known */
+      /* check if size specified for all dimensions */
+      for (idx=0; idx<numdim; idx++)
+        if (dim[idx]==0)
+          break;
       /* already reserve space for the indirection tables (for an array with
        * known dimensions)
        * (do not use dumpzero(), as it bypasses the literal queue)
        */
+      if(idx==numdim) 
+        *size=calc_arraysize(dim,numdim,0);
+      else 
+        *size=0; /* size of one or more dimensions is unknown */
       for (tablesize=calc_arraysize(dim,numdim-1,0); tablesize>0; tablesize--)
         litadd(0);
       /* now initialize the sub-arrays */
@@ -2489,7 +2521,7 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
                       constvalue *enumroot,int *errorfound)
 {
   cell dsize,totalsize;
-  int idx,idx_ellips,vidx;
+  int idx,idx_ellips,vidx,do_insert;
   int abortparse;
   int curlit;
   cell *prev1=NULL,*prev2=NULL;
@@ -2499,7 +2531,13 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
   assert(cur+2<=numdim);        /* there must be 2 dimensions or more to do */
   assert(errorfound!=NULL && *errorfound==FALSE);
   totalsize=0;
-  needtoken('{');
+  needtoken('{');  
+  for (do_insert=0,idx=0; idx<=cur; idx++) {
+    if (dim[idx]==0) {
+      do_insert=TRUE;
+      break;
+    } /* if */
+  } /* for */  
   for (idx=0,abortparse=FALSE; !abortparse; idx++) {
     /* In case the major dimension is zero, we need to store the offset
      * to the newly detected sub-array into the indirection table; i.e.
@@ -2509,7 +2547,7 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
      * necessary at this point to reserve space for an extra cell in the
      * indirection vector.
      */
-    if (dim[cur]==0) {
+    if (do_insert) {
       litinsert(0,startlit);
     } else if (idx>=dim[cur]) {
       error(18);                /* initialization data exceeds array size */
@@ -2768,7 +2806,7 @@ static void decl_const(int vclass)
 /*  decl_enum   - declare enumerated constants
  *
  */
-static void decl_enum(int vclass)
+static void decl_enum(int vclass,int fstatic)
 {
   char enumname[sNAMEMAX+1],constname[sNAMEMAX+1];
   cell val,value,size;
@@ -2777,6 +2815,9 @@ static void decl_enum(int vclass)
   cell increment,multiplier;
   constvalue *enumroot;
   symbol *enumsym;
+  short filenum;
+
+  filenum=fcurrent;
 
   /* get an explicit tag, if any (we need to remember whether an explicit
    * tag was passed, even if that explicit tag was "_:", so we cannot call
@@ -2820,8 +2861,11 @@ static void decl_enum(int vclass)
   if (strlen(enumname)>0) {
     /* already create the root symbol, so the fields can have it as their "parent" */
     enumsym=add_constant(enumname,0,vclass,tag);
-    if (enumsym!=NULL)
+    if (enumsym!=NULL) {
       enumsym->usage |= uENUMROOT;
+      if (fstatic)
+        enumsym->fnumber=filenum;
+    }
     /* start a new list for the element names */
     if ((enumroot=(constvalue*)malloc(sizeof(constvalue)))==NULL)
       error(103);                       /* insufficient memory (fatal error) */
@@ -2868,6 +2912,10 @@ static void decl_enum(int vclass)
     sym->dim.array.length=size;
     sym->dim.array.level=0;
     sym->parent=enumsym;
+
+    if (fstatic)
+      sym->fnumber=filenum;
+
     /* add the constant to a separate list as well */
     if (enumroot!=NULL) {
       sym->usage |= uENUMFIELD;
@@ -3179,7 +3227,7 @@ static int operatoradjust(int opertok,symbol *sym,char *opername,int resulttag)
       error(62);      /* number or placement of the operands does not fit the operator */
   } /* switch */
 
-  if (tags[0]==0 && (opertok!='=' && tags[1]==0 || opertok=='=' && resulttag==0))
+  if (tags[0]==0 && ((opertok!='=' && tags[1]==0) || (opertok=='=' && resulttag==0)))
     error(64);        /* cannot change predefined operators */
 
   /* change the operator name */
@@ -3324,21 +3372,19 @@ SC_FUNC char *funcdisplayname(char *dest,char *funcname)
 
 static void check_reparse(symbol *sym)
 {
-  /* if the function was used before being declared, add a third pass (as
-   * second "skimming" parse) because:
-   *
-   * - the function result may have been used with user-defined operators,
-   *   which have now been incorrectly flagged (as the return tag was unknown
-   *   at the time of the call)
-   *
-   * - one or more of the function's arguments involve global variables that
-   *   have been declared before the function; in this situation the arguments
-   *   are uknown at the time the funtion is called, so the variable may not
-   *   be marked as read (uREAD) and may therefore be omitted from the
-   *   resulting P-code
+  /* if the function was used before being declared, and it has a tag for the
+   * result, add a third pass (as second "skimming" parse) because the function
+   * result may have been used with user-defined operators, which have now
+   * been incorrectly flagged (as the return tag was unknown at the time of
+   * the call)
    */
-  if ((sym->usage & (uPROTOTYPED | uREAD))==uREAD)
-    sc_reparse=TRUE; /* must add another pass to "initial scan" phase */
+  if ((sym->usage & (uPROTOTYPED | uREAD))==uREAD && sym->tag!=0) {
+    int curstatus=sc_status;
+    sc_status=statWRITE;  /* temporarily set status to WRITE, so the warning isn't blocked */
+    error(208);
+    sc_status=curstatus;
+    sc_reparse=TRUE;      /* must add another pass to "initial scan" phase */
+  } /* if */
 }
 
 static void funcstub(int fnative)
@@ -3381,7 +3427,7 @@ static void funcstub(int fnative)
   tok=lex(&val,&str);
   fpublic=(tok==tPUBLIC) || (tok==tSYMBOL && str[0]==PUBLIC_CHAR);
   if (fnative) {
-    if (fpublic || tok==tSTOCK || tok==tSTATIC || tok==tSYMBOL && *str==PUBLIC_CHAR)
+    if (fpublic || tok==tSTOCK || tok==tSTATIC || (tok==tSYMBOL && *str==PUBLIC_CHAR))
       error(42);                /* invalid combination of class specifiers */
   } else {
     if (tok==tPUBLIC || tok==tSTOCK || tok==tSTATIC)
@@ -3506,7 +3552,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     tag= (firsttag>=0) ? firsttag : pc_addtag(NULL);
     tok=lex(&val,&str);
     assert(!fpublic);
-    if (tok==tNATIVE || tok==tPUBLIC && stock)
+    if (tok==tNATIVE || (tok==tPUBLIC && stock))
       error(42);                /* invalid combination of class specifiers */
     if (tok==tOPERATOR) {
       opertok=operatorname(symbolname);
@@ -3741,7 +3787,7 @@ static int declargs(symbol *sym,int chkshadow)
   ident=iVARIABLE;
   numtags=0;
   fconst=FALSE;
-  fpublic=(sym->usage & uPUBLIC)!=0;
+  fpublic= (sym->usage & uPUBLIC)!=0;
   /* the '(' parantheses has already been parsed */
   if (!matchtoken(')')){
     do {                                /* there are arguments; process them */
@@ -3855,7 +3901,7 @@ static int declargs(symbol *sym,int chkshadow)
         error(10);                      /* illegal function or declaration */
       } /* switch */
     } while (tok=='&' || tok==tLABEL || tok==tCONST
-             || tok!=tELLIPS && matchtoken(',')); /* more? */
+             || (tok!=tELLIPS && matchtoken(','))); /* more? */
     /* if the next token is not ",", it should be ")" */
     needtoken(')');
   } /* if */
@@ -4885,9 +4931,9 @@ SC_FUNC symbol *add_constant(char *name,cell val,int vclass,int tag)
    * constants are stored in the symbols table, this also finds previously
    * defind constants. */
   sym=findglb(name,sSTATEVAR);
-  if (!sym)
+  if (sym==NULL)
     sym=findloc(name);
-  if (sym) {
+  if (sym!=NULL) {
     int redef=0;
     if (sym->ident!=iCONSTEXPR)
       redef=1;                  /* redefinition a function/variable to a constant is not allowed */
@@ -4929,8 +4975,61 @@ SC_FUNC symbol *add_constant(char *name,cell val,int vclass,int tag)
 redef_enumfield:
   sym=addsym(name,val,iCONSTEXPR,vclass,tag,uDEFINE);
   assert(sym!=NULL);            /* fatal error 103 must be given on error */
-  if (sc_status == statIDLE)
-    sym->usage |= uPREDEF;
+  return sym;
+}
+
+/* add_builtin_constant
+ *
+ * Adds a predefined constant to the symbol table.
+ */
+SC_FUNC symbol *add_builtin_constant(char *name,cell val,int vclass,int tag)
+{
+  symbol *sym;
+
+  sym=add_constant(name,val,vclass,tag);
+  sym->flags|=flagPREDEF;
+  return sym;
+}
+
+/*  add_builtin_string_constant
+ *
+ *  Adds a predefined string constant to the symbol table.
+ */
+SC_FUNC symbol *add_builtin_string_constant(char *name,const char *val,
+                                            int vclass)
+{
+  symbol *sym;
+
+  /* Test whether a global or local symbol with the same name exists. Since
+   * constants are stored in the symbols table, this also finds previously
+   * defind constants. */
+  sym=findglb(name,sSTATEVAR);
+  if (sym==NULL)
+    sym=findloc(name);
+  if (sym!=NULL) {
+    if (sym->ident!=iARRAY) {
+      error(21,name);           /* symbol already defined */
+      return NULL;
+    } /* if */
+  } else {
+    sym=addsym(name,0,iARRAY,vclass,0,uDEFINE | uSTOCK);
+  } /* if */
+  sym->addr=(litidx+glb_declared)*sizeof(cell);
+  /* Store this constant only if it's used somewhere. This can be detected
+   * in the second stage. */
+  if (sc_status==statIDLE
+      || (sc_status==statWRITE && (sym->usage & uREAD)!=0)) {
+    assert(litidx==0);
+    begdseg();
+    while (*val!='\0')
+      litadd(*val++);
+    litadd(0);
+    glb_declared+=litidx;
+    dumplits();
+    litidx=0;
+  }
+  sym->usage|=uDEFINE;
+  sym->flags|=flagPREDEF;
   return sym;
 }
 
@@ -4976,7 +5075,9 @@ static void statement(int *lastindent,int allow_decl)
     } /* if */
     break;
   case tSTATIC:
-    if (allow_decl) {
+    if (matchtoken(tENUM))
+      decl_enum(sLOCAL,FALSE);
+    else if (allow_decl) {
       declloc(TRUE);
       lastst=tNEW;
     } else {
@@ -5053,7 +5154,8 @@ static void statement(int *lastindent,int allow_decl)
     decl_const(sLOCAL);
     break;
   case tENUM:
-    decl_enum(sLOCAL);
+    matchtoken(tSTATIC);
+    decl_enum(sLOCAL,FALSE);
     break;
   default:          /* non-empty expression */
     sc_allowproccall=optproccall;
@@ -5734,7 +5836,7 @@ static void doreturn(void)
     if ((rettype & uRETVALUE)!=0) {
       int retarray=(ident==iARRAY || ident==iREFARRAY);
       /* there was an earlier "return" statement in this function */
-      if ((sub==NULL && retarray && sym!=NULL) || sub!=NULL && !retarray)
+      if ((sub==NULL && retarray && sym!=NULL) || (sub!=NULL && !retarray))
         error(79);                      /* mixing "return array;" and "return value;" */
       if (retarray && (curfunc->usage & uPUBLIC)!=0)
         error(90,curfunc->name);        /* public function may not return array */
@@ -5745,7 +5847,7 @@ static void doreturn(void)
     if (!matchtag(curfunc->tag,tag,TRUE))
       error(213);                       /* tagname mismatch */
     if (ident==iARRAY || ident==iREFARRAY) {
-      int dim[sDIMEN_MAX],numdim;
+      int dim[sDIMEN_MAX],numdim=0;
       cell arraysize;
       if (sym==NULL) {
         /* array literals cannot be returned directly */
