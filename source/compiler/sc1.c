@@ -3569,11 +3569,9 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   /* so it is not a prototype, proceed */
   /* if this is a function that is not referred to (this can only be detected
    * in the second stage), shut code generation off */
-  sym->func_skipped=FALSE;
   if (sc_status==statWRITE && (sym->usage & uREAD)==0 && !fpublic) {
     sc_status=statSKIP;
     cidx=code_idx;
-    sym->func_skipped=TRUE;
     glbdecl=glb_declared;
   } /* if */
   if ((sym->flags & flgDEPRECATED)!=0) {
