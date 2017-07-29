@@ -137,6 +137,14 @@ static void dostate(void);
 static void addwhile(int *ptr);
 static void delwhile(void);
 static int *readwhile(void);
+static void doasm(void);
+
+typedef void (OPHANDLER_CALL *OPCODE_PROC)(char *name);
+typedef struct {
+  cell opcode;
+  char *name;
+  OPCODE_PROC func;
+} ASM_OPCODE;
 
 enum {
   TEST_PLAIN,           /* no parentheses */
@@ -878,6 +886,7 @@ static void resetglobals(void)
   sc_curstates=0;
   pc_memflags=0;
   pc_naked=FALSE;
+  asm_block_parsing=FALSE;
 }
 
 static void initglobals(void)
@@ -1616,6 +1625,11 @@ static void parse(void)
     switch (tok) {
     case 0:
       /* ignore zero's */
+      break;
+    case tASM:
+      asm_block_parsing=FALSE;
+      lex(&val,&str);
+      asm_parse_line();
       break;
     case tNEW:
       if (getclassspec(tok,&fpublic,&fstatic,&fstock,&fconst))
@@ -2464,9 +2478,9 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
        * known dimensions)
        * (do not use dumpzero(), as it bypasses the literal queue)
        */
-      if(idx==numdim) 
+      if(idx==numdim)
         *size=calc_arraysize(dim,numdim,0);
-      else 
+      else
         *size=0; /* size of one or more dimensions is unknown */
       for (tablesize=calc_arraysize(dim,numdim-1,0); tablesize>0; tablesize--)
         litadd(0);
@@ -2531,13 +2545,13 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
   assert(cur+2<=numdim);        /* there must be 2 dimensions or more to do */
   assert(errorfound!=NULL && *errorfound==FALSE);
   totalsize=0;
-  needtoken('{');  
+  needtoken('{');
   for (do_insert=0,idx=0; idx<=cur; idx++) {
     if (dim[idx]==0) {
       do_insert=TRUE;
       break;
     } /* if */
-  } /* for */  
+  } /* for */
   for (idx=0,abortparse=FALSE; !abortparse; idx++) {
     /* In case the major dimension is zero, we need to store the offset
      * to the newly detected sub-array into the indirection table; i.e.
@@ -5051,6 +5065,13 @@ static void statement(int *lastindent,int allow_decl)
   errorset(sRESET,0);
 
   tok=lex(&val,&st);
+  if (tok==tASM) {
+    doasm();
+    return;
+  } else if (asm_block_parsing) {
+    asm_parse_line();
+    return;
+  }
   if (tok!='{') {
     insert_dbgline(fline);
     setline(TRUE);
@@ -5771,6 +5792,582 @@ static void dolabel(void)
    */
   setstk(-declared*sizeof(cell));
   sym->usage|=uDEFINE;  /* label is now defined */
+}
+
+static void check_empty(const unsigned char *lptr)
+{
+  /* verifies that the string contains only whitespace */
+  while (*lptr<=' ' && *lptr!='\0')
+    lptr++;
+  if (*lptr!='\0'&&*lptr!='}')
+    error(38);          /* extra characters on line */
+}
+
+static void asm_invalid_token(int need_token, int current_token)
+{
+  char s[sNAMEMAX+ 2];
+  extern char *sc_tokens[];
+
+  if (current_token<256) {
+    sprintf(s,"%c",(char)current_token);
+  } else {
+    strcpy(s,sc_tokens[current_token-tFIRST]);
+  } /* if */
+  error(1,sc_tokens[tSYMBOL-tFIRST],s);
+}
+
+static void asm_param_num(char *name, ucell *p, int size)
+{
+  char *str;
+  cell val;
+  symbol *sym;
+  int tok;
+  char ival[sNAMEMAX+2]="-";
+  extern char *sc_tokens[];
+  int curp=0;
+
+  do {
+    switch (tok=lex(&val, &str)) {
+    case tRATIONAL:
+    case tNUMBER:
+      p[curp]=val;
+      break;
+    case tSYMBOL:
+      sym=findloc(str);
+      if (sym==NULL)
+        sym=findglb(str,sSTATEVAR);
+      if (sym==NULL || (sym->ident!=iFUNCTN && sym->ident!=iREFFUNC && (sym->usage & uDEFINE)==0) || sym->ident==iLABEL) {
+        error(17,str);  /* undefined symbol */
+      } else {
+        if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
+          if ((sym->usage & uNATIVE)!=0) {
+            if ((sym->usage & uREAD)==0 && sym->addr>=0)
+              sym->addr=ntv_funcid++;
+          }
+          p[curp]=sym->addr;
+          markusage(sym,uREAD);
+        } else {
+          p[curp]=sym->addr;
+          markusage(sym,uREAD|uWRITTEN);
+        } /* if */
+      } /* if */
+      break;
+    default:
+      if ((char)tok=='-') {
+        tok=lex(&val,&str);
+        if (tok==tNUMBER) {
+          p[curp]=-val;
+          break;
+        } else if (tok==tRATIONAL) {
+          p[curp]=val|0x80000000;
+          break;
+        } else {
+          strcpy(ival+1,str);
+          error(1,sc_tokens[tSYMBOL-tFIRST],ival);
+          break;
+        } /* if */
+      } /* if */
+      if (tok<256) {
+        sprintf(ival,"%c",(char)tok);
+      } else {
+        strcpy(ival,sc_tokens[tok-tFIRST]);
+      } /* if */
+      error(1,sc_tokens[tSYMBOL-tFIRST],ival);
+    } /* switch */
+  } while (++curp < size);
+}
+
+static void asm_param_data(char *name, ucell *p, int size)
+{
+  cell val;
+  char *str;
+  symbol *sym;
+  int curp=0;
+  int tok;
+  extern char *sc_tokens[];
+
+  do {
+    tok=lex(&val,&str);
+    if (tok!=tSYMBOL) {
+      asm_invalid_token(tSYMBOL, tok);
+    } /* if */
+    sym=findloc(str);
+    if (sym==NULL || sym->vclass!=sSTATIC)
+      sym=findglb(str,sGLOBAL);
+    if (sym==NULL) {
+      error(17,str);
+    } else {
+      if (sym->ident!=iVARIABLE) {
+        error(17,str);  /* undefined symbol */
+      } /* if */
+      markusage(sym,uREAD|uWRITTEN);
+      p[curp]=sym->addr;
+    } /* if */
+  } while (++curp < size);
+}
+
+static void OPHANDLER_CALL asm_noop(char *name)
+{
+  (void)name;
+}
+
+static void OPHANDLER_CALL asm_parm0(char *name)
+{
+  outinstr(name, 0, NULL);
+}
+
+static void OPHANDLER_CALL asm_parm1_num(char *name)
+{
+  ucell p[1];
+
+  asm_param_num(name, p, arraysize(p));
+  outinstr(name,arraysize(p),p);
+}
+
+static void OPHANDLER_CALL asm_parm1_gvar(char *name)
+{
+  ucell p[1];
+
+  asm_param_data(name, p, arraysize(p));
+  outinstr(name,arraysize(p),p);
+}
+
+static void OPHANDLER_CALL asm_parm1_lbl(char *name)
+{
+  char *str;
+  cell val;
+  symbol *sym;
+  int tok;
+
+  tok=lex(&val,&str);
+  if (tok!=tSYMBOL) {
+    asm_invalid_token(tSYMBOL, tok);
+  } /* if */
+  sym=fetchlab(str);
+  sym->usage|=uREAD;
+  outinstr(name,1,&sym->addr);
+}
+
+static void OPHANDLER_CALL asm_parm2_num(char *name)
+{
+  ucell p[2];
+
+  asm_param_num(name, p, arraysize(p));
+  outinstr(name,arraysize(p),p);
+}
+
+static void OPHANDLER_CALL asm_parm2_gvar(char *name)
+{
+  ucell p[2];
+
+  asm_param_data(name, p, arraysize(p));
+  outinstr(name,arraysize(p),p);
+}
+
+static void OPHANDLER_CALL asm_parm2_gvar_num(char *name)
+{
+  cell val;
+  char *str;
+  ucell p[2];
+  symbol *sym;
+  int curp=0;
+  int tok;
+  extern char *sc_tokens[];
+
+  tok=lex(&val,&str);
+  if (tok!=tSYMBOL) {
+    asm_invalid_token(tSYMBOL, tok);
+  } /* if */
+  sym=findloc(str);
+  if (sym==NULL || sym->vclass!=sSTATIC)
+    sym=findglb(str,sGLOBAL);
+  if (sym==NULL) {
+    error(17,str);
+  } else {
+    if (sym->ident!=iVARIABLE) {
+      error(17,str);  /* undefined symbol */
+    } /* if */
+    markusage(sym,uREAD);
+    p[0]=sym->addr;
+    tok=lex(&val,&str);
+    if (tok!=tNUMBER) {
+      asm_invalid_token(tNUMBER, tok);
+    } /* if */
+    p[1]=val;
+    outinstr(name,arraysize(p),p);
+  } /* if */
+}
+
+static void OPHANDLER_CALL asm_parm3_num(char *name)
+{
+  ucell p[3];
+
+  asm_param_num(name, p, arraysize(p));
+  outinstr(name,arraysize(p),p);
+}
+
+static void OPHANDLER_CALL asm_parm3_gvar(char *name)
+{
+  ucell p[3];
+
+  asm_param_data(name, p, arraysize(p));
+  outinstr(name,arraysize(p),p);
+}
+
+static void OPHANDLER_CALL asm_parm4_num(char *name)
+{
+  ucell p[4];
+
+  asm_param_num(name, p, arraysize(p));
+  outinstr(name,arraysize(p),p);
+}
+
+static void OPHANDLER_CALL asm_parm4_gvar(char *name)
+{
+  ucell p[4];
+
+  asm_param_data(name, p, arraysize(p));
+  outinstr(name,arraysize(p),p);
+}
+
+static void OPHANDLER_CALL asm_parm5_num(char *name)
+{
+  ucell p[5];
+
+  asm_param_num(name, p, arraysize(p));
+  outinstr(name,arraysize(p),p);
+}
+
+static void OPHANDLER_CALL asm_parm5_gvar(char *name)
+{
+  ucell p[5];
+
+  asm_param_data(name, p, arraysize(p));
+  outinstr(name,arraysize(p),p);
+}
+
+static void OPHANDLER_CALL asm_do_case(char *name)
+{
+  /* case <value> <label> */
+  cell val;
+  char *str;
+  symbol* sym;
+  int tok;
+  extern char *sc_tokens[];
+
+  stgwrite("\t");
+  stgwrite(name);
+  stgwrite(" ");
+
+  tok=lex(&val,&str);
+  if (tok!=tNUMBER) {
+    asm_invalid_token(tSYMBOL, tok);
+  } /* if */
+  outval(val,FALSE);
+  tok=lex(&val,&str);
+  if (tok!=tSYMBOL) {
+    asm_invalid_token(tSYMBOL, tok);
+  } /* if */
+  sym=fetchlab(str);
+  if (sym==NULL) {
+    error(17,str);  /* undefined symbol */
+  } /* if */
+  outval(sym->addr,FALSE);
+  stgwrite("\n");
+  code_idx+=opargs(2)+opcodes(0);
+}
+
+static void OPHANDLER_CALL asm_do_lodb_strb(char *name)
+{
+  ucell val;
+  char *str;
+  int tok;
+  extern char *sc_tokens[];
+
+  tok=lex(&val,&str);
+  if (tok!=tNUMBER) {
+    asm_invalid_token(tNUMBER, tok);
+  } /* if */
+  if (val!=1 && val!=2 && val!=4) {
+    error(50);  /* invalid range */
+  } /* if */
+  outinstr(name,1,&val);
+}
+
+static void OPHANDLER_CALL asm_do_call(char *name)
+{
+  cell val;
+  char *str;
+  symbol *sym;
+  int tok;
+  extern char *sc_tokens[];
+
+  tok=lex(&val,&str);
+  if (tok!=tSYMBOL) {
+    asm_invalid_token(tSYMBOL, tok);
+  } /* if */
+  sym=findglb(str,sGLOBAL);
+  if (sym==NULL) {
+    error(12);  /* invalid function call */
+  } else {
+    stgwrite("\t");
+    stgwrite(name);
+    stgwrite(" ");
+    stgwrite(".");
+    stgwrite(str);
+    stgwrite("\n");
+    code_idx+=opcodes(1)+opargs(1);
+    markusage(sym,uREAD);
+  }
+}
+
+static ASM_OPCODE asm_opcodelist[] = {
+  {  0, NULL,         asm_noop },
+  { 78, "add",        asm_parm0 },
+  { 87, "add.c",      asm_parm1_num },
+  { 14, "addr.alt",   asm_parm1_num },
+  { 13, "addr.pri",   asm_parm1_num },
+  { 30, "align.alt",  asm_parm1_num },
+  { 29, "align.pri",  asm_parm1_num },
+  { 81, "and",        asm_parm0 },
+  {121, "bounds",     asm_parm1_num },
+  {137, "break",      asm_parm0 },
+  { 49, "call",       asm_do_call },
+  { 50, "call.pri",   asm_parm0 },
+  {  0, "case",       asm_do_case },
+  {130, "casetbl",    asm_parm0 },
+  {118, "cmps",       asm_parm1_num },
+  {156, "const",      asm_parm2_gvar_num },
+  { 12, "const.alt",  asm_parm1_num },
+  { 11, "const.pri",  asm_parm1_num },
+  {157, "const.s",    asm_parm2_num },
+  {114, "dec",        asm_parm1_gvar },
+  {113, "dec.alt",    asm_parm0 },
+  {116, "dec.i",      asm_parm0 },
+  {112, "dec.pri",    asm_parm0 },
+  {115, "dec.s",      asm_parm1_num },
+  { 95, "eq",         asm_parm0 },
+  {106, "eq.c.alt",   asm_parm1_num },
+  {105, "eq.c.pri",   asm_parm1_num },
+/*{124, "file",       do_file }, */
+  {119, "fill",       asm_parm1_num },
+  {100, "geq",        asm_parm0 },
+  { 99, "grtr",       asm_parm0 },
+  {120, "halt",       asm_parm1_num },
+  { 45, "heap",       asm_parm1_num },
+  { 27, "idxaddr",    asm_parm0 },
+  { 28, "idxaddr.b",  asm_parm1_num },
+  {109, "inc",        asm_parm1_gvar },
+  {108, "inc.alt",    asm_parm0 },
+  {111, "inc.i",      asm_parm0 },
+  {107, "inc.pri",    asm_parm0 },
+  {110, "inc.s",      asm_parm1_num },
+  { 86, "invert",     asm_parm0 },
+  { 55, "jeq",        asm_parm1_lbl },
+  { 60, "jgeq",       asm_parm1_lbl },
+  { 59, "jgrtr",      asm_parm1_lbl },
+  { 58, "jleq",       asm_parm1_lbl },
+  { 57, "jless",      asm_parm1_lbl },
+  { 56, "jneq",       asm_parm1_lbl },
+  { 54, "jnz",        asm_parm1_lbl },
+  { 52, "jrel",       asm_parm1_num },
+  { 64, "jsgeq",      asm_parm1_lbl },
+  { 63, "jsgrtr",     asm_parm1_lbl },
+  { 62, "jsleq",      asm_parm1_lbl },
+  { 61, "jsless",     asm_parm1_lbl },
+  { 51, "jump",       asm_parm1_lbl },
+  {128, "jump.pri",   asm_parm0 },
+  { 53, "jzer",       asm_parm1_lbl },
+  { 31, "lctrl",      asm_parm1_num },
+  { 98, "leq",        asm_parm0 },
+  { 97, "less",       asm_parm0 },
+  { 25, "lidx",       asm_parm0 },
+  { 26, "lidx.b",     asm_parm1_num },
+/*{125, "line",       asm_parm2_num }, */
+  {  2, "load.alt",   asm_parm1_gvar },
+  {154, "load.both",  asm_parm2_gvar },
+  {  9, "load.i",     asm_parm0 },
+  {  1, "load.pri",   asm_parm1_gvar },
+  {  4, "load.s.alt", asm_parm1_num },
+  {155, "load.s.both",asm_parm2_num },
+  {  3, "load.s.pri", asm_parm1_num },
+  { 10, "lodb.i",     asm_do_lodb_strb },
+  {  6, "lref.alt",   asm_parm1_gvar },
+  {  5, "lref.pri",   asm_parm1_gvar },
+  {  8, "lref.s.alt", asm_parm1_num },
+  {  7, "lref.s.pri", asm_parm1_num },
+  { 34, "move.alt",   asm_parm0 },
+  { 33, "move.pri",   asm_parm0 },
+  {117, "movs",       asm_parm1_num },
+  { 85, "neg",        asm_parm0 },
+  { 96, "neq",        asm_parm0 },
+  {134, "nop",        asm_parm0 },
+  { 84, "not",        asm_parm0 },
+  { 82, "or",         asm_parm0 },
+  { 43, "pop.alt",    asm_parm0 },
+  { 42, "pop.pri",    asm_parm0 },
+  { 46, "proc",       asm_parm0 },
+  { 40, "push",       asm_parm1_gvar },
+  {133, "push.adr",   asm_parm1_num },
+  { 37, "push.alt",   asm_parm0 },
+  { 39, "push.c",     asm_parm1_num },
+  { 36, "push.pri",   asm_parm0 },
+  { 38, "push.r",     asm_parm1_num },
+  { 41, "push.s",     asm_parm1_num },
+  {139, "push2",      asm_parm2_gvar },
+  {141, "push2.adr",  asm_parm2_num },
+  {138, "push2.c",    asm_parm2_num },
+  {140, "push2.s",    asm_parm2_num },
+  {143, "push3",      asm_parm3_gvar },
+  {145, "push3.adr",  asm_parm3_num },
+  {142, "push3.c",    asm_parm3_num },
+  {144, "push3.s",    asm_parm3_num },
+  {147, "push4",      asm_parm4_gvar },
+  {149, "push4.adr",  asm_parm4_num },
+  {146, "push4.c",    asm_parm4_num },
+  {148, "push4.s",    asm_parm4_num },
+  {151, "push5",      asm_parm5_gvar },
+  {153, "push5.adr",  asm_parm5_num },
+  {150, "push5.c",    asm_parm5_num },
+  {152, "push5.s",    asm_parm5_num },
+  { 47, "ret",        asm_parm0 },
+  { 48, "retn",       asm_parm0 },
+  { 32, "sctrl",      asm_parm1_num },
+  { 73, "sdiv",       asm_parm0 },
+  { 74, "sdiv.alt",   asm_parm0 },
+  {104, "sgeq",       asm_parm0 },
+  {103, "sgrtr",      asm_parm0 },
+  { 65, "shl",        asm_parm0 },
+  { 69, "shl.c.alt",  asm_parm1_num },
+  { 68, "shl.c.pri",  asm_parm1_num },
+  { 66, "shr",        asm_parm0 },
+  { 71, "shr.c.alt",  asm_parm1_num },
+  { 70, "shr.c.pri",  asm_parm1_num },
+  { 94, "sign.alt",   asm_parm0 },
+  { 93, "sign.pri",   asm_parm0 },
+  {102, "sleq",       asm_parm0 },
+  {101, "sless",      asm_parm0 },
+  { 72, "smul",       asm_parm0 },
+  { 88, "smul.c",     asm_parm1_num },
+/*{127, "srange",     asm_parm2_num }, */
+  { 20, "sref.alt",   asm_parm1_gvar },
+  { 19, "sref.pri",   asm_parm1_gvar },
+  { 22, "sref.s.alt", asm_parm1_num },
+  { 21, "sref.s.pri", asm_parm1_num },
+  { 67, "sshr",       asm_parm0 },
+  { 44, "stack",      asm_parm1_num },
+  { 16, "stor.alt",   asm_parm1_gvar },
+  { 23, "stor.i",     asm_parm0 },
+  { 15, "stor.pri",   asm_parm1_gvar },
+  { 18, "stor.s.alt", asm_parm1_num },
+  { 17, "stor.s.pri", asm_parm1_num },
+  { 24, "strb.i",     asm_do_lodb_strb },
+  { 79, "sub",        asm_parm0 },
+  { 80, "sub.alt",    asm_parm0 },
+  {132, "swap.alt",   asm_parm0 },
+  {131, "swap.pri",   asm_parm0 },
+  {129, "switch",     asm_parm1_lbl },
+/*{126, "symbol",     do_symbol }, */
+/*{136, "symtag",     asm_parm1_num }, */
+  {123, "sysreq.c",   asm_parm1_num },
+  {135, "sysreq.n",   asm_parm2_num },
+  {122, "sysreq.pri", asm_parm0 },
+  { 76, "udiv",       asm_parm0 },
+  { 77, "udiv.alt",   asm_parm0 },
+  { 75, "umul",       asm_parm0 },
+  { 35, "xchg",       asm_parm0 },
+  { 83, "xor",        asm_parm0 },
+  { 91, "zero",       asm_parm1_gvar },
+  { 90, "zero.alt",   asm_parm0 },
+  { 89, "zero.pri",   asm_parm0 },
+  { 92, "zero.s",     asm_parm1_num },
+};
+
+static int asm_findopcode(char *instr,int maxlen)
+{
+  int low,high,mid,cmp;
+  char str[MAX_INSTR_LEN];
+
+  if (maxlen>=MAX_INSTR_LEN)
+    return 0;
+  strlcpy(str,instr,maxlen+1);
+  /* look up the instruction with a binary search
+   * the assembler is case insensitive to instructions (but case sensitive
+   * to symbols)
+   */
+  low=1;                /* entry 0 is reserved (for "not found") */
+  high=(sizeof asm_opcodelist / sizeof asm_opcodelist[0])-1;
+  while (low<high) {
+    mid=(low+high)/2;
+    assert(asm_opcodelist[mid].name!=NULL);
+    cmp=stricmp(str,asm_opcodelist[mid].name);
+    if (cmp>0)
+      low=mid+1;
+    else
+      high=mid;
+  } /* while */
+
+  assert(low==high);
+  if (stricmp(str,asm_opcodelist[low].name)==0)
+    return low;         /* found */
+  return 0;             /* not found, return special index */
+}
+
+SC_FUNC void asm_parse_line(void)
+{
+  cell val;
+  char* st;
+  int tok,len,i;
+  symbol *sym;
+  char name[MAX_INSTR_LEN];
+
+  tok=tokeninfo(&val,&st);
+  if (tok==tSYMBOL || (tok > tMIDDLE && tok <= tLAST)) {
+    /* get the token length */
+    if (tok > tMIDDLE && tok <= tLAST) {
+      extern char *sc_tokens[];
+      len=strlen(sc_tokens[tok-tFIRST]);
+    } else {
+      len=strlen(st);
+    } /* if */
+    lptr-=len;
+    for(i=0; i<sizeof(name) && (isalnum(*lptr) || *lptr=='.'); ++i,++lptr) {
+      name[i]=(char)tolower(*lptr);
+    } /* for */
+    name[i]='\0';
+    i=asm_findopcode(name,strlen(name));
+    if (asm_opcodelist[i].name==NULL && *name!='\0') {
+      error(104,name); /* invalid assembler instruction */
+    } /* if */
+    asm_opcodelist[i].func(name);
+    check_empty(lptr);
+  } else if (tok==tLABEL) {
+    if (!asm_block_parsing) {
+      error(38);  /* extra characters on line */
+    } /* if */
+    sym=fetchlab(st);
+    setlabel((int)sym->addr);
+    sym->usage|=uDEFINE;
+  } /* if */
+  if ((asm_block_parsing && matchtoken('}')) || !asm_block_parsing) {
+    matchtoken(';');
+    asm_block_parsing=FALSE;
+  } /* if */
+}
+
+static void doasm(void)
+{
+  cell val;
+  char *st;
+
+  asm_block_parsing=FALSE;
+  if (matchtoken('{')) {
+    lexpush();
+    asm_block_parsing=TRUE;
+  } else {
+    lex(&val,&st);
+    asm_parse_line();
+  }
 }
 
 /*  fetchlab

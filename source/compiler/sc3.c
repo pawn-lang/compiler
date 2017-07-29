@@ -1448,6 +1448,17 @@ static int hier2(value *lval)
     } /* if */
     return FALSE;
   } /* case */
+  case tASM: {
+    cell val;
+    char* st;
+    if (!matchtoken('{'))
+      error(38);
+    lex(&val,&st);
+    asm_parse_line();
+    if (!matchtoken('}'))
+      error(38);
+    return FALSE;
+  } /* asm */
   default:
     lexpush();
     lvalue=hier1(lval);

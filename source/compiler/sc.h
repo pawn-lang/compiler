@@ -44,6 +44,24 @@
 #include "../amx/osdefs.h"
 #include "../amx/amx.h"
 
+#if defined _MSC_VER
+  #define OPHANDLER_CALL __fastcall
+#elif defined __GNUC__
+  #if defined __clang__
+    #define OPHANDLER_CALL __attribute__((fastcall))
+  #elif (defined __i386__ || defined __x86_64__ || defined __amd64__)
+    #if __GNUC__>=4 || __GNUC__==3 && __GNUC_MINOR__>=4
+      #define OPHANDLER_CALL __attribute__((fastcall))
+    #else
+      #define OPHANDLER_CALL __attribute__((regparam(3)))
+    #endif
+  #else
+    #define OPHANDLER_CALL
+  #endif
+#else
+  #define OPHANDLER_CALL
+#endif
+
 /* Note: the "cell" and "ucell" types are defined in AMX.H */
 
 #define PUBLIC_CHAR '@'     /* character that defines a function "public" */
@@ -293,7 +311,7 @@ typedef struct s_valuepair {
  */
 #define tFIRST      256 /* value of first multi-character operator */
 #define tMIDDLE     280 /* value of last multi-character operator */
-#define tLAST       329 /* value of last multi-character match-able token */
+#define tLAST       330 /* value of last multi-character match-able token */
 /* multi-character operators */
 #define taMULT      256 /* *= */
 #define taDIV       257 /* /= */
@@ -321,67 +339,68 @@ typedef struct s_valuepair {
 #define tDBLDOT     279 /* .. */
 #define tDBLCOLON   280 /* :: */
 /* reserved words (statements) */
-#define tASSERT     281
-#define tBEGIN      282
-#define tBREAK      283
-#define tCASE       284
-#define tCHAR       285
-#define tCONST      286
-#define tCONTINUE   287
-#define tDEFAULT    288
-#define tDEFINED    289
-#define tDO         290
-#define tELSE       291
-#define tEND        292
-#define tENUM       293
-#define tEXIT       294
-#define tFOR        295
-#define tFORWARD    296
-#define tGOTO       297
-#define tIF         298
-#define tNATIVE     299
-#define tNEW        300
-#define tOPERATOR   301
-#define tPUBLIC     302
-#define tRETURN     303
-#define tSIZEOF     304
-#define tSLEEP      305
-#define tSTATE      306
-#define tSTATIC     307
-#define tSTOCK      308
-#define tSWITCH     309
-#define tTAGOF      310
-#define tTHEN       311
-#define tWHILE      312
+#define tASM        281
+#define tASSERT     282
+#define tBEGIN      283
+#define tBREAK      284
+#define tCASE       285
+#define tCHAR       286
+#define tCONST      287
+#define tCONTINUE   288
+#define tDEFAULT    289
+#define tDEFINED    290
+#define tDO         291
+#define tELSE       292
+#define tEND        293
+#define tENUM       294
+#define tEXIT       295
+#define tFOR        296
+#define tFORWARD    297
+#define tGOTO       298
+#define tIF         299
+#define tNATIVE     300
+#define tNEW        301
+#define tOPERATOR   302
+#define tPUBLIC     303
+#define tRETURN     304
+#define tSIZEOF     305
+#define tSLEEP      306
+#define tSTATE      307
+#define tSTATIC     308
+#define tSTOCK      309
+#define tSWITCH     310
+#define tTAGOF      311
+#define tTHEN       312
+#define tWHILE      313
 /* compiler directives */
-#define tpASSERT    313 /* #assert */
-#define tpDEFINE    314
-#define tpELSE      315 /* #else */
-#define tpELSEIF    316 /* #elseif */
-#define tpEMIT      317
-#define tpENDIF     318
-#define tpENDINPUT  319
-#define tpENDSCRPT  320
-#define tpERROR     321
-#define tpFILE      322
-#define tpIF        323 /* #if */
-#define tINCLUDE    324
-#define tpLINE      325
-#define tpPRAGMA    326
-#define tpTRYINCLUDE 327
-#define tpUNDEF     328
-#define tpWARNING   329
+#define tpASSERT    314 /* #assert */
+#define tpDEFINE    315
+#define tpELSE      316 /* #else */
+#define tpELSEIF    317 /* #elseif */
+#define tpEMIT      318
+#define tpENDIF     319
+#define tpENDINPUT  320
+#define tpENDSCRPT  321
+#define tpERROR     322
+#define tpFILE      323
+#define tpIF        324 /* #if */
+#define tINCLUDE    325
+#define tpLINE      326
+#define tpPRAGMA    327
+#define tpTRYINCLUDE 328
+#define tpUNDEF     329
+#define tpWARNING   330
 /* semicolon is a special case, because it can be optional */
-#define tTERM       330 /* semicolon or newline */
-#define tENDEXPR    331 /* forced end of expression */
+#define tTERM       331 /* semicolon or newline */
+#define tENDEXPR    332 /* forced end of expression */
 /* other recognized tokens */
-#define tNUMBER     332 /* integer number */
-#define tRATIONAL   333 /* rational number */
-#define tSYMBOL     334
-#define tLABEL      335
-#define tSTRING     336
-#define tEXPR       337 /* for assigment to "lastst" only (see SC1.C) */
-#define tENDLESS    338 /* endless loop, for assigment to "lastst" only */
+#define tNUMBER     333 /* integer number */
+#define tRATIONAL   334 /* rational number */
+#define tSYMBOL     335
+#define tLABEL      336
+#define tSTRING     337
+#define tEXPR       338 /* for assigment to "lastst" only (see SC1.C) */
+#define tENDLESS    339 /* endless loop, for assigment to "lastst" only */
 
 /* (reversed) evaluation of staging buffer */
 #define sSTARTREORDER 0x01
@@ -449,6 +468,7 @@ typedef enum s_optmark {
 #define TAGMASK       (~PUBLICTAG)
 #define CELL_MAX      (((ucell)1 << (sizeof(cell)*8-1)) - 1)
 
+#define MAX_INSTR_LEN   30
 
 /* interface functions */
 #if defined __cplusplus
@@ -532,6 +552,7 @@ SC_FUNC symbol *add_builtin_constant(char *name,cell val,int vclass,int tag);
 SC_FUNC symbol *add_builtin_string_constant(char *name,const char *val,int vclass);
 SC_FUNC void exporttag(int tag);
 SC_FUNC void sc_attachdocumentation(symbol *sym);
+SC_FUNC void asm_parse_line(void);
 
 /* function prototypes in SC2.C */
 #define PUSHSTK_P(v)  { stkitem s_; s_.pv=(v); pushstk(s_); }
@@ -667,6 +688,7 @@ SC_FUNC void dec(value *lval);
 SC_FUNC void jmp_ne0(int number);
 SC_FUNC void jmp_eq0(int number);
 SC_FUNC void outval(cell val,int newline);
+SC_FUNC void outinstr(const char *name, int nargs, ucell *args);
 
 /* function prototypes in SC5.C */
 SC_FUNC int error(int number,...);
@@ -832,6 +854,8 @@ SC_VDECL FILE *inpf_org;      /* main source file */
 SC_VDECL FILE *outf;          /* file written to */
 
 SC_VDECL jmp_buf errbuf;      /* target of longjmp() on a fatal error */
+
+SC_VDECL int asm_block_parsing;
 
 #if !defined SC_LIGHT
   SC_VDECL int sc_makereport; /* generate a cross-reference report */

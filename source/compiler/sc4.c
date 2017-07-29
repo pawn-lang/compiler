@@ -1371,3 +1371,21 @@ SC_FUNC void outval(cell val,int newline)
   if (newline)
     stgwrite("\n");
 }
+
+/* write an instruction with arguments */
+SC_FUNC void outinstr(const char *name, int nargs, ucell *args)
+{
+  int i;
+
+  stgwrite("\t");
+  stgwrite(name);
+
+  for (i=0; i<nargs; i++) {
+    stgwrite(" ");
+    stgwrite(itoh(args[i]));
+  } /* for */
+
+  stgwrite("\n");
+
+  code_idx+=opargs(nargs)+opcodes(1);
+}
