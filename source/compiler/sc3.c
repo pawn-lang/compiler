@@ -1454,6 +1454,7 @@ static int hier2(value *lval)
     if (!matchtoken('{'))
       error(38);
     lex(&val,&st);
+    lval->ident=iEXPRESSION;
     asm_parse_line();
     if (!matchtoken('}'))
       error(38);
