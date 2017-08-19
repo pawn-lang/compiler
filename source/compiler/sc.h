@@ -50,7 +50,7 @@
   #if defined __clang__
     #define OPHANDLER_CALL __attribute__((fastcall))
   #elif (defined __i386__ || defined __x86_64__ || defined __amd64__)
-    #if __GNUC__>=4 || __GNUC__==3 && __GNUC_MINOR__>=4
+    #if !defined __x86_64__ && !defined __amd64__ && (__GNUC__>=4 || __GNUC__==3 && __GNUC_MINOR__>=4)
       #define OPHANDLER_CALL __attribute__((fastcall))
     #else
       #define OPHANDLER_CALL __attribute__((regparam(3)))
