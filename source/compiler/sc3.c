@@ -1984,7 +1984,9 @@ static int nesting=0;
      * reserved memory block as a hidden parameter
      */
     retsize=(int)array_totalsize(symret);
-    assert(retsize>0);
+    if (retsize<=0) {
+      error(92,sym->name);
+    } /* if */
     modheap(retsize*sizeof(cell));/* address is in ALT */
     pushreg(sALT);                /* pass ALT as the last (hidden) parameter */
     decl_heap+=retsize;
