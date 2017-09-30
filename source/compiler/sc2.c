@@ -1122,8 +1122,10 @@ static int command(void)
           while (*lptr<=' ' && *lptr!='\0')
             lptr++;
           pc_deprecate=(char*)malloc(strlen((char*)lptr)+1);
-          if (pc_deprecate!=NULL)
-            strcpy(pc_deprecate,(char*)lptr);
+          if (pc_deprecate!=NULL) {
+            strcpy(pc_deprecate,lptr);
+            pc_deprecate[strcspn(pc_deprecate,"\r\n")]='\0';
+          } /* if */
           lptr=(unsigned char*)strchr((char*)lptr,'\0'); /* skip to end (ignore "extra characters on line") */
         } else if (strcmp(str,"dynamic")==0) {
           preproc_expr(&pc_stksize,NULL);
@@ -1490,8 +1492,13 @@ static int command(void)
   case tpWARNING:
     while (*lptr<=' ' && *lptr!='\0')
       lptr++;
-    if (!SKIPPING)
-      error(237,lptr);  /* user warning */
+    if (!SKIPPING) {
+      char *usermsg=(char*)malloc(strlen(lptr)+1);
+      strcpy(usermsg,lptr);
+      usermsg[strcspn(usermsg,"\r\n")]='\0';
+      error(237,usermsg);  /* user warning */
+      free(usermsg);
+    } /* if */
     break;
   default:
     error(31);          /* unknown compiler directive */
