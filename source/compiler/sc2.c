@@ -1494,10 +1494,14 @@ static int command(void)
       lptr++;
     if (!SKIPPING) {
       char *usermsg=(char*)malloc(strlen(lptr)+1);
-      strcpy(usermsg,lptr);
-      usermsg[strcspn(usermsg,"\r\n")]='\0';
-      error(237,usermsg);  /* user warning */
-      free(usermsg);
+      if(usermsg!=NULL) {
+        strcpy(usermsg,lptr);
+        usermsg[strcspn(usermsg,"\r\n")]='\0';
+        error(237,usermsg);  /* user warning */
+        free(usermsg);
+      } else {
+        error(237,lptr);
+      } /* if */
     } /* if */
     break;
   default:
