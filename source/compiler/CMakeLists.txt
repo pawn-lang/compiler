@@ -60,6 +60,8 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # The Pawn compiler shared library
 set(PAWNC_SRCS
+  hashmap/hashmap.c
+  hashmap/hashmap.h
   libpawnc.c
   lstring.c
   lstring.h

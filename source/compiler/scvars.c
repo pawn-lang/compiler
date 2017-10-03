@@ -33,6 +33,7 @@
  */
 SC_VDEFINE symbol loctab;                   /* local symbol table */
 SC_VDEFINE symbol glbtab;                   /* global symbol table */
+SC_VDEFINE struct hashmap symbol_cache_map;
 SC_VDEFINE cell *litq;                      /* the literal queue */
 SC_VDEFINE unsigned char pline[sLINEMAX+1]; /* the line read from the input file */
 SC_VDEFINE const unsigned char *lptr;       /* points to the current position in "pline" */

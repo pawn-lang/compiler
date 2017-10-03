@@ -761,6 +761,7 @@ cleanup:
   delete_symbols(&loctab,0,TRUE,TRUE);    /* delete local variables if not yet
                                            * done (i.e. on a fatal error) */
   delete_symbols(&glbtab,0,TRUE,TRUE);
+  hashmap_destroy(&symbol_cache_map);
   delete_consttable(&tagname_tab);
   delete_consttable(&libname_tab);
   delete_consttable(&sc_automaton_tab);
@@ -927,6 +928,7 @@ static void initglobals(void)
   litq=NULL;            /* the literal queue */
   glbtab.next=NULL;     /* clear global variables/constants table */
   loctab.next=NULL;     /*   "   local      "    /    "       "   */
+  hashmap_init(&symbol_cache_map, hashmap_hash_string, hashmap_compare_string, 100000); // TODO: make sure this is big enough
   tagname_tab.next=NULL;/* tagname table */
   libname_tab.next=NULL;/* library table (#pragma library "..." syntax) */
 
@@ -3261,8 +3263,7 @@ static int operatoradjust(int opertok,symbol *sym,char *opername,int resulttag)
         refer_symbol(sym,oldsym->refer[i]);
     delete_symbol(&glbtab,oldsym);
   } /* if */
-  strcpy(sym->name,tmpname);
-  sym->hash=namehash(sym->name);/* calculate new hash */
+  rename_symbol(sym, tmpname);
 
   /* operators should return a value, except the '~' operator */
   if (opertok!='~')

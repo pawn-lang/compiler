@@ -2644,6 +2644,9 @@ static symbol *add_symbol(symbol *root,symbol *entry,int sort)
   memcpy(newsym,entry,sizeof(symbol));
   newsym->next=root->next;
   root->next=newsym;
+  if (newsym->vclass == sGLOBAL) {
+    hashmap_put(&symbol_cache_map, newsym->name, newsym);
+  }
   return newsym;
 }
 
@@ -2688,6 +2691,8 @@ static void free_symbol(symbol *sym)
   free(sym->refer);
   if (sym->documentation!=NULL)
     free(sym->documentation);
+  if (sym->vclass == sGLOBAL)
+    hashmap_remove(&symbol_cache_map, sym->name);
   free(sym);
 }
 
@@ -2790,18 +2795,15 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
   } /* while */
 }
 
-/* The purpose of the hash is to reduce the frequency of a "name"
- * comparison (which is costly). There is little interest in avoiding
- * clusters in similar names, which is why this function is plain simple.
- */
-SC_FUNC uint32_t namehash(const char *name)
+SC_FUNC void rename_symbol(symbol *sym, const char *newname)
 {
-  const unsigned char *ptr=(const unsigned char *)name;
-  int len=strlen(name);
-  if (len==0)
-    return 0L;
-  assert(len<256);
-  return (len<<24Lu) + (ptr[0]<<16Lu) + (ptr[len-1]<<8Lu) + (ptr[len>>1Lu]);
+  char is_global = (sym->vclass == sGLOBAL);
+
+  if (is_global)
+    hashmap_remove(&symbol_cache_map, sym->name);
+  strcpy(sym->name, newname);
+  if (is_global)
+    hashmap_put(&symbol_cache_map, sym->name, sym);
 }
 
 static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int automaton,int *cmptag)
@@ -2809,9 +2811,13 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
   symbol *firstmatch=NULL;
   symbol *sym=root->next;
   int count=0;
-  unsigned long hash=namehash(name);
+  char is_global = (root == &glbtab);
+
+  if (is_global)
+    sym = hashmap_get(&symbol_cache_map, name);
+
   while (sym!=NULL) {
-    if (hash==sym->hash && strcmp(name,sym->name)==0        /* check name */
+    if ( (is_global || strcmp(name,sym->name)==0)           /* check name */
         && (sym->parent==NULL || sym->ident==iCONSTEXPR)    /* sub-types (hierarchical types) are skipped, except for enum fields */
         && (sym->fnumber<0 || sym->fnumber==fnumber))       /* check file number for scope */
     {
@@ -2834,6 +2840,8 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
         } /* if */
       } /* if */
     } /*  */
+    if (is_global)
+      break;
     sym=sym->next;
   } /* while */
   if (cmptag!=NULL && firstmatch!=NULL) {
@@ -3010,7 +3018,6 @@ SC_FUNC symbol *addsym(const char *name,cell addr,int ident,int vclass,int tag,i
   /* first fill in the entry */
   memset(&entry,0,sizeof entry);
   strcpy(entry.name,name);
-  entry.hash=namehash(name);
   entry.addr=addr;
   entry.codeaddr=code_idx;
   entry.vclass=(char)vclass;

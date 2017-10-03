@@ -41,6 +41,7 @@
 #else
   #include <setjmp.h>
 #endif
+#include "hashmap/hashmap.h"
 #include "../amx/osdefs.h"
 #include "../amx/amx.h"
 
@@ -131,7 +132,6 @@ typedef struct s_symbol {
   struct s_symbol *next;
   struct s_symbol *parent;  /* hierarchical types (multi-dimensional arrays) */
   char name[sNAMEMAX+1];
-  uint32_t hash;        /* value derived from name, for quicker searching */
   cell addr;            /* address or offset (or value for constant, index for native function) */
   cell codeaddr;        /* address (in the code segment) where the symbol declaration starts */
   char vclass;          /* sLOCAL if "addr" refers to a local symbol */
@@ -581,7 +581,7 @@ SC_FUNC void delete_symbol(symbol *root,symbol *sym);
 SC_FUNC void delete_symbols(symbol *root,int level,int del_labels,int delete_functions);
 SC_FUNC int refer_symbol(symbol *entry,symbol *bywhom);
 SC_FUNC void markusage(symbol *sym,int usage);
-SC_FUNC uint32_t namehash(const char *name);
+SC_FUNC void rename_symbol(symbol *sym, const char *newname);
 SC_FUNC symbol *findglb(const char *name,int filter);
 SC_FUNC symbol *findloc(const char *name);
 SC_FUNC symbol *findconst(const char *name,int *matchtag);
@@ -786,6 +786,7 @@ SC_FUNC int state_conflict_id(int listid1,int listid2);
 #if !defined SC_SKIP_VDECL
 SC_VDECL symbol loctab;       /* local symbol table */
 SC_VDECL symbol glbtab;       /* global symbol table */
+SC_VDECL struct hashmap symbol_cache_map;
 SC_VDECL cell *litq;          /* the literal queue */
 SC_VDECL unsigned char pline[]; /* the line read from the input file */
 SC_VDECL const unsigned char *lptr;/* points to the current position in "pline" */
