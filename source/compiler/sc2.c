@@ -3095,7 +3095,8 @@ SC_FUNC int getlabel(void)
  */
 SC_FUNC char *itoh(ucell val)
 {
-static char itohstr[30];
+  const char *hex = "0123456789abcdef";
+  static char itohstr[30];
   char *ptr;
   int i,nibble[16];             /* a 64-bit hexadecimal cell has 16 nibbles */
   int max;
@@ -3118,10 +3119,7 @@ static char itohstr[30];
   while (nibble[i]==0 && i>0)   /* search for highest non-zero nibble */
     i-=1;
   while (i>=0){
-    if (nibble[i]>=10)
-      *ptr++=(char)('a'+(nibble[i]-10));
-    else
-      *ptr++=(char)('0'+nibble[i]);
+    *ptr++ = hex[nibble[i]];
     i-=1;
   } /* while */
   *ptr='\0';            /* and a zero-terminator */
