@@ -103,7 +103,7 @@ SC_VDEFINE FILE *outf    = NULL;   /* (intermediate) text file written to */
 
 SC_VDEFINE jmp_buf errbuf;
 
-SC_VDEFINE asm_block_parsing=FALSE;
+SC_VDEFINE emit_block_parsing=FALSE;
 
 #if !defined SC_LIGHT
   SC_VDEFINE int sc_makereport=FALSE; /* generate a cross-reference report */

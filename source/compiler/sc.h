@@ -311,7 +311,7 @@ typedef struct s_valuepair {
  */
 #define tFIRST      256 /* value of first multi-character operator */
 #define tMIDDLE     280 /* value of last multi-character operator */
-#define tLAST       330 /* value of last multi-character match-able token */
+#define tLAST       331 /* value of last multi-character match-able token */
 /* multi-character operators */
 #define taMULT      256 /* *= */
 #define taDIV       257 /* /= */
@@ -339,68 +339,69 @@ typedef struct s_valuepair {
 #define tDBLDOT     279 /* .. */
 #define tDBLCOLON   280 /* :: */
 /* reserved words (statements) */
-#define tASM        281
-#define tASSERT     282
-#define tBEGIN      283
-#define tBREAK      284
-#define tCASE       285
-#define tCHAR       286
-#define tCONST      287
-#define tCONTINUE   288
-#define tDEFAULT    289
-#define tDEFINED    290
-#define tDO         291
-#define tELSE       292
-#define tEND        293
-#define tENUM       294
-#define tEXIT       295
-#define tFOR        296
-#define tFORWARD    297
-#define tGOTO       298
-#define tIF         299
-#define tNATIVE     300
-#define tNEW        301
-#define tOPERATOR   302
-#define tPUBLIC     303
-#define tRETURN     304
-#define tSIZEOF     305
-#define tSLEEP      306
-#define tSTATE      307
-#define tSTATIC     308
-#define tSTOCK      309
-#define tSWITCH     310
-#define tTAGOF      311
-#define tTHEN       312
-#define tWHILE      313
+#define tASSERT     281
+#define tBEGIN      282
+#define tBREAK      283
+#define tCASE       284
+#define tCHAR       285
+#define tCONST      286
+#define tCONTINUE   287
+#define tDEFAULT    288
+#define tDEFINED    289
+#define tDO         290
+#define tELSE       291
+#define tEMIT       292
+#define t__EMIT     293
+#define tEND        294
+#define tENUM       295
+#define tEXIT       296
+#define tFOR        297
+#define tFORWARD    298
+#define tGOTO       299
+#define tIF         300
+#define tNATIVE     301
+#define tNEW        302
+#define tOPERATOR   303
+#define tPUBLIC     304
+#define tRETURN     305
+#define tSIZEOF     306
+#define tSLEEP      307
+#define tSTATE      308
+#define tSTATIC     309
+#define tSTOCK      310
+#define tSWITCH     311
+#define tTAGOF      312
+#define tTHEN       313
+#define tWHILE      314
 /* compiler directives */
-#define tpASSERT    314 /* #assert */
-#define tpDEFINE    315
-#define tpELSE      316 /* #else */
-#define tpELSEIF    317 /* #elseif */
-#define tpEMIT      318
-#define tpENDIF     319
-#define tpENDINPUT  320
-#define tpENDSCRPT  321
-#define tpERROR     322
-#define tpFILE      323
-#define tpIF        324 /* #if */
-#define tINCLUDE    325
-#define tpLINE      326
-#define tpPRAGMA    327
-#define tpTRYINCLUDE 328
-#define tpUNDEF     329
-#define tpWARNING   330
+#define tpASSERT    315 /* #assert */
+#define tpDEFINE    316
+#define tpELSE      317 /* #else */
+#define tpELSEIF    318 /* #elseif */
+#define tpEMIT      319
+#define tpENDIF     320
+#define tpENDINPUT  321
+#define tpENDSCRPT  322
+#define tpERROR     323
+#define tpFILE      324
+#define tpIF        325 /* #if */
+#define tINCLUDE    326
+#define tpLINE      327
+#define tpPRAGMA    328
+#define tpTRYINCLUDE 329
+#define tpUNDEF     330
+#define tpWARNING   331
 /* semicolon is a special case, because it can be optional */
-#define tTERM       331 /* semicolon or newline */
-#define tENDEXPR    332 /* forced end of expression */
+#define tTERM       332 /* semicolon or newline */
+#define tENDEXPR    333 /* forced end of expression */
 /* other recognized tokens */
-#define tNUMBER     333 /* integer number */
-#define tRATIONAL   334 /* rational number */
-#define tSYMBOL     335
-#define tLABEL      336
-#define tSTRING     337
-#define tEXPR       338 /* for assigment to "lastst" only (see SC1.C) */
-#define tENDLESS    339 /* endless loop, for assigment to "lastst" only */
+#define tNUMBER     334 /* integer number */
+#define tRATIONAL   335 /* rational number */
+#define tSYMBOL     336
+#define tLABEL      337
+#define tSTRING     338
+#define tEXPR       339 /* for assigment to "lastst" only (see SC1.C) */
+#define tENDLESS    340 /* endless loop, for assigment to "lastst" only */
 
 /* (reversed) evaluation of staging buffer */
 #define sSTARTREORDER 0x01
@@ -552,7 +553,7 @@ SC_FUNC symbol *add_builtin_constant(char *name,cell val,int vclass,int tag);
 SC_FUNC symbol *add_builtin_string_constant(char *name,const char *val,int vclass);
 SC_FUNC void exporttag(int tag);
 SC_FUNC void sc_attachdocumentation(symbol *sym);
-SC_FUNC void asm_parse_line(void);
+SC_FUNC void emit_parse_line(void);
 
 /* function prototypes in SC2.C */
 #define PUSHSTK_P(v)  { stkitem s_; s_.pv=(v); pushstk(s_); }
@@ -855,7 +856,7 @@ SC_VDECL FILE *outf;          /* file written to */
 
 SC_VDECL jmp_buf errbuf;      /* target of longjmp() on a fatal error */
 
-SC_VDECL int asm_block_parsing;
+SC_VDECL int emit_block_parsing;
 
 #if !defined SC_LIGHT
   SC_VDECL int sc_makereport; /* generate a cross-reference report */
