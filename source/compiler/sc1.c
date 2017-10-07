@@ -1209,7 +1209,7 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
       } /* if */
       strlcpy(str,argv[arg],i+1);       /* str holds symbol name */
       i=atoi(ptr+1);
-      add_constant(str,i,sGLOBAL,0);
+      add_builtin_constant(str,i,sGLOBAL,0);
     } else {
       strlcpy(str,argv[arg],sizeof(str)-2); /* -2 because default extension is ".p" */
       set_extension(str,".p",FALSE);
