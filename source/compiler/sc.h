@@ -44,6 +44,24 @@
 #include "../amx/osdefs.h"
 #include "../amx/amx.h"
 
+#if defined _MSC_VER
+  #define OPHANDLER_CALL __fastcall
+#elif defined __GNUC__
+  #if defined __clang__
+    #define OPHANDLER_CALL __attribute__((fastcall))
+  #elif (defined __i386__ || defined __x86_64__ || defined __amd64__)
+    #if !defined __x86_64__ && !defined __amd64__ && (__GNUC__>=4 || __GNUC__==3 && __GNUC_MINOR__>=4)
+      #define OPHANDLER_CALL __attribute__((fastcall))
+    #else
+      #define OPHANDLER_CALL __attribute__((regparam(3)))
+    #endif
+  #else
+    #define OPHANDLER_CALL
+  #endif
+#else
+  #define OPHANDLER_CALL
+#endif
+
 /* Note: the "cell" and "ucell" types are defined in AMX.H */
 
 #define PUBLIC_CHAR '@'     /* character that defines a function "public" */
@@ -293,7 +311,7 @@ typedef struct s_valuepair {
  */
 #define tFIRST      256 /* value of first multi-character operator */
 #define tMIDDLE     280 /* value of last multi-character operator */
-#define tLAST       329 /* value of last multi-character match-able token */
+#define tLAST       331 /* value of last multi-character match-able token */
 /* multi-character operators */
 #define taMULT      256 /* *= */
 #define taDIV       257 /* /= */
@@ -332,56 +350,58 @@ typedef struct s_valuepair {
 #define tDEFINED    289
 #define tDO         290
 #define tELSE       291
-#define tEND        292
-#define tENUM       293
-#define tEXIT       294
-#define tFOR        295
-#define tFORWARD    296
-#define tGOTO       297
-#define tIF         298
-#define tNATIVE     299
-#define tNEW        300
-#define tOPERATOR   301
-#define tPUBLIC     302
-#define tRETURN     303
-#define tSIZEOF     304
-#define tSLEEP      305
-#define tSTATE      306
-#define tSTATIC     307
-#define tSTOCK      308
-#define tSWITCH     309
-#define tTAGOF      310
-#define tTHEN       311
-#define tWHILE      312
+#define tEMIT       292
+#define t__EMIT     293
+#define tEND        294
+#define tENUM       295
+#define tEXIT       296
+#define tFOR        297
+#define tFORWARD    298
+#define tGOTO       299
+#define tIF         300
+#define tNATIVE     301
+#define tNEW        302
+#define tOPERATOR   303
+#define tPUBLIC     304
+#define tRETURN     305
+#define tSIZEOF     306
+#define tSLEEP      307
+#define tSTATE      308
+#define tSTATIC     309
+#define tSTOCK      310
+#define tSWITCH     311
+#define tTAGOF      312
+#define tTHEN       313
+#define tWHILE      314
 /* compiler directives */
-#define tpASSERT    313 /* #assert */
-#define tpDEFINE    314
-#define tpELSE      315 /* #else */
-#define tpELSEIF    316 /* #elseif */
-#define tpEMIT      317
-#define tpENDIF     318
-#define tpENDINPUT  319
-#define tpENDSCRPT  320
-#define tpERROR     321
-#define tpFILE      322
-#define tpIF        323 /* #if */
-#define tINCLUDE    324
-#define tpLINE      325
-#define tpPRAGMA    326
-#define tpTRYINCLUDE 327
-#define tpUNDEF     328
-#define tpWARNING   329
+#define tpASSERT    315 /* #assert */
+#define tpDEFINE    316
+#define tpELSE      317 /* #else */
+#define tpELSEIF    318 /* #elseif */
+#define tpEMIT      319
+#define tpENDIF     320
+#define tpENDINPUT  321
+#define tpENDSCRPT  322
+#define tpERROR     323
+#define tpFILE      324
+#define tpIF        325 /* #if */
+#define tINCLUDE    326
+#define tpLINE      327
+#define tpPRAGMA    328
+#define tpTRYINCLUDE 329
+#define tpUNDEF     330
+#define tpWARNING   331
 /* semicolon is a special case, because it can be optional */
-#define tTERM       330 /* semicolon or newline */
-#define tENDEXPR    331 /* forced end of expression */
+#define tTERM       332 /* semicolon or newline */
+#define tENDEXPR    333 /* forced end of expression */
 /* other recognized tokens */
-#define tNUMBER     332 /* integer number */
-#define tRATIONAL   333 /* rational number */
-#define tSYMBOL     334
-#define tLABEL      335
-#define tSTRING     336
-#define tEXPR       337 /* for assigment to "lastst" only (see SC1.C) */
-#define tENDLESS    338 /* endless loop, for assigment to "lastst" only */
+#define tNUMBER     334 /* integer number */
+#define tRATIONAL   335 /* rational number */
+#define tSYMBOL     336
+#define tLABEL      337
+#define tSTRING     338
+#define tEXPR       339 /* for assigment to "lastst" only (see SC1.C) */
+#define tENDLESS    340 /* endless loop, for assigment to "lastst" only */
 
 /* (reversed) evaluation of staging buffer */
 #define sSTARTREORDER 0x01
@@ -449,6 +469,7 @@ typedef enum s_optmark {
 #define TAGMASK       (~PUBLICTAG)
 #define CELL_MAX      (((ucell)1 << (sizeof(cell)*8-1)) - 1)
 
+#define MAX_INSTR_LEN   30
 
 /* interface functions */
 #if defined __cplusplus
@@ -532,6 +553,7 @@ SC_FUNC symbol *add_builtin_constant(char *name,cell val,int vclass,int tag);
 SC_FUNC symbol *add_builtin_string_constant(char *name,const char *val,int vclass);
 SC_FUNC void exporttag(int tag);
 SC_FUNC void sc_attachdocumentation(symbol *sym);
+SC_FUNC void emit_parse_line(void);
 
 /* function prototypes in SC2.C */
 #define PUSHSTK_P(v)  { stkitem s_; s_.pv=(v); pushstk(s_); }
@@ -667,6 +689,7 @@ SC_FUNC void dec(value *lval);
 SC_FUNC void jmp_ne0(int number);
 SC_FUNC void jmp_eq0(int number);
 SC_FUNC void outval(cell val,int newline);
+SC_FUNC void outinstr(const char *name, int nargs, ucell *args);
 
 /* function prototypes in SC5.C */
 SC_FUNC int error(int number,...);
@@ -832,6 +855,8 @@ SC_VDECL FILE *inpf_org;      /* main source file */
 SC_VDECL FILE *outf;          /* file written to */
 
 SC_VDECL jmp_buf errbuf;      /* target of longjmp() on a fatal error */
+
+SC_VDECL int emit_block_parsing;
 
 #if !defined SC_LIGHT
   SC_VDECL int sc_makereport; /* generate a cross-reference report */

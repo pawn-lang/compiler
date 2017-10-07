@@ -1448,6 +1448,19 @@ static int hier2(value *lval)
     } /* if */
     return FALSE;
   } /* case */
+  case tEMIT:
+  case t__EMIT: {
+    cell val;
+    char* st;
+    if (!matchtoken('{'))
+      error(38);
+    lex(&val,&st);
+    lval->ident=iEXPRESSION;
+    emit_parse_line();
+    if (!matchtoken('}'))
+      error(38);
+    return FALSE;
+  } /* case */
   default:
     lexpush();
     lvalue=hier1(lval);
