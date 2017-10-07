@@ -417,9 +417,12 @@ static void readline(unsigned char *line)
           ptr--;        /* skip trailing whitespace */
         if (*ptr=='\\') {
           cont=TRUE;
+          while (*(ptr-1)<=' ' && *(ptr-1)!='\0')
+            ptr--;
           /* set '\a' at the position of '\\' to make it possible to check
            * for a line continuation in a single line comment (error 49)
            */
+          /* delete trailing whitespace before continuation */
           *ptr++='\a';
           *ptr='\0';    /* erase '\n' (and any trailing whitespace) */
         } /* if */
@@ -460,7 +463,7 @@ static void stripcom(unsigned char *line)
     prev_singleline=FALSE;  /* preset */
   #endif
 
-  while (*line){
+  while (*line) {
     if (icomment!=0) {
       if (*line=='*' && *(line+1)=='/') {
         #if !defined SC_LIGHT
@@ -553,6 +556,9 @@ static void stripcom(unsigned char *line)
         } /* if */
       } /* if */
     } /* if */
+    if (*line == '\a') {
+      *line = ' ';
+    }
   } /* while */
   #if !defined SC_LIGHT
     if (icomment==2) {
