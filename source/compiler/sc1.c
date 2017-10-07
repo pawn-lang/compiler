@@ -6629,7 +6629,6 @@ static void dosleep(void)
 
 static void dostate(void)
 {
-  char name[sNAMEMAX+1];
   constvalue *automaton;
   constvalue *state;
   constvalue *stlist;
@@ -6698,13 +6697,13 @@ static void dostate(void)
         listid=-1;
       } /* if */
       listindex=0;
-      length=strlen(name)+70; /* +70 for the fixed part "<transition ... />\n" */
+      length=strlen(state->name)+70; /* +70 for the fixed part "<transition ... />\n" */
       /* see if there are any condition strings to attach */
       for (index=0; (str=get_autolist(index))!=NULL; index++)
         length+=strlen(str);
       if ((doc=(char*)malloc(length*sizeof(char)))!=NULL) {
         do {
-          sprintf(doc,"<transition target=\"%s\"",name);
+          sprintf(doc,"<transition target=\"%s\"",state->name);
           if (listid>=0) {
             /* get the source state */
             stateindex=state_listitem(listid,listindex);
