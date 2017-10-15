@@ -2662,6 +2662,8 @@ static symbol *add_symbol(symbol *root,symbol *entry,int sort)
       } /* if */
       new_cache_sym->symbol=newsym;
       new_cache_sym->next=NULL;
+      while(cache_sym->next!=NULL)
+        cache_sym=cache_sym->next;
       cache_sym->next=new_cache_sym;
     }
   }
