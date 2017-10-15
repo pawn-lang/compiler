@@ -2929,6 +2929,8 @@ static void decl_enum(int vclass,int fstatic)
     sym->dim.array.length=size;
     sym->dim.array.level=0;
     sym->parent=enumsym;
+    if (enumsym)
+      enumsym->child=sym;
 
     if (fstatic)
       sym->fnumber=filenum;
@@ -3522,6 +3524,8 @@ static void funcstub(int fnative)
     assert(sym!=NULL);
     sub=addvariable(symbolname,0,iARRAY,sGLOBAL,tag,dim,numdim,idxtag,0);
     sub->parent=sym;
+    if (sym)
+      sym->child=sub;
   } /* if */
 
   litidx=0;                     /* clear the literal pool */
@@ -6513,6 +6517,8 @@ static void doreturn(void)
           sub=addvariable(curfunc->name,(argcount+3)*sizeof(cell),iREFARRAY,sGLOBAL,
                           curfunc->tag,dim,numdim,idxtag,0);
           sub->parent=curfunc;
+          if (curfunc)
+            curfunc->child=sub;
         } /* if */
         /* get the hidden parameter, copy the array (the array is on the heap;
          * it stays on the heap for the moment, and it is removed -usually- at

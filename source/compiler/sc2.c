@@ -2855,12 +2855,8 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
 
 static symbol *find_symbol_child(const symbol *root,const symbol *sym)
 {
-  symbol *ptr=root->next;
-  while (ptr!=NULL) {
-    if (ptr->parent==sym)
-      return ptr;
-    ptr=ptr->next;
-  } /* while */
+  if (sym->child && sym->child->parent == sym)
+    return sym->child;
   return NULL;
 }
 
@@ -3062,6 +3058,8 @@ SC_FUNC symbol *addvariable(const char *name,cell addr,int ident,int vclass,int 
       top->dim.array.level=(short)(numdim-level-1);
       top->x.tags.index=idxtag[level];
       top->parent=parent;
+      if (parent)
+        parent->child=top;
       if (vclass==sLOCAL || vclass==sSTATIC) {
         top->compound=compound;  /* for multiple declaration/shadowing check */
       } /* if */

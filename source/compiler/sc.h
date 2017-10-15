@@ -131,6 +131,7 @@ typedef struct s_constvalue {
 typedef struct s_symbol {
   struct s_symbol *next;
   struct s_symbol *parent;  /* hierarchical types (multi-dimensional arrays) */
+  struct s_symbol *child;
   char name[sNAMEMAX+1];
   cell addr;            /* address or offset (or value for constant, index for native function) */
   cell codeaddr;        /* address (in the code segment) where the symbol declaration starts */
