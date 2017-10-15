@@ -166,6 +166,12 @@ typedef struct s_symbol {
   char *documentation;  /* optional documentation string */
 } symbol;
 
+/* new symbol struct for cached global symbols with the same names*/
+typedef struct s_symbol2 {
+  struct s_symbol *symbol;
+  struct s_symbol2 *next;
+} symbol2;
+
 
 /*  Possible entries for "ident". These are used in the "symbol", "value"
  *  and arginfo structures. Not every constant is valid for every use.

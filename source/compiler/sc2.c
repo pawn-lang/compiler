@@ -2632,6 +2632,8 @@ SC_FUNC int ishex(char c)
 static symbol *add_symbol(symbol *root,symbol *entry,int sort)
 {
   symbol *newsym;
+  symbol2 *cache_sym;
+  symbol2 *new_cache_sym;
 
   if (sort)
     while (root->next!=NULL && strcmp(entry->name,root->next->name)>0)
@@ -2645,7 +2647,23 @@ static symbol *add_symbol(symbol *root,symbol *entry,int sort)
   newsym->next=root->next;
   root->next=newsym;
   if (newsym->vclass == sGLOBAL) {
-    hashmap_put(&symbol_cache_map, newsym->name, newsym);
+    if ((cache_sym=hashmap_get(&symbol_cache_map, newsym->name))==NULL) {
+      if ((cache_sym=(symbol2 *)malloc(sizeof(symbol2)))==NULL) {
+        error(103);
+        return NULL;
+      } /* if */
+      cache_sym->symbol=newsym;
+      cache_sym->next=NULL;
+      hashmap_put(&symbol_cache_map, newsym->name, cache_sym);
+    } else {
+      if ((new_cache_sym=(symbol2 *)malloc(sizeof(symbol2)))==NULL) {
+        error(103);
+        return NULL;
+      } /* if */
+      new_cache_sym->symbol=newsym;
+      new_cache_sym->next=NULL;
+      cache_sym->next=new_cache_sym;
+    }
   }
   return newsym;
 }
@@ -2653,6 +2671,8 @@ static symbol *add_symbol(symbol *root,symbol *entry,int sort)
 static void free_symbol(symbol *sym)
 {
   arginfo *arg;
+  symbol2 *cache_sym;
+  symbol2 *parent_cache_sym=NULL;
 
   /* free all sub-symbol allocated memory blocks, depending on the
    * kind of the symbol
@@ -2691,8 +2711,24 @@ static void free_symbol(symbol *sym)
   free(sym->refer);
   if (sym->documentation!=NULL)
     free(sym->documentation);
-  if (sym->vclass == sGLOBAL)
-    hashmap_remove(&symbol_cache_map, sym->name);
+  if (sym->vclass == sGLOBAL) {
+    cache_sym=hashmap_get(&symbol_cache_map, sym->name);
+    while (cache_sym!=NULL) {
+      if (cache_sym->symbol!=sym) {
+        parent_cache_sym=cache_sym;
+        cache_sym=cache_sym->next;
+        continue;
+      }
+
+      if (parent_cache_sym!=NULL) {
+        parent_cache_sym->next=cache_sym->next;
+        free(cache_sym);
+      } else {
+        hashmap_remove(&symbol_cache_map, sym->name);
+      }
+      break;
+    }
+  }
   free(sym);
 }
 
@@ -2798,23 +2834,33 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
 SC_FUNC void rename_symbol(symbol *sym, const char *newname)
 {
   char is_global = (sym->vclass == sGLOBAL);
+  symbol2 *cache_sym;
 
-  if (is_global)
-    hashmap_remove(&symbol_cache_map, sym->name);
+  if (is_global) {
+    cache_sym=hashmap_get(&symbol_cache_map, sym->name);
+    if (cache_sym!=NULL)
+      hashmap_remove(&symbol_cache_map, sym->name); // TODO what if there are multiple symbols with same name and rename happens?
+  }
   strcpy(sym->name, newname);
-  if (is_global)
-    hashmap_put(&symbol_cache_map, sym->name, sym);
+  if (is_global && cache_sym != NULL)
+    hashmap_put(&symbol_cache_map, sym->name, cache_sym);
 }
 
 static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int automaton,int *cmptag)
 {
   symbol *firstmatch=NULL;
   symbol *sym=root->next;
+  symbol2 *cache_sym=NULL;
   int count=0;
   char is_global = (root == &glbtab);
 
-  if (is_global)
-    sym = hashmap_get(&symbol_cache_map, name);
+  if (is_global) {
+    cache_sym=hashmap_get(&symbol_cache_map, name);
+    if (cache_sym)
+      sym = cache_sym->symbol;
+    else
+      sym = NULL;
+  }
 
   while (sym!=NULL) {
     if ( (is_global || strcmp(name,sym->name)==0)           /* check name */
@@ -2840,9 +2886,15 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
         } /* if */
       } /* if */
     } /*  */
-    if (is_global)
-      break;
-    sym=sym->next;
+    if (is_global) {
+      cache_sym=cache_sym->next;
+      if (cache_sym)
+        sym = cache_sym->symbol;
+      else
+        sym = NULL;
+    } else {
+      sym=sym->next;
+    }
   } /* while */
   if (cmptag!=NULL && firstmatch!=NULL) {
     if (*cmptag==0)
