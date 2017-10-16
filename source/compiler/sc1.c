@@ -928,7 +928,7 @@ static void initglobals(void)
   litq=NULL;            /* the literal queue */
   glbtab.next=NULL;     /* clear global variables/constants table */
   loctab.next=NULL;     /*   "   local      "    /    "       "   */
-  hashmap_init(&symbol_cache_map, hashmap_hash_string, hashmap_compare_string, 100000); // TODO: make sure this is big enough
+  hashmap_init(&symbol_cache_map, hashmap_hash_string, hashmap_compare_string, 10000000); // TODO: make sure this is big enough
   tagname_tab.next=NULL;/* tagname table */
   libname_tab.next=NULL;/* library table (#pragma library "..." syntax) */
 
