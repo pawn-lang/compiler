@@ -3156,33 +3156,17 @@ SC_FUNC int getlabel(void)
  */
 SC_FUNC char *itoh(ucell val)
 {
-  const char *hex = "0123456789abcdef";
-  static char itohstr[30];
-  char *ptr;
-  int i,nibble[16];             /* a 64-bit hexadecimal cell has 16 nibbles */
-  int max;
+  static const char hex[16]=
+    { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+  static char itohstr[17]=
+    { '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0' };
+  char *ptr=&itohstr[15];
 
-  #if PAWN_CELL_SIZE==16
-    max=4;
-  #elif PAWN_CELL_SIZE==32
-    max=8;
-  #elif PAWN_CELL_SIZE==64
-    max=16;
-  #else
-    #error Unsupported cell size
-  #endif
-  ptr=itohstr;
-  for (i=0; i<max; i+=1){
-    nibble[i]=(int)(val & 0x0f);        /* nibble 0 is lowest nibble */
-    val>>=4;
-  } /* endfor */
-  i=max-1;
-  while (nibble[i]==0 && i>0)   /* search for highest non-zero nibble */
-    i-=1;
-  while (i>=0){
-    *ptr++ = hex[nibble[i]];
-    i-=1;
-  } /* while */
-  *ptr='\0';            /* and a zero-terminator */
-  return itohstr;
+#if PAWN_CELL_SIZE>64
+  #error Unsupported cell size
+#endif
+  do {
+    *ptr-- = hex[val&(ucell)0x0f];
+  } while ((val>>=4)!=0);
+  return ptr+1;
 }
