@@ -928,7 +928,7 @@ static void initglobals(void)
   litq=NULL;            /* the literal queue */
   glbtab.next=NULL;     /* clear global variables/constants table */
   loctab.next=NULL;     /*   "   local      "    /    "       "   */
-  hashmap_init(&symbol_cache_map, hashmap_hash_string, hashmap_compare_string, 10000000); // TODO: make sure this is big enough
+  hashmap_init(&symbol_cache_map,hashmap_hash_string,hashmap_compare_string,10000000); // TODO: make sure this is big enough
   tagname_tab.next=NULL;/* tagname table */
   libname_tab.next=NULL;/* library table (#pragma library "..." syntax) */
 
@@ -3265,7 +3265,7 @@ static int operatoradjust(int opertok,symbol *sym,char *opername,int resulttag)
         refer_symbol(sym,oldsym->refer[i]);
     delete_symbol(&glbtab,oldsym);
   } /* if */
-  rename_symbol(sym, tmpname);
+  rename_symbol(sym,tmpname);
 
   /* operators should return a value, except the '~' operator */
   if (opertok!='~')

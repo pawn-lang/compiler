@@ -1387,9 +1387,9 @@ SC_FUNC void stgwrite(const char *st)
     stgbuf[stgidx++]='\0';
   } else {
     len=(stgbuf!=NULL) ? stglen : 0;
-    st_len = strlen(st);
+    st_len=strlen(st);
     CHECK_STGBUFFER(len+st_len+1);
-    memcpy(stgbuf + len, st, st_len + 1); //strcat(stgbuf,st);
+    memcpy(stgbuf+len,st,st_len+1); //strcat(stgbuf,st);
     len=len+st_len;
     stglen=len;
     if (len>0 && stgbuf[len-1]=='\n') {

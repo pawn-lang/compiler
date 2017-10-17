@@ -2623,6 +2623,57 @@ SC_FUNC int ishex(char c)
   return (c>='0' && c<='9') || (c>='a' && c<='f') || (c>='A' && c<='F');
 }
 
+static void symbol_cache_add(symbol *sym,symbol2 *new_cache_sym)
+{
+  symbol2 *cache_sym;
+
+  if (new_cache_sym==NULL) {
+    new_cache_sym=(symbol2 *)malloc(sizeof(symbol2));
+    if (new_cache_sym==NULL)
+      error(103);         /* insufficient memory */
+    new_cache_sym->symbol=sym;
+  }
+  new_cache_sym->next=NULL;
+
+  cache_sym=hashmap_get(&symbol_cache_map,sym->name);
+  if (cache_sym==NULL) {
+    if (hashmap_put(&symbol_cache_map,sym->name,new_cache_sym)==NULL)
+      error(103);       /* insufficient memory */
+  } else {
+    while(cache_sym->next!=NULL)
+      cache_sym=cache_sym->next;
+    cache_sym->next=new_cache_sym;
+  }
+}
+
+static symbol2 *symbol_cache_remove(symbol *sym,int free_cache_sym)
+{
+  symbol2 *cache_sym;
+  symbol2 *parent_cache_sym=NULL;
+
+  cache_sym=hashmap_get(&symbol_cache_map,sym->name);
+  if (cache_sym==NULL)
+    return NULL;
+  while (cache_sym->symbol!=sym) {
+    parent_cache_sym=cache_sym;
+    cache_sym=cache_sym->next;
+  }
+
+  if (parent_cache_sym!=NULL) {
+    parent_cache_sym->next=cache_sym->next;
+  } else {
+    hashmap_remove(&symbol_cache_map,sym->name);
+    if (cache_sym->next!=NULL)
+      if (hashmap_put(&symbol_cache_map,sym->name,cache_sym->next))
+        error(103);     /* insufficient memory */
+  }
+  if (free_cache_sym) {
+    free(cache_sym);
+    return NULL;
+  }
+  return cache_sym;
+}
+
 /* The local variable table must be searched backwards, so that the deepest
  * nesting of local variables is searched first. The simplest way to do
  * this is to insert all new items at the head of the list.
@@ -2632,8 +2683,6 @@ SC_FUNC int ishex(char c)
 static symbol *add_symbol(symbol *root,symbol *entry,int sort)
 {
   symbol *newsym;
-  symbol2 *cache_sym;
-  symbol2 *new_cache_sym;
 
   if (sort)
     while (root->next!=NULL && strcmp(entry->name,root->next->name)>0)
@@ -2646,35 +2695,14 @@ static symbol *add_symbol(symbol *root,symbol *entry,int sort)
   memcpy(newsym,entry,sizeof(symbol));
   newsym->next=root->next;
   root->next=newsym;
-  if (newsym->vclass == sGLOBAL) {
-    if ((cache_sym=hashmap_get(&symbol_cache_map, newsym->name))==NULL) {
-      if ((cache_sym=(symbol2 *)malloc(sizeof(symbol2)))==NULL) {
-        error(103);
-        return NULL;
-      } /* if */
-      cache_sym->symbol=newsym;
-      cache_sym->next=NULL;
-      hashmap_put(&symbol_cache_map, newsym->name, cache_sym);
-    } else {
-      if ((new_cache_sym=(symbol2 *)malloc(sizeof(symbol2)))==NULL) {
-        error(103);
-        return NULL;
-      } /* if */
-      new_cache_sym->symbol=newsym;
-      new_cache_sym->next=NULL;
-      while(cache_sym->next!=NULL)
-        cache_sym=cache_sym->next;
-      cache_sym->next=new_cache_sym;
-    }
-  }
+  if (newsym->vclass==sGLOBAL)
+    symbol_cache_add(newsym,NULL);
   return newsym;
 }
 
 static void free_symbol(symbol *sym)
 {
   arginfo *arg;
-  symbol2 *cache_sym;
-  symbol2 *parent_cache_sym=NULL;
 
   /* free all sub-symbol allocated memory blocks, depending on the
    * kind of the symbol
@@ -2713,24 +2741,8 @@ static void free_symbol(symbol *sym)
   free(sym->refer);
   if (sym->documentation!=NULL)
     free(sym->documentation);
-  if (sym->vclass == sGLOBAL) {
-    cache_sym=hashmap_get(&symbol_cache_map, sym->name);
-    while (cache_sym!=NULL) {
-      if (cache_sym->symbol!=sym) {
-        parent_cache_sym=cache_sym;
-        cache_sym=cache_sym->next;
-        continue;
-      }
-
-      if (parent_cache_sym!=NULL) {
-        parent_cache_sym->next=cache_sym->next;
-        free(cache_sym);
-      } else {
-        hashmap_remove(&symbol_cache_map, sym->name);
-      }
-      break;
-    }
-  }
+  if (sym->vclass==sGLOBAL)
+    symbol_cache_remove(sym,1);
   free(sym);
 }
 
@@ -2833,19 +2845,16 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
   } /* while */
 }
 
-SC_FUNC void rename_symbol(symbol *sym, const char *newname)
+SC_FUNC void rename_symbol(symbol *sym,const char *newname)
 {
-  char is_global = (sym->vclass == sGLOBAL);
+  int is_global=(sym->vclass==sGLOBAL);
   symbol2 *cache_sym;
 
-  if (is_global) {
-    cache_sym=hashmap_get(&symbol_cache_map, sym->name);
-    if (cache_sym!=NULL)
-      hashmap_remove(&symbol_cache_map, sym->name); // TODO what if there are multiple symbols with same name and rename happens?
-  }
-  strcpy(sym->name, newname);
-  if (is_global && cache_sym != NULL)
-    hashmap_put(&symbol_cache_map, sym->name, cache_sym);
+  if (is_global)
+    cache_sym=symbol_cache_remove(sym,0);
+  strcpy(sym->name,newname);
+  if (is_global && cache_sym!=NULL)
+    symbol_cache_add(sym,cache_sym);
 }
 
 static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int automaton,int *cmptag)
@@ -2854,14 +2863,14 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
   symbol *sym=root->next;
   symbol2 *cache_sym=NULL;
   int count=0;
-  char is_global = (root == &glbtab);
+  int is_global=(root==&glbtab);
 
   if (is_global) {
-    cache_sym=hashmap_get(&symbol_cache_map, name);
+    cache_sym=hashmap_get(&symbol_cache_map,name);
     if (cache_sym)
-      sym = cache_sym->symbol;
+      sym=cache_sym->symbol;
     else
-      sym = NULL;
+      sym=NULL;
   }
 
   while (sym!=NULL) {
@@ -2891,9 +2900,9 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
     if (is_global) {
       cache_sym=cache_sym->next;
       if (cache_sym)
-        sym = cache_sym->symbol;
+        sym=cache_sym->symbol;
       else
-        sym = NULL;
+        sym=NULL;
     } else {
       sym=sym->next;
     }
@@ -2909,7 +2918,7 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
 
 static symbol *find_symbol_child(const symbol *root,const symbol *sym)
 {
-  if (sym->child && sym->child->parent == sym)
+  if (sym->child && sym->child->parent==sym)
     return sym->child;
   return NULL;
 }
