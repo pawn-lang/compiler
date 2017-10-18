@@ -2630,7 +2630,7 @@ static void symbol_cache_add(symbol *sym,symbol2 *new_cache_sym)
   if (new_cache_sym==NULL) {
     new_cache_sym=(symbol2 *)malloc(sizeof(symbol2));
     if (new_cache_sym==NULL)
-      error(103);         /* insufficient memory */
+      error(103);       /* insufficient memory */
     new_cache_sym->symbol=sym;
   }
   new_cache_sym->next=NULL;
@@ -2652,9 +2652,11 @@ static symbol2 *symbol_cache_remove(symbol *sym,int free_cache_sym)
   symbol2 *parent_cache_sym=NULL;
 
   cache_sym=hashmap_get(&symbol_cache_map,sym->name);
-  if (cache_sym==NULL)
-    return NULL;
-  while (cache_sym->symbol!=sym) {
+  for ( ;; ) {
+    if (cache_sym==NULL)
+      return NULL;
+    if (cache_sym->symbol==sym)
+      break;
     parent_cache_sym=cache_sym;
     cache_sym=cache_sym->next;
   }
@@ -2664,7 +2666,7 @@ static symbol2 *symbol_cache_remove(symbol *sym,int free_cache_sym)
   } else {
     hashmap_remove(&symbol_cache_map,sym->name);
     if (cache_sym->next!=NULL)
-      if (hashmap_put(&symbol_cache_map,sym->name,cache_sym->next))
+      if (hashmap_put(&symbol_cache_map,sym->name,cache_sym->next)==NULL)
         error(103);     /* insufficient memory */
   }
   if (free_cache_sym) {
@@ -3157,14 +3159,23 @@ SC_FUNC int getlabel(void)
 SC_FUNC char *itoh(ucell val)
 {
   static const char hex[16]=
-    { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+    {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
+#if PAWN_CELL_SIZE==16
+  static char itohstr[5]=
+    {'\0','\0','\0','\0','\0'};
+  char *ptr=&itohstr[3];
+#elif PAWN_CELL_SIZE==32
+  static char itohstr[9]=
+    {'\0','\0','\0','\0','\0','\0','\0','\0','\0'};
+  char *ptr=&itohstr[7];
+#elif PAWN_CELL_SIZE==64
   static char itohstr[17]=
-    { '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0' };
+    {'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0'};
   char *ptr=&itohstr[15];
-
-#if PAWN_CELL_SIZE>64
+#else
   #error Unsupported cell size
 #endif
+
   do {
     *ptr-- = hex[val&(ucell)0x0f];
   } while ((val>>=4)!=0);
