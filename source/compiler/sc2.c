@@ -2632,8 +2632,8 @@ static void symbol_cache_add(symbol *sym,symbol2 *new_cache_sym)
     if (new_cache_sym==NULL)
       error(103);       /* insufficient memory */
     new_cache_sym->symbol=sym;
+    new_cache_sym->next=NULL;
   }
-  new_cache_sym->next=NULL;
 
   cache_sym=hashmap_get(&symbol_cache_map,sym->name);
   if (cache_sym==NULL) {
@@ -2673,6 +2673,7 @@ static symbol2 *symbol_cache_remove(symbol *sym,int free_cache_sym)
     free(cache_sym);
     return NULL;
   }
+  cache_sym->next=NULL;
   return cache_sym;
 }
 
