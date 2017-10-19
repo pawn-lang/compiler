@@ -1389,7 +1389,7 @@ SC_FUNC void stgwrite(const char *st)
     len=(stgbuf!=NULL) ? stglen : 0;
     st_len=strlen(st);
     CHECK_STGBUFFER(len+st_len+1);
-    memcpy(stgbuf+len,st,st_len+1); //strcat(stgbuf,st);
+    memcpy(stgbuf+len,st,st_len+1);
     len=len+st_len;
     stglen=len;
     if (len>0 && stgbuf[len-1]=='\n') {
