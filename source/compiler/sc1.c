@@ -761,6 +761,7 @@ cleanup:
   delete_symbols(&loctab,0,TRUE,TRUE);    /* delete local variables if not yet
                                            * done (i.e. on a fatal error) */
   delete_symbols(&glbtab,0,TRUE,TRUE);
+  line_sym=NULL;
   hashmap_destroy(&symbol_cache_map);
   delete_consttable(&tagname_tab);
   delete_consttable(&libname_tab);
@@ -1512,7 +1513,7 @@ static void setconstants(void)
 
   add_builtin_constant("__Pawn",VERSION_INT,sGLOBAL,0);
   add_builtin_constant("__PawnBuild",VERSION_BUILD,sGLOBAL,0);
-  add_builtin_constant("__line",0,sGLOBAL,0);
+  line_sym=add_builtin_constant("__line",0,sGLOBAL,0);
   add_builtin_constant("__compat",pc_compat,sGLOBAL,0);
 
   debug=0;

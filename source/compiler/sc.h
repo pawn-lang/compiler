@@ -617,7 +617,6 @@ SC_FUNC void setline(int chkbounds);
 SC_FUNC void setfiledirect(char *name);
 SC_FUNC void setfileconst(char *name);
 SC_FUNC void setlinedirect(int line);
-SC_FUNC void setlineconst(int line);
 SC_FUNC void setlabel(int index);
 SC_FUNC void markexpr(optmark type,const char *name,cell offset);
 SC_FUNC void startfunc(char *fname);
@@ -794,6 +793,7 @@ SC_FUNC int state_conflict_id(int listid1,int listid2);
 SC_VDECL symbol loctab;       /* local symbol table */
 SC_VDECL symbol glbtab;       /* global symbol table */
 SC_VDECL struct hashmap symbol_cache_map;
+SC_VDECL symbol *line_sym;
 SC_VDECL cell *litq;          /* the literal queue */
 SC_VDECL unsigned char pline[]; /* the line read from the input file */
 SC_VDECL const unsigned char *lptr;/* points to the current position in "pline" */

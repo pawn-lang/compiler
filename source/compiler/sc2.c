@@ -431,7 +431,8 @@ static void readline(unsigned char *line)
       line+=strlen((char*)line);
     } /* if */
     fline+=1;
-    setlineconst(fline);
+    assert(line_sym!=NULL);
+    line_sym->addr=fline;
   } while (num>=0 && cont);
 }
 
