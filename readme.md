@@ -13,6 +13,13 @@ What is this?
 This is a modified copy of the Pawn compiler version 3.2.3664 by Compuphase that
 fixes some bugs and adds a few features.
 
+List of changes
+---------------
+
+See [Known compiler bugs](../../wiki/Known-compiler-bugs) for the list of fixed
+bugs and [What's new](../../wiki/What's-new) for the list of features and other
+notable changes.
+
 Installation on openSUSE/SLES
 -----------------------------
 
@@ -117,13 +124,6 @@ mkdir build && cd build
 cmake ../source/compiler -DCMAKE_BUILD_TYPE=Release
 make
 ```
-
-List of changes
----------------
-
-See [Known compiler bugs](../../wiki/Known-compiler-bugs) for the list of fixed
-bugs and [What's new](../../wiki/What's-new) for the list of features and other
-notable changes.
 
 Background
 ----------
