@@ -14,8 +14,10 @@ This is a modified copy of the Pawn compiler version 3.2.3664 by Compuphase that
 fixes some bugs and adds a few features.
 
 Installation on openSUSE/SLES
----------------------
-There is an installation package available for openSUSE/SLES users so that you can easily install the compiler on your distribution. Please follow these steps:
+-----------------------------
+
+There is an installation package available for openSUSE/SLES users so that you can
+easily install the compiler on your distribution. Please follow these steps:
 
 1. Go to https://build.opensuse.org/package/show/home:mschnitzer/pawncc
 2. On the right side, select your distribution (only if it's not disabled!)
@@ -25,8 +27,99 @@ There is an installation package available for openSUSE/SLES users so that you c
 6. Install the package with `zypper in pawncc`
 7. Run `pawncc` in your shell to test if it's working
 
-Changes
--------
+Building from source code
+-------------------------
+
+In general you will need [CMake](https://cmake.org/) and a C compiller to build
+Pawn from source code.
+
+### Building on Windows
+
+* Clone this repo: `git clone https://github.com/Zeex/pawn.git C:\pawn`  (you can
+  use another directory instead of `C:\Pawn`, but make sure the path doesn't have
+  spaces).
+* Install [Visual Studio Community](https://www.visualstudio.com/vs/community/),
+  it's free.
+* Install [CMake](https://cmake.org/).
+
+  When installing make sure to check "Add CMake to system PATH" to make your life
+  easier.
+  
+* Generate a Visual Studio project.
+
+  In Command promprt or Powershell execute the following:
+  
+  ```cmd
+  cd C:\Pawn
+  mkdir build && cd build
+  cmake ..\source\compiler -G "Visual Studio 15 2017"
+  ```
+  
+* From the same directory as in the previous step run:
+
+  ```
+  cmake --build . --config Release
+  ```
+  
+  or open the pawnc.sln in Visual Studio and build from there (but make sure to
+  choose the "Release" configuration).
+
+  This will create `pawnc.dll` and `pawncc.exe` in the `Release` folder. You can
+  now copy these files to your `pawno` folder for convenience or put them in a
+  separate folder and configure your code editor accordingly.
+
+### Building on Linux
+
+Use your distribution's package manager to install the required dependencies.
+For example, in Ubuntu you would do:
+
+```sh
+sudo apt install gcc gcc-multilib make cmake
+```
+
+`gcc-multilib` is needed for compiling a 32-bit binary (64-bit is not supported).
+
+Now you can clone this repo and build the compiler:
+
+```sh
+git clone https://github.com/Zeex/pawn.git ~/pawn
+cd ~/pawn
+mkdir build && cd build
+cmake ../source/compiler -DCMAKE_BUILD_TYPE=Release
+make
+```
+
+Replace "Release" with "Debug" if you want to build a debug executable for
+development or submitting bugs.
+
+### Building on macOS
+
+* Install Xcode: https://developer.apple.com/xcode/
+
+* Install Command Line Tools for Xcode:
+
+```sh
+xcode-select --install
+```
+
+* Install CMake:
+
+```sh
+brew install cmake
+```
+
+* Now you can clone this repo and build the compiler:
+
+```sh
+git clone https://github.com/Zeex/pawn.git ~/pawn
+cd ~/pawn
+mkdir build && cd build
+cmake ../source/compiler -DCMAKE_BUILD_TYPE=Release
+make
+```
+
+List of changes
+---------------
 
 See [Known compiler bugs](../../wiki/Known-compiler-bugs) for the list of fixed
 bugs and [What's new](../../wiki/What's-new) for the list of features and other
