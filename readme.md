@@ -92,7 +92,7 @@ Now you can clone this repo and build the compiler:
 git clone https://github.com/Zeex/pawn.git ~/pawn
 cd ~/pawn
 mkdir build && cd build
-cmake ../source/compiler -DCMAKE_BUILD_TYPE=Release
+cmake ../source/compiler -DCMAKE_C_FLAGS=-m32 -DCMAKE_BUILD_TYPE=Release
 make
 ```
 
@@ -121,7 +121,7 @@ brew install cmake
 git clone https://github.com/Zeex/pawn.git ~/pawn
 cd ~/pawn
 mkdir build && cd build
-cmake ../source/compiler -DCMAKE_BUILD_TYPE=Release
+cmake ../source/compiler -DCMAKE_C_FLAGS=-m32 -DCMAKE_BUILD_TYPE=Release
 make
 ```
 
