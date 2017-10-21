@@ -5,7 +5,7 @@ Pawn
 [![Build Status - Windows][build_status_win]][build_win]
 [![Gitter][gitter_badge]][gitter]
 
-[Original readme](readme.txt)
+[Original readme](readme_compuphase.txt)
 
 What is this?
 -------------
