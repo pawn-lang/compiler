@@ -327,7 +327,11 @@ char *pc_readasm(void *handle, char *string, int maxchars)
  */
 void *pc_openbin(char *filename)
 {
-  return fopen(filename,"wb");
+  FILE *fbin;
+
+  fbin=fopen(filename,"wb");
+  setvbuf(fbin,NULL,_IOFBF,1UL<<20);
+  return fbin;
 }
 
 void pc_closebin(void *handle,int deletefile)

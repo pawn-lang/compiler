@@ -414,7 +414,11 @@ char *pc_readasm(void *handle, char *string, int maxchars)
  */
 void *pc_openbin(char *filename)
 {
-  return fopen(filename,"wb");
+  FILE *fbin;
+
+  fbin=fopen(filename,"wb");
+  setvbuf(fbin,NULL,_IOFBF,1UL<<20);
+  return fbin;
 }
 
 void pc_closebin(void *handle,int deletefile)
@@ -1716,29 +1720,42 @@ static void parse(void)
  */
 static void dumplits(void)
 {
-  int j,k;
+  int i,j;
+  static const int row_len=16;
 
   if (sc_status==statSKIP)
     return;
 
-  k=0;
-  while (k<litidx){
+  i=0;
+  while (i<litidx) {
     /* should be in the data segment */
     assert(curseg==2);
-    defstorage();
-    j=16;       /* 16 values per line */
-    while (j && k<litidx){
-      outval(litq[k], FALSE);
+    j=i+1;
+    while (j<litidx && litq[j]==litq[i])
+      j++;
+    if (j-i>=row_len-1) {
+      int count=j-i;
+      defcompactstorage();
+      outval(litq[i],FALSE);
       stgwrite(" ");
-      k++;
-      j--;
-      if (j==0 || k>=litidx)
-        stgwrite("\n");         /* force a newline after 10 dumps */
-      /* Note: stgwrite() buffers a line until it is complete. It recognizes
-       * the end of line as a sequence of "\n\0", so something like "\n\t"
-       * so should not be passed to stgwrite().
-       */
-    } /* while */
+      outval(count,TRUE);
+      i+=count;
+    } else {
+      defstorage();
+      j=row_len;       /* 16 values per line */
+      while (j && i<litidx){
+        outval(litq[i],FALSE);
+        stgwrite(" ");
+        i++;
+        j--;
+        if (j==0 || i>=litidx)
+          stgwrite("\n");         /* force a newline after 10 dumps */
+        /* Note: stgwrite() buffers a line until it is complete. It recognizes
+         * the end of line as a sequence of "\n\0", so something like "\n\t"
+         * so should not be passed to stgwrite().
+         */
+      } /* while */
+    } /* if */
   } /* while */
 }
 
@@ -1748,20 +1765,13 @@ static void dumplits(void)
  */
 static void dumpzero(int count)
 {
-  int i;
-
   if (sc_status==statSKIP || count<=0)
     return;
   assert(curseg==2);
-  defstorage();
-  i=0;
-  while (count-- > 0) {
-    outval(0, FALSE);
-    i=(i+1) % 16;
-    stgwrite((i==0 || count==0) ? "\n" : " ");
-    if (i==0 && count>0)
-      defstorage();
-  } /* while */
+  defcompactstorage();
+  outval(0, FALSE);
+  stgwrite(" ");
+  outval(count, TRUE);
 }
 
 static void aligndata(int numbytes)

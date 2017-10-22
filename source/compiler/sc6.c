@@ -382,7 +382,7 @@ static cell OPHANDLER_CALL parm5(FILE *fbin,char *params,cell opcode)
 static cell OPHANDLER_CALL do_dump(FILE *fbin,char *params,cell opcode)
 {
   ucell p;
-  int num = 0;
+  int num=0;
 
   while (*params!='\0') {
     p=getparam(params,&params);
@@ -392,6 +392,19 @@ static cell OPHANDLER_CALL do_dump(FILE *fbin,char *params,cell opcode)
     while (isspace(*params))
       params++;
   } /* while */
+  return num*sizeof(cell);
+}
+
+static cell OPHANDLER_CALL do_dumpn(FILE *fbin,char *params,cell opcode)
+{
+  ucell value,num,i;
+
+  value=getparam(params,&params);
+  num=getparam(params,NULL);
+  if (fbin!=NULL) {
+    for (i=0; i<num; i++)
+      write_encoded(fbin,&value,1);
+  } /* if */
   return num*sizeof(cell);
 }
 
@@ -521,6 +534,7 @@ static OPCODE opcodelist[] = {
   {112, "dec.pri",    sIN_CSEG, parm0 },
   {115, "dec.s",      sIN_CSEG, parm1 },
   {  0, "dump",       sIN_DSEG, do_dump },
+  {  0, "dumpn",      sIN_DSEG, do_dumpn },
   { 95, "eq",         sIN_CSEG, parm0 },
   {106, "eq.c.alt",   sIN_CSEG, parm1 },
   {105, "eq.c.pri",   sIN_CSEG, parm1 },

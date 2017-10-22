@@ -833,6 +833,15 @@ SC_FUNC void defstorage(void)
 }
 
 /*
+ *  Same as defstorage() but for repeating values.
+ */
+
+SC_FUNC void defcompactstorage()
+{
+  stgwrite("dumpn ");
+}
+
+/*
  *  Copies frame address to primary register
  */
 

@@ -639,6 +639,7 @@ SC_FUNC void ffabort(int reason);
 SC_FUNC void ffbounds(cell size);
 SC_FUNC void jumplabel(int number);
 SC_FUNC void defstorage(void);
+SC_FUNC void defcompactstorage(void);
 SC_FUNC void getfrm(void);
 SC_FUNC void modstk(int delta);
 SC_FUNC void setstk(cell value);
