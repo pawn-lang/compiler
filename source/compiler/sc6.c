@@ -385,7 +385,7 @@ static cell OPHANDLER_CALL do_dump(FILE *fbin,char *params,cell opcode)
   int num=0;
 
   while (*params!='\0') {
-    p=getparam(params,&params);
+    p=hex2long(params,&params);
     if (fbin!=NULL)
       write_encoded(fbin,&p,1);
     num++;
@@ -399,8 +399,8 @@ static cell OPHANDLER_CALL do_dumpn(FILE *fbin,char *params,cell opcode)
 {
   ucell value,num,i;
 
-  value=getparam(params,&params);
-  num=getparam(params,NULL);
+  value=hex2long(params,&params);
+  num=hex2long(params,NULL);
   if (fbin!=NULL) {
     for (i=0; i<num; i++)
       write_encoded(fbin,&value,1);
