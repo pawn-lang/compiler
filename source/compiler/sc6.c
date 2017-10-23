@@ -228,7 +228,7 @@ static char *stripwhitespace(char *str)
   return str;
 }
 
-static void write_encoded(FILE *fbin,ucell *c,int num)
+static unsigned char *encode_cell(ucell c,int *len)
 {
   #if PAWN_CELL_SIZE == 16
     #define ENC_MAX   3     /* a 16-bit cell is encoded in max. 3 bytes */
@@ -241,32 +241,43 @@ static void write_encoded(FILE *fbin,ucell *c,int num)
     #define ENC_MASK  0x01  /* after 9x7 bits, 1 bit remains to make 64 bits */
   #endif
 
+  static unsigned char buffer[ENC_MAX];
+  char *ptr;
+  int index;
+
+  assert(len!=NULL);
+  index=ENC_MAX-1;
+  do {
+    buffer[index--]=(unsigned char)(c & 0x7f);  /* store 7 bits */
+    c>>=7;
+  } while (index>=0);
+  /* skip leading zeros */
+  while (index<ENC_MAX-1 && buffer[index]==0 && (buffer[index+1] & 0x40)==0)
+    index++;
+  /* skip leading -1s */
+  if (index==0 && buffer[index]==ENC_MASK && (buffer[index+1] & 0x40)!=0)
+    index++;
+  while (index<ENC_MAX-1 && buffer[index]==0x7f && (buffer[index+1] & 0x40)!=0)
+    index++;
+  *len=ENC_MAX-index;
+  ptr=&buffer[index];
+  while (index<ENC_MAX-1)
+    buffer[index++] |= 0x80;
+  return ptr;
+}
+
+static void write_encoded(FILE *fbin,ucell *c,int num)
+{
+  int len;
+  unsigned char *bytes;
+
   assert(fbin!=NULL);
   while (num-->0) {
     if (sc_compress) {
-      ucell p=(ucell)*c;
-      unsigned char t[ENC_MAX];
-      unsigned char code;
-      int index;
-      for (index=0; index<ENC_MAX; index++) {
-        t[index]=(unsigned char)(p & 0x7f);     /* store 7 bits */
-        p>>=7;
-      } /* for */
-      /* skip leading zeros */
-      while (index>1 && t[index-1]==0 && (t[index-2] & 0x40)==0)
-        index--;
-      /* skip leading -1s */
-      if (index==ENC_MAX && t[index-1]==ENC_MASK && (t[index-2] & 0x40)!=0)
-        index--;
-      while (index>1 && t[index-1]==0x7f && (t[index-2] & 0x40)!=0)
-        index--;
-      /* write high byte first, write continuation bits */
-      assert(index>0);
-      while (index-->0) {
-        code=(unsigned char)((index==0) ? t[index] : (t[index]|0x80));
-        writeerror |= !pc_writebin(fbin,&code,1);
-        bytes_out++;
-      } /* while */
+      bytes=encode_cell(*c,&len);
+      assert(len>0);
+      writeerror |= !pc_writebin(fbin,bytes,len);
+      bytes_out+=len;
       bytes_in+=sizeof *c;
       assert(AMX_COMPACTMARGIN>2);
       if (bytes_out-bytes_in>=AMX_COMPACTMARGIN-2)
@@ -277,6 +288,30 @@ static void write_encoded(FILE *fbin,ucell *c,int num)
     } /* if */
     c++;
   } /* while */
+}
+
+static void write_encoded_n(FILE *fbin,ucell c,int num)
+{
+  int len;
+  unsigned char *bytes;
+
+  assert(fbin != NULL);
+  if (sc_compress) {
+    bytes=encode_cell(c,&len);
+    assert(len>0);
+    while (num-->0)
+      writeerror |= !pc_writebin(fbin,bytes,len);
+    bytes_in += num*sizeof c;
+    bytes_out += num*len;
+    if (bytes_out-bytes_in>=AMX_COMPACTMARGIN-2)
+      longjmp(compact_err,1);
+  } else {
+    c=aligncell(c);
+    while (num-->0) {
+      assert((pc_lengthbin(fbin) % sizeof(cell)) == 0);
+      writeerror |= !pc_writebin(fbin,&c,sizeof c);
+    } /* while */
+  } /* if */
 }
 
 #if defined __BORLANDC__ || defined __WATCOMC__
@@ -397,14 +432,13 @@ static cell OPHANDLER_CALL do_dump(FILE *fbin,char *params,cell opcode)
 
 static cell OPHANDLER_CALL do_dumpn(FILE *fbin,char *params,cell opcode)
 {
-  ucell value,num,i;
+  ucell value;
+  int num;
 
   value=hex2long(params,&params);
-  num=hex2long(params,NULL);
-  if (fbin!=NULL) {
-    for (i=0; i<num; i++)
-      write_encoded(fbin,&value,1);
-  } /* if */
+  num=(int)hex2long(params,NULL);
+  if (fbin!=NULL)
+      write_encoded_n(fbin,value,num);
   return num*sizeof(cell);
 }
 
