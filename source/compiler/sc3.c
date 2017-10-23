@@ -1064,7 +1064,6 @@ static int hier13(value *lval)
     int flab2=getlabel();
     value lval2={0};
     int array1,array2;
-    int asize1 = -1, asize2 = -1; /* -1 indicates that the value is not an array */
 
     if (lvalue) {
       rvalue(lval);
@@ -1120,17 +1119,6 @@ static int hier13(value *lval)
       error(33,ptr);            /* array must be indexed */
     } /* if */
     /* ??? if both are arrays, should check dimensions */
-    if (lval->ident == iARRAY)
-      asize1 = (lval->sym == NULL) ? (lval->constval > 0 ? lval->constval : -lval->constval) : lval->sym->dim.array.length;
-    if (lval->ident == iREFARRAY)
-      asize1 = lval->sym->dim.array.length;
-    if (lval2.ident == iARRAY)
-      asize2 = (lval2.sym == NULL) ? (lval2.constval > 0 ? lval2.constval : -lval2.constval) : lval2.sym->dim.array.length;
-    if (lval2.ident == iREFARRAY)
-      asize2 = lval2.sym->dim.array.length;
-    if (asize1 != -1 && asize2 != -1)
-      if (asize1 != asize2)
-        error(47);
     if (!matchtag(lval->tag,lval2.tag,FALSE))
       error(213);               /* tagname mismatch ('true' and 'false' expressions) */
     setlabel(flab2);
