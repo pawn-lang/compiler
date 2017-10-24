@@ -203,6 +203,7 @@ static struct s_warnstack {
 static int errflag;
 static int errstart;    /* line number at which the instruction started */
 static int errline;     /* forced line number for the error message */
+static int errwarn;
 
 /*  error
  *
@@ -249,6 +250,11 @@ static short lastfile;
     msg=fatalmsg[number-100];
     pre=prefix[1];
     errnum++;           /* a fatal error also counts as an error */
+  } else if (errwarn) {
+    msg=warnmsg[number-200];
+    pre=prefix[0];
+    errflag=TRUE;
+    errnum++;
   } else {
     msg=warnmsg[number-200];
     pre=prefix[2];
@@ -303,7 +309,7 @@ static short lastfile;
     errorcount=0;
   lastline=fline;
   lastfile=fcurrent;
-  if (number<200)
+  if (number<200 || errwarn)
     errorcount++;
   if (errorcount>=3)
     error(107);         /* too many error/warning messages on one line */
@@ -399,5 +405,18 @@ int pc_popwarnings()
   memmove(&warnstack,p,sizeof(struct s_warnstack));
   free(p);
   return TRUE;
+}
+
+/* pc_seterrorwarnings()
+ * Make warnings errors (or not).
+ */
+void pc_seterrorwarnings(int enable)
+{
+  errwarn = enable;
+}
+
+int pc_geterrorwarnings()
+{
+  return errwarn;
 }
 
