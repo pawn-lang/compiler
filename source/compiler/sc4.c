@@ -287,15 +287,6 @@ SC_FUNC void setlinedirect(int line)
   } /* if */
 }
 
-SC_FUNC void setlineconst(int line)
-{
-  symbol *sym;
-
-  sym=findconst("__line",NULL);
-  assert(sym!=NULL);
-  sym->addr=fline;
-}
-
 /*  setlabel
  *
  *  Post a code label (specified as a number), on a new line.

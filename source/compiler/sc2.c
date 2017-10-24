@@ -431,7 +431,8 @@ static void readline(unsigned char *line)
       line+=strlen((char*)line);
     } /* if */
     fline+=1;
-    setlineconst(fline);
+    assert(line_sym!=NULL);
+    line_sym->addr=fline;
   } while (num>=0 && cont);
 }
 
@@ -2623,6 +2624,60 @@ SC_FUNC int ishex(char c)
   return (c>='0' && c<='9') || (c>='a' && c<='f') || (c>='A' && c<='F');
 }
 
+static void symbol_cache_add(symbol *sym,symbol2 *new_cache_sym)
+{
+  symbol2 *cache_sym;
+
+  if (new_cache_sym==NULL) {
+    new_cache_sym=(symbol2 *)malloc(sizeof(symbol2));
+    if (new_cache_sym==NULL)
+      error(103);       /* insufficient memory */
+    new_cache_sym->symbol=sym;
+    new_cache_sym->next=NULL;
+  }
+
+  cache_sym=hashmap_get(&symbol_cache_map,sym->name);
+  if (cache_sym==NULL) {
+    if (hashmap_put(&symbol_cache_map,sym->name,new_cache_sym)==NULL)
+      error(103);       /* insufficient memory */
+  } else {
+    while(cache_sym->next!=NULL)
+      cache_sym=cache_sym->next;
+    cache_sym->next=new_cache_sym;
+  }
+}
+
+static symbol2 *symbol_cache_remove(symbol *sym,int free_cache_sym)
+{
+  symbol2 *cache_sym;
+  symbol2 *parent_cache_sym=NULL;
+
+  cache_sym=hashmap_get(&symbol_cache_map,sym->name);
+  for ( ;; ) {
+    if (cache_sym==NULL)
+      return NULL;
+    if (cache_sym->symbol==sym)
+      break;
+    parent_cache_sym=cache_sym;
+    cache_sym=cache_sym->next;
+  }
+
+  if (parent_cache_sym!=NULL) {
+    parent_cache_sym->next=cache_sym->next;
+  } else {
+    hashmap_remove(&symbol_cache_map,sym->name);
+    if (cache_sym->next!=NULL)
+      if (hashmap_put(&symbol_cache_map,sym->name,cache_sym->next)==NULL)
+        error(103);     /* insufficient memory */
+  }
+  if (free_cache_sym) {
+    free(cache_sym);
+    return NULL;
+  }
+  cache_sym->next=NULL;
+  return cache_sym;
+}
+
 /* The local variable table must be searched backwards, so that the deepest
  * nesting of local variables is searched first. The simplest way to do
  * this is to insert all new items at the head of the list.
@@ -2644,6 +2699,8 @@ static symbol *add_symbol(symbol *root,symbol *entry,int sort)
   memcpy(newsym,entry,sizeof(symbol));
   newsym->next=root->next;
   root->next=newsym;
+  if (newsym->vclass==sGLOBAL)
+    symbol_cache_add(newsym,NULL);
   return newsym;
 }
 
@@ -2688,6 +2745,8 @@ static void free_symbol(symbol *sym)
   free(sym->refer);
   if (sym->documentation!=NULL)
     free(sym->documentation);
+  if (sym->vclass==sGLOBAL)
+    symbol_cache_remove(sym,1);
   free(sym);
 }
 
@@ -2790,28 +2849,36 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
   } /* while */
 }
 
-/* The purpose of the hash is to reduce the frequency of a "name"
- * comparison (which is costly). There is little interest in avoiding
- * clusters in similar names, which is why this function is plain simple.
- */
-SC_FUNC uint32_t namehash(const char *name)
+SC_FUNC void rename_symbol(symbol *sym,const char *newname)
 {
-  const unsigned char *ptr=(const unsigned char *)name;
-  int len=strlen(name);
-  if (len==0)
-    return 0L;
-  assert(len<256);
-  return (len<<24Lu) + (ptr[0]<<16Lu) + (ptr[len-1]<<8Lu) + (ptr[len>>1Lu]);
+  int is_global=(sym->vclass==sGLOBAL);
+  symbol2 *cache_sym;
+
+  if (is_global)
+    cache_sym=symbol_cache_remove(sym,0);
+  strcpy(sym->name,newname);
+  if (is_global && cache_sym!=NULL)
+    symbol_cache_add(sym,cache_sym);
 }
 
 static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int automaton,int *cmptag)
 {
   symbol *firstmatch=NULL;
   symbol *sym=root->next;
+  symbol2 *cache_sym=NULL;
   int count=0;
-  unsigned long hash=namehash(name);
+  int is_global=(root==&glbtab);
+
+  if (is_global) {
+    cache_sym=hashmap_get(&symbol_cache_map,name);
+    if (cache_sym)
+      sym=cache_sym->symbol;
+    else
+      sym=NULL;
+  }
+
   while (sym!=NULL) {
-    if (hash==sym->hash && strcmp(name,sym->name)==0        /* check name */
+    if ( (is_global || strcmp(name,sym->name)==0)           /* check name */
         && (sym->parent==NULL || sym->ident==iCONSTEXPR)    /* sub-types (hierarchical types) are skipped, except for enum fields */
         && (sym->fnumber<0 || sym->fnumber==fnumber))       /* check file number for scope */
     {
@@ -2834,7 +2901,15 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
         } /* if */
       } /* if */
     } /*  */
-    sym=sym->next;
+    if (is_global) {
+      cache_sym=cache_sym->next;
+      if (cache_sym)
+        sym=cache_sym->symbol;
+      else
+        sym=NULL;
+    } else {
+      sym=sym->next;
+    }
   } /* while */
   if (cmptag!=NULL && firstmatch!=NULL) {
     if (*cmptag==0)
@@ -2847,12 +2922,8 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
 
 static symbol *find_symbol_child(const symbol *root,const symbol *sym)
 {
-  symbol *ptr=root->next;
-  while (ptr!=NULL) {
-    if (ptr->parent==sym)
-      return ptr;
-    ptr=ptr->next;
-  } /* while */
+  if (sym->child && sym->child->parent==sym)
+    return sym->child;
   return NULL;
 }
 
@@ -3010,7 +3081,6 @@ SC_FUNC symbol *addsym(const char *name,cell addr,int ident,int vclass,int tag,i
   /* first fill in the entry */
   memset(&entry,0,sizeof entry);
   strcpy(entry.name,name);
-  entry.hash=namehash(name);
   entry.addr=addr;
   entry.codeaddr=code_idx;
   entry.vclass=(char)vclass;
@@ -3055,6 +3125,8 @@ SC_FUNC symbol *addvariable(const char *name,cell addr,int ident,int vclass,int 
       top->dim.array.level=(short)(numdim-level-1);
       top->x.tags.index=idxtag[level];
       top->parent=parent;
+      if (parent)
+        parent->child=top;
       if (vclass==sLOCAL || vclass==sSTATIC) {
         top->compound=compound;  /* for multiple declaration/shadowing check */
       } /* if */
@@ -3088,35 +3160,26 @@ SC_FUNC int getlabel(void)
  */
 SC_FUNC char *itoh(ucell val)
 {
-static char itohstr[30];
-  char *ptr;
-  int i,nibble[16];             /* a 64-bit hexadecimal cell has 16 nibbles */
-  int max;
+  static const char hex[16]=
+    {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
+#if PAWN_CELL_SIZE==16
+  static char itohstr[5]=
+    {'\0','\0','\0','\0','\0'};
+  char *ptr=&itohstr[3];
+#elif PAWN_CELL_SIZE==32
+  static char itohstr[9]=
+    {'\0','\0','\0','\0','\0','\0','\0','\0','\0'};
+  char *ptr=&itohstr[7];
+#elif PAWN_CELL_SIZE==64
+  static char itohstr[17]=
+    {'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0'};
+  char *ptr=&itohstr[15];
+#else
+  #error Unsupported cell size
+#endif
 
-  #if PAWN_CELL_SIZE==16
-    max=4;
-  #elif PAWN_CELL_SIZE==32
-    max=8;
-  #elif PAWN_CELL_SIZE==64
-    max=16;
-  #else
-    #error Unsupported cell size
-  #endif
-  ptr=itohstr;
-  for (i=0; i<max; i+=1){
-    nibble[i]=(int)(val & 0x0f);        /* nibble 0 is lowest nibble */
-    val>>=4;
-  } /* endfor */
-  i=max-1;
-  while (nibble[i]==0 && i>0)   /* search for highest non-zero nibble */
-    i-=1;
-  while (i>=0){
-    if (nibble[i]>=10)
-      *ptr++=(char)('a'+(nibble[i]-10));
-    else
-      *ptr++=(char)('0'+nibble[i]);
-    i-=1;
-  } /* while */
-  *ptr='\0';            /* and a zero-terminator */
-  return itohstr;
+  do {
+    *ptr-- = hex[val&(ucell)0x0f];
+  } while ((val>>=4)!=0);
+  return ptr+1;
 }
