@@ -1832,6 +1832,23 @@ static void substallpatterns(unsigned char *line,int buffersize)
 }
 #endif
 
+static void doconcat(const char *line)
+{
+  register int i;
+  const char *p, *b;
+  for (i=0; *(line+i)!='\0'; ++i) {
+    if (*(line+i)=='#' && *(line+i+1)=='#') {
+      p=line+i-1;
+      b=line+i+2;
+      while (*p==' ')
+        p--;
+      while (*b==' ')
+        b++;
+      strcpy((char*)p+1, b);
+    } /* if */
+  } /* for */
+}
+
 /*  preprocess
  *
  *  Reads a line by readline() into "pline" and performs basic preprocessing:
@@ -1855,12 +1872,14 @@ SC_FUNC void preprocess(void)
     stripcom(pline);    /* ??? no need for this when reading back from list file (in the second pass) */
     lptr=pline;         /* set "line pointer" to start of the parsing buffer */
     iscommand=command();
+    doconcat(lptr);
     if (iscommand!=CMD_NONE)
       errorset(sRESET,0); /* reset error flag ("panic mode") on empty line or directive */
     #if !defined NO_DEFINE
       if (iscommand==CMD_NONE) {
         assert(lptr!=term_expr);
         substallpatterns(pline,sLINEMAX);
+        doconcat(pline);
         lptr=pline;       /* reset "line pointer" to start of the parsing buffer */
       } /* if */
     #endif
