@@ -242,7 +242,7 @@ static unsigned char *encode_cell(ucell c,int *len)
   #endif
 
   static unsigned char buffer[ENC_MAX];
-  char *ptr;
+  unsigned char *ptr;
   int index;
 
   assert(len!=NULL);
