@@ -5893,7 +5893,7 @@ static void emit_param_num(char *name, ucell *p, int size)
           p[curp]=-val;
           break;
         } else if (tok==tRATIONAL) {
-          p[curp]=val|0x80000000;
+          p[curp]=val|((cell)1 << (PAWN_CELL_SIZE-1));
           break;
         } else {
           strcpy(ival+1,str);
