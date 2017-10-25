@@ -417,12 +417,9 @@ static void readline(unsigned char *line)
           ptr--;        /* skip trailing whitespace */
         if (*ptr=='\\') {
           cont=TRUE;
-          while (*(ptr-1)<=' ' && *(ptr-1)!='\0')
-            ptr--;
           /* set '\a' at the position of '\\' to make it possible to check
            * for a line continuation in a single line comment (error 49)
            */
-          /* delete trailing whitespace before continuation */
           *ptr++='\a';
           *ptr='\0';    /* erase '\n' (and any trailing whitespace) */
         } /* if */
@@ -557,7 +554,7 @@ static void stripcom(unsigned char *line)
       } /* if */
     } /* if */
     if (*line == '\a') {
-      *line = ' ';
+      memmove(line,line+1,strlen(line+1)+1);
     }
   } /* while */
   #if !defined SC_LIGHT
