@@ -221,6 +221,9 @@ static char *prefix[3]={ "error", "fatal error", "warning" };
     char *pre;
 
     pre=prefix[number/100];
+    if (number>=200 && pc_geterrorwarnings()){
+      pre=prefix[0];
+    }
     if (firstline>=0)
       fprintf(stderr,"%s(%d -- %d) : %s %03d: ",filename,firstline,lastline,pre,number);
     else
@@ -1159,6 +1162,19 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
         if (sc_asmfile && verbosity>1)
           verbosity=1;
         break;
+      case 'E':
+        switch (*option_value(ptr)) {
+        case '+':
+          pc_seterrorwarnings(1);
+          break;
+        case '-':
+          pc_seterrorwarnings(0);
+          break;
+        default:
+          pc_seterrorwarnings(2);
+          break;
+        }
+        break;
       case 'w':
         i=(int)strtol(option_value(ptr),(char **)&ptr,10);
         if (*ptr=='-')
@@ -1450,6 +1466,7 @@ static void about(void)
     pc_printf("         -X<num>  abstract machine size limit in bytes\n");
     pc_printf("         -XD<num> abstract machine data/stack size limit in bytes\n");
     pc_printf("         -Z[+/-]  run in compatibility mode (default=%c)\n",pc_compat ? '+' : '-');
+    pc_printf("         -E[+/-]  turn warnings in to errors\n");
     pc_printf("         -\\       use '\\' for escape characters\n");
     pc_printf("         -^       use '^' for escape characters\n");
     pc_printf("         -;[+/-]  require a semicolon to end each statement (default=%c)\n", sc_needsemicolon ? '+' : '-');

@@ -485,6 +485,8 @@ int pc_addtag(char *name);
 int pc_enablewarning(int number,int enable);
 int pc_pushwarnings();
 int pc_popwarnings();
+void pc_seterrorwarnings(int enable);
+int pc_geterrorwarnings();
 
 /*
  * Functions called from the compiler (to be implemented by you)
