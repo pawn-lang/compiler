@@ -5842,7 +5842,7 @@ static void emit_invalid_token(int need_token, int current_token)
   char s[sNAMEMAX+ 2];
   extern char *sc_tokens[];
 
-  if (current_token<256) {
+  if (current_token<tFIRST) {
     sprintf(s,"%c",(char)current_token);
   } else {
     strcpy(s,sc_tokens[current_token-tFIRST]);
@@ -5901,7 +5901,7 @@ static void emit_param_num(char *name, ucell *p, int size)
           break;
         } /* if */
       } /* if */
-      if (tok<256) {
+      if (tok<tFIRST) {
         sprintf(ival,"%c",(char)tok);
       } else {
         strcpy(ival,sc_tokens[tok-tFIRST]);
