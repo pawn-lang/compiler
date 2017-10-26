@@ -1453,12 +1453,12 @@ static int hier2(value *lval)
     cell val;
     char* st;
     if (!matchtoken('{'))
-      error(38);
+      error(38);    /* extra characters on line */
     lex(&val,&st);
     lval->ident=iEXPRESSION;
     emit_parse_line();
     if (!matchtoken('}'))
-      error(38);
+      error(38);    /* extra characters on line */
     return FALSE;
   } /* case */
   default:
