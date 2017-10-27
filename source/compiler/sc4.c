@@ -289,11 +289,8 @@ SC_FUNC void setlinedirect(int line)
 
 SC_FUNC void setlineconst(int line)
 {
-  symbol *sym;
-
-  sym=findconst("__line",NULL);
-  assert(sym!=NULL);
-  sym->addr=fline;
+  assert(line_sym!=NULL);
+  line_sym->addr=line;
 }
 
 /*  setlabel
