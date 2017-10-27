@@ -5901,6 +5901,7 @@ static void emit_param_num(char *name,ucell *p,int size)
       else
         strcpy(ival,sc_tokens[tok-tFIRST]);
       error(1,sc_tokens[tSYMBOL-tFIRST],ival);
+      break;
     } /* switch */
   } while (++curp<size);
 }
@@ -5916,17 +5917,24 @@ static void emit_param_data(char *name,ucell *p,int size)
 
   do {
     tok=lex(&val,&str);
-    if (tok!=tSYMBOL)
+    switch (tok) {
+    case tNUMBER:
+      p[curp]=val;
+      break;
+    case tSYMBOL:
+      sym=findloc(str);
+      if (sym==NULL)
+        sym=findglb(str,sSTATIC);
+      else if (sym->vclass!=sSTATIC)
+        error(17,str);
+      if (sym==NULL)
+        error(17,str);
+      markusage(sym,uREAD|uWRITTEN);
+      p[curp]=sym->addr;
+      break;
+    default:
       emit_invalid_token(tSYMBOL,tok);
-    sym=findloc(str);
-    if (sym==NULL || sym->vclass!=sSTATIC)
-      sym=findglb(str,sGLOBAL);
-    if (sym==NULL)
-      error(17,str);    /* undefined symbol */
-    if (sym->ident!=iVARIABLE)
-      error(17,str);    /* undefined symbol */
-    markusage(sym,uREAD|uWRITTEN);
-    p[curp]=sym->addr;
+    } /* switch */
   } while (++curp<size);
 }
 
@@ -5998,15 +6006,25 @@ static void OPHANDLER_CALL emit_parm2_gvar_num(char *name)
   extern char *sc_tokens[];
 
   tok=lex(&val,&str);
-  if (tok!=tSYMBOL)
+  switch (tok) {
+  case tNUMBER:
+    p[0]=val;
+    break;
+  case tSYMBOL:
+    sym=findloc(str);
+    if (sym==NULL)
+      sym=findglb(str,sSTATIC);
+    else if (sym->vclass!=sSTATIC)
+      error(17,str);
+    if (sym==NULL)
+      error(17,str);
+    markusage(sym,uREAD|uWRITTEN);
+    p[0]=sym->addr;
+    break;
+  default:
     emit_invalid_token(tSYMBOL,tok);
-  sym=findloc(str);
-  if (sym==NULL || sym->vclass!=sSTATIC)
-    sym=findglb(str,sGLOBAL);
-  if (sym==NULL || sym->ident!=iVARIABLE)
-    error(17,str);    /* undefined symbol */
-  markusage(sym,uREAD);
-  p[0]=sym->addr;
+  } /* switch */
+
   tok=lex(&val,&str);
   if (tok!=tNUMBER)
     emit_invalid_token(tNUMBER,tok);
