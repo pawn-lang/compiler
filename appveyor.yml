@@ -5,7 +5,7 @@ configuration:
   - RelWithDebInfo
 
 before_build:
-  - cmake -G "Visual Studio 14 2015" source/compiler -DCPACK_GENERATOR=ZIP
+  - cmake -G "Visual Studio 12 2013" source/compiler -DCPACK_GENERATOR=ZIP
 
 build_script:
   - cmake --build . --config %CONFIGURATION%
