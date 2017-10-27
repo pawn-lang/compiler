@@ -287,6 +287,12 @@ SC_FUNC void setlinedirect(int line)
   } /* if */
 }
 
+SC_FUNC void setlineconst(int line)
+{
+  assert(line_sym!=NULL);
+  line_sym->addr=line;
+}
+
 /*  setlabel
  *
  *  Post a code label (specified as a number), on a new line.

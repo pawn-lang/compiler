@@ -617,6 +617,7 @@ SC_FUNC void setline(int chkbounds);
 SC_FUNC void setfiledirect(char *name);
 SC_FUNC void setfileconst(char *name);
 SC_FUNC void setlinedirect(int line);
+SC_FUNC void setlineconst(int line);
 SC_FUNC void setlabel(int index);
 SC_FUNC void markexpr(optmark type,const char *name,cell offset);
 SC_FUNC void startfunc(char *fname);
