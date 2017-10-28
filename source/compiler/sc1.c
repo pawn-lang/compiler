@@ -768,6 +768,8 @@ cleanup:
   delete_symbols(&loctab,0,TRUE,TRUE);    /* delete local variables if not yet
                                            * done (i.e. on a fatal error) */
   delete_symbols(&glbtab,0,TRUE,TRUE);
+  line_sym=NULL;
+  hashmap_destroy(&symbol_cache_map);
   delete_consttable(&tagname_tab);
   delete_consttable(&libname_tab);
   delete_consttable(&sc_automaton_tab);
@@ -934,6 +936,7 @@ static void initglobals(void)
   litq=NULL;            /* the literal queue */
   glbtab.next=NULL;     /* clear global variables/constants table */
   loctab.next=NULL;     /*   "   local      "    /    "       "   */
+  hashmap_init(&symbol_cache_map,hashmap_hash_string,hashmap_compare_string,8388608); /* 2^23 */
   tagname_tab.next=NULL;/* tagname table */
   libname_tab.next=NULL;/* library table (#pragma library "..." syntax) */
 
@@ -1542,7 +1545,7 @@ static void setconstants(void)
 
   add_builtin_constant("__Pawn",VERSION_INT,sGLOBAL,0);
   add_builtin_constant("__PawnBuild",VERSION_BUILD,sGLOBAL,0);
-  add_builtin_constant("__line",0,sGLOBAL,0);
+  line_sym=add_builtin_constant("__line",0,sGLOBAL,0);
   add_builtin_constant("__compat",pc_compat,sGLOBAL,0);
 
   debug=0;
@@ -2965,6 +2968,8 @@ static void decl_enum(int vclass,int fstatic)
     sym->dim.array.length=size;
     sym->dim.array.level=0;
     sym->parent=enumsym;
+    if (enumsym)
+      enumsym->child=sym;
 
     if (fstatic)
       sym->fnumber=filenum;
@@ -3299,8 +3304,7 @@ static int operatoradjust(int opertok,symbol *sym,char *opername,int resulttag)
         refer_symbol(sym,oldsym->refer[i]);
     delete_symbol(&glbtab,oldsym);
   } /* if */
-  strcpy(sym->name,tmpname);
-  sym->hash=namehash(sym->name);/* calculate new hash */
+  rename_symbol(sym,tmpname);
 
   /* operators should return a value, except the '~' operator */
   if (opertok!='~')
@@ -3559,6 +3563,8 @@ static void funcstub(int fnative)
     assert(sym!=NULL);
     sub=addvariable(symbolname,0,iARRAY,sGLOBAL,tag,dim,numdim,idxtag,0);
     sub->parent=sym;
+    if (sym)
+      sym->child=sub;
   } /* if */
 
   litidx=0;                     /* clear the literal pool */
@@ -6550,6 +6556,8 @@ static void doreturn(void)
           sub=addvariable(curfunc->name,(argcount+3)*sizeof(cell),iREFARRAY,sGLOBAL,
                           curfunc->tag,dim,numdim,idxtag,0);
           sub->parent=curfunc;
+          if (curfunc)
+            curfunc->child=sub;
         } /* if */
         /* get the hidden parameter, copy the array (the array is on the heap;
          * it stays on the heap for the moment, and it is removed -usually- at

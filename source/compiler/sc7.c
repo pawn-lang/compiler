@@ -1254,6 +1254,7 @@ static void stgopt(char *start,char *end,int (*outputfunc)(char *str));
 
 static char *stgbuf=NULL;
 static int stgmax=0;    /* current size of the staging buffer */
+static int stglen=0;    /* current length of the staging buffer */
 
 static char *stgpipe=NULL;
 static int pipemax=0;   /* current size of the stage pipe, a second staging buffer */
@@ -1290,6 +1291,7 @@ SC_FUNC void stgbuffer_cleanup(void)
   if (stgbuf!=NULL) {
     free(stgbuf);
     stgbuf=NULL;
+    stglen=0;
     stgmax=0;
   } /* if */
   if (stgpipe!=NULL) {
@@ -1323,6 +1325,7 @@ SC_FUNC void stgmark(char mark)
   if (staging) {
     CHECK_STGBUFFER(stgidx);
     stgbuf[stgidx++]=mark;
+    stglen++;
   } /* if */
 }
 
@@ -1364,10 +1367,12 @@ static int filewrite(char *str)
  *  Global references: stgidx  (altered)
  *                     stgbuf  (altered)
  *                     staging (referred to only)
+ *                     stglen  (altered)
  */
 SC_FUNC void stgwrite(const char *st)
 {
   int len;
+  int st_len;
 
   if (staging) {
     assert(stgidx==0 || stgbuf!=NULL);  /* staging buffer must be valid if there is (apparently) something in it */
@@ -1376,17 +1381,21 @@ SC_FUNC void stgwrite(const char *st)
     while (*st!='\0') {                /* copy to staging buffer */
       CHECK_STGBUFFER(stgidx);
       stgbuf[stgidx++]=*st++;
+      stglen++;
     } /* while */
     CHECK_STGBUFFER(stgidx);
     stgbuf[stgidx++]='\0';
   } else {
-    len=(stgbuf!=NULL) ? strlen(stgbuf) : 0;
-    CHECK_STGBUFFER(len+strlen(st)+1);
-    strcat(stgbuf,st);
-    len=strlen(stgbuf);
+    len=(stgbuf!=NULL) ? stglen : 0;
+    st_len=strlen(st);
+    CHECK_STGBUFFER(len+st_len+1);
+    memcpy(stgbuf+len,st,st_len+1);
+    len=len+st_len;
+    stglen=len;
     if (len>0 && stgbuf[len-1]=='\n') {
       filewrite(stgbuf);
       stgbuf[0]='\0';
+      stglen=0;
     } /* if */
   } /* if */
 }
@@ -1413,6 +1422,7 @@ SC_FUNC void stgout(int index)
   /* first pass: sub-expressions */
   if (sc_status==statWRITE)
     reordered=stgstring(&stgbuf[index],&stgbuf[stgidx]);
+  stglen=stgidx-index;
   stgidx=index;
 
   /* second pass: optimize the buffer created in the first pass */
@@ -1562,10 +1572,11 @@ SC_FUNC void stgset(int onoff)
     /* write any contents that may be put in the buffer by stgwrite()
      * when "staging" was 0
      */
-    if (strlen(stgbuf)>0)
+    if (stglen>0)
       filewrite(stgbuf);
   } /* if */
   stgbuf[0]='\0';
+  stglen=0;
 }
 
 #define MAX_OPT_VARS    5
