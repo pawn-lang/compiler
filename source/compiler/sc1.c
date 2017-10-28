@@ -1053,8 +1053,7 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
         #endif
         break;
       case 'c':
-        if (codepage)
-          strlcpy(codepage,option_value(ptr),MAXCODEPAGE);  /* set name of codepage */
+        strlcpy(codepage,option_value(ptr),MAXCODEPAGE);  /* set name of codepage */
         break;
       case 'D':                 /* set active directory */
         ptr=option_value(ptr);
@@ -1272,8 +1271,14 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
 
 void parsesingleoption(char *argv)
 {
+  /* argv[0] is the program, which we don't need here */
   char *args[2] = { 0, argv };
-  parseoptions(2, args, NULL, NULL, NULL, NULL, NULL);
+  char codepage[MAXCODEPAGE+1] = { 0 };
+  codepage[0] = '\0';
+  parseoptions(2, args, NULL, NULL, NULL, NULL, codepage);
+  /* need explicit support for codepages */
+  if (codepage[0] && !cp_set(codepage))
+    error(108);         /* codepage mapping file not found */
 }
 
 #if !defined SC_LIGHT
