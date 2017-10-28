@@ -1272,7 +1272,8 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
 
 void parsesingleoption(char *argv)
 {
-  parseoptions(1, &argv, NULL, NULL, NULL, NULL, NULL);
+  char *args[2] = { 0, argv };
+  parseoptions(2, args, NULL, NULL, NULL, NULL, NULL);
 }
 
 #if !defined SC_LIGHT
