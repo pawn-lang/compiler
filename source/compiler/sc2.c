@@ -1847,7 +1847,7 @@ static void ppconcat(const char *line)
         b++;
       strcpy((char*)p+1,b);
     } /* if */
-  } /* switch */
+  } /* for */
 }
 
 /*  preprocess
