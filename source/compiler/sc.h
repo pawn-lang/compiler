@@ -47,19 +47,14 @@
 
 #if defined _MSC_VER
   #define OPHANDLER_CALL __fastcall
-#elif defined __GNUC__
-  #if defined __clang__
+#elif defined __GNUC__ && (defined __i386__ || defined __x86_64__ || defined __amd64__)
+  #if !defined __x86_64__ && !defined __amd64__ && (__GNUC__>=4 || __GNUC__==3 && __GNUC_MINOR__>=4)
     #define OPHANDLER_CALL __attribute__((fastcall))
-  #elif (defined __i386__ || defined __x86_64__ || defined __amd64__)
-    #if !defined __x86_64__ && !defined __amd64__ && (__GNUC__>=4 || __GNUC__==3 && __GNUC_MINOR__>=4)
-      #define OPHANDLER_CALL __attribute__((fastcall))
-    #else
-      #define OPHANDLER_CALL __attribute__((regparam(3)))
-    #endif
   #else
-    #define OPHANDLER_CALL
+    #define OPHANDLER_CALL __attribute__((regparam(3)))
   #endif
-#else
+#endif
+#if !defined OPHANDLER_CALL
   #define OPHANDLER_CALL
 #endif
 
