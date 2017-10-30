@@ -6303,7 +6303,7 @@ static int emit_findopcode(const char *instr,int maxlen)
   while (low<high) {
     mid=(low+high)/2;
     assert(emit_opcodelist[mid].name!=NULL);
-    cmp=stricmp(instr,emit_opcodelist[mid].name);
+    cmp=strcmp(instr,emit_opcodelist[mid].name);
     if (cmp>0)
       low=mid+1;
     else
@@ -6311,7 +6311,7 @@ static int emit_findopcode(const char *instr,int maxlen)
   } /* while */
 
   assert(low==high);
-  if (stricmp(instr,emit_opcodelist[low].name)==0)
+  if (strcmp(instr,emit_opcodelist[low].name)==0)
     return low;         /* found */
   return 0;             /* not found, return special index */
 }
