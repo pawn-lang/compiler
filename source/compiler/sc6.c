@@ -299,12 +299,12 @@ static void write_encoded_n(FILE *fbin,ucell c,int num)
   if (sc_compress) {
     bytes=encode_cell(c,&len);
     assert(len>0);
-    while (num-->0)
-      writeerror |= !pc_writebin(fbin,bytes,len);
     bytes_in += num*sizeof c;
     bytes_out += num*len;
     if (bytes_out-bytes_in>=AMX_COMPACTMARGIN-2)
       longjmp(compact_err,1);
+    while (num-->0)
+      writeerror |= !pc_writebin(fbin,bytes,len);
   } else {
     c=aligncell(c);
     while (num-->0) {
