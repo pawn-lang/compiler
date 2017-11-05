@@ -942,6 +942,8 @@ enum {
  *  Global variables: iflevel, ifstack (altered)
  *                    lptr      (altered)
  */
+void parsesingleoption(char *argv);
+
 static int command(void)
 {
   int tok,ret;
@@ -1265,6 +1267,16 @@ static int command(void)
           sym=findconst("__compat",NULL);
           assert(sym!=NULL);
           sym->addr=pc_compat;
+        } else if (strcmp(str,"option")==0) {
+          char name[sNAMEMAX+1];
+          int i;
+          /* first gather all information, start with the tag name */
+          while (*lptr<=' ' && *lptr!='\0')
+            lptr++;
+          for (i=0; i<sizeof name && *lptr>' '; i++,lptr++)
+            name[i]=*lptr;
+          name[i]='\0';
+          parsesingleoption(name);
         } else {
           error(207);           /* unknown #pragma */
         } /* if */

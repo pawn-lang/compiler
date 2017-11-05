@@ -1085,7 +1085,8 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
         } /* switch */
         break;
       case 'e':
-        strlcpy(ename,option_value(ptr),_MAX_PATH); /* set name of error file */
+        if (ename)
+          strlcpy(ename,option_value(ptr),_MAX_PATH); /* set name of error file */
         break;
 #if defined	__WIN32__ || defined _WIN32 || defined _Windows
       case 'H':
@@ -1111,7 +1112,8 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
         sc_listing=TRUE;        /* skip second pass & code generation */
         break;
       case 'o':
-        strlcpy(oname,option_value(ptr),_MAX_PATH); /* set name of (binary) output file */
+        if (oname)
+          strlcpy(oname,option_value(ptr),_MAX_PATH); /* set name of (binary) output file */
         break;
       case 'O':
         pc_optimize=*option_value(ptr) - '0';
@@ -1119,13 +1121,16 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
           about();
         break;
       case 'p':
-        strlcpy(pname,option_value(ptr),_MAX_PATH); /* set name of implicit include file */
+        if (pname)
+          strlcpy(pname,option_value(ptr),_MAX_PATH); /* set name of implicit include file */
         break;
       case 'R':
         pc_recursion=toggle_option(ptr,pc_recursion);
         break;
 #if !defined SC_LIGHT
       case 'r':
+        if (!rname)
+          break;
         strlcpy(rname,option_value(ptr),_MAX_PATH); /* set name of report file */
         sc_makereport=TRUE;
         if (strlen(rname)>0) {
@@ -1233,7 +1238,7 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
       strlcpy(str,argv[arg],i+1);       /* str holds symbol name */
       i=atoi(ptr+1);
       add_builtin_constant(str,i,sGLOBAL,0);
-    } else {
+    } else if (oname) {
       strlcpy(str,argv[arg],sizeof(str)-2); /* -2 because default extension is ".p" */
       set_extension(str,".p",FALSE);
       insert_sourcefile(str);
@@ -1262,6 +1267,18 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
 #endif
     } /* if */
   } /* for */
+}
+
+void parsesingleoption(char *argv)
+{
+  /* argv[0] is the program, which we don't need here */
+  char *args[2] = { 0, argv };
+  char codepage[MAXCODEPAGE+1] = { 0 };
+  codepage[0] = '\0';
+  parseoptions(2, args, NULL, NULL, NULL, NULL, codepage);
+  /* need explicit support for codepages */
+  if (codepage[0] && !cp_set(codepage))
+    error(108);         /* codepage mapping file not found */
 }
 
 #if !defined SC_LIGHT
