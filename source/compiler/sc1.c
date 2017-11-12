@@ -5911,7 +5911,6 @@ static void emit_param_data(ucell *p,int size)
   symbol *sym;
   int curp=0;
   int tok;
-  extern char *sc_tokens[];
 
   do {
     tok=lex(&val,&str);
@@ -5980,7 +5979,7 @@ static void OPHANDLER_CALL emit_parm1_lbl(char *name)
     emit_invalid_token(tSYMBOL,tok);
   sym=fetchlab(str);
   sym->usage|=uREAD;
-  outinstr(name,1,&sym->addr);
+  outinstr(name,1,(ucell *)&sym->addr);
 }
 
 static void OPHANDLER_CALL emit_parm2_num(char *name)
@@ -6063,7 +6062,6 @@ static void OPHANDLER_CALL emit_do_case(char *name)
   char *str;
   symbol* sym;
   int tok;
-  extern char *sc_tokens[];
 
   stgwrite("\t");
   stgwrite(name);
@@ -6087,17 +6085,16 @@ static void OPHANDLER_CALL emit_do_case(char *name)
 
 static void OPHANDLER_CALL emit_do_lodb_strb(char *name)
 {
-  ucell val;
+  cell val;
   char *str;
   int tok;
-  extern char *sc_tokens[];
 
   tok=lex(&val,&str);
   if (tok!=tNUMBER)
     emit_invalid_token(tNUMBER,tok);
   if (val!=1 && val!=2 && val!=4)
     error(50);  /* invalid range */
-  outinstr(name,1,&val);
+  outinstr(name,1,(ucell *)&val);
 }
 
 static void OPHANDLER_CALL emit_do_call(char *name)
@@ -6106,7 +6103,6 @@ static void OPHANDLER_CALL emit_do_call(char *name)
   char *str;
   symbol *sym;
   int tok;
-  extern char *sc_tokens[];
 
   tok=lex(&val,&str);
   if (tok!=tSYMBOL)
