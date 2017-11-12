@@ -5849,7 +5849,7 @@ static void emit_invalid_token(int need_token,int current_token)
   error(1,sc_tokens[tSYMBOL-tFIRST],s);
 }
 
-static void emit_param_num(char *name,ucell *p,int size)
+static void emit_param_num(ucell *p,int size)
 {
   char *str;
   cell val;
@@ -5904,7 +5904,7 @@ static void emit_param_num(char *name,ucell *p,int size)
   } while (++curp<size);
 }
 
-static void emit_param_data(char *name,ucell *p,int size)
+static void emit_param_data(ucell *p,int size)
 {
   cell val;
   char *str;
@@ -5956,7 +5956,7 @@ static void OPHANDLER_CALL emit_parm1_num(char *name)
 {
   ucell p[1];
 
-  emit_param_num(name,p,(sizeof p / sizeof p[0]));
+  emit_param_num(p,(sizeof p / sizeof p[0]));
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
@@ -5964,7 +5964,7 @@ static void OPHANDLER_CALL emit_parm1_gvar(char *name)
 {
   ucell p[1];
 
-  emit_param_data(name,p,(sizeof p / sizeof p[0]));
+  emit_param_data(p,(sizeof p / sizeof p[0]));
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
@@ -5987,7 +5987,7 @@ static void OPHANDLER_CALL emit_parm2_num(char *name)
 {
   ucell p[2];
 
-  emit_param_num(name,p,(sizeof p / sizeof p[0]));
+  emit_param_num(p,(sizeof p / sizeof p[0]));
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
@@ -5995,7 +5995,7 @@ static void OPHANDLER_CALL emit_parm2_gvar(char *name)
 {
   ucell p[2];
 
-  emit_param_data(name,p,(sizeof p / sizeof p[0]));
+  emit_param_data(p,(sizeof p / sizeof p[0]));
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
@@ -6040,7 +6040,7 @@ static void OPHANDLER_CALL emit_parm3_num(char *name)
 {
   ucell p[3];
 
-  emit_param_num(name,p,(sizeof p / sizeof p[0]));
+  emit_param_num(p,(sizeof p / sizeof p[0]));
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
@@ -6048,7 +6048,7 @@ static void OPHANDLER_CALL emit_parm3_gvar(char *name)
 {
   ucell p[3];
 
-  emit_param_data(name,p,(sizeof p / sizeof p[0]));
+  emit_param_data(p,(sizeof p / sizeof p[0]));
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
@@ -6056,7 +6056,7 @@ static void OPHANDLER_CALL emit_parm4_num(char *name)
 {
   ucell p[4];
 
-  emit_param_num(name,p,(sizeof p / sizeof p[0]));
+  emit_param_num(p,(sizeof p / sizeof p[0]));
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
@@ -6064,7 +6064,7 @@ static void OPHANDLER_CALL emit_parm4_gvar(char *name)
 {
   ucell p[4];
 
-  emit_param_data(name,p,(sizeof p / sizeof p[0]));
+  emit_param_data(p,(sizeof p / sizeof p[0]));
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
@@ -6072,7 +6072,7 @@ static void OPHANDLER_CALL emit_parm5_num(char *name)
 {
   ucell p[5];
 
-  emit_param_num(name,p,(sizeof p / sizeof p[0]));
+  emit_param_num(p,(sizeof p / sizeof p[0]));
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
@@ -6080,7 +6080,7 @@ static void OPHANDLER_CALL emit_parm5_gvar(char *name)
 {
   ucell p[5];
 
-  emit_param_data(name,p,(sizeof p / sizeof p[0]));
+  emit_param_data(p,(sizeof p / sizeof p[0]));
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
