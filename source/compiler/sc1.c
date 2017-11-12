@@ -5922,7 +5922,7 @@ static void emit_param_data(char *name,ucell *p,int size)
     case tSYMBOL:
       sym=findloc(str);
       if (sym!=NULL) {
-        if (sym->vclass!=sSTATIC) {
+        if (sym->vclass!=sSTATIC && sym->ident!=iCONSTEXPR) {
           error(17,str);    /* undefined symbol */
           continue;
         }
