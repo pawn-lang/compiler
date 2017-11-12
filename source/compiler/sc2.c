@@ -1356,7 +1356,7 @@ static int command(void)
               break;
             } else if (current_token==tRATIONAL) {
               /* change the first bit to make float negative value */
-              outval(val | 0x80000000,FALSE);
+              outval(val|((cell)1 << (PAWN_CELL_SIZE-1)),FALSE);
               code_idx+=opargs(1);
               break;
             } else {
