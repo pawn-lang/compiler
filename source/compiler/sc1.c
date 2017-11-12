@@ -5941,6 +5941,21 @@ static void emit_param_data(ucell *p,int size)
   } while (++curp<size);
 }
 
+static void emit_param_label(ucell *p)
+{
+  cell val;
+  char *str;
+  symbol *sym;
+  int tok;
+
+  tok=lex(&val,&str);
+  if (tok!=tSYMBOL)
+    emit_invalid_token(tSYMBOL,tok);
+  sym=fetchlab(str);
+  sym->usage|=uREAD;
+  *p=*(ucell *)&sym->addr;
+}
+
 static void OPHANDLER_CALL emit_noop(char *name)
 {
   (void)name;
@@ -5969,17 +5984,10 @@ static void OPHANDLER_CALL emit_parm1_gvar(char *name)
 
 static void OPHANDLER_CALL emit_parm1_lbl(char *name)
 {
-  char *str;
-  cell val;
-  symbol *sym;
-  int tok;
+  ucell p[1];
 
-  tok=lex(&val,&str);
-  if (tok!=tSYMBOL)
-    emit_invalid_token(tSYMBOL,tok);
-  sym=fetchlab(str);
-  sym->usage|=uREAD;
-  outinstr(name,1,(ucell *)&sym->addr);
+  emit_param_label(&p[0]);
+  outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
 static void OPHANDLER_CALL emit_parm2_num(char *name)
@@ -6057,29 +6065,11 @@ static void OPHANDLER_CALL emit_parm5_gvar(char *name)
 
 static void OPHANDLER_CALL emit_do_case(char *name)
 {
-  /* case <value> <label> */
-  cell val;
-  char *str;
-  symbol* sym;
-  int tok;
+  ucell p[2];
 
-  stgwrite("\t");
-  stgwrite(name);
-  stgwrite(" ");
-
-  tok=lex(&val,&str);
-  if (tok!=tNUMBER)
-    emit_invalid_token(tSYMBOL,tok);
-  outval(val,FALSE);
-  tok=lex(&val,&str);
-  if (tok!=tSYMBOL)
-    emit_invalid_token(tSYMBOL,tok);
-  sym=fetchlab(str);
-  if (sym==NULL)
-    error(17,str);  /* undefined symbol */
-  else
-    val=sym->addr;
-  outval(val,TRUE);
+  emit_param_num(&p[1],1);
+  emit_param_label(&p[1]);
+  outinstr(name,2,p);
   code_idx+=opargs(2)+opcodes(0);
 }
 
