@@ -6001,38 +6001,10 @@ static void OPHANDLER_CALL emit_parm2_gvar(char *name)
 
 static void OPHANDLER_CALL emit_parm2_gvar_num(char *name)
 {
-  cell val;
-  char *str;
   ucell p[2];
-  symbol *sym;
-  int curp=0;
-  int tok;
-  extern char *sc_tokens[];
 
-  tok=lex(&val,&str);
-  switch (tok) {
-  case tNUMBER:
-    p[0]=val;
-    break;
-  case tSYMBOL:
-    sym=findloc(str);
-    if (sym==NULL)
-      sym=findglb(str,sSTATIC);
-    else if (sym->vclass!=sSTATIC)
-      error(17,str);
-    if (sym==NULL)
-      error(17,str);
-    markusage(sym,uREAD|uWRITTEN);
-    p[0]=sym->addr;
-    break;
-  default:
-    emit_invalid_token(tSYMBOL,tok);
-  } /* switch */
-
-  tok=lex(&val,&str);
-  if (tok!=tNUMBER)
-    emit_invalid_token(tNUMBER,tok);
-  p[1]=val;
+  emit_param_data(&p[0],1);
+  emit_param_num(&p[1],1);
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
