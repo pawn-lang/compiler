@@ -5846,7 +5846,6 @@ static void emit_param_num(ucell *p,int size)
   cell val;
   symbol *sym;
   int tok;
-  char ival[sNAMEMAX+2]="-";
   extern char *sc_tokens[];
   int curp=0;
 
@@ -5877,20 +5876,16 @@ static void emit_param_num(ucell *p,int size)
         tok=lex(&val,&str);
         if (tok==tNUMBER) {
           p[curp]=-val;
-          break;
         } else if (tok==tRATIONAL) {
           p[curp]=val|((cell)1 << (PAWN_CELL_SIZE-1));
-          break;
         } else {
+          char ival[sNAMEMAX+2]="-";
           strcpy(ival+1,str);
+          error(1,sc_tokens[tSYMBOL-tFIRST],ival);
         } /* if */
       } else {
-        if (tok<tFIRST)
-          sprintf(ival,"%c",(char)tok);
-        else
-          strcpy(ival,sc_tokens[tok-tFIRST]);
+        emit_invalid_token(tSYMBOL,tok);
       } /* if */
-      error(1,sc_tokens[tSYMBOL-tFIRST],ival);
     } /* switch */
   } while (++curp<size);
 }
@@ -5914,13 +5909,13 @@ static void emit_param_data(ucell *p,int size)
       if (sym!=NULL) {
         if (sym->vclass!=sSTATIC && sym->ident!=iCONSTEXPR) {
           error(17,str);    /* undefined symbol */
-          continue;
+          break;
         }
       } else {
         sym=findglb(str,sSTATIC);
         if (sym==NULL) {
           error(17,str);    /* undefined symbol */
-          continue;
+          break;
         }
       }
       markusage(sym,uREAD|uWRITTEN);
@@ -6138,7 +6133,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { 49, "call",       emit_do_call },
   { 50, "call.pri",   emit_parm0 },
   {  0, "case",       emit_do_case },
-/*{130, "casetbl",    emit_parm0 },*/
+/*{130, "casetbl",    emit_parm0 }, */
   {118, "cmps",       emit_parm1_num },
   {156, "const",      emit_parm2_gvar_num },
   { 12, "const.alt",  emit_parm1_num },
@@ -6336,7 +6331,9 @@ SC_FUNC void emit_parse_line(void)
     if (emit_opcodelist[i].name==NULL && *name!='\0')
       error(104,name); /* invalid assembler instruction */
     emit_opcodelist[i].func(name);
-    /* make sure the string only contains whitespaces and/or a trailing '}' */
+    /* make sure the string only contains whitespaces
+     * and/or an optional trailing '}'
+     */
     while (*lptr<=' ' && *lptr!='\0')
       lptr++;
     if (*lptr!='\0' && *lptr!='}')
