@@ -5828,15 +5828,6 @@ static void dolabel(void)
   sym->usage|=uDEFINE;  /* label is now defined */
 }
 
-static void check_empty(const unsigned char *lptr)
-{
-  /* verifies that the string contains only whitespace */
-  while (*lptr<=' ' && *lptr!='\0')
-    lptr++;
-  if (*lptr!='\0' && *lptr!='}')
-    error(38);          /* extra characters on line */
-}
-
 static void emit_invalid_token(int need_token,int current_token)
 {
   char s[sNAMEMAX+2];
@@ -6345,7 +6336,11 @@ SC_FUNC void emit_parse_line(void)
     if (emit_opcodelist[i].name==NULL && *name!='\0')
       error(104,name); /* invalid assembler instruction */
     emit_opcodelist[i].func(name);
-    check_empty(lptr);
+    /* make sure the string only contains whitespaces and/or a trailing '}' */
+    while (*lptr<=' ' && *lptr!='\0')
+      lptr++;
+    if (*lptr!='\0' && *lptr!='}')
+      error(38);  /* extra characters on line */
   } else if (tok==tLABEL) {
     if (!emit_block_parsing)
       error(38);  /* extra characters on line */
