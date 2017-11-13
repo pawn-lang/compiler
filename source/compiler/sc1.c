@@ -5837,7 +5837,7 @@ static void emit_invalid_token(int need_token,int current_token)
     sprintf(s,"%c",(char)current_token);
   else
     strcpy(s,sc_tokens[current_token-tFIRST]);
-  error(1,sc_tokens[tSYMBOL-tFIRST],s);
+  error(1,sc_tokens[need_token-tFIRST],s);
 }
 
 static void emit_param_num(ucell *p,int size)
