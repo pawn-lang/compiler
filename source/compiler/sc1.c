@@ -6063,14 +6063,36 @@ static void OPHANDLER_CALL emit_parm5_gvar(char *name)
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
+static void OPHANDLER_CALL emit_do_switch(char *name)
+{
+  ucell p[2];
+  int lbl_table;
+
+  emit_param_num(&p[0],1);
+  emit_param_label(&p[1]);
+  lbl_table=getlabel();
+  stgwrite("\tswitch ");
+  outval((cell)lbl_table,TRUE);
+  setlabel(lbl_table);
+  stgwrite("\tcasetbl\n");
+  stgwrite("\tcase ");
+  outval(p[0],FALSE);
+  stgwrite(" ");
+  outval(p[1],TRUE);
+  code_idx+=opcodes(2)+opargs(3);
+}
+
 static void OPHANDLER_CALL emit_do_case(char *name)
 {
   ucell p[2];
 
-  emit_param_num(&p[1],1);
+  emit_param_num(&p[0],1);
   emit_param_label(&p[1]);
-  outinstr(name,2,p);
-  code_idx+=opargs(2)+opcodes(0);
+  stgwrite("\tcase ");
+  outval(p[0],FALSE);
+  stgwrite(" ");
+  outval(p[1],TRUE);
+  code_idx+=opargs(2);
 }
 
 static void OPHANDLER_CALL emit_do_lodb_strb(char *name)
@@ -6125,7 +6147,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { 49, "call",       emit_do_call },
   { 50, "call.pri",   emit_parm0 },
   {  0, "case",       emit_do_case },
-  {130, "casetbl",    emit_parm0 },
+/*{130, "casetbl",    emit_parm0 },*/
   {118, "cmps",       emit_parm1_num },
   {156, "const",      emit_parm2_gvar_num },
   { 12, "const.alt",  emit_parm1_num },
@@ -6256,7 +6278,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { 80, "sub.alt",    emit_parm0 },
   {132, "swap.alt",   emit_parm0 },
   {131, "swap.pri",   emit_parm0 },
-  {129, "switch",     emit_parm1_lbl },
+  {129, "switch",     emit_do_switch },
 /*{126, "symbol",     do_symbol }, */
 /*{136, "symtag",     emit_parm1_num }, */
   {123, "sysreq.c",   emit_parm1_num },
