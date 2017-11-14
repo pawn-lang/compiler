@@ -5927,6 +5927,39 @@ static void emit_param_data(ucell *p,int size)
   } while (++curp<size);
 }
 
+static void emit_param_local(ucell *p,int size)
+{
+  cell val;
+  char *str;
+  symbol *sym;
+  int curp=0;
+  int tok;
+
+  do {
+    tok=lex(&val,&str);
+    switch (tok) {
+    case tNUMBER:
+      p[curp]=val;
+      break;
+    case tSYMBOL:
+      sym=findloc(str);
+      if (sym==NULL) {
+        sym=findglb(str,sSTATEVAR);
+        if (sym==NULL || sym->ident!=iCONSTEXPR)
+          error(17,str);    /* undefined symbol */
+      } else if (sym->vclass==sSTATIC) {
+        error(17,str);      /* undefined symbol */
+        break;
+      } /* if */
+      markusage(sym,uREAD|uWRITTEN);
+      p[curp]=sym->addr;
+      break;
+    default:
+      emit_invalid_token(tSYMBOL,tok);
+    } /* switch */
+  } while (++curp<size);
+}
+
 static void emit_param_label(ucell *p)
 {
   cell val;
@@ -5968,6 +6001,14 @@ static void OPHANDLER_CALL emit_parm1_gvar(char *name)
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
+static void OPHANDLER_CALL emit_parm1_local(char *name)
+{
+  ucell p[1];
+
+  emit_param_local(p,(sizeof p / sizeof p[0]));
+  outinstr(name,(sizeof p / sizeof p[0]),p);
+}
+
 static void OPHANDLER_CALL emit_parm1_lbl(char *name)
 {
   ucell p[1];
@@ -5989,6 +6030,14 @@ static void OPHANDLER_CALL emit_parm2_gvar(char *name)
   ucell p[2];
 
   emit_param_data(p,(sizeof p / sizeof p[0]));
+  outinstr(name,(sizeof p / sizeof p[0]),p);
+}
+
+static void OPHANDLER_CALL emit_parm2_local(char *name)
+{
+  ucell p[2];
+
+  emit_param_local(p,(sizeof p / sizeof p[0]));
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
@@ -6017,6 +6066,14 @@ static void OPHANDLER_CALL emit_parm3_gvar(char *name)
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
+static void OPHANDLER_CALL emit_parm3_local(char *name)
+{
+  ucell p[3];
+
+  emit_param_local(p,(sizeof p / sizeof p[0]));
+  outinstr(name,(sizeof p / sizeof p[0]),p);
+}
+
 static void OPHANDLER_CALL emit_parm4_num(char *name)
 {
   ucell p[4];
@@ -6033,6 +6090,14 @@ static void OPHANDLER_CALL emit_parm4_gvar(char *name)
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
+static void OPHANDLER_CALL emit_parm4_local(char *name)
+{
+  ucell p[4];
+
+  emit_param_local(p,(sizeof p / sizeof p[0]));
+  outinstr(name,(sizeof p / sizeof p[0]),p);
+}
+
 static void OPHANDLER_CALL emit_parm5_num(char *name)
 {
   ucell p[5];
@@ -6046,6 +6111,14 @@ static void OPHANDLER_CALL emit_parm5_gvar(char *name)
   ucell p[5];
 
   emit_param_data(p,(sizeof p / sizeof p[0]));
+  outinstr(name,(sizeof p / sizeof p[0]),p);
+}
+
+static void OPHANDLER_CALL emit_parm5_local(char *name)
+{
+  ucell p[5];
+
+  emit_param_local(p,(sizeof p / sizeof p[0]));
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
@@ -6138,12 +6211,12 @@ static EMIT_OPCODE emit_opcodelist[] = {
   {156, "const",      emit_parm2_gvar_num },
   { 12, "const.alt",  emit_parm1_num },
   { 11, "const.pri",  emit_parm1_num },
-  {157, "const.s",    emit_parm2_num },
+  {157, "const.s",    emit_parm2_local },
   {114, "dec",        emit_parm1_gvar },
   {113, "dec.alt",    emit_parm0 },
   {116, "dec.i",      emit_parm0 },
   {112, "dec.pri",    emit_parm0 },
-  {115, "dec.s",      emit_parm1_num },
+  {115, "dec.s",      emit_parm1_local },
   { 95, "eq",         emit_parm0 },
   {106, "eq.c.alt",   emit_parm1_num },
   {105, "eq.c.pri",   emit_parm1_num },
@@ -6159,7 +6232,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   {108, "inc.alt",    emit_parm0 },
   {111, "inc.i",      emit_parm0 },
   {107, "inc.pri",    emit_parm0 },
-  {110, "inc.s",      emit_parm1_num },
+  {110, "inc.s",      emit_parm1_local },
   { 86, "invert",     emit_parm0 },
   { 55, "jeq",        emit_parm1_lbl },
   { 60, "jgeq",       emit_parm1_lbl },
@@ -6186,14 +6259,14 @@ static EMIT_OPCODE emit_opcodelist[] = {
   {154, "load.both",  emit_parm2_gvar },
   {  9, "load.i",     emit_parm0 },
   {  1, "load.pri",   emit_parm1_gvar },
-  {  4, "load.s.alt", emit_parm1_num },
-  {155, "load.s.both",emit_parm2_num },
-  {  3, "load.s.pri", emit_parm1_num },
+  {  4, "load.s.alt", emit_parm1_local },
+  {155, "load.s.both",emit_parm2_local },
+  {  3, "load.s.pri", emit_parm1_local },
   { 10, "lodb.i",     emit_do_lodb_strb },
   {  6, "lref.alt",   emit_parm1_gvar },
   {  5, "lref.pri",   emit_parm1_gvar },
-  {  8, "lref.s.alt", emit_parm1_num },
-  {  7, "lref.s.pri", emit_parm1_num },
+  {  8, "lref.s.alt", emit_parm1_local },
+  {  7, "lref.s.pri", emit_parm1_local },
   { 34, "move.alt",   emit_parm0 },
   { 33, "move.pri",   emit_parm0 },
   {117, "movs",       emit_parm1_num },
@@ -6206,28 +6279,28 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { 42, "pop.pri",    emit_parm0 },
   { 46, "proc",       emit_parm0 },
   { 40, "push",       emit_parm1_gvar },
-  {133, "push.adr",   emit_parm1_num },
+  {133, "push.adr",   emit_parm1_local },
   { 37, "push.alt",   emit_parm0 },
   { 39, "push.c",     emit_parm1_num },
   { 36, "push.pri",   emit_parm0 },
   { 38, "push.r",     emit_parm1_num },
-  { 41, "push.s",     emit_parm1_num },
+  { 41, "push.s",     emit_parm1_local },
   {139, "push2",      emit_parm2_gvar },
-  {141, "push2.adr",  emit_parm2_num },
+  {141, "push2.adr",  emit_parm2_local },
   {138, "push2.c",    emit_parm2_num },
-  {140, "push2.s",    emit_parm2_num },
+  {140, "push2.s",    emit_parm2_local },
   {143, "push3",      emit_parm3_gvar },
-  {145, "push3.adr",  emit_parm3_num },
+  {145, "push3.adr",  emit_parm3_local },
   {142, "push3.c",    emit_parm3_num },
-  {144, "push3.s",    emit_parm3_num },
+  {144, "push3.s",    emit_parm3_local },
   {147, "push4",      emit_parm4_gvar },
-  {149, "push4.adr",  emit_parm4_num },
+  {149, "push4.adr",  emit_parm4_local },
   {146, "push4.c",    emit_parm4_num },
-  {148, "push4.s",    emit_parm4_num },
+  {148, "push4.s",    emit_parm4_local },
   {151, "push5",      emit_parm5_gvar },
-  {153, "push5.adr",  emit_parm5_num },
+  {153, "push5.adr",  emit_parm5_local },
   {150, "push5.c",    emit_parm5_num },
-  {152, "push5.s",    emit_parm5_num },
+  {152, "push5.s",    emit_parm5_local },
   { 47, "ret",        emit_parm0 },
   { 48, "retn",       emit_parm0 },
   { 32, "sctrl",      emit_parm1_num },
@@ -6250,15 +6323,15 @@ static EMIT_OPCODE emit_opcodelist[] = {
 /*{127, "srange",     emit_parm2_num }, */
   { 20, "sref.alt",   emit_parm1_gvar },
   { 19, "sref.pri",   emit_parm1_gvar },
-  { 22, "sref.s.alt", emit_parm1_num },
-  { 21, "sref.s.pri", emit_parm1_num },
+  { 22, "sref.s.alt", emit_parm1_local },
+  { 21, "sref.s.pri", emit_parm1_local },
   { 67, "sshr",       emit_parm0 },
   { 44, "stack",      emit_parm1_num },
   { 16, "stor.alt",   emit_parm1_gvar },
   { 23, "stor.i",     emit_parm0 },
   { 15, "stor.pri",   emit_parm1_gvar },
-  { 18, "stor.s.alt", emit_parm1_num },
-  { 17, "stor.s.pri", emit_parm1_num },
+  { 18, "stor.s.alt", emit_parm1_local },
+  { 17, "stor.s.pri", emit_parm1_local },
   { 24, "strb.i",     emit_do_lodb_strb },
   { 79, "sub",        emit_parm0 },
   { 80, "sub.alt",    emit_parm0 },
@@ -6278,7 +6351,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { 91, "zero",       emit_parm1_gvar },
   { 90, "zero.alt",   emit_parm0 },
   { 89, "zero.pri",   emit_parm0 },
-  { 92, "zero.s",     emit_parm1_num },
+  { 92, "zero.s",     emit_parm1_local },
 };
 
 static int emit_findopcode(const char *instr,int maxlen)
