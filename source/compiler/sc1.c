@@ -5977,6 +5977,66 @@ static void emit_param_local(ucell *p,int size)
   } while (++curp<size);
 }
 
+static void emit_param_index(ucell *p, const cell *valid_values, int size)
+{
+  cell val;
+  char *str;
+  symbol *sym;
+  int tok,i;
+  int neg=0;
+
+  assert(size>0);
+fetchtok:
+  tok=lex(&val,&str);
+  switch (tok) {
+  case tNUMBER:
+    if (neg!=0)
+      val=-val;
+    break;
+  case tRATIONAL:
+    if (neg!=0)
+      val=val|((cell)1 << (PAWN_CELL_SIZE-1));
+    break;
+  case tSYMBOL:
+  	sym=findloc(str);
+    if (sym==NULL)
+      sym=findglb(str,sSTATEVAR);
+    if (sym==NULL) {
+      error(17,str);    /* undefined symbol */
+      return;
+    } /* if */
+    switch (sym->ident) {
+    case iCONSTEXPR:
+      break;
+    case iFUNCTN:
+    case iREFFUNC:
+      tok=((sym->usage & uNATIVE)!=0) ? teNATIVE : teFUNCTN;
+      /* drop through */
+    default:
+      if (tok==tSYMBOL)
+        tok=teDATA;
+      emit_invalid_token(teNUMBER,tok);
+      return;
+    } /* switch */
+    markusage(sym,uREAD);
+    val=(neg!=0) ? -sym->addr : sym->addr;
+    break;
+  default:
+    if (tok==(int)'-' && neg==0) {
+      neg=1;
+      goto fetchtok;
+    } /* if */
+    emit_invalid_token(teNUMBER,tok);
+    return;
+  } /* switch */
+
+  *p=val;
+  for (i=0; i<size; i++)
+    if (val==valid_values[i])
+      return;
+  error(50);    /* invalid range */
+}
+
 static void emit_param_label(ucell *p)
 {
   cell val;
@@ -6173,16 +6233,11 @@ static void OPHANDLER_CALL emit_do_case(char *name)
 
 static void OPHANDLER_CALL emit_do_lodb_strb(char *name)
 {
-  cell val;
-  char *str;
-  int tok;
+  static const cell valid_values[] = { 1, 2, 4 };
+  ucell p[1];
 
-  tok=lex(&val,&str);
-  if (tok!=tNUMBER)
-    emit_invalid_token(tNUMBER,tok);
-  if (val!=1 && val!=2 && val!=4)
-    error(50);  /* invalid range */
-  outinstr(name,1,(ucell *)&val);
+  emit_param_index(&p[0],valid_values,(sizeof valid_values / sizeof valid_values[0]));
+  outinstr(name,(sizeof p / sizeof p[0]),&p[0]);
 }
 
 static void OPHANDLER_CALL emit_do_call(char *name)
