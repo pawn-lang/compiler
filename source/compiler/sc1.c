@@ -5850,12 +5850,18 @@ static void emit_param_num(ucell *p,int size)
   int tok;
   extern char *sc_tokens[];
   int curp=0;
+  int neg;
 
   do {
-    switch (tok=lex(&val,&str)) {
-    case tRATIONAL:
+    neg=0;
+  fetchtok:
+    tok=lex(&val,&str);
+    switch (tok) {
     case tNUMBER:
-      p[curp]=val;
+      p[curp]=(neg!=0) ? -val : val;
+      break;
+    case tRATIONAL:
+      p[curp]=(neg!=0) ? (val|((cell)1 << (PAWN_CELL_SIZE-1))) : val;
       break;
     case tSYMBOL:
       sym=findloc(str);
@@ -5863,28 +5869,26 @@ static void emit_param_num(ucell *p,int size)
         sym=findglb(str,sSTATEVAR);
       if (sym==NULL || (sym->ident!=iFUNCTN && sym->ident!=iREFFUNC && (sym->usage & uDEFINE)==0) || sym->ident==iLABEL) {
         error(17,str);  /* undefined symbol */
-      } else if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
+        break;
+      } /* if */
+      if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
         if ((sym->usage & uNATIVE)!=0 && (sym->usage & uREAD)==0 && sym->addr>=0)
           sym->addr=ntv_funcid++;
-        p[curp]=sym->addr;
         markusage(sym,uREAD);
       } else {
-        p[curp]=sym->addr;
         markusage(sym,uREAD|uWRITTEN);
       } /* if */
+      p[curp]=(neg!=0) ? -sym->addr : sym->addr;
       break;
     default:
-      if ((char)tok=='-') {
-        tok=lex(&val,&str);
-        if (tok==tNUMBER) {
-          p[curp]=-val;
-        } else if (tok==tRATIONAL) {
-          p[curp]=val|((cell)1 << (PAWN_CELL_SIZE-1));
-        } else {
-          char ival[sNAMEMAX+2]="-";
-          strcpy(ival+1,str);
-          error(1,sc_tokens[tSYMBOL-tFIRST],ival);
+      if (tok==(int)'-') {
+        if (neg==0) {
+          neg=1;
+          goto fetchtok;
         } /* if */
+        char ival[sNAMEMAX+2]="-";
+        strcpy(ival+1,str);
+        error(1,sc_tokens[tSYMBOL-tFIRST],ival);
       } else {
         emit_invalid_token(teNUMBER,tok);
       } /* if */
