@@ -406,9 +406,11 @@ typedef struct s_valuepair {
 #define teNUMBER    339 /* integer/rational number */
 #define teDATA      340 /* data (variable name or address) */
 #define teLOCAL     341 /* local variable (name or offset) */
+#define teFUNCTN    342 /* Pawn function */
+#define teNATIVE    343 /* native function */
 /* for assigment to "lastst" only (see SC1.C) */
-#define tEXPR       342
-#define tENDLESS    343 /* endless loop */
+#define tEXPR       344
+#define tENDLESS    345 /* endless loop */
 
 /* (reversed) evaluation of staging buffer */
 #define sSTARTREORDER 0x01

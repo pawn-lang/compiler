@@ -6182,20 +6182,30 @@ static void OPHANDLER_CALL emit_do_call(char *name)
   int tok;
 
   tok=lex(&val,&str);
-  if (tok!=tSYMBOL)
+  if (tok!=tSYMBOL) {
     emit_invalid_token(tSYMBOL,tok);
+    return;
+  }
   sym=findglb(str,sGLOBAL);
   if (sym==NULL) {
-    error(12);  /* invalid function call */
-  } else {
-    stgwrite("\t");
-    stgwrite(name);
-    stgwrite(" .");
-    stgwrite(str);
-    stgwrite("\n");
-    code_idx+=opcodes(1)+opargs(1);
-    markusage(sym,uREAD);
+    error(17,str); /* undefined symbol */
+    return;
   }
+  if (sym->ident!=iFUNCTN && sym->ident!=iREFFUNC && sym->ident!=iVARARGS) {
+    emit_invalid_token(teFUNCTN,(sym->ident==iCONSTEXPR) ? teNUMBER : teDATA);
+    return;
+  }
+  if ((sym->usage & uNATIVE)!=0) {
+    emit_invalid_token(teFUNCTN,teNATIVE);
+    return;
+  }
+  stgwrite("\t");
+  stgwrite(name);
+  stgwrite(" .");
+  stgwrite(str);
+  stgwrite("\n");
+  code_idx+=opcodes(1)+opargs(1);
+  markusage(sym,uREAD);
 }
 
 static EMIT_OPCODE emit_opcodelist[] = {
