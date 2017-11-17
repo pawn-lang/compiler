@@ -5842,7 +5842,7 @@ static void emit_invalid_token(int expected_token,int found_token)
   } /* if */
 }
 
-static void emit_param_num(ucell *p,int size)
+static void emit_param_any(ucell *p,int size)
 {
   char *str;
   cell val;
@@ -5852,6 +5852,7 @@ static void emit_param_num(ucell *p,int size)
   int curp=0;
   int neg;
 
+  assert(size>0);
   do {
     neg=0;
   fetchtok:
@@ -5889,9 +5890,9 @@ static void emit_param_num(ucell *p,int size)
         char ival[sNAMEMAX+2]="-";
         strcpy(ival+1,str);
         error(1,sc_tokens[tSYMBOL-tFIRST],ival);
-      } else {
-        emit_invalid_token(teNUMBER,tok);
+        break;
       } /* if */
+      emit_invalid_token(teNUMBER,tok);
     } /* switch */
   } while (++curp<size);
 }
@@ -5904,6 +5905,7 @@ static void emit_param_data(ucell *p,int size)
   int curp=0;
   int tok;
 
+  assert(size>0);
   do {
     tok=lex(&val,&str);
     switch (tok) {
@@ -5916,18 +5918,18 @@ static void emit_param_data(ucell *p,int size)
         if (sym->vclass!=sSTATIC && sym->ident!=iCONSTEXPR) {
           emit_invalid_token(teDATA,teLOCAL);
           break;
-        }
+        } /* if */
       } else {
         sym=findglb(str,sSTATIC);
         if (sym==NULL) {
           error(17,str);    /* undefined symbol */
           break;
-        }
+        } /* if */
         if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
           emit_invalid_token(teDATA,((sym->usage & uNATIVE)!=0) ? teNATIVE : teFUNCTN);
           break;
-        }
-      }
+        } /* if */
+      } /* if */
       markusage(sym,uREAD|uWRITTEN);
       p[curp]=sym->addr;
       break;
@@ -5945,6 +5947,7 @@ static void emit_param_local(ucell *p,int size)
   int curp=0;
   int tok;
 
+  assert(size>0);
   do {
     tok=lex(&val,&str);
     switch (tok) {
@@ -5999,15 +6002,15 @@ static void OPHANDLER_CALL emit_parm0(char *name)
   outinstr(name,0,NULL);
 }
 
-static void OPHANDLER_CALL emit_parm1_num(char *name)
+static void OPHANDLER_CALL emit_parm1_any(char *name)
 {
   ucell p[1];
 
-  emit_param_num(p,(sizeof p / sizeof p[0]));
+  emit_param_any(p,(sizeof p / sizeof p[0]));
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
-static void OPHANDLER_CALL emit_parm1_gvar(char *name)
+static void OPHANDLER_CALL emit_parm1_data(char *name)
 {
   ucell p[1];
 
@@ -6023,7 +6026,7 @@ static void OPHANDLER_CALL emit_parm1_local(char *name)
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
-static void OPHANDLER_CALL emit_parm1_lbl(char *name)
+static void OPHANDLER_CALL emit_parm1_label(char *name)
 {
   ucell p[1];
 
@@ -6031,15 +6034,15 @@ static void OPHANDLER_CALL emit_parm1_lbl(char *name)
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
-static void OPHANDLER_CALL emit_parm2_num(char *name)
+static void OPHANDLER_CALL emit_parm2_any(char *name)
 {
   ucell p[2];
 
-  emit_param_num(p,(sizeof p / sizeof p[0]));
+  emit_param_any(p,(sizeof p / sizeof p[0]));
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
-static void OPHANDLER_CALL emit_parm2_gvar(char *name)
+static void OPHANDLER_CALL emit_parm2_data(char *name)
 {
   ucell p[2];
 
@@ -6055,24 +6058,24 @@ static void OPHANDLER_CALL emit_parm2_local(char *name)
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
-static void OPHANDLER_CALL emit_parm2_gvar_num(char *name)
+static void OPHANDLER_CALL emit_parm2_data_any(char *name)
 {
   ucell p[2];
 
   emit_param_data(&p[0],1);
-  emit_param_num(&p[1],1);
+  emit_param_any(&p[1],1);
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
-static void OPHANDLER_CALL emit_parm3_num(char *name)
+static void OPHANDLER_CALL emit_parm3_any(char *name)
 {
   ucell p[3];
 
-  emit_param_num(p,(sizeof p / sizeof p[0]));
+  emit_param_any(p,(sizeof p / sizeof p[0]));
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
-static void OPHANDLER_CALL emit_parm3_gvar(char *name)
+static void OPHANDLER_CALL emit_parm3_data(char *name)
 {
   ucell p[3];
 
@@ -6088,15 +6091,15 @@ static void OPHANDLER_CALL emit_parm3_local(char *name)
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
-static void OPHANDLER_CALL emit_parm4_num(char *name)
+static void OPHANDLER_CALL emit_parm4_any(char *name)
 {
   ucell p[4];
 
-  emit_param_num(p,(sizeof p / sizeof p[0]));
+  emit_param_any(p,(sizeof p / sizeof p[0]));
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
-static void OPHANDLER_CALL emit_parm4_gvar(char *name)
+static void OPHANDLER_CALL emit_parm4_data(char *name)
 {
   ucell p[4];
 
@@ -6112,15 +6115,15 @@ static void OPHANDLER_CALL emit_parm4_local(char *name)
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
-static void OPHANDLER_CALL emit_parm5_num(char *name)
+static void OPHANDLER_CALL emit_parm5_any(char *name)
 {
   ucell p[5];
 
-  emit_param_num(p,(sizeof p / sizeof p[0]));
+  emit_param_any(p,(sizeof p / sizeof p[0]));
   outinstr(name,(sizeof p / sizeof p[0]),p);
 }
 
-static void OPHANDLER_CALL emit_parm5_gvar(char *name)
+static void OPHANDLER_CALL emit_parm5_data(char *name)
 {
   ucell p[5];
 
@@ -6141,7 +6144,7 @@ static void OPHANDLER_CALL emit_do_switch(char *name)
   ucell p[2];
   int lbl_table;
 
-  emit_param_num(&p[0],1);
+  emit_param_any(&p[0],1);
   emit_param_label(&p[1]);
   lbl_table=getlabel();
   stgwrite("\tswitch ");
@@ -6159,7 +6162,7 @@ static void OPHANDLER_CALL emit_do_case(char *name)
 {
   ucell p[2];
 
-  emit_param_num(&p[0],1);
+  emit_param_any(&p[0],1);
   emit_param_label(&p[1]);
   stgwrite("\tcase ");
   outval(p[0],FALSE);
@@ -6193,20 +6196,20 @@ static void OPHANDLER_CALL emit_do_call(char *name)
   if (tok!=tSYMBOL) {
     emit_invalid_token(tSYMBOL,tok);
     return;
-  }
+  } /* if */
   sym=findglb(str,sGLOBAL);
   if (sym==NULL) {
     error(17,str); /* undefined symbol */
     return;
-  }
-  if (sym->ident!=iFUNCTN && sym->ident!=iREFFUNC && sym->ident!=iVARARGS) {
+  } /* if */
+  if (sym->ident!=iFUNCTN && sym->ident!=iREFFUNC) {
     emit_invalid_token(teFUNCTN,(sym->ident==iCONSTEXPR) ? teNUMBER : teDATA);
     return;
-  }
+  } /* if */
   if ((sym->usage & uNATIVE)!=0) {
     emit_invalid_token(teFUNCTN,teNATIVE);
     return;
-  }
+  } /* if */
   stgwrite("\t");
   stgwrite(name);
   stgwrite(" .");
@@ -6219,81 +6222,81 @@ static void OPHANDLER_CALL emit_do_call(char *name)
 static EMIT_OPCODE emit_opcodelist[] = {
   {  0, NULL,         emit_noop },
   { 78, "add",        emit_parm0 },
-  { 87, "add.c",      emit_parm1_num },
-  { 14, "addr.alt",   emit_parm1_num },
-  { 13, "addr.pri",   emit_parm1_num },
-  { 30, "align.alt",  emit_parm1_num },
-  { 29, "align.pri",  emit_parm1_num },
+  { 87, "add.c",      emit_parm1_any },
+  { 14, "addr.alt",   emit_parm1_any },
+  { 13, "addr.pri",   emit_parm1_any },
+  { 30, "align.alt",  emit_parm1_any },
+  { 29, "align.pri",  emit_parm1_any },
   { 81, "and",        emit_parm0 },
-  {121, "bounds",     emit_parm1_num },
+  {121, "bounds",     emit_parm1_any },
   {137, "break",      emit_parm0 },
   { 49, "call",       emit_do_call },
   { 50, "call.pri",   emit_parm0 },
   {  0, "case",       emit_do_case },
 /*{130, "casetbl",    emit_parm0 }, */
-  {118, "cmps",       emit_parm1_num },
-  {156, "const",      emit_parm2_gvar_num },
-  { 12, "const.alt",  emit_parm1_num },
-  { 11, "const.pri",  emit_parm1_num },
+  {118, "cmps",       emit_parm1_any },
+  {156, "const",      emit_parm2_data_any },
+  { 12, "const.alt",  emit_parm1_any },
+  { 11, "const.pri",  emit_parm1_any },
   {157, "const.s",    emit_parm2_local },
-  {114, "dec",        emit_parm1_gvar },
+  {114, "dec",        emit_parm1_data },
   {113, "dec.alt",    emit_parm0 },
   {116, "dec.i",      emit_parm0 },
   {112, "dec.pri",    emit_parm0 },
   {115, "dec.s",      emit_parm1_local },
   { 95, "eq",         emit_parm0 },
-  {106, "eq.c.alt",   emit_parm1_num },
-  {105, "eq.c.pri",   emit_parm1_num },
+  {106, "eq.c.alt",   emit_parm1_any },
+  {105, "eq.c.pri",   emit_parm1_any },
 /*{124, "file",       do_file }, */
-  {119, "fill",       emit_parm1_num },
+  {119, "fill",       emit_parm1_any },
   {100, "geq",        emit_parm0 },
   { 99, "grtr",       emit_parm0 },
-  {120, "halt",       emit_parm1_num },
-  { 45, "heap",       emit_parm1_num },
+  {120, "halt",       emit_parm1_any },
+  { 45, "heap",       emit_parm1_any },
   { 27, "idxaddr",    emit_parm0 },
-  { 28, "idxaddr.b",  emit_parm1_num },
-  {109, "inc",        emit_parm1_gvar },
+  { 28, "idxaddr.b",  emit_parm1_any },
+  {109, "inc",        emit_parm1_data },
   {108, "inc.alt",    emit_parm0 },
   {111, "inc.i",      emit_parm0 },
   {107, "inc.pri",    emit_parm0 },
   {110, "inc.s",      emit_parm1_local },
   { 86, "invert",     emit_parm0 },
-  { 55, "jeq",        emit_parm1_lbl },
-  { 60, "jgeq",       emit_parm1_lbl },
-  { 59, "jgrtr",      emit_parm1_lbl },
-  { 58, "jleq",       emit_parm1_lbl },
-  { 57, "jless",      emit_parm1_lbl },
-  { 56, "jneq",       emit_parm1_lbl },
-  { 54, "jnz",        emit_parm1_lbl },
-  { 52, "jrel",       emit_parm1_num },
-  { 64, "jsgeq",      emit_parm1_lbl },
-  { 63, "jsgrtr",     emit_parm1_lbl },
-  { 62, "jsleq",      emit_parm1_lbl },
-  { 61, "jsless",     emit_parm1_lbl },
-  { 51, "jump",       emit_parm1_lbl },
+  { 55, "jeq",        emit_parm1_label },
+  { 60, "jgeq",       emit_parm1_label },
+  { 59, "jgrtr",      emit_parm1_label },
+  { 58, "jleq",       emit_parm1_label },
+  { 57, "jless",      emit_parm1_label },
+  { 56, "jneq",       emit_parm1_label },
+  { 54, "jnz",        emit_parm1_label },
+  { 52, "jrel",       emit_parm1_any },
+  { 64, "jsgeq",      emit_parm1_label },
+  { 63, "jsgrtr",     emit_parm1_label },
+  { 62, "jsleq",      emit_parm1_label },
+  { 61, "jsless",     emit_parm1_label },
+  { 51, "jump",       emit_parm1_label },
   {128, "jump.pri",   emit_parm0 },
-  { 53, "jzer",       emit_parm1_lbl },
-  { 31, "lctrl",      emit_parm1_num },
+  { 53, "jzer",       emit_parm1_label },
+  { 31, "lctrl",      emit_parm1_any },
   { 98, "leq",        emit_parm0 },
   { 97, "less",       emit_parm0 },
   { 25, "lidx",       emit_parm0 },
-  { 26, "lidx.b",     emit_parm1_num },
-/*{125, "line",       emit_parm2_num }, */
-  {  2, "load.alt",   emit_parm1_gvar },
-  {154, "load.both",  emit_parm2_gvar },
+  { 26, "lidx.b",     emit_parm1_any },
+/*{125, "line",       emit_parm2_any }, */
+  {  2, "load.alt",   emit_parm1_data },
+  {154, "load.both",  emit_parm2_data },
   {  9, "load.i",     emit_parm0 },
-  {  1, "load.pri",   emit_parm1_gvar },
+  {  1, "load.pri",   emit_parm1_data },
   {  4, "load.s.alt", emit_parm1_local },
   {155, "load.s.both",emit_parm2_local },
   {  3, "load.s.pri", emit_parm1_local },
   { 10, "lodb.i",     emit_do_lodb_strb },
-  {  6, "lref.alt",   emit_parm1_gvar },
-  {  5, "lref.pri",   emit_parm1_gvar },
+  {  6, "lref.alt",   emit_parm1_data },
+  {  5, "lref.pri",   emit_parm1_data },
   {  8, "lref.s.alt", emit_parm1_local },
   {  7, "lref.s.pri", emit_parm1_local },
   { 34, "move.alt",   emit_parm0 },
   { 33, "move.pri",   emit_parm0 },
-  {117, "movs",       emit_parm1_num },
+  {117, "movs",       emit_parm1_any },
   { 85, "neg",        emit_parm0 },
   { 96, "neq",        emit_parm0 },
   {134, "nop",        emit_parm0 },
@@ -6302,58 +6305,58 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { 43, "pop.alt",    emit_parm0 },
   { 42, "pop.pri",    emit_parm0 },
   { 46, "proc",       emit_parm0 },
-  { 40, "push",       emit_parm1_gvar },
+  { 40, "push",       emit_parm1_data },
   {133, "push.adr",   emit_parm1_local },
   { 37, "push.alt",   emit_parm0 },
-  { 39, "push.c",     emit_parm1_num },
+  { 39, "push.c",     emit_parm1_any },
   { 36, "push.pri",   emit_parm0 },
-  { 38, "push.r",     emit_parm1_num },
+  { 38, "push.r",     emit_parm1_any },
   { 41, "push.s",     emit_parm1_local },
-  {139, "push2",      emit_parm2_gvar },
+  {139, "push2",      emit_parm2_data },
   {141, "push2.adr",  emit_parm2_local },
-  {138, "push2.c",    emit_parm2_num },
+  {138, "push2.c",    emit_parm2_any },
   {140, "push2.s",    emit_parm2_local },
-  {143, "push3",      emit_parm3_gvar },
+  {143, "push3",      emit_parm3_data },
   {145, "push3.adr",  emit_parm3_local },
-  {142, "push3.c",    emit_parm3_num },
+  {142, "push3.c",    emit_parm3_any },
   {144, "push3.s",    emit_parm3_local },
-  {147, "push4",      emit_parm4_gvar },
+  {147, "push4",      emit_parm4_data },
   {149, "push4.adr",  emit_parm4_local },
-  {146, "push4.c",    emit_parm4_num },
+  {146, "push4.c",    emit_parm4_any },
   {148, "push4.s",    emit_parm4_local },
-  {151, "push5",      emit_parm5_gvar },
+  {151, "push5",      emit_parm5_data },
   {153, "push5.adr",  emit_parm5_local },
-  {150, "push5.c",    emit_parm5_num },
+  {150, "push5.c",    emit_parm5_any },
   {152, "push5.s",    emit_parm5_local },
   { 47, "ret",        emit_parm0 },
   { 48, "retn",       emit_parm0 },
-  { 32, "sctrl",      emit_parm1_num },
+  { 32, "sctrl",      emit_parm1_any },
   { 73, "sdiv",       emit_parm0 },
   { 74, "sdiv.alt",   emit_parm0 },
   {104, "sgeq",       emit_parm0 },
   {103, "sgrtr",      emit_parm0 },
   { 65, "shl",        emit_parm0 },
-  { 69, "shl.c.alt",  emit_parm1_num },
-  { 68, "shl.c.pri",  emit_parm1_num },
+  { 69, "shl.c.alt",  emit_parm1_any },
+  { 68, "shl.c.pri",  emit_parm1_any },
   { 66, "shr",        emit_parm0 },
-  { 71, "shr.c.alt",  emit_parm1_num },
-  { 70, "shr.c.pri",  emit_parm1_num },
+  { 71, "shr.c.alt",  emit_parm1_any },
+  { 70, "shr.c.pri",  emit_parm1_any },
   { 94, "sign.alt",   emit_parm0 },
   { 93, "sign.pri",   emit_parm0 },
   {102, "sleq",       emit_parm0 },
   {101, "sless",      emit_parm0 },
   { 72, "smul",       emit_parm0 },
-  { 88, "smul.c",     emit_parm1_num },
-/*{127, "srange",     emit_parm2_num }, */
-  { 20, "sref.alt",   emit_parm1_gvar },
-  { 19, "sref.pri",   emit_parm1_gvar },
+  { 88, "smul.c",     emit_parm1_any },
+/*{127, "srange",     emit_parm2_any }, */
+  { 20, "sref.alt",   emit_parm1_data },
+  { 19, "sref.pri",   emit_parm1_data },
   { 22, "sref.s.alt", emit_parm1_local },
   { 21, "sref.s.pri", emit_parm1_local },
   { 67, "sshr",       emit_parm0 },
-  { 44, "stack",      emit_parm1_num },
-  { 16, "stor.alt",   emit_parm1_gvar },
+  { 44, "stack",      emit_parm1_any },
+  { 16, "stor.alt",   emit_parm1_data },
   { 23, "stor.i",     emit_parm0 },
-  { 15, "stor.pri",   emit_parm1_gvar },
+  { 15, "stor.pri",   emit_parm1_data },
   { 18, "stor.s.alt", emit_parm1_local },
   { 17, "stor.s.pri", emit_parm1_local },
   { 24, "strb.i",     emit_do_lodb_strb },
@@ -6363,16 +6366,16 @@ static EMIT_OPCODE emit_opcodelist[] = {
   {131, "swap.pri",   emit_parm0 },
   {129, "switch",     emit_do_switch },
 /*{126, "symbol",     do_symbol }, */
-/*{136, "symtag",     emit_parm1_num }, */
-  {123, "sysreq.c",   emit_parm1_num },
-  {135, "sysreq.n",   emit_parm2_num },
+/*{136, "symtag",     emit_parm1_any }, */
+  {123, "sysreq.c",   emit_parm1_any },
+  {135, "sysreq.n",   emit_parm2_any },
   {122, "sysreq.pri", emit_parm0 },
   { 76, "udiv",       emit_parm0 },
   { 77, "udiv.alt",   emit_parm0 },
   { 75, "umul",       emit_parm0 },
   { 35, "xchg",       emit_parm0 },
   { 83, "xor",        emit_parm0 },
-  { 91, "zero",       emit_parm1_gvar },
+  { 91, "zero",       emit_parm1_data },
   { 90, "zero.alt",   emit_parm0 },
   { 89, "zero.pri",   emit_parm0 },
   { 92, "zero.s",     emit_parm1_local },
@@ -6454,13 +6457,13 @@ static void doemit(void)
   char *st;
 
   emit_block_parsing=FALSE;
-  if (matchtoken('{')) {
+  if (matchtoken((int)'{')) {
     lexpush();
     emit_block_parsing=TRUE;
   } else {
     lex(&val,&st);
     emit_parse_line();
-  }
+  } /* if */
 }
 
 /*  fetchlab
