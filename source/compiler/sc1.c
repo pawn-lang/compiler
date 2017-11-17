@@ -5923,6 +5923,10 @@ static void emit_param_data(ucell *p,int size)
           error(17,str);    /* undefined symbol */
           break;
         }
+        if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
+          emit_invalid_token(teDATA,((sym->usage & uNATIVE)!=0) ? teNATIVE : teFUNCTN);
+          break;
+        }
       }
       markusage(sym,uREAD|uWRITTEN);
       p[curp]=sym->addr;
