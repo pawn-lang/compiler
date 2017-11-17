@@ -402,8 +402,13 @@ typedef struct s_valuepair {
 #define tSYMBOL     336
 #define tLABEL      337
 #define tSTRING     338
-#define tEXPR       339 /* for assigment to "lastst" only (see SC1.C) */
-#define tENDLESS    340 /* endless loop, for assigment to "lastst" only */
+/* argument types for emit/__emit */
+#define teNUMBER    339 /* integer/rational number */
+#define teDATA      340 /* data (variable name or address) */
+#define teLOCAL     341 /* local variable (name or offset) */
+/* for assigment to "lastst" only (see SC1.C) */
+#define tEXPR       342
+#define tENDLESS    343 /* endless loop */
 
 /* (reversed) evaluation of staging buffer */
 #define sSTARTREORDER 0x01

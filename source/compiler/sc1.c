@@ -5828,16 +5828,18 @@ static void dolabel(void)
   sym->usage|=uDEFINE;  /* label is now defined */
 }
 
-static void emit_invalid_token(int need_token,int current_token)
+static void emit_invalid_token(int expected_token,int found_token)
 {
-  char s[sNAMEMAX+2];
+  char s[2];
   extern char *sc_tokens[];
 
-  if (current_token<tFIRST)
-    sprintf(s,"%c",(char)current_token);
-  else
-    strcpy(s,sc_tokens[current_token-tFIRST]);
-  error(1,sc_tokens[need_token-tFIRST],s);
+  assert(expected_token>=tFIRST);
+  if (found_token<tFIRST) {
+    sprintf(s,"%c",(char)found_token);
+    error(1,sc_tokens[expected_token-tFIRST],s);
+  } else {
+    error(1,sc_tokens[expected_token-tFIRST],sc_tokens[found_token-tFIRST]);
+  } /* if */
 }
 
 static void emit_param_num(ucell *p,int size)
@@ -5884,7 +5886,7 @@ static void emit_param_num(ucell *p,int size)
           error(1,sc_tokens[tSYMBOL-tFIRST],ival);
         } /* if */
       } else {
-        emit_invalid_token(tSYMBOL,tok);
+        emit_invalid_token(teNUMBER,tok);
       } /* if */
     } /* switch */
   } while (++curp<size);
@@ -5908,7 +5910,7 @@ static void emit_param_data(ucell *p,int size)
       sym=findloc(str);
       if (sym!=NULL) {
         if (sym->vclass!=sSTATIC && sym->ident!=iCONSTEXPR) {
-          error(17,str);    /* undefined symbol */
+          emit_invalid_token(teDATA,teLOCAL);
           break;
         }
       } else {
@@ -5922,7 +5924,7 @@ static void emit_param_data(ucell *p,int size)
       p[curp]=sym->addr;
       break;
     default:
-      emit_invalid_token(tSYMBOL,tok);
+      emit_invalid_token(teDATA,tok);
     } /* switch */
   } while (++curp<size);
 }
@@ -5943,13 +5945,17 @@ static void emit_param_local(ucell *p,int size)
       break;
     case tSYMBOL:
       sym=findloc(str);
-      if (sym==NULL) {
+      if (sym!=NULL) {
+        if (sym->vclass==sSTATIC) {
+          emit_invalid_token(teLOCAL,teDATA);
+          break;
+        } /* if */
+      } else {
         sym=findglb(str,sSTATEVAR);
-        if (sym==NULL || sym->ident!=iCONSTEXPR)
+        if (sym==NULL || sym->ident!=iCONSTEXPR) {
           error(17,str);    /* undefined symbol */
-      } else if (sym->vclass==sSTATIC) {
-        error(17,str);      /* undefined symbol */
-        break;
+          break;
+        } /* if */
       } /* if */
       markusage(sym,uREAD|uWRITTEN);
       p[curp]=sym->addr;
