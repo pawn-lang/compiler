@@ -5828,6 +5828,31 @@ static void dolabel(void)
   sym->usage|=uDEFINE;  /* label is now defined */
 }
 
+/*  fetchlab
+ *
+ *  Finds a label from the (local) symbol table or adds one to it.
+ *  Labels are local in scope.
+ *
+ *  Note: The "_usage" bit is set to zero. The routines that call "fetchlab()"
+ *        must set this bit accordingly.
+ */
+static symbol *fetchlab(char *name)
+{
+  symbol *sym;
+
+  sym=findloc(name);            /* labels are local in scope */
+  if (sym) {
+    if (sym->ident!=iLABEL)
+      error(19,sym->name);      /* not a label: ... */
+  } else {
+    sym=addsym(name,getlabel(),iLABEL,sLOCAL,0,0);
+    assert(sym!=NULL);          /* fatal error 103 must be given on error */
+    sym->x.declared=(int)declared;
+    sym->compound=nestlevel;
+  } /* if */
+  return sym;
+}
+
 static void emit_invalid_token(int expected_token,int found_token)
 {
   char s[2];
@@ -6537,31 +6562,6 @@ static void doemit(void)
     lex(&val,&st);
     emit_parse_line();
   } /* if */
-}
-
-/*  fetchlab
- *
- *  Finds a label from the (local) symbol table or adds one to it.
- *  Labels are local in scope.
- *
- *  Note: The "_usage" bit is set to zero. The routines that call "fetchlab()"
- *        must set this bit accordingly.
- */
-static symbol *fetchlab(char *name)
-{
-  symbol *sym;
-
-  sym=findloc(name);            /* labels are local in scope */
-  if (sym){
-    if (sym->ident!=iLABEL)
-      error(19,sym->name);      /* not a label: ... */
-  } else {
-    sym=addsym(name,getlabel(),iLABEL,sLOCAL,0,0);
-    assert(sym!=NULL);          /* fatal error 103 must be given on error */
-    sym->x.declared=(int)declared;
-    sym->compound=nestlevel;
-  } /* if */
-  return sym;
 }
 
 /* isvariadic
