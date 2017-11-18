@@ -6224,23 +6224,19 @@ static void OPHANDLER_CALL emit_parm5_local(char *name)
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
-static void OPHANDLER_CALL emit_do_switch(char *name)
+static void OPHANDLER_CALL emit_do_casetbl(char *name)
 {
   ucell p[2];
-  int lbl_table;
 
+  (void)name;
   emit_param_any(&p[0],1);
   emit_param_label(&p[1]);
-  lbl_table=getlabel();
-  stgwrite("\tswitch ");
-  outval((cell)lbl_table,TRUE);
-  setlabel(lbl_table);
   stgwrite("\tcasetbl\n");
   stgwrite("\tcase ");
   outval(p[0],FALSE);
   stgwrite(" ");
   outval(p[1],TRUE);
-  code_idx+=opcodes(2)+opargs(3);
+  code_idx+=opcodes(1)+opargs(2);
 }
 
 static void OPHANDLER_CALL emit_do_case(char *name)
@@ -6331,7 +6327,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { 49, "call",       emit_do_call },
   { 50, "call.pri",   emit_parm0 },
   {  0, "case",       emit_do_case },
-/*{130, "casetbl",    emit_parm0 }, */
+  {130, "casetbl",    emit_do_casetbl },
   {118, "cmps",       emit_parm1_any },
   {156, "const",      emit_parm2_data_any },
   { 12, "const.alt",  emit_parm1_any },
@@ -6462,7 +6458,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { 80, "sub.alt",    emit_parm0 },
   {132, "swap.alt",   emit_parm0 },
   {131, "swap.pri",   emit_parm0 },
-  {129, "switch",     emit_do_switch },
+  {129, "switch",     emit_parm1_label },
 /*{126, "symbol",     do_symbol }, */
 /*{136, "symtag",     emit_parm1_any }, */
   {123, "sysreq.c",   emit_parm1_any },
@@ -6539,6 +6535,8 @@ SC_FUNC void emit_parse_line(void)
   } else if (tok==tLABEL) {
     if (!emit_block_parsing)
       error(38);  /* extra characters on line */
+    if (find_constval(&tagname_tab,st,0)!=NULL)
+      error(221,st);    /* label name shadows tagname */
     sym=fetchlab(st);
     setlabel((int)sym->addr);
     sym->usage|=uDEFINE;
