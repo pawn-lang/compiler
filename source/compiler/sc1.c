@@ -6059,7 +6059,7 @@ static void OPHANDLER_CALL emit_noop(char *name)
 
 static void OPHANDLER_CALL emit_parm0(char *name)
 {
-  outinstr(name,0,NULL);
+  outinstr(name,NULL,0);
 }
 
 static void OPHANDLER_CALL emit_parm1_any(char *name)
@@ -6067,7 +6067,7 @@ static void OPHANDLER_CALL emit_parm1_any(char *name)
   ucell p[1];
 
   emit_param_any(p,(sizeof p / sizeof p[0]));
-  outinstr(name,(sizeof p / sizeof p[0]),p);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void OPHANDLER_CALL emit_parm1_data(char *name)
@@ -6075,7 +6075,7 @@ static void OPHANDLER_CALL emit_parm1_data(char *name)
   ucell p[1];
 
   emit_param_data(p,(sizeof p / sizeof p[0]));
-  outinstr(name,(sizeof p / sizeof p[0]),p);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void OPHANDLER_CALL emit_parm1_local(char *name)
@@ -6083,7 +6083,7 @@ static void OPHANDLER_CALL emit_parm1_local(char *name)
   ucell p[1];
 
   emit_param_local(p,(sizeof p / sizeof p[0]));
-  outinstr(name,(sizeof p / sizeof p[0]),p);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void OPHANDLER_CALL emit_parm1_label(char *name)
@@ -6091,7 +6091,7 @@ static void OPHANDLER_CALL emit_parm1_label(char *name)
   ucell p[1];
 
   emit_param_label(&p[0]);
-  outinstr(name,(sizeof p / sizeof p[0]),p);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void OPHANDLER_CALL emit_parm2_any(char *name)
@@ -6099,7 +6099,7 @@ static void OPHANDLER_CALL emit_parm2_any(char *name)
   ucell p[2];
 
   emit_param_any(p,(sizeof p / sizeof p[0]));
-  outinstr(name,(sizeof p / sizeof p[0]),p);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void OPHANDLER_CALL emit_parm2_data(char *name)
@@ -6107,7 +6107,7 @@ static void OPHANDLER_CALL emit_parm2_data(char *name)
   ucell p[2];
 
   emit_param_data(p,(sizeof p / sizeof p[0]));
-  outinstr(name,(sizeof p / sizeof p[0]),p);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void OPHANDLER_CALL emit_parm2_local(char *name)
@@ -6115,7 +6115,7 @@ static void OPHANDLER_CALL emit_parm2_local(char *name)
   ucell p[2];
 
   emit_param_local(p,(sizeof p / sizeof p[0]));
-  outinstr(name,(sizeof p / sizeof p[0]),p);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void OPHANDLER_CALL emit_parm2_data_any(char *name)
@@ -6124,7 +6124,7 @@ static void OPHANDLER_CALL emit_parm2_data_any(char *name)
 
   emit_param_data(&p[0],1);
   emit_param_any(&p[1],1);
-  outinstr(name,(sizeof p / sizeof p[0]),p);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void OPHANDLER_CALL emit_parm3_any(char *name)
@@ -6132,7 +6132,7 @@ static void OPHANDLER_CALL emit_parm3_any(char *name)
   ucell p[3];
 
   emit_param_any(p,(sizeof p / sizeof p[0]));
-  outinstr(name,(sizeof p / sizeof p[0]),p);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void OPHANDLER_CALL emit_parm3_data(char *name)
@@ -6140,7 +6140,7 @@ static void OPHANDLER_CALL emit_parm3_data(char *name)
   ucell p[3];
 
   emit_param_data(p,(sizeof p / sizeof p[0]));
-  outinstr(name,(sizeof p / sizeof p[0]),p);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void OPHANDLER_CALL emit_parm3_local(char *name)
@@ -6148,7 +6148,7 @@ static void OPHANDLER_CALL emit_parm3_local(char *name)
   ucell p[3];
 
   emit_param_local(p,(sizeof p / sizeof p[0]));
-  outinstr(name,(sizeof p / sizeof p[0]),p);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void OPHANDLER_CALL emit_parm4_any(char *name)
@@ -6156,7 +6156,7 @@ static void OPHANDLER_CALL emit_parm4_any(char *name)
   ucell p[4];
 
   emit_param_any(p,(sizeof p / sizeof p[0]));
-  outinstr(name,(sizeof p / sizeof p[0]),p);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void OPHANDLER_CALL emit_parm4_data(char *name)
@@ -6164,7 +6164,7 @@ static void OPHANDLER_CALL emit_parm4_data(char *name)
   ucell p[4];
 
   emit_param_data(p,(sizeof p / sizeof p[0]));
-  outinstr(name,(sizeof p / sizeof p[0]),p);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void OPHANDLER_CALL emit_parm4_local(char *name)
@@ -6172,7 +6172,7 @@ static void OPHANDLER_CALL emit_parm4_local(char *name)
   ucell p[4];
 
   emit_param_local(p,(sizeof p / sizeof p[0]));
-  outinstr(name,(sizeof p / sizeof p[0]),p);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void OPHANDLER_CALL emit_parm5_any(char *name)
@@ -6180,7 +6180,7 @@ static void OPHANDLER_CALL emit_parm5_any(char *name)
   ucell p[5];
 
   emit_param_any(p,(sizeof p / sizeof p[0]));
-  outinstr(name,(sizeof p / sizeof p[0]),p);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void OPHANDLER_CALL emit_parm5_data(char *name)
@@ -6188,7 +6188,7 @@ static void OPHANDLER_CALL emit_parm5_data(char *name)
   ucell p[5];
 
   emit_param_data(p,(sizeof p / sizeof p[0]));
-  outinstr(name,(sizeof p / sizeof p[0]),p);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void OPHANDLER_CALL emit_parm5_local(char *name)
@@ -6196,7 +6196,7 @@ static void OPHANDLER_CALL emit_parm5_local(char *name)
   ucell p[5];
 
   emit_param_local(p,(sizeof p / sizeof p[0]));
-  outinstr(name,(sizeof p / sizeof p[0]),p);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void OPHANDLER_CALL emit_do_switch(char *name)
@@ -6237,7 +6237,7 @@ static void OPHANDLER_CALL emit_do_lodb_strb(char *name)
   ucell p[1];
 
   emit_param_index(&p[0],valid_values,(sizeof valid_values / sizeof valid_values[0]));
-  outinstr(name,(sizeof p / sizeof p[0]),&p[0]);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void OPHANDLER_CALL emit_do_lctrl(char *name)
@@ -6246,7 +6246,7 @@ static void OPHANDLER_CALL emit_do_lctrl(char *name)
   ucell p[1];
 
   emit_param_index(&p[0],valid_values,(sizeof valid_values / sizeof valid_values[0]));
-  outinstr(name,(sizeof p / sizeof p[0]),&p[0]);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void OPHANDLER_CALL emit_do_sctrl(char *name)
@@ -6255,7 +6255,7 @@ static void OPHANDLER_CALL emit_do_sctrl(char *name)
   ucell p[1];
 
   emit_param_index(&p[0],valid_values,(sizeof valid_values / sizeof valid_values[0]));
-  outinstr(name,(sizeof p / sizeof p[0]),&p[0]);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void OPHANDLER_CALL emit_do_call(char *name)
