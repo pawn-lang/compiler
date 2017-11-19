@@ -6002,7 +6002,7 @@ static void emit_param_local(ucell *p,int size)
   } while (++curp<size);
 }
 
-static void emit_param_index(ucell *p, const cell *valid_values, int size)
+static void emit_param_index(ucell *p,const cell *valid_values,int size)
 {
   cell val;
   char *str;
@@ -6152,6 +6152,15 @@ static void OPHANDLER_CALL emit_parm2_data_any(char *name)
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
+static void OPHANDLER_CALL emit_parm2_local_any(char *name)
+{
+  ucell p[2];
+
+  emit_param_local(&p[0],1);
+  emit_param_any(&p[1],1);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
+}
+
 static void OPHANDLER_CALL emit_parm3_any(char *name)
 {
   ucell p[3];
@@ -6254,7 +6263,7 @@ static void OPHANDLER_CALL emit_do_case(char *name)
 
 static void OPHANDLER_CALL emit_do_lodb_strb(char *name)
 {
-  static const cell valid_values[] = { 1, 2, 4 };
+  static const cell valid_values[] = { 1,2,4 };
   ucell p[1];
 
   emit_param_index(&p[0],valid_values,(sizeof valid_values / sizeof valid_values[0]));
@@ -6263,7 +6272,7 @@ static void OPHANDLER_CALL emit_do_lodb_strb(char *name)
 
 static void OPHANDLER_CALL emit_do_lctrl(char *name)
 {
-  static const cell valid_values[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+  static const cell valid_values[] = { 0,1,2,3,4,5,6,7 };
   ucell p[1];
 
   emit_param_index(&p[0],valid_values,(sizeof valid_values / sizeof valid_values[0]));
@@ -6272,7 +6281,7 @@ static void OPHANDLER_CALL emit_do_lctrl(char *name)
 
 static void OPHANDLER_CALL emit_do_sctrl(char *name)
 {
-  static const cell valid_values[] = { 2, 4, 5, 6 };
+  static const cell valid_values[] = { 2,4,5,6 };
   ucell p[1];
 
   emit_param_index(&p[0],valid_values,(sizeof valid_values / sizeof valid_values[0]));
@@ -6332,7 +6341,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   {156, "const",      emit_parm2_data_any },
   { 12, "const.alt",  emit_parm1_any },
   { 11, "const.pri",  emit_parm1_any },
-  {157, "const.s",    emit_parm2_local },
+  {157, "const.s",    emit_parm2_local_any },
   {114, "dec",        emit_parm1_data },
   {113, "dec.alt",    emit_parm0 },
   {116, "dec.i",      emit_parm0 },
