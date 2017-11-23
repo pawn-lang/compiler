@@ -5911,11 +5911,12 @@ static void emit_param_any(ucell *p,int size)
         if (neg==0) {
           neg=1;
           goto fetchtok;
+        } else {
+          char ival[sNAMEMAX+2]="-";
+          strcpy(ival+1,str);
+          error(1,sc_tokens[tSYMBOL-tFIRST],ival);
+          break;
         } /* if */
-        char ival[sNAMEMAX+2]="-";
-        strcpy(ival+1,str);
-        error(1,sc_tokens[tSYMBOL-tFIRST],ival);
-        break;
       } /* if */
       emit_invalid_token(teNUMBER,tok);
     } /* switch */
@@ -6272,7 +6273,7 @@ static void OPHANDLER_CALL emit_do_lodb_strb(char *name)
 
 static void OPHANDLER_CALL emit_do_lctrl(char *name)
 {
-  static const cell valid_values[] = { 0,1,2,3,4,5,6,7 };
+  static const cell valid_values[] = { 0,1,2,3,4,5,6,7,8,9 };
   ucell p[1];
 
   emit_param_index(&p[0],valid_values,(sizeof valid_values / sizeof valid_values[0]));
@@ -6281,7 +6282,7 @@ static void OPHANDLER_CALL emit_do_lctrl(char *name)
 
 static void OPHANDLER_CALL emit_do_sctrl(char *name)
 {
-  static const cell valid_values[] = { 2,4,5,6 };
+  static const cell valid_values[] = { 2,4,5,6,8,9 };
   ucell p[1];
 
   emit_param_index(&p[0],valid_values,(sizeof valid_values / sizeof valid_values[0]));
