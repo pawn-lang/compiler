@@ -895,7 +895,7 @@ static void resetglobals(void)
   sc_curstates=0;
   pc_memflags=0;
   pc_naked=FALSE;
-  emit_block_parsing=FALSE;
+  emit_parsing_mode=0;
 }
 
 static void initglobals(void)
@@ -1652,9 +1652,10 @@ static void parse(void)
       break;
     case tEMIT:
     case t__EMIT:
-      emit_block_parsing=FALSE;
+      emit_parsing_mode |= epmGLOBAL;
       lex(&val,&str);
       emit_parse_line();
+      emit_parsing_mode &= ~epmGLOBAL;
       break;
     case tNEW:
       if (getclassspec(tok,&fpublic,&fstatic,&fstock,&fconst))
@@ -5102,10 +5103,10 @@ static void statement(int *lastindent,int allow_decl)
   if (tok==tEMIT || tok==t__EMIT) {
     doemit();
     return;
-  } else if (emit_block_parsing) {
+  } else if ((emit_parsing_mode & epmBLOCK)!=0) {
     emit_parse_line();
     return;
-  }
+  } /* if */
   if (tok!='{') {
     insert_dbgline(fline);
     setline(TRUE);
@@ -6527,33 +6528,48 @@ SC_FUNC void emit_parse_line(void)
       len=strlen(sc_tokens[tok-tFIRST]);
     else
       len=strlen(st);
+
+    /* move back to the start of the last fetched token
+     * and copy the instruction name
+     */
     lptr-=len;
     for(i=0; i<sizeof(name) && (isalnum(*lptr) || *lptr=='.'); ++i,++lptr)
       name[i]=(char)tolower(*lptr);
     name[i]='\0';
+
+    /* find the corresponding argument handler and call it */
     i=emit_findopcode(name,strlen(name));
     if (emit_opcodelist[i].name==NULL && *name!='\0')
       error(104,name); /* invalid assembler instruction */
     emit_opcodelist[i].func(name);
-    /* make sure the string only contains whitespaces
-     * and/or an optional trailing '}'
-     */
-    while (*lptr<=' ' && *lptr!='\0')
-      lptr++;
-    if (*lptr!='\0' && *lptr!='}')
-      error(38);  /* extra characters on line */
+
+    if ((emit_parsing_mode & epmEXPR)==0) {
+      /* make sure the string only contains whitespaces
+       * and/or an optional trailing '}' or ';'
+       */
+      while (*lptr<=' ' && *lptr!='\0')
+        lptr++;
+      if (*lptr!='\0' && *lptr!='}' && (*lptr!=';' || (emit_parsing_mode & epmBLOCK)!=0))
+        error(38);  /* extra characters on line */
+    } /* if */
   } else if (tok==tLABEL) {
-    if (!emit_block_parsing)
-      error(38);  /* extra characters on line */
-    if (find_constval(&tagname_tab,st,0)!=NULL)
+    if ((emit_parsing_mode & epmEXPR)!=0) {
+      error(29);        /* invalid expression, assumed zero */
+    } else if ((emit_parsing_mode & epmGLOBAL)!=0) {
+      error(11);        /* invalid outside functions */
+    } else if (find_constval(&tagname_tab,st,0)!=NULL) {
       error(221,st);    /* label name shadows tagname */
-    sym=fetchlab(st);
-    setlabel((int)sym->addr);
-    sym->usage|=uDEFINE;
+    } else {
+      sym=fetchlab(st);
+      setlabel((int)sym->addr);
+      sym->usage|=uDEFINE;
+    } /* if */
   } /* if */
-  if (!emit_block_parsing || matchtoken('}')) {
+  if ((emit_parsing_mode & epmBLOCK)!=0) {
+    if (matchtoken('}'))
+      emit_parsing_mode &= ~epmBLOCK;
+  } else if ((emit_parsing_mode & epmEXPR)==0) {
     matchtoken(';');
-    emit_block_parsing=FALSE;
   } /* if */
 }
 
@@ -6562,10 +6578,9 @@ static void doemit(void)
   cell val;
   char *st;
 
-  emit_block_parsing=FALSE;
-  if (matchtoken((int)'{')) {
+  if (matchtoken('{')) {
     lexpush();
-    emit_block_parsing=TRUE;
+    emit_parsing_mode |= epmBLOCK;
   } else {
     lex(&val,&st);
     emit_parse_line();

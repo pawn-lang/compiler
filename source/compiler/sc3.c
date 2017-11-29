@@ -1452,13 +1452,13 @@ static int hier2(value *lval)
   case t__EMIT: {
     cell val;
     char* st;
-    if (!matchtoken('{'))
-      error(38);    /* extra characters on line */
-    lex(&val,&st);
+    if (matchtoken('{'))
+      error(29);    /* invalid expression, assumed zero */
     lval->ident=iEXPRESSION;
+    emit_parsing_mode |= epmEXPR;
+    lex(&val,&st);
     emit_parse_line();
-    if (!matchtoken('}'))
-      error(38);    /* extra characters on line */
+    emit_parsing_mode &= ~epmEXPR;
     return FALSE;
   } /* case */
   default:
