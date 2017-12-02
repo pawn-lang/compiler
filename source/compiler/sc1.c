@@ -5820,6 +5820,8 @@ static void dolabel(void)
   if (find_constval(&tagname_tab,st,0)!=NULL)
     error(221,st);      /* label name shadows tagname */
   sym=fetchlab(st);
+  if ((sym->usage & uDEFINE)!=0)
+    error(21,st);       /* symbol already defined */
   setlabel((int)sym->addr);
   /* since one can jump around variable declarations or out of compound
    * blocks, the stack must be manually adjusted
