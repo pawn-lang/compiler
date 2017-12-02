@@ -6561,6 +6561,8 @@ SC_FUNC void emit_parse_line(void)
       error(221,st);    /* label name shadows tagname */
     } else {
       sym=fetchlab(st);
+      if ((sym->usage & uDEFINE)!=0)
+        error(021,st);  /* symbol already defined */
       setlabel((int)sym->addr);
       sym->usage|=uDEFINE;
     } /* if */
