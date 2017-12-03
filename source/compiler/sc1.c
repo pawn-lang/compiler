@@ -5907,18 +5907,21 @@ static void emit_param_any(ucell *p,int size)
       } /* if */
       p[curp]=(neg!=0) ? -sym->addr : sym->addr;
       break;
-    default:
-      if (tok==(int)'-') {
-        if (neg==0) {
-          neg=1;
-          goto fetchtok;
-        } else {
-          char ival[sNAMEMAX+2]="-";
-          strcpy(ival+1,str);
-          error(1,sc_tokens[tSYMBOL-tFIRST],ival);
-          break;
-        } /* if */
+    case '(':
+      constexpr(&val,NULL,NULL);
+      needtoken(')');
+      p[curp]=val;
+      break;
+    case '-':
+      if (neg==0) {
+        neg=1;
+        goto fetchtok;
       } /* if */
+      char ival[sNAMEMAX+2]="-";
+      strcpy(ival+1,str);
+      error(1,sc_tokens[tSYMBOL-tFIRST],ival);
+      break;
+    default:
       emit_invalid_token(teNUMBER,tok);
     } /* switch */
   } while (++curp<size);
@@ -6048,11 +6051,13 @@ fetchtok:
     markusage(sym,uREAD);
     val=(neg!=0) ? -sym->addr : sym->addr;
     break;
-  default:
-    if (tok==(int)'-' && neg==0) {
+  case '-':
+    if (neg==0) {
       neg=1;
       goto fetchtok;
     } /* if */
+    /* drop through */
+  default:
     emit_invalid_token(teNUMBER,tok);
     return;
   } /* switch */
