@@ -5879,22 +5879,26 @@ static void emit_param_any(ucell *p,int size)
 
   assert(size>0);
   do {
-    neg=0;
+    neg=FALSE;
   fetchtok:
     tok=lex(&val,&str);
     switch (tok) {
     case tNUMBER:
-      p[curp]=(neg!=0) ? -val : val;
+      p[curp]=(neg==TRUE) ? -val : val;
       break;
     case tRATIONAL:
-      p[curp]=(neg!=0) ? (val|((cell)1 << (PAWN_CELL_SIZE-1))) : val;
+      p[curp]=(neg==TRUE) ? (val|((cell)1 << (PAWN_CELL_SIZE-1))) : val;
       break;
     case tSYMBOL:
       sym=findloc(str);
       if (sym==NULL)
         sym=findglb(str,sSTATEVAR);
-      if (sym==NULL || (sym->ident!=iFUNCTN && sym->ident!=iREFFUNC && (sym->usage & uDEFINE)==0) || sym->ident==iLABEL) {
+      if (sym==NULL || (sym->ident!=iFUNCTN && sym->ident!=iREFFUNC && (sym->usage & uDEFINE)==0)) {
         error(17,str);  /* undefined symbol */
+        break;
+      } /* if */
+      if (sym->ident==iLABEL) {
+        emit_invalid_token(teNUMBER,tLABEL);
         break;
       } /* if */
       if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
@@ -5904,7 +5908,7 @@ static void emit_param_any(ucell *p,int size)
       } else {
         markusage(sym,uREAD|uWRITTEN);
       } /* if */
-      p[curp]=(neg!=0) ? -sym->addr : sym->addr;
+      p[curp]=(neg==TRUE) ? -sym->addr : sym->addr;
       break;
     case '(':
       if ((emit_parsing_mode & epmEXPR)==0)
@@ -5919,11 +5923,11 @@ static void emit_param_any(ucell *p,int size)
       if ((emit_parsing_mode & epmEXPR)==0)
         stgset(FALSE);
       needtoken(')');
-      p[curp]=(neg==0) ? val : -val;
+      p[curp]=(neg==TRUE) ? -val : val;
       break;
     case '-':
-      if (neg==0) {
-        neg=1;
+      if (neg==FALSE) {
+        neg=TRUE;
         goto fetchtok;
       } /* if */
       char ival[sNAMEMAX+2]="-";
@@ -5954,6 +5958,10 @@ static void emit_param_data(ucell *p,int size)
     case tSYMBOL:
       sym=findloc(str);
       if (sym!=NULL) {
+        if (sym->ident==iLABEL) {
+          emit_invalid_token(teDATA,tLABEL);
+          break;
+        } /* if */
         if (sym->vclass!=sSTATIC && sym->ident!=iCONSTEXPR) {
           emit_invalid_token(teDATA,teLOCAL);
           break;
@@ -5996,6 +6004,10 @@ static void emit_param_local(ucell *p,int size)
     case tSYMBOL:
       sym=findloc(str);
       if (sym!=NULL) {
+        if (sym->ident==iLABEL) {
+          emit_invalid_token(teLOCAL,tLABEL);
+          break;
+        } /* if */
         if (sym->vclass==sSTATIC) {
           emit_invalid_token(teLOCAL,teDATA);
           break;
@@ -6021,25 +6033,28 @@ static void emit_param_index(ucell *p,const cell *valid_values,int size)
   cell val;
   char *str;
   symbol *sym;
-  int tok,i;
-  int neg=0;
+  int tok,i,global;
+  int neg=FALSE;
 
   assert(size>0);
 fetchtok:
   tok=lex(&val,&str);
   switch (tok) {
   case tNUMBER:
-    if (neg!=0)
+    if (neg==TRUE)
       val=-val;
     break;
   case tRATIONAL:
-    if (neg!=0)
+    if (neg==TRUE)
       val=val|((cell)1 << (PAWN_CELL_SIZE-1));
     break;
   case tSYMBOL:
-  	sym=findloc(str);
-    if (sym==NULL)
+    global=FALSE;
+    sym=findloc(str);
+    if (sym==NULL) {
+      global=TRUE;
       sym=findglb(str,sSTATEVAR);
+    } /* if */
     if (sym==NULL) {
       error(17,str);    /* undefined symbol */
       return;
@@ -6047,22 +6062,25 @@ fetchtok:
     switch (sym->ident) {
     case iCONSTEXPR:
       break;
+    case iLABEL:
+      tok=tLABEL;
+      goto invalid_token;
     case iFUNCTN:
     case iREFFUNC:
       tok=((sym->usage & uNATIVE)!=0) ? teNATIVE : teFUNCTN;
-      /* drop through */
+      goto invalid_token;
     default:
-      if (tok==tSYMBOL)
-        tok=teDATA;
+      tok=(global==FALSE && sym->vclass!=sSTATIC) ? teLOCAL : teDATA;
+    invalid_token:
       emit_invalid_token(teNUMBER,tok);
       return;
     } /* switch */
     markusage(sym,uREAD);
-    val=(neg!=0) ? -sym->addr : sym->addr;
+    val=(neg==TRUE) ? -sym->addr : sym->addr;
     break;
   case '-':
-    if (neg==0) {
-      neg=1;
+    if (neg==FALSE) {
+      neg=TRUE;
       goto fetchtok;
     } /* if */
     /* drop through */
