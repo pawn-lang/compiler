@@ -5871,12 +5871,11 @@ static void emit_invalid_token(int expected_token,int found_token)
 static void emit_param_any(ucell *p,int size)
 {
   char *str;
-  cell val;
+  cell val,cidx;
   symbol *sym;
-  int tok;
   extern char *sc_tokens[];
   int curp=0;
-  int neg;
+  int tok,neg,ident,index;
 
   assert(size>0);
   do {
@@ -5908,9 +5907,19 @@ static void emit_param_any(ucell *p,int size)
       p[curp]=(neg!=0) ? -sym->addr : sym->addr;
       break;
     case '(':
-      constexpr(&val,NULL,NULL);
+      if ((emit_parsing_mode & epmEXPR)==0)
+        stgset(TRUE);
+      stgget(&index,&cidx);
+      errorset(sEXPRMARK,0);
+      ident=expression(&val,NULL,NULL,FALSE);
+      if (ident!=iCONSTEXPR)
+        error(8);       /* must be constant expression */
+      errorset(sEXPRRELEASE,0);
+      stgdel(index,cidx);
+      if ((emit_parsing_mode & epmEXPR)==0)
+        stgset(FALSE);
       needtoken(')');
-      p[curp]=val;
+      p[curp]=(neg==0) ? val : -val;
       break;
     case '-':
       if (neg==0) {
