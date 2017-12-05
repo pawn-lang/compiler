@@ -5868,7 +5868,7 @@ static void emit_invalid_token(int expected_token,int found_token)
   } /* if */
 }
 
-static void emit_param_any(ucell *p,int size)
+static void emit_param_any(ucell *p,int numargs)
 {
   char *str;
   cell val,cidx;
@@ -5877,17 +5877,17 @@ static void emit_param_any(ucell *p,int size)
   int curp=0;
   int tok,neg,ident,index;
 
-  assert(size>0);
+  assert(numargs>0);
   do {
     neg=FALSE;
   fetchtok:
     tok=lex(&val,&str);
     switch (tok) {
     case tNUMBER:
-      p[curp]=(neg==TRUE) ? -val : val;
+      p[curp]=(neg!=FALSE) ? -val : val;
       break;
     case tRATIONAL:
-      p[curp]=(neg==TRUE) ? (val|((cell)1 << (PAWN_CELL_SIZE-1))) : val;
+      p[curp]=(neg!=FALSE) ? (val|((cell)1 << (PAWN_CELL_SIZE-1))) : val;
       break;
     case tSYMBOL:
       sym=findloc(str);
@@ -5908,7 +5908,7 @@ static void emit_param_any(ucell *p,int size)
       } else {
         markusage(sym,uREAD|uWRITTEN);
       } /* if */
-      p[curp]=(neg==TRUE) ? -sym->addr : sym->addr;
+      p[curp]=(neg!=FALSE) ? -sym->addr : sym->addr;
       break;
     case '(':
       if ((emit_parsing_mode & epmEXPR)==0)
@@ -5923,24 +5923,25 @@ static void emit_param_any(ucell *p,int size)
       if ((emit_parsing_mode & epmEXPR)==0)
         stgset(FALSE);
       needtoken(')');
-      p[curp]=(neg==TRUE) ? -val : val;
+      p[curp]=(neg!=FALSE) ? -val : val;
       break;
     case '-':
       if (neg==FALSE) {
         neg=TRUE;
         goto fetchtok;
+      } else {
+        char ival[sNAMEMAX+2]="-";
+        strcpy(ival+1,str);
+        error(1,sc_tokens[tSYMBOL-tFIRST],ival);
+        break;
       } /* if */
-      char ival[sNAMEMAX+2]="-";
-      strcpy(ival+1,str);
-      error(1,sc_tokens[tSYMBOL-tFIRST],ival);
-      break;
     default:
       emit_invalid_token(teNUMBER,tok);
     } /* switch */
-  } while (++curp<size);
+  } while (++curp<numargs);
 }
 
-static void emit_param_data(ucell *p,int size)
+static void emit_param_data(ucell *p,int numargs)
 {
   cell val;
   char *str;
@@ -5948,7 +5949,7 @@ static void emit_param_data(ucell *p,int size)
   int curp=0;
   int tok;
 
-  assert(size>0);
+  assert(numargs>0);
   do {
     tok=lex(&val,&str);
     switch (tok) {
@@ -5983,10 +5984,10 @@ static void emit_param_data(ucell *p,int size)
     default:
       emit_invalid_token(teDATA,tok);
     } /* switch */
-  } while (++curp<size);
+  } while (++curp<numargs);
 }
 
-static void emit_param_local(ucell *p,int size)
+static void emit_param_local(ucell *p,int numargs)
 {
   cell val;
   char *str;
@@ -5994,7 +5995,7 @@ static void emit_param_local(ucell *p,int size)
   int curp=0;
   int tok;
 
-  assert(size>0);
+  assert(numargs>0);
   do {
     tok=lex(&val,&str);
     switch (tok) {
@@ -6025,10 +6026,10 @@ static void emit_param_local(ucell *p,int size)
     default:
       emit_invalid_token(tSYMBOL,tok);
     } /* switch */
-  } while (++curp<size);
+  } while (++curp<numargs);
 }
 
-static void emit_param_index(ucell *p,const cell *valid_values,int size)
+static void emit_param_index(ucell *p,const cell *valid_values,int numvalues)
 {
   cell val;
   char *str;
@@ -6036,16 +6037,16 @@ static void emit_param_index(ucell *p,const cell *valid_values,int size)
   int tok,i,global;
   int neg=FALSE;
 
-  assert(size>0);
+  assert(numvalues>0);
 fetchtok:
   tok=lex(&val,&str);
   switch (tok) {
   case tNUMBER:
-    if (neg==TRUE)
+    if (neg!=FALSE)
       val=-val;
     break;
   case tRATIONAL:
-    if (neg==TRUE)
+    if (neg!=FALSE)
       val=val|((cell)1 << (PAWN_CELL_SIZE-1));
     break;
   case tSYMBOL:
@@ -6076,7 +6077,7 @@ fetchtok:
       return;
     } /* switch */
     markusage(sym,uREAD);
-    val=(neg==TRUE) ? -sym->addr : sym->addr;
+    val=(neg!=FALSE) ? -sym->addr : sym->addr;
     break;
   case '-':
     if (neg==FALSE) {
@@ -6090,7 +6091,7 @@ fetchtok:
   } /* switch */
 
   *p=val;
-  for (i=0; i<size; i++)
+  for (i=0; i<numvalues; i++)
     if (val==valid_values[i])
       return;
   error(50);    /* invalid range */
@@ -6109,6 +6110,45 @@ static void emit_param_label(ucell *p)
   sym=fetchlab(str);
   sym->usage|=uREAD;
   *p=*(ucell *)&sym->addr;
+}
+
+static void emit_param_function(ucell *p,int isnative)
+{
+  cell val;
+  char *str;
+  symbol *sym;
+  int tok;
+
+  tok=lex(&val,&str);
+  switch (tok)
+  {
+  case tSYMBOL:
+    sym=findglb(str,sSTATEVAR);
+    if (sym==NULL) {
+      error(17,str);    /* undefined symbol */
+      return;
+    } /* if */
+    if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
+      if (!!(sym->usage & uNATIVE)==isnative)
+        break;
+      tok=(isnative!=FALSE) ? teFUNCTN : teNATIVE;
+    } else {
+      tok=(sym->ident==iCONSTEXPR) ? teNUMBER : teDATA;
+    } /* if */
+    /* drop through */
+  default:
+    emit_invalid_token((isnative!=FALSE) ? teNATIVE : teFUNCTN,tok);
+    return;
+  } /* switch */
+
+  if (isnative!=FALSE) {
+    if ((sym->usage & uREAD)==0 && sym->addr>=0)
+      sym->addr=ntv_funcid++;
+    *p=sym->addr;
+  } else {
+    *(char **)p=str;
+  } /* if */
+  markusage(sym,uREAD);
 }
 
 static void OPHANDLER_CALL emit_noop(char *name)
@@ -6324,36 +6364,34 @@ static void OPHANDLER_CALL emit_do_sctrl(char *name)
 
 static void OPHANDLER_CALL emit_do_call(char *name)
 {
-  cell val;
-  char *str;
-  symbol *sym;
-  int tok;
+  char *funcname=NULL;
 
-  tok=lex(&val,&str);
-  if (tok!=tSYMBOL) {
-    emit_invalid_token(tSYMBOL,tok);
-    return;
-  } /* if */
-  sym=findglb(str,sGLOBAL);
-  if (sym==NULL) {
-    error(17,str); /* undefined symbol */
-    return;
-  } /* if */
-  if (sym->ident!=iFUNCTN && sym->ident!=iREFFUNC) {
-    emit_invalid_token(teFUNCTN,(sym->ident==iCONSTEXPR) ? teNUMBER : teDATA);
-    return;
-  } /* if */
-  if ((sym->usage & uNATIVE)!=0) {
-    emit_invalid_token(teFUNCTN,teNATIVE);
-    return;
-  } /* if */
+  emit_param_function((ucell *)&funcname,FALSE);
   stgwrite("\t");
   stgwrite(name);
-  stgwrite(" .");
-  stgwrite(str);
+  if (funcname!=NULL) {
+    stgwrite(" .");
+    stgwrite(funcname);
+  } /* if */
   stgwrite("\n");
   code_idx+=opcodes(1)+opargs(1);
-  markusage(sym,uREAD);
+}
+
+static void OPHANDLER_CALL emit_do_sysreq_c(char *name)
+{
+  ucell p[1];
+
+  emit_param_function(&p[0],TRUE);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
+}
+
+static void OPHANDLER_CALL emit_do_sysreq_n(char *name)
+{
+  ucell p[2];
+
+  emit_param_function(&p[0],TRUE);
+  emit_param_any(&p[1],1);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static EMIT_OPCODE emit_opcodelist[] = {
@@ -6504,8 +6542,8 @@ static EMIT_OPCODE emit_opcodelist[] = {
   {129, "switch",     emit_parm1_label },
 /*{126, "symbol",     do_symbol }, */
 /*{136, "symtag",     emit_parm1_any }, */
-  {123, "sysreq.c",   emit_parm1_any },
-  {135, "sysreq.n",   emit_parm2_any },
+  {123, "sysreq.c",   emit_do_sysreq_c },
+  {135, "sysreq.n",   emit_do_sysreq_n },
   {122, "sysreq.pri", emit_parm0 },
   { 76, "udiv",       emit_parm0 },
   { 77, "udiv.alt",   emit_parm0 },
