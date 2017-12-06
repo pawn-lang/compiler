@@ -6259,8 +6259,8 @@ static void SC_FASTCALL emit_do_sysreq_c(char *name)
 
   emit_param_function(&p[0],TRUE);
 
-  /* if macro instructions aren't enabled, output a 'sysreq.c' instruction,
-   * otherwise generate the following sequence for compatibility:
+  /* if macro optimisations aren't enabled, output a 'sysreq.c' instruction,
+   * otherwise generate the following sequence:
    *   const.pri <funcid>
    *   sysreq.pri
    */
@@ -6279,8 +6279,8 @@ static void SC_FASTCALL emit_do_sysreq_n(char *name)
   emit_param_function(&p[0],TRUE);
   emit_param_any(&p[1]);
 
-  /* if macro instructions are enabled, output a 'sysreq.n' instruction,
-   * otherwise generate the following sequence for compatibility:
+  /* if macro optimisations are enabled, output a 'sysreq.n' instruction,
+   * otherwise generate the following sequence:
    *   push <argsize>
    *   sysreq.c <funcid>
    *   stack <argsize> + <cellsize>
@@ -6301,7 +6301,22 @@ static void SC_FASTCALL emit_do_const(char *name)
 
   emit_param_data(&p[0]);
   emit_param_any(&p[1]);
-  outinstr(name,p,(sizeof p / sizeof p[0]));
+
+  /* if macro optimisations are enabled, output a 'const' instruction,
+   * otherwise generate the following sequence:
+   *   push.pri
+   *   const.pri <val>
+   *   stor.pri <addr>
+   *   pop.pri
+   */
+  if (pc_optimize>sOPTIMIZE_NOMACRO) {
+    outinstr(name,p,2);
+  } else {
+    outinstr("push.pri",NULL,0);
+    outinstr("const.pri",&p[1],1);
+    outinstr("stor.pri",&p[0],1);
+    outinstr("pop.pri",NULL,0);
+  } /* if */
 }
 
 static void SC_FASTCALL emit_do_const_s(char *name)
@@ -6310,27 +6325,62 @@ static void SC_FASTCALL emit_do_const_s(char *name)
 
   emit_param_local(&p[0]);
   emit_param_any(&p[1]);
-  outinstr(name,p,(sizeof p / sizeof p[0]));
+
+  /* if macro optimisations are enabled, output a 'const.s' instruction,
+   * otherwise generate the following sequence:
+   *   push.pri
+   *   const.pri <val>
+   *   stor.s.pri <addr>
+   *   pop.pri
+   */
+  if (pc_optimize>sOPTIMIZE_NOMACRO) {
+    outinstr(name,p,2);
+  } else {
+    outinstr("push.pri",NULL,0);
+    outinstr("const.pri",&p[1],1);
+    outinstr("stor.s.pri",&p[0],1);
+    outinstr("pop.pri",NULL,0);
+  } /* if */
 }
 
 static void SC_FASTCALL emit_do_load_both(char *name)
 {
   ucell p[2];
-  int i;
 
-  for (i=0; i<(sizeof p / sizeof p[0]); i++)
-    emit_param_data(&p[i]);
-  outinstr(name,p,(sizeof p / sizeof p[0]));
+  emit_param_data(&p[0]);
+  emit_param_data(&p[1]);
+
+  /* if macro optimisations are enabled, output a 'load.both' instruction,
+   * otherwise generate the following sequence:
+   *   load.pri <val1>
+   *   load.alt <val2>
+   */
+  if (pc_optimize>sOPTIMIZE_NOMACRO) {
+    outinstr(name,p,2);
+  } else {
+    outinstr("load.pri",&p[0],1);
+    outinstr("load.alt",&p[1],1);
+  } /* if */
 }
 
 static void SC_FASTCALL emit_do_load_s_both(char *name)
 {
   ucell p[2];
-  int i;
 
-  for (i=0; i<(sizeof p / sizeof p[0]); i++)
-    emit_param_local(&p[i]);
-  outinstr(name,p,(sizeof p / sizeof p[0]));
+  emit_param_local(&p[0]);
+  emit_param_local(&p[1]);
+
+  /* if macro optimisations are enabled, output a 'load.s.both' instruction,
+   * otherwise generate the following sequence:
+   *   load.s.pri <val1>
+   *   load.s.alt <val2>
+   */
+  if (pc_optimize>sOPTIMIZE_NOMACRO) {
+    outinstr(name,p,2);
+  } else {
+    outinstr("load.s.pri",&p[0],1);
+    outinstr("load.s.alt",&p[1],1);
+  } /* if */
 }
 
 static void SC_FASTCALL emit_do_pushn_c(char *name)
@@ -6343,7 +6393,16 @@ static void SC_FASTCALL emit_do_pushn_c(char *name)
   numargs=name[4]-'0';
   for (i=0; i<numargs; i++)
     emit_param_any(&p[i]);
-  outinstr(name,p,numargs);
+
+  /* if macro optimisations are enabled, output a 'push<N>.c' instruction,
+   * otherwise generate a sequence of <N> 'push.c' instructions
+   */
+  if (pc_optimize>sOPTIMIZE_NOMACRO) {
+    outinstr(name,p,numargs);
+  } else {
+    for (i=0; i<numargs; i++)
+      outinstr("push.c",&p[i],1);
+  } /* if */
 }
 
 static void SC_FASTCALL emit_do_pushn(char *name)
@@ -6356,7 +6415,16 @@ static void SC_FASTCALL emit_do_pushn(char *name)
   numargs=name[4]-'0';
   for (i=0; i<numargs; i++)
     emit_param_data(&p[i]);
-  outinstr(name,p,numargs);
+
+  /* if macro optimisations are enabled, output a 'push<N>' instruction,
+   * otherwise generate a sequence of <N> 'push' instructions
+   */
+  if (pc_optimize>sOPTIMIZE_NOMACRO) {
+    outinstr(name,p,numargs);
+  } else {
+    for (i=0; i<numargs; i++)
+      outinstr("push",&p[i],1);
+  } /* if */
 }
 
 static void SC_FASTCALL emit_do_pushn_s_adr(char *name)
@@ -6365,11 +6433,21 @@ static void SC_FASTCALL emit_do_pushn_s_adr(char *name)
   int i,numargs;
 
   assert(name[0]=='p' && name[1]=='u' && name[2]=='s'
-         && name[3]=='h' && '2'<=name[4] && name[4]<='5');
+         && name[3]=='h' && '2'<=name[4] && name[4]<='5' && name[5]=='.');
   numargs=name[4]-'0';
   for (i=0; i<numargs; i++)
-    emit_param_data(&p[i]);
-  outinstr(name,p,numargs);
+    emit_param_local(&p[i]);
+
+  /* if macro optimisations are enabled, output a 'push<N>.s/.adr' instruction,
+   * otherwise generate a sequence of <N> 'push.s/.adr' instructions
+   */
+  if (pc_optimize>sOPTIMIZE_NOMACRO) {
+    outinstr(name,p,numargs);
+  } else {
+    name=(name[6]=='s') ? "push.s" : "push.adr";
+    for (i=0; i<numargs; i++)
+      outinstr(name,&p[i],1);
+  } /* if */
 }
 
 static EMIT_OPCODE emit_opcodelist[] = {
