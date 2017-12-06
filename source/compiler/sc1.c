@@ -6258,7 +6258,18 @@ static void SC_FASTCALL emit_do_sysreq_c(char *name)
   ucell p[1];
 
   emit_param_function(&p[0],TRUE);
-  outinstr(name,p,(sizeof p / sizeof p[0]));
+
+  /* if macro instructions aren't enabled, output a 'sysreq.c' instruction,
+   * otherwise generate the following sequence for compatibility:
+   *   const.pri <funcid>
+   *   sysreq.pri
+   */
+  if (pc_optimize<=sOPTIMIZE_NOMACRO) {
+    outinstr(name,p,1);
+  } else {
+    outinstr("const.pri",&p[0],1);
+    outinstr("sysreq.pri",NULL,0);
+  } /* if */
 }
 
 static void SC_FASTCALL emit_do_sysreq_n(char *name)
@@ -6267,7 +6278,21 @@ static void SC_FASTCALL emit_do_sysreq_n(char *name)
 
   emit_param_function(&p[0],TRUE);
   emit_param_any(&p[1]);
-  outinstr(name,p,(sizeof p / sizeof p[0]));
+
+  /* if macro instructions are enabled, output a 'sysreq.n' instruction,
+   * otherwise generate the following sequence for compatibility:
+   *   push <argsize>
+   *   sysreq.c <funcid>
+   *   stack <argsize> + <cellsize>
+   */
+  if (pc_optimize>sOPTIMIZE_NOMACRO) {
+    outinstr(name,p,2);
+  } else {
+    outinstr("push.c",&p[1],1);
+    outinstr("sysreq.c",&p[0],1);
+    p[1]+=sizeof(cell);
+    outinstr("stack",&p[1],1);
+  } /* if */
 }
 
 static void SC_FASTCALL emit_do_const(char *name)
