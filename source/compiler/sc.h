@@ -46,16 +46,16 @@
 #include "../amx/amx.h"
 
 #if defined _MSC_VER
-  #define OPHANDLER_CALL __fastcall
+  #define SC_FASTCALL __fastcall
 #elif defined __GNUC__ && (defined __i386__ || defined __x86_64__ || defined __amd64__)
   #if !defined __x86_64__ && !defined __amd64__ && (__GNUC__>=4 || __GNUC__==3 && __GNUC_MINOR__>=4)
-    #define OPHANDLER_CALL __attribute__((fastcall))
+    #define SC_FASTCALL __attribute__((fastcall))
   #else
-    #define OPHANDLER_CALL __attribute__((regparam(3)))
+    #define SC_FASTCALL __attribute__((regparam(3)))
   #endif
 #endif
-#if !defined OPHANDLER_CALL
-  #define OPHANDLER_CALL
+#if !defined SC_FASTCALL
+  #define SC_FASTCALL
 #endif
 
 /* Note: the "cell" and "ucell" types are defined in AMX.H */
@@ -403,7 +403,7 @@ typedef struct s_valuepair {
 #define tLABEL      337
 #define tSTRING     338
 /* argument types for emit/__emit */
-#define teNUMBER    339 /* integer/rational number */
+#define teNUMERIC   339 /* integer/rational number */
 #define teDATA      340 /* data (variable name or address) */
 #define teLOCAL     341 /* local variable (name or offset) */
 #define teFUNCTN    342 /* Pawn function */
