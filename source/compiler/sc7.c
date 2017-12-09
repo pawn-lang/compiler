@@ -1437,6 +1437,8 @@ SC_FUNC void stgout(int index)
         filewrite(stgpipe+idx);
     } /* if */
   } /* if */
+  if (stgidx<=emit_stgbuf_idx)
+    emit_stgbuf_idx=-1;
   pipeidx=0;  /* reset second pipe */
 }
 
@@ -1770,7 +1772,7 @@ static void stgopt(char *start,char *end,int (*outputfunc)(char *str))
 
   assert(sequences!=NULL);
   /* do not match anything if debug-level is maximum */
-  if (pc_optimize>sOPTIMIZE_NONE && (emit_parsing_mode & epmACTIVE)==0 && sc_status==statWRITE) {
+  if (pc_optimize>sOPTIMIZE_NONE && sc_status==statWRITE && emit_stgbuf_idx==-1) {
     do {
       matches=0;
       start=debut;

@@ -870,17 +870,16 @@ SC_VDECL FILE *outf;          /* file written to */
 
 SC_VDECL jmp_buf errbuf;      /* target of longjmp() on a fatal error */
 
-/*  Possible entries for "emit_parsing_mode"
- *  Bits: 0     (epmACTIVE) 'emit'/'__emit' parsing is active
- *        1     (epmBLOCK) multiline ('{}' block) syntax
- *        2     (epmEXPR) used within an expression
- *        3     (epmGLOBAL) used outside of function
+/*  Possible entries for "emit_flags"
+ *  Bits: 0     (epmBLOCK) multiline ('{}' block) syntax
+ *        1     (epmEXPR) used within an expression
+ *        2     (epmGLOBAL) used outside of a function
  */
-#define epmACTIVE   1
-#define epmBLOCK    2
-#define epmEXPR     4
-#define epmGLOBAL   8
-SC_VDECL int emit_parsing_mode;
+#define efBLOCK         1
+#define efEXPR          2
+#define efGLOBAL        4
+SC_VDECL int emit_flags;
+SC_VDECL int emit_stgbuf_idx;
 
 #if !defined SC_LIGHT
   SC_VDECL int sc_makereport; /* generate a cross-reference report */
