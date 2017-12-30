@@ -135,7 +135,6 @@ target_link_libraries(pawncc pawnc)
 set(PAWNDISASM_SRCS
   pawndisasm.c
   ../amx/amxdbg.c
-  ../amx/amx.c
 )
 add_executable(pawndisasm ${PAWNDISASM_SRCS})
 if(UNIX)
