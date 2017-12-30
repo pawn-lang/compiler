@@ -579,7 +579,7 @@ int main(int argc,char *argv[])
         fprintf(fplist," %s",name);
         name[0]='\0';
       } /* if */
-      fprintf(fplist,"\n%08"PRIxC"  ",(cell)(cip-code)*sizeof(cell)-(amxhdr.dat-amxhdr.cod));
+      fprintf(fplist,"\n%08"PRIxC"  ",(cell)((cip-code)*sizeof(cell)-(amxhdr.dat-amxhdr.cod)));
     } /* if */
     fprintf(fplist,"%08"PRIxC" ",*cip);
     addchars(name,*cip,count);
