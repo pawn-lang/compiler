@@ -58,6 +58,10 @@ if(UNIX)
   link_libraries(pthread)
 endif()
 
+if(APPLE)
+  set(CMAKE_MACOSX_RPATH ON)
+endif()
+
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/version.h)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
