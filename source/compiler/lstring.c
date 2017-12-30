@@ -5,6 +5,7 @@
  * (there is no need to include the same files twice).
  */
 
+#include <string.h>   /* for strlen() */
 #include "lstring.h"
 
 #if !defined HAVE_STRLCPY
@@ -26,11 +27,6 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-
-/*
-  #include <sys/types.h>  already included through lstring.h
- */
-#include <string.h>   /* for strlen() */
 
 /*
  * Copy src to string dst of size siz.  At most siz-1 characters
@@ -84,11 +80,6 @@ strlcpy(char *dst, const char *src, size_t siz)
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-
-/*
-  #include <sys/types.h>    already included
-  #include <string.h>       already included
-*/
 
 /*
  * Appends src to string dst of size siz (unlike strncat, siz is the
