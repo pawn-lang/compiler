@@ -554,7 +554,7 @@ static void stripcom(unsigned char *line)
       } /* if */
     } /* if */
     if (*line == '\a') {
-      memmove(line,line+1,strlen(line+1)+1);
+      memmove(line,line+1,strlen((char *)line+1)+1);
     }
   } /* while */
   #if !defined SC_LIGHT
@@ -1128,7 +1128,7 @@ static int command(void)
             lptr++;
           pc_deprecate=(char*)malloc(strlen((char*)lptr)+1);
           if (pc_deprecate!=NULL) {
-            strcpy(pc_deprecate,lptr);
+            strcpy(pc_deprecate,(const char *)lptr);
             pc_deprecate[strcspn(pc_deprecate,"\r\n")]='\0';
           } /* if */
           lptr=(unsigned char*)strchr((char*)lptr,'\0'); /* skip to end (ignore "extra characters on line") */
@@ -1509,9 +1509,9 @@ static int command(void)
     while (*lptr<=' ' && *lptr!='\0')
       lptr++;
     if (!SKIPPING) {
-      char *usermsg=(char*)malloc(strlen(lptr)+1);
+      char *usermsg=(char*)malloc(strlen((const char *)lptr)+1);
       if(usermsg!=NULL) {
-        strcpy(usermsg,lptr);
+        strcpy(usermsg,(const char *)lptr);
         usermsg[strcspn(usermsg,"\r\n")]='\0';
         error(237,usermsg);  /* user warning */
         free(usermsg);
@@ -1840,12 +1840,12 @@ static void substallpatterns(unsigned char *line,int buffersize)
   } /* while */
 }
 
-static void ppconcat(const char *line)
+static void ppconcat(unsigned char *line)
 {
-  const char *c,*p,*b;
+  unsigned char *c,*p,*b;
   for (c=line; *c!='\0'; ++c) {
     if (is_startstring(c))
-      c=skipstring(c);
+      c=(unsigned char *)skipstring(c);
     if (*c=='#' && *(c+1)=='#') {
       p=c-1;
       b=c+2;
@@ -1853,7 +1853,7 @@ static void ppconcat(const char *line)
         p--;
       while (*b==' ')
         b++;
-      strcpy((char*)p+1,b);
+      strcpy((char *)p+1,(char *)b);
     } /* if */
   } /* for */
 }

@@ -5234,7 +5234,7 @@ static void statement(int *lastindent,int allow_decl)
   case tEMIT:
   case t__EMIT: {
     extern char *sc_tokens[];
-    const char *bck_lptr=lptr-strlen(sc_tokens[tok-tFIRST]);
+    const unsigned char *bck_lptr=lptr-strlen(sc_tokens[tok-tFIRST]);
     if (matchtoken('{')) {
       lexpush();
       emit_flags |= efBLOCK;

@@ -1074,7 +1074,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
       instr=skipwhitespace(line);
       /* ignore empty lines and labels (labels have a special syntax, so these
        * must be parsed separately) */
-      if (*instr=='\0' || (tolower(*instr)=='l') && *(instr+1)=='.')
+      if (*instr=='\0' || (tolower(*instr)=='l' && *(instr+1)=='.'))
         continue;
       /* get to the end of the instruction (make use of the '\n' that fgets()
        * added at the end of the line; this way we will *always* drop on a
