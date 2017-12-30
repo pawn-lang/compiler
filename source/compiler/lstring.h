@@ -2,8 +2,9 @@
 
 #include <stddef.h>
 
-#if defined __WATCOMC__ && __WATCOMC__ >= 1240
-  /* OpenWatcom introduced BSD "safe string functions" with version 1.4 */
+#if (defined __WATCOMC__ && __WATCOMC__ >= 1240)
+    /* OpenWatcom introduced BSD "safe string functions" with version 1.4 */
+    || defined __APPLE__
   #define HAVE_SAFESTR
 #endif
 
