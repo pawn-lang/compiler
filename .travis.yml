@@ -29,7 +29,7 @@ deploy:
   file_glob: true
   file:
     - 'pawnc-*-linux.tar.gz'
-    - 'pawnc-*-darwin.zip'
+    - 'pawnc-*-macos.zip'
   draft: true
   skip_cleanup: true
   on:
