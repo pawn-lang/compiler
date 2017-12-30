@@ -46,21 +46,16 @@
 #include "../amx/amx.h"
 
 #if defined _MSC_VER
-  #define OPHANDLER_CALL __fastcall
-#elif defined __GNUC__
-  #if defined __clang__
-    #define OPHANDLER_CALL __attribute__((fastcall))
-  #elif (defined __i386__ || defined __x86_64__ || defined __amd64__)
-    #if !defined __x86_64__ && !defined __amd64__ && (__GNUC__>=4 || __GNUC__==3 && __GNUC_MINOR__>=4)
-      #define OPHANDLER_CALL __attribute__((fastcall))
-    #else
-      #define OPHANDLER_CALL __attribute__((regparam(3)))
-    #endif
+  #define SC_FASTCALL __fastcall
+#elif defined __GNUC__ && (defined __i386__ || defined __x86_64__ || defined __amd64__)
+  #if !defined __x86_64__ && !defined __amd64__ && (__GNUC__>=4 || __GNUC__==3 && __GNUC_MINOR__>=4)
+    #define SC_FASTCALL __attribute__((fastcall))
   #else
-    #define OPHANDLER_CALL
+    #define SC_FASTCALL __attribute__((regparam(3)))
   #endif
-#else
-  #define OPHANDLER_CALL
+#endif
+#if !defined SC_FASTCALL
+  #define SC_FASTCALL
 #endif
 
 /* Note: the "cell" and "ucell" types are defined in AMX.H */
@@ -407,8 +402,15 @@ typedef struct s_valuepair {
 #define tSYMBOL     336
 #define tLABEL      337
 #define tSTRING     338
-#define tEXPR       339 /* for assigment to "lastst" only (see SC1.C) */
-#define tENDLESS    340 /* endless loop, for assigment to "lastst" only */
+/* argument types for emit/__emit */
+#define teNUMERIC   339 /* integer/rational number */
+#define teDATA      340 /* data (variable name or address) */
+#define teLOCAL     341 /* local variable (name or offset) */
+#define teFUNCTN    342 /* Pawn function */
+#define teNATIVE    343 /* native function */
+/* for assigment to "lastst" only (see SC1.C) */
+#define tEXPR       344
+#define tENDLESS    345 /* endless loop */
 
 /* (reversed) evaluation of staging buffer */
 #define sSTARTREORDER 0x01
@@ -699,7 +701,7 @@ SC_FUNC void dec(value *lval);
 SC_FUNC void jmp_ne0(int number);
 SC_FUNC void jmp_eq0(int number);
 SC_FUNC void outval(cell val,int newline);
-SC_FUNC void outinstr(const char *name, int nargs, ucell *args);
+SC_FUNC void outinstr(const char *name,ucell args[],int numargs);
 
 /* function prototypes in SC5.C */
 SC_FUNC int error(int number,...);
@@ -868,7 +870,16 @@ SC_VDECL FILE *outf;          /* file written to */
 
 SC_VDECL jmp_buf errbuf;      /* target of longjmp() on a fatal error */
 
-SC_VDECL int emit_block_parsing;
+/*  Possible entries for "emit_flags"
+ *  Bits: 0     (epmBLOCK) multiline ('{}' block) syntax
+ *        1     (epmEXPR) used within an expression
+ *        2     (epmGLOBAL) used outside of a function
+ */
+#define efBLOCK         1
+#define efEXPR          2
+#define efGLOBAL        4
+SC_VDECL int emit_flags;
+SC_VDECL int emit_stgbuf_idx;
 
 #if !defined SC_LIGHT
   SC_VDECL int sc_makereport; /* generate a cross-reference report */

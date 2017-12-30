@@ -42,7 +42,7 @@
 static void append_dbginfo(FILE *fout);
 
 
-typedef cell (OPHANDLER_CALL *OPCODE_PROC)(FILE *fbin,char *params,cell opcode);
+typedef cell (SC_FASTCALL *OPCODE_PROC)(FILE *fbin,char *params,cell opcode);
 
 typedef struct {
   cell opcode;
@@ -282,7 +282,7 @@ static void write_encoded(FILE *fbin,ucell *c,int num)
 #if defined __BORLANDC__ || defined __WATCOMC__
   #pragma argsused
 #endif
-static cell OPHANDLER_CALL noop(FILE *fbin,char *params,cell opcode)
+static cell SC_FASTCALL noop(FILE *fbin,char *params,cell opcode)
 {
   return 0;
 }
@@ -290,7 +290,7 @@ static cell OPHANDLER_CALL noop(FILE *fbin,char *params,cell opcode)
 #if defined __BORLANDC__ || defined __WATCOMC__
   #pragma argsused
 #endif
-static cell OPHANDLER_CALL set_currentfile(FILE *fbin,char *params,cell opcode)
+static cell SC_FASTCALL set_currentfile(FILE *fbin,char *params,cell opcode)
 {
   fcurrent=(short)getparam(params,NULL);
   return 0;
@@ -299,14 +299,14 @@ static cell OPHANDLER_CALL set_currentfile(FILE *fbin,char *params,cell opcode)
 #if defined __BORLANDC__ || defined __WATCOMC__
   #pragma argsused
 #endif
-static cell OPHANDLER_CALL parm0(FILE *fbin,char *params,cell opcode)
+static cell SC_FASTCALL parm0(FILE *fbin,char *params,cell opcode)
 {
   if (fbin!=NULL)
     write_encoded(fbin,(ucell*)&opcode,1);
   return opcodes(1);
 }
 
-static cell OPHANDLER_CALL parm1(FILE *fbin,char *params,cell opcode)
+static cell SC_FASTCALL parm1(FILE *fbin,char *params,cell opcode)
 {
   ucell p=getparam(params,NULL);
   if (fbin!=NULL) {
@@ -316,7 +316,7 @@ static cell OPHANDLER_CALL parm1(FILE *fbin,char *params,cell opcode)
   return opcodes(1)+opargs(1);
 }
 
-static cell OPHANDLER_CALL parm2(FILE *fbin,char *params,cell opcode)
+static cell SC_FASTCALL parm2(FILE *fbin,char *params,cell opcode)
 {
   ucell p1=getparam(params,&params);
   ucell p2=getparam(params,NULL);
@@ -328,7 +328,7 @@ static cell OPHANDLER_CALL parm2(FILE *fbin,char *params,cell opcode)
   return opcodes(1)+opargs(2);
 }
 
-static cell OPHANDLER_CALL parm3(FILE *fbin,char *params,cell opcode)
+static cell SC_FASTCALL parm3(FILE *fbin,char *params,cell opcode)
 {
   ucell p1=getparam(params,&params);
   ucell p2=getparam(params,&params);
@@ -342,7 +342,7 @@ static cell OPHANDLER_CALL parm3(FILE *fbin,char *params,cell opcode)
   return opcodes(1)+opargs(3);
 }
 
-static cell OPHANDLER_CALL parm4(FILE *fbin,char *params,cell opcode)
+static cell SC_FASTCALL parm4(FILE *fbin,char *params,cell opcode)
 {
   ucell p1=getparam(params,&params);
   ucell p2=getparam(params,&params);
@@ -358,7 +358,7 @@ static cell OPHANDLER_CALL parm4(FILE *fbin,char *params,cell opcode)
   return opcodes(1)+opargs(4);
 }
 
-static cell OPHANDLER_CALL parm5(FILE *fbin,char *params,cell opcode)
+static cell SC_FASTCALL parm5(FILE *fbin,char *params,cell opcode)
 {
   ucell p1=getparam(params,&params);
   ucell p2=getparam(params,&params);
@@ -379,7 +379,7 @@ static cell OPHANDLER_CALL parm5(FILE *fbin,char *params,cell opcode)
 #if defined __BORLANDC__ || defined __WATCOMC__
   #pragma argsused
 #endif
-static cell OPHANDLER_CALL do_dump(FILE *fbin,char *params,cell opcode)
+static cell SC_FASTCALL do_dump(FILE *fbin,char *params,cell opcode)
 {
   ucell p;
   int num=0;
@@ -395,7 +395,7 @@ static cell OPHANDLER_CALL do_dump(FILE *fbin,char *params,cell opcode)
   return num*sizeof(cell);
 }
 
-static cell OPHANDLER_CALL do_dumpn(FILE *fbin,char *params,cell opcode)
+static cell SC_FASTCALL do_dumpn(FILE *fbin,char *params,cell opcode)
 {
   ucell value,num,i;
 
@@ -408,7 +408,7 @@ static cell OPHANDLER_CALL do_dumpn(FILE *fbin,char *params,cell opcode)
   return num*sizeof(cell);
 }
 
-static cell OPHANDLER_CALL do_call(FILE *fbin,char *params,cell opcode)
+static cell SC_FASTCALL do_call(FILE *fbin,char *params,cell opcode)
 {
   char name[sNAMEMAX+2]; /* +1 for a possible leading dot */
   int i;
@@ -449,7 +449,7 @@ static cell OPHANDLER_CALL do_call(FILE *fbin,char *params,cell opcode)
   return opcodes(1)+opargs(1);
 }
 
-static cell OPHANDLER_CALL do_jump(FILE *fbin,char *params,cell opcode)
+static cell SC_FASTCALL do_jump(FILE *fbin,char *params,cell opcode)
 {
   int i;
   ucell p;
@@ -466,7 +466,7 @@ static cell OPHANDLER_CALL do_jump(FILE *fbin,char *params,cell opcode)
   return opcodes(1)+opargs(1);
 }
 
-static cell OPHANDLER_CALL do_switch(FILE *fbin,char *params,cell opcode)
+static cell SC_FASTCALL do_switch(FILE *fbin,char *params,cell opcode)
 {
   int i;
   ucell p;
@@ -486,7 +486,7 @@ static cell OPHANDLER_CALL do_switch(FILE *fbin,char *params,cell opcode)
 #if defined __BORLANDC__ || defined __WATCOMC__
   #pragma argsused
 #endif
-static cell OPHANDLER_CALL do_case(FILE *fbin,char *params,cell opcode)
+static cell SC_FASTCALL do_case(FILE *fbin,char *params,cell opcode)
 {
   int i;
   ucell p,v;

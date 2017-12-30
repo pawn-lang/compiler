@@ -1452,13 +1452,19 @@ static int hier2(value *lval)
   case t__EMIT: {
     cell val;
     char* st;
-    if (!matchtoken('{'))
-      error(38);
-    lex(&val,&st);
+    int block_syntax=matchtoken('(');
+    emit_flags |= efEXPR;
+    if (emit_stgbuf_idx==-1)
+      emit_stgbuf_idx=stgidx;
+    do {
+      lex(&val,&st);
+      emit_parse_line();
+    } while ((block_syntax!=0) && matchtoken(','));
+    if (block_syntax!=0)
+      needtoken(')');
+    emit_flags &= ~efEXPR;
     lval->ident=iEXPRESSION;
-    emit_parse_line();
-    if (!matchtoken('}'))
-      error(38);
+    pc_sideeffect=TRUE;
     return FALSE;
   } /* case */
   default:
