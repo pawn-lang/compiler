@@ -7,6 +7,8 @@ Pawn
 
 [Original readme](readme_compuphase.txt)
 
+**This project is no longer maintained. Because of the lack of time and interest I can't add new fixes and features or accept pull requests. But feel free to create a fork to continue development. Thank you!**
+
 What is this?
 -------------
 
