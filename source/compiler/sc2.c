@@ -1840,23 +1840,6 @@ static void substallpatterns(unsigned char *line,int buffersize)
   } /* while */
 }
 
-static void ppconcat(unsigned char *line)
-{
-  unsigned char *c,*p,*b;
-  for (c=line; *c!='\0'; ++c) {
-    if (is_startstring(c))
-      c=(unsigned char *)skipstring(c);
-    if (*c=='#' && *(c+1)=='#') {
-      p=c-1;
-      b=c+2;
-      while (*p==' ')
-        p--;
-      while (*b==' ')
-        b++;
-      strcpy((char *)p+1,(char *)b);
-    } /* if */
-  } /* for */
-}
 #endif
 
 /*  preprocess
@@ -1888,7 +1871,6 @@ SC_FUNC void preprocess(void)
       if (iscommand==CMD_NONE) {
         assert(lptr!=term_expr);
         substallpatterns(pline,sLINEMAX);
-        ppconcat(pline);
         lptr=pline;       /* reset "line pointer" to start of the parsing buffer */
       } /* if */
     #endif
