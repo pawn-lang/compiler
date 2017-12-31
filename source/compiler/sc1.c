@@ -2589,7 +2589,7 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
   int idx,idx_ellips,vidx,do_insert;
   int abortparse;
   int curlit;
-  cell *prev1=NULL,*prev2=NULL;
+  int prev1_idx=-1,prev2_idx=-1;
 
   assert(cur>=0 && cur<numdim);
   assert(startlit>=0);
@@ -2627,13 +2627,13 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
         /* found an ellipsis; fill up the rest of the array with a series
          * of one-dimensional arrays ("2d ellipsis")
          */
-        if (prev1!=NULL) {
+        if (prev1_idx!=-1) {
           for (idx_ellips=1; idx < dim[cur]; idx++, idx_ellips++) {
             for (vidx=0; vidx < dsize; vidx++) {
-              if (prev2!=NULL)
-                litadd(prev1[vidx]+idx_ellips*(prev1[vidx]-prev2[vidx]));
+              if (prev2_idx!=-1)
+                litadd(litq[prev1_idx+vidx]+idx_ellips*(litq[prev1_idx+vidx]-litq[prev2_idx+vidx]));
               else
-                litadd(prev1[vidx]);
+                litadd(litq[prev1_idx+vidx]);
             } /* for */
             append_constval(lastdim,itoh(idx),dsize,0);
           } /* for */
@@ -2641,8 +2641,8 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
         } else
           error(41);            /* invalid ellipsis, array size unknown */
       } else {
-        prev2=prev1;
-        prev1=&litq[litidx];
+        prev2_idx=prev1_idx;
+        prev1_idx=litidx;
         dsize=initvector(ident,tag,dim[cur+1],curlit,TRUE,enumroot,errorfound);
         /* The final dimension may be variable length. We need to save the
          * lengths of the final dimensions in order to set the indirection
