@@ -1,0 +1,1 @@
+add_compiler_test(main ${CMAKE_CURRENT_SOURCE_DIR}/main.pwn)
