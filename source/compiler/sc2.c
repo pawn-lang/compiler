@@ -396,11 +396,8 @@ static void readline(unsigned char *line)
       *line='\0';     /* delete line */
       cont=FALSE;
     } else {
-      /* check whether to erase leading spaces */
+      /* check whether to erase leading whitespace after '\\' on next line */
       if (cont) {
-        unsigned char *ptr=line;
-        while (*ptr<=' ' && *ptr!='\0')
-          ptr++;
         if (ptr!=line)
           memmove(line,ptr,strlen((char*)ptr)+1);
       } /* if */
@@ -417,10 +414,6 @@ static void readline(unsigned char *line)
           ptr--;        /* skip trailing whitespace */
         if (*ptr=='\\') {
           cont=TRUE;
-          /* set '\a' at the position of '\\' to make it possible to check
-           * for a line continuation in a single line comment (error 49)
-           */
-          *ptr++='\a';
           *ptr='\0';    /* erase '\n' (and any trailing whitespace) */
         } /* if */
       } /* if */
@@ -445,7 +438,7 @@ static void readline(unsigned char *line)
  *
  *  Global references: icomment  (private to "stripcom")
  */
-static void stripcom(unsigned char *line)
+static void stripcomment(unsigned char *line)
 {
   char c;
   #if !defined SC_LIGHT
@@ -519,8 +512,6 @@ static void stripcom(unsigned char *line)
         if (icomment==2)
           *line++=' ';
       } else if (*line=='/' && *(line+1)=='/'){  /* comment to end of line */
-        if (strchr((char*)line,'\a')!=NULL)
-          error(49);    /* invalid line continuation */
         #if !defined SC_LIGHT
           if (*(line+2)=='/' && *(line+3)<=' ') {
             /* documentation comment */
@@ -1859,8 +1850,8 @@ SC_FUNC void preprocess(void)
     return;
   do {
     readline(pline);
-    stripcom(pline);    /* ??? no need for this when reading back from list file (in the second pass) */
-    lptr=pline;         /* set "line pointer" to start of the parsing buffer */
+    stripcomment(pline);  /* ??? no need for this when reading back from list file (in the second pass) */
+    lptr=pline;           /* set "line pointer" to start of the parsing buffer */
     iscommand=command();
     if (iscommand!=CMD_NONE)
       errorset(sRESET,0); /* reset error flag ("panic mode") on empty line or directive */
@@ -1895,10 +1886,6 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
     while (*lptr==' ' || *lptr=='\t')     /* this is as defines with parameters may add them */
       lptr++;                             /* when you use a space after , in a match pattern */
   while (*lptr!='\0') {
-    if (*lptr=='\a') {
-      lptr++;
-      continue;
-    } /* if */
     if (!instring) {
       if (*lptr=='\"') {
         instring=1;
@@ -1969,10 +1956,6 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
   i=sizeof(ucell)-(sCHARBITS/8); /* start at most significant byte */
   val=0;
   while (*lptr!='\0') {
-    if (*lptr=='\a') {          /* ignore '\a' (which was inserted at a line concatenation) */
-      lptr++;
-      continue;
-    } /* if */
     if (!instring) {
       if (*lptr=='\"') {
         instring=1;
