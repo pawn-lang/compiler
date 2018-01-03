@@ -553,9 +553,6 @@ static void stripcom(unsigned char *line)
         } /* if */
       } /* if */
     } /* if */
-    if (*line == '\a') {
-      memmove(line,line+1,strlen((char *)line+1)+1);
-    }
   } /* while */
   #if !defined SC_LIGHT
     if (icomment==2) {
