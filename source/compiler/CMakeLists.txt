@@ -45,7 +45,7 @@ if(HAVE_STRLCAT)
 endif()
 
 if(MSVC)
-  add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE /J)
+  add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE)
   if(MSVC LESS 1900)
     # MSVC 2013 and below don't support the "inline" keyword
     add_definitions(-Dinline=__inline)
