@@ -1625,6 +1625,7 @@ static int substpattern(unsigned char *line,size_t buffersize,char *pattern,char
   int prefixlen;
   const unsigned char *p,*s,*e;
   unsigned char *args[10];
+  unsigned char *before;
   int match,arg,len,instring;
 
   memset(args,0,sizeof args);
@@ -1739,6 +1740,8 @@ static int substpattern(unsigned char *line,size_t buffersize,char *pattern,char
     if (strlen((char*)line) + len - (int)(s-line) > buffersize) {
       error(75);      /* line too long */
     } else {
+      before = malloc(strlen(line) + 1);
+      strcpy(before,line);
       /* substitute pattern */
       instring=0;
       strdel((char*)line,(int)(s-line));
@@ -1762,6 +1765,23 @@ static int substpattern(unsigned char *line,size_t buffersize,char *pattern,char
           s++;
         } /* if */
       } /* for */
+      if (sc_macros&&sc_status==statFIRST) {
+        int end = strlen(before) - 1, dummy;
+        if(before[end] == '\n')
+          before[end] = '\0';
+
+        end = strlen(line) - 1;
+        if (line[end] == '\n')
+        {
+          line[end] = '\0';
+          dummy = 1;
+        }
+        pc_printf("%s:%d MACRO(%s->%s) INPUT(%s) OUTPUT(%s)\n", inpfname, fline, pattern, substitution, before, line);
+        if (dummy == 1)
+          line[end] = '\n';
+
+        free(before);
+      }
     } /* if */
   } /* if */
 

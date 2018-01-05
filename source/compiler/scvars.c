@@ -63,6 +63,7 @@ SC_VDEFINE int sc_debug=sCHKBOUNDS;         /* by default: bounds checking+asser
 SC_VDEFINE int sc_packstr= FALSE;           /* strings are packed by default? */
 SC_VDEFINE int sc_asmfile= FALSE;           /* create .ASM file? */
 SC_VDEFINE int sc_listing= FALSE;           /* create .LST file? */
+SC_VDEFINE int sc_macros= FALSE;            /* show the macro replacements? */
 SC_VDEFINE int sc_compress=TRUE;            /* compress bytecode? */
 SC_VDEFINE int sc_needsemicolon=TRUE;       /* semicolon required to terminate expressions? */
 SC_VDEFINE int sc_dataalign=sizeof(cell);   /* data alignment value */

@@ -829,6 +829,7 @@ SC_VDECL int sc_debug;        /* debug/optimization options (bit field) */
 SC_VDECL int sc_packstr;      /* strings are packed by default? */
 SC_VDECL int sc_asmfile;      /* create .ASM file? */
 SC_VDECL int sc_listing;      /* create .LST file? */
+SC_VDECL int sc_macros;       /* show the macro replacements? */
 SC_VDECL int sc_compress;     /* compress bytecode? */
 SC_VDECL int sc_needsemicolon;/* semicolon required to terminate expressions? */
 SC_VDECL int sc_dataalign;    /* data alignment value */
