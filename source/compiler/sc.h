@@ -554,6 +554,7 @@ long pc_lengthbin(void *handle); /* return the length of the file */
 SC_FUNC void set_extension(char *filename,char *extension,int force);
 SC_FUNC symbol *fetchfunc(char *name,int tag);
 SC_FUNC char *operator_symname(char *symname,char *opername,int tag1,int tag2,int numtags,int resulttag);
+SC_FUNC constvalue *find_tag_byval(int tag);
 SC_FUNC char *funcdisplayname(char *dest,char *funcname);
 SC_FUNC int constexpr(cell *val,int *tag,symbol **symptr);
 SC_FUNC constvalue *append_constval(constvalue *table,const char *name,cell val,int index);

@@ -2352,8 +2352,15 @@ static int declloc(int fstatic)
         assert(staging);        /* end staging phase (optimize expression) */
         stgout(staging_start);
         stgset(FALSE);
-        if (!matchtag(tag,ctag,TRUE))
-          error(213);           /* tag mismatch */
+        if (!matchtag(tag,ctag,TRUE)) {
+          constvalue *tagsym;
+          char *formal_tagname,*actual_tagname;
+          tagsym=find_tag_byval(tag);
+          formal_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+          tagsym=find_tag_byval(ctag);
+          actual_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+          error(213,formal_tagname,actual_tagname); /* tag mismatch */
+        } /* if */
         /* if the variable was not explicitly initialized, reset the
          * "uWRITTEN" flag that store() set */
         if (!explicit_init)
@@ -2508,8 +2515,15 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
   if (ident==iVARIABLE) {
     assert(*size==1);
     init(ident,&ctag,NULL);
-    if (!matchtag(tag,ctag,TRUE))
-      error(213);       /* tag mismatch */
+    if (!matchtag(tag,ctag,TRUE)) {
+      constvalue *tagsym;
+      char *formal_tagname,*actual_tagname;
+      tagsym=find_tag_byval(tag);
+      formal_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+      tagsym=find_tag_byval(ctag);
+      actual_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+      error(213,formal_tagname,actual_tagname); /* tag mismatch */
+    } /* if */
   } else {
     assert(numdim>0);
     if (numdim==1) {
@@ -2736,14 +2750,28 @@ static cell initvector(int ident,int tag,cell size,int startlit,int fillzero,
         rtag=symfield->x.tags.index;  /* set the expected tag to the index tag */
         enumfield=enumfield->next;
       } /* if */
-      if (!matchtag(rtag,ctag,TRUE))
-        error(213);            /* tag mismatch */
+      if (!matchtag(rtag,ctag,TRUE)) {
+        constvalue *tagsym;
+        char *formal_tagname,*actual_tagname;
+        tagsym=find_tag_byval(rtag);
+        formal_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+        tagsym=find_tag_byval(ctag);
+        actual_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+        error(213,formal_tagname,actual_tagname); /* tag mismatch */
+      } /* if */
     } while (matchtoken(',')); /* do */
     needtoken('}');
   } else {
     init(ident,&ctag,errorfound);
-    if (!matchtag(tag,ctag,TRUE))
-      error(213);               /* tagname mismatch */
+    if (!matchtag(tag,ctag,TRUE)) {
+      constvalue *tagsym;
+      char *formal_tagname,*actual_tagname;
+      tagsym=find_tag_byval(tag);
+      formal_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+      tagsym=find_tag_byval(ctag);
+      actual_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+      error(213,formal_tagname,actual_tagname); /* tag mismatch */
+    } /* if */
   } /* if */
   /* fill up the literal queue with a series */
   if (ellips) {
@@ -2855,10 +2883,16 @@ static void decl_const(int vclass)
     constexpr(&val,&exprtag,NULL);      /* get value */
     /* add_constant() checks for duplicate definitions */
     if (!matchtag(tag,exprtag,FALSE)) {
+      constvalue *tagsym;
+      char *formal_tagname,*actual_tagname;
       /* temporarily reset the line number to where the symbol was defined */
       int orgfline=fline;
-      fline=symbolline;
-      error(213);                       /* tagname mismatch */
+      fline=symbolline;     
+      tagsym=find_tag_byval(tag);
+      formal_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+      tagsym=find_tag_byval(exprtag);
+      actual_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+      error(213,formal_tagname,actual_tagname); /* tag mismatch */
       fline=orgfline;
     } /* if */
     sym=add_constant(constname,val,vclass,tag);
@@ -3397,7 +3431,7 @@ static int parse_funcname(char *fname,int *tag1,int *tag2,char *opname)
   return unary;
 }
 
-static constvalue *find_tag_byval(int tag)
+SC_FUNC constvalue *find_tag_byval(int tag)
 {
   constvalue *tagsym;
   tagsym=find_constval_byval(&tagname_tab,tag & ~PUBLICTAG);
@@ -4113,8 +4147,15 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
       } else {
         constexpr(&arg->defvalue.val,&arg->defvalue_tag,NULL);
         assert(numtags>0);
-        if (!matchtag(tags[0],arg->defvalue_tag,TRUE))
-          error(213);           /* tagname mismatch */
+        if (!matchtag(tags[0],arg->defvalue_tag,TRUE)) {
+          constvalue *tagsym;
+          char *formal_tagname,*actual_tagname;
+          tagsym=find_tag_byval(tags[0]);
+          formal_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+          tagsym=find_tag_byval(arg->defvalue_tag);
+          actual_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+          error(213,formal_tagname,actual_tagname); /* tag mismatch */
+        } /* if */
       } /* if */
     } /* if */
   } /* if */
@@ -6770,8 +6811,15 @@ static void doreturn(void)
     rettype|=uRETVALUE;                 /* function returns a value */
     /* check tagname with function tagname */
     assert(curfunc!=NULL);
-    if (!matchtag(curfunc->tag,tag,TRUE))
-      error(213);                       /* tagname mismatch */
+    if (!matchtag(curfunc->tag,tag,TRUE)) {
+      constvalue *tagsym;
+      char *formal_tagname,*actual_tagname;
+      tagsym=find_tag_byval(curfunc->tag);
+      formal_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+      tagsym=find_tag_byval(tag);
+      actual_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+      error(213,formal_tagname,actual_tagname); /* tag mismatch */
+    } /* if */
     if (ident==iARRAY || ident==iREFARRAY) {
       int dim[sDIMEN_MAX],numdim=0;
       cell arraysize;

@@ -613,12 +613,26 @@ static void plnge2(void (*oper)(void),
     } else if (lval1->ident==iCONSTEXPR && lval2->ident==iCONSTEXPR) {
       /* only constant expression if both constant */
       stgdel(index,cidx);       /* scratch generated code and calculate */
-      if (!matchtag(lval1->tag,lval2->tag,FALSE))
-        error(213);             /* tagname mismatch */
+      if (!matchtag(lval1->tag,lval2->tag,FALSE)) {
+        constvalue *tagsym;
+        char *formal_tagname,*actual_tagname;
+        tagsym=find_tag_byval(lval1->tag);
+        formal_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+        tagsym=find_tag_byval(lval2->tag);
+        actual_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+        error(213,formal_tagname,actual_tagname); /* tag mismatch */
+      } /* if */
       lval1->constval=calc(lval1->constval,oper,lval2->constval,&lval1->boolresult);
     } else {
-      if (!matchtag(lval1->tag,lval2->tag,FALSE))
-        error(213);             /* tagname mismatch */
+      if (!matchtag(lval1->tag,lval2->tag,FALSE)) {
+        constvalue *tagsym;
+        char *formal_tagname,*actual_tagname;
+        tagsym=find_tag_byval(lval1->tag);
+        formal_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+        tagsym=find_tag_byval(lval2->tag);
+        actual_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+        error(213,formal_tagname,actual_tagname); /* tag mismatch */
+      } /* if */
       (*oper)();                /* do the (signed) operation */
       lval1->ident=iEXPRESSION;
     } /* if */
@@ -1044,8 +1058,16 @@ static int hier14(value *lval1)
     check_userop(NULL,lval2.tag,lval3.tag,2,&lval3,&lval2.tag);
     store(&lval3);      /* now, store the expression result */
   } /* if */
-  if (!oper && !matchtag(lval3.tag,lval2.tag,TRUE))
-    error(213);         /* tagname mismatch (if "oper", warning already given in plunge2()) */
+  if (!oper && !matchtag(lval3.tag,lval2.tag,TRUE)) {
+    /* tagname mismatch (if "oper", warning already given in plunge2()) */
+    constvalue *tagsym;
+    char *formal_tagname,*actual_tagname;
+    tagsym=find_tag_byval(lval3.tag);
+    formal_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+    tagsym=find_tag_byval(lval2.tag);
+    actual_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+    error(213,formal_tagname,actual_tagname); /* tag mismatch */
+  } /* if */
   if (lval3.sym)
     markusage(lval3.sym,uWRITTEN);
   pc_sideeffect=TRUE;
@@ -1119,8 +1141,16 @@ static int hier13(value *lval)
       error(33,ptr);            /* array must be indexed */
     } /* if */
     /* ??? if both are arrays, should check dimensions */
-    if (!matchtag(lval->tag,lval2.tag,FALSE))
-      error(213);               /* tagname mismatch ('true' and 'false' expressions) */
+    if (!matchtag(lval->tag,lval2.tag,FALSE)) {
+      /* tagname mismatch ('true' and 'false' expressions) */
+      constvalue *tagsym;
+      char *formal_tagname,*actual_tagname;
+      tagsym=find_tag_byval(lval->tag);
+      formal_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+      tagsym=find_tag_byval(lval2.tag);
+      actual_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+      error(213,formal_tagname,actual_tagname); /* tagname mismatch */
+    } /* if */ 
     setlabel(flab2);
     if (sc_status==statFIRST) {
       /* Calculate the max. heap space used by either branch and save values of
@@ -1604,8 +1634,15 @@ restart:
       if (lval2.ident==iARRAY || lval2.ident==iREFARRAY)
         error(33,lval2.sym->name);      /* array must be indexed */
       needtoken(close);
-      if (!matchtag(sym->x.tags.index,lval2.tag,TRUE))
-        error(213);
+      if (!matchtag(sym->x.tags.index,lval2.tag,TRUE)) {
+        constvalue *tagsym;
+        char *formal_tagname,*actual_tagname;
+        tagsym=find_tag_byval(sym->x.tags.index);
+        formal_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+        tagsym=find_tag_byval(lval2.tag);
+        actual_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+        error(213,formal_tagname,actual_tagname); /* tagname mismatch */
+      } /* if */ 
       if (lval2.ident==iCONSTEXPR) {    /* constant expression */
         stgdel(index,cidx);             /* scratch generated code */
         if (lval1->arrayidx!=NULL) {    /* keep constant index, for checking */
@@ -2156,8 +2193,21 @@ static int nesting=0;
           /* otherwise, the address is already in PRI */
           if (lval.sym!=NULL)
             markusage(lval.sym,uWRITTEN);
-          if (!checktag(arg[argidx].tags,arg[argidx].numtags,lval.tag))
-            error(213);
+          if (!checktag(arg[argidx].tags,arg[argidx].numtags,lval.tag)) {
+            int i;
+            constvalue *tagsym;
+            char formal_tagnames[sLINEMAX],*actual_tagname;
+            formal_tagnames[0]='\0';
+            for (i=0; i<arg[argidx].numtags; i++) {
+              tagsym=find_tag_byval(arg[argidx].tags[i]);
+              strlcat(formal_tagnames,(tagsym!=NULL) ? tagsym->name : "-unknown-",sizeof(formal_tagnames));
+              if(i!=arg[argidx].numtags)
+                strlcat(formal_tagnames,"\" or \"",sizeof(formal_tagnames));
+            }
+            tagsym=find_tag_byval(lval.tag);
+            actual_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+            error(213,formal_tagnames,actual_tagname); /* tag mismatch */
+          } /* if */
           if (lval.tag!=0)
             append_constval(&taglst,arg[argidx].name,lval.tag,0);
           break;
@@ -2170,8 +2220,21 @@ static int nesting=0;
           /* otherwise, the expression result is already in PRI */
           assert(arg[argidx].numtags>0);
           check_userop(NULL,lval.tag,arg[argidx].tags[0],2,NULL,&lval.tag);
-          if (!checktag(arg[argidx].tags,arg[argidx].numtags,lval.tag))
-            error(213);
+          if (!checktag(arg[argidx].tags,arg[argidx].numtags,lval.tag)) {
+            int i;
+            constvalue *tagsym;
+            char formal_tagnames[sLINEMAX],*actual_tagname;
+            formal_tagnames[0]='\0';
+            for (i=0; i<arg[argidx].numtags; i++) {
+              tagsym=find_tag_byval(arg[argidx].tags[i]);
+              strlcat(formal_tagnames,(tagsym!=NULL) ? tagsym->name : "-unknown-",sizeof(formal_tagnames));
+              if(i!=arg[argidx].numtags)
+                strlcat(formal_tagnames,"\" or \"",sizeof(formal_tagnames));
+            }
+            tagsym=find_tag_byval(lval.tag);
+            actual_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+            error(213,formal_tagnames,actual_tagname); /* tag mismatch */
+          } /* if */
           if (lval.tag!=0)
             append_constval(&taglst,arg[argidx].name,lval.tag,0);
           argidx++;               /* argument done */
@@ -2192,8 +2255,21 @@ static int nesting=0;
             } /* if */
           } /* if */
           /* otherwise, the address is already in PRI */
-          if (!checktag(arg[argidx].tags,arg[argidx].numtags,lval.tag))
-            error(213);
+          if (!checktag(arg[argidx].tags,arg[argidx].numtags,lval.tag)) {
+            int i;
+            constvalue *tagsym;
+            char formal_tagnames[sLINEMAX],*actual_tagname;
+            formal_tagnames[0]='\0';
+            for (i=0; i<arg[argidx].numtags; i++) {
+              tagsym=find_tag_byval(arg[argidx].tags[i]);
+              strlcat(formal_tagnames,(tagsym!=NULL) ? tagsym->name : "-unknown-",sizeof(formal_tagnames));
+              if(i!=arg[argidx].numtags)
+                strlcat(formal_tagnames,"\" or \"",sizeof(formal_tagnames));
+            }
+            tagsym=find_tag_byval(lval.tag);
+            actual_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+            error(213,formal_tagnames,actual_tagname); /* tag mismatch */
+          } /* if */
           if (lval.tag!=0)
             append_constval(&taglst,arg[argidx].name,lval.tag,0);
           argidx++;               /* argument done */
@@ -2269,8 +2345,21 @@ static int nesting=0;
             append_constval(&arrayszlst,arg[argidx].name,sym->dim.array.length,level);
           } /* if */
           /* address already in PRI */
-          if (!checktag(arg[argidx].tags,arg[argidx].numtags,lval.tag))
-            error(213);
+          if (!checktag(arg[argidx].tags,arg[argidx].numtags,lval.tag)) {
+            int i;
+            constvalue *tagsym;
+            char formal_tagnames[sLINEMAX],*actual_tagname;
+            formal_tagnames[0]='\0';
+            for (i=0; i<arg[argidx].numtags; i++) {
+              tagsym=find_tag_byval(arg[argidx].tags[i]);
+              strlcat(formal_tagnames,(tagsym!=NULL) ? tagsym->name : "-unknown-",sizeof(formal_tagnames));
+              if(i!=arg[argidx].numtags)
+                strlcat(formal_tagnames,"\" or \"",sizeof(formal_tagnames));
+            }
+            tagsym=find_tag_byval(lval.tag);
+            actual_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+            error(213,formal_tagnames,actual_tagname); /* tag mismatch */
+          } /* if */
           if (lval.tag!=0)
             append_constval(&taglst,arg[argidx].name,lval.tag,0);
           // ??? set uWRITTEN?
@@ -2545,8 +2634,15 @@ static int constant(value *lval)
         error(8);               /* must be constant expression */
       if (lasttag<0)
         lasttag=tag;
-      else if (!matchtag(lasttag,tag,FALSE))
-        error(213);             /* tagname mismatch */
+      else if (!matchtag(lasttag,tag,FALSE)) {
+        constvalue *tagsym;
+        char *formal_tagname,*actual_tagname;
+        tagsym=find_tag_byval(lasttag);
+        formal_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+        tagsym=find_tag_byval(tag);
+        actual_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+        error(213,formal_tagname,actual_tagname); /* tagname mismatch */
+      } /* if */ 
       litadd(item);             /* store expression result in literal table */
     } while (matchtoken(','));
     if (!needtoken('}'))
