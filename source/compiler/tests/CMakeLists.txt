@@ -25,7 +25,7 @@ set_tests_properties(gh_217 PROPERTIES PASS_REGULAR_EXPRESSION
 .*: warning 234: function is deprecated \\(symbol \"f\"\\) don't    use this     functionplease[\r\n]+\
 .*: warning 234: function is deprecated \\(symbol \"f\"\\) don't    use this     functionplease")
 
-add_compiler_test(macro_output ${CMAKE_CURRENT_SOURCE_DIR}/macro_output.pwn)
+add_compiler_test(macro_output ${CMAKE_CURRENT_SOURCE_DIR}/macro_output.pwn "-l")
 set_tests_properties(macro_output PROPERTIES PASS_REGULAR_EXPRESSION
 ".* MACRO(A->B) INPUT(A) OUTPUT(B)\
 .* MACRO(B->C) INPUT(B) OUTPUT(C)\
