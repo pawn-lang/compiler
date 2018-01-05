@@ -2201,7 +2201,7 @@ static int nesting=0;
             for (i=0; i<arg[argidx].numtags; i++) {
               tagsym=find_tag_byval(arg[argidx].tags[i]);
               strlcat(formal_tagnames,(tagsym!=NULL) ? tagsym->name : "-unknown-",sizeof(formal_tagnames));
-              if(i!=arg[argidx].numtags)
+              if((i+1)!=arg[argidx].numtags)
                 strlcat(formal_tagnames,"\" or \"",sizeof(formal_tagnames));
             }
             tagsym=find_tag_byval(lval.tag);
@@ -2228,7 +2228,7 @@ static int nesting=0;
             for (i=0; i<arg[argidx].numtags; i++) {
               tagsym=find_tag_byval(arg[argidx].tags[i]);
               strlcat(formal_tagnames,(tagsym!=NULL) ? tagsym->name : "-unknown-",sizeof(formal_tagnames));
-              if(i!=arg[argidx].numtags)
+              if((i+1)!=arg[argidx].numtags)
                 strlcat(formal_tagnames,"\" or \"",sizeof(formal_tagnames));
             }
             tagsym=find_tag_byval(lval.tag);
@@ -2263,7 +2263,7 @@ static int nesting=0;
             for (i=0; i<arg[argidx].numtags; i++) {
               tagsym=find_tag_byval(arg[argidx].tags[i]);
               strlcat(formal_tagnames,(tagsym!=NULL) ? tagsym->name : "-unknown-",sizeof(formal_tagnames));
-              if(i!=arg[argidx].numtags)
+              if((i+1)!=arg[argidx].numtags)
                 strlcat(formal_tagnames,"\" or \"",sizeof(formal_tagnames));
             }
             tagsym=find_tag_byval(lval.tag);
@@ -2353,7 +2353,7 @@ static int nesting=0;
             for (i=0; i<arg[argidx].numtags; i++) {
               tagsym=find_tag_byval(arg[argidx].tags[i]);
               strlcat(formal_tagnames,(tagsym!=NULL) ? tagsym->name : "-unknown-",sizeof(formal_tagnames));
-              if(i!=arg[argidx].numtags)
+              if((i+1)!=arg[argidx].numtags)
                 strlcat(formal_tagnames,"\" or \"",sizeof(formal_tagnames));
             }
             tagsym=find_tag_byval(lval.tag);
