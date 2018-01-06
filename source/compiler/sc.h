@@ -41,7 +41,7 @@
 #else
   #include <setjmp.h>
 #endif
-#include "hashmap/hashmap.h"
+#include "hashtable/wrap_hashtable.h"
 #include "../amx/osdefs.h"
 #include "../amx/amx.h"
 
@@ -127,6 +127,7 @@ typedef struct s_symbol {
   struct s_symbol *next;
   struct s_symbol *parent;  /* hierarchical types (multi-dimensional arrays) */
   struct s_symbol *child;
+  struct s_symbol *htnext;
   char name[sNAMEMAX+1];
   cell addr;            /* address or offset (or value for constant, index for native function) */
   cell codeaddr;        /* address (in the code segment) where the symbol declaration starts */
@@ -160,12 +161,6 @@ typedef struct s_symbol {
   int numrefers;        /* number of entries in the referrer list */
   char *documentation;  /* optional documentation string */
 } symbol;
-
-/* new symbol struct for cached global symbols with the same names*/
-typedef struct s_symbol2 {
-  struct s_symbol *symbol;
-  struct s_symbol2 *next;
-} symbol2;
 
 
 /*  Possible entries for "ident". These are used in the "symbol", "value"
@@ -798,7 +793,7 @@ SC_FUNC int state_conflict_id(int listid1,int listid2);
 #if !defined SC_SKIP_VDECL
 SC_VDECL symbol loctab;       /* local symbol table */
 SC_VDECL symbol glbtab;       /* global symbol table */
-SC_VDECL struct hashmap symbol_cache_map;
+SC_VDECL struct hashtable_t symbol_cache_ht;
 SC_VDECL symbol *line_sym;
 SC_VDECL cell *litq;          /* the literal queue */
 SC_VDECL unsigned char pline[]; /* the line read from the input file */
