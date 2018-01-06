@@ -905,6 +905,7 @@ static void initglobals(void)
 
   sc_asmfile=FALSE;      /* do not create .ASM file */
   sc_listing=FALSE;      /* do not create .LST file */
+  sc_macros=FALSE;       /* show the macro replacements */
   skipinput=0;           /* number of lines to skip from the first input file */
   sc_ctrlchar=CTRL_CHAR; /* the escape character */
   litmax=sDEF_LITMAX;    /* current size of the literal table */
@@ -1111,6 +1112,11 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
         if (*(ptr+1)!='\0')
           about();
         sc_listing=TRUE;        /* skip second pass & code generation */
+        break;
+      case 'm':
+        if (*(ptr+1)!='\0')
+          about();
+        sc_macros=TRUE;        /* show the macro replacements */
         break;
       case 'o':
         if (oname)
@@ -1469,6 +1475,7 @@ static void about(void)
 #endif
     pc_printf("         -i<name> path for include files\n");
     pc_printf("         -l       create list file (preprocess only)\n");
+    pc_printf("         -m       shows the replacement of the macros\n");
     pc_printf("         -o<name> set base name of (P-code) output file\n");
     pc_printf("         -O<num>  optimization level (default=-O%d)\n",pc_optimize);
     pc_printf("             0    no optimization\n");
