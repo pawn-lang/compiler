@@ -903,54 +903,54 @@ static void initglobals(void)
 {
   resetglobals();
 
-  sc_asmfile=FALSE;     /* do not create .ASM file */
-  sc_listing=FALSE;     /* do not create .LST file */
-  skipinput=0;          /* number of lines to skip from the first input file */
-  sc_ctrlchar=CTRL_CHAR;/* the escape character */
-  litmax=sDEF_LITMAX;   /* current size of the literal table */
-  errnum=0;             /* number of errors */
-  warnnum=0;            /* number of warnings */
-  optproccall=TRUE;     /* support "procedure call" */
-  verbosity=1;          /* verbosity level, no copyright banner */
-  sc_debug=sCHKBOUNDS;  /* by default: bounds checking+assertions */
+  sc_asmfile=FALSE;      /* do not create .ASM file */
+  sc_listing=FALSE;      /* do not create .LST file */
+  skipinput=0;           /* number of lines to skip from the first input file */
+  sc_ctrlchar=CTRL_CHAR; /* the escape character */
+  litmax=sDEF_LITMAX;    /* current size of the literal table */
+  errnum=0;              /* number of errors */
+  warnnum=0;             /* number of warnings */
+  optproccall=TRUE;      /* support "procedure call" */
+  verbosity=1;           /* verbosity level, no copyright banner */
+  sc_debug=sCHKBOUNDS;   /* by default: bounds checking+assertions */
   pc_optimize=sOPTIMIZE_NOMACRO;
-  sc_packstr=FALSE;     /* strings are unpacked by default */
+  sc_packstr=FALSE;      /* strings are unpacked by default */
   #if AMX_COMPACTMARGIN > 2
-    sc_compress=TRUE;   /* compress output bytecodes */
+    sc_compress=TRUE;    /* compress output bytecodes */
   #else
     sc_compress=FALSE;
   #endif
-  sc_needsemicolon=FALSE;/* semicolon required to terminate expressions? */
+  sc_needsemicolon=FALSE;   /* semicolon required to terminate expressions? */
   sc_dataalign=sizeof(cell);
-  pc_stksize=sDEF_AMXSTACK;/* default stack size */
-  pc_amxlimit=0;        /* no limit on size of the abstract machine */
-  pc_amxram=0;          /* no limit on data size of the abstract machine */
-  sc_tabsize=8;         /* assume a TAB is 8 spaces */
-  sc_rationaltag=0;     /* assume no support for rational numbers */
-  rational_digits=0;    /* number of fractional digits */
+  pc_stksize=sDEF_AMXSTACK; /* default stack size */
+  pc_amxlimit=0;         /* no limit on size of the abstract machine */
+  pc_amxram=0;           /* no limit on data size of the abstract machine */
+  sc_tabsize=8;          /* assume a TAB is 8 spaces */
+  sc_rationaltag=0;      /* assume no support for rational numbers */
+  rational_digits=0;     /* number of fractional digits */
 
-  outfname[0]='\0';     /* output file name */
-  errfname[0]='\0';     /* error file name */
-  inpf=NULL;            /* file read from */
-  inpfname=NULL;        /* pointer to name of the file currently read from */
-  outf=NULL;            /* file written to */
-  litq=NULL;            /* the literal queue */
-  glbtab.next=NULL;     /* clear global variables/constants table */
-  loctab.next=NULL;     /*   "   local      "    /    "       "   */
-  hashmap_init(&symbol_cache_map,hashmap_hash_string,hashmap_compare_string,8388608); /* 2^23 */
-  tagname_tab.next=NULL;/* tagname table */
-  libname_tab.next=NULL;/* library table (#pragma library "..." syntax) */
+  outfname[0]='\0';      /* output file name */
+  errfname[0]='\0';      /* error file name */
+  inpf=NULL;             /* file read from */
+  inpfname=NULL;         /* pointer to name of the file currently read from */
+  outf=NULL;             /* file written to */
+  litq=NULL;             /* the literal queue */
+  glbtab.next=NULL;      /* clear global variables/constants table */
+  loctab.next=NULL;      /*   "   local      "    /    "       "   */
+  hashmap_init(&symbol_cache_map,hashmap_hash_string,hashmap_compare_string,10000);
+  tagname_tab.next=NULL; /* tagname table */
+  libname_tab.next=NULL; /* library table (#pragma library "..." syntax) */
 
-  pline[0]='\0';        /* the line read from the input file */
-  lptr=NULL;            /* points to the current position in "pline" */
-  curlibrary=NULL;      /* current library */
-  inpf_org=NULL;        /* main source file */
+  pline[0]='\0';         /* the line read from the input file */
+  lptr=NULL;             /* points to the current position in "pline" */
+  curlibrary=NULL;       /* current library */
+  inpf_org=NULL;         /* main source file */
 
-  wqptr=wq;             /* initialize while queue pointer */
+  wqptr=wq;              /* initialize while queue pointer */
 
 #if !defined SC_LIGHT
   sc_documentation=NULL;
-  sc_makereport=FALSE;  /* do not generate a cross-reference report */
+  sc_makereport=FALSE;   /* do not generate a cross-reference report */
 #endif
 }
 
