@@ -355,7 +355,7 @@ cell do_sysreq(FILE *ftxt,const cell *params,cell opcode,cell cip)
 cell do_switch(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08"PRIxC"\n",*params+cip);
+  fprintf(ftxt,"%08"PRIxC"\n",*params);
   return 2;
 }
 
