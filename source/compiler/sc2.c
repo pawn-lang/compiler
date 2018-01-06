@@ -2626,7 +2626,7 @@ static uint32_t murmurhash2_aligned(const void *key,int len,uint32_t seed)
   const int r=24;
   const unsigned char *data=(const unsigned char *)key;
   uint32_t h=seed ^ len;
-  int align=(uint64_t)data & 3;
+  int align=(int)(size_t)data & 3;
   int sl,sr;
 
   if (align && (len>=4)) {
