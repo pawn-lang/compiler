@@ -2622,58 +2622,171 @@ SC_FUNC int ishex(char c)
   return (c>='0' && c<='9') || (c>='a' && c<='f') || (c>='A' && c<='F');
 }
 
-static void symbol_cache_add(symbol *sym,symbol2 *new_cache_sym)
+static uint32_t murmurhash2_aligned(const void *key,int len,uint32_t seed)
 {
-  symbol2 *cache_sym;
+  /* Based on public domain code by Austin Appleby.
+   * https://github.com/aappleby/smhasher/blob/master/src/MurmurHash2.cpp
+   */
+  #define MIX(h,k,m) { k *= m; k ^= k >> r; k *= m; h *= m; h ^= k; }
 
-  if (new_cache_sym==NULL) {
-    new_cache_sym=(symbol2 *)malloc(sizeof(symbol2));
-    if (new_cache_sym==NULL)
-      error(103);       /* insufficient memory */
-    new_cache_sym->symbol=sym;
-    new_cache_sym->next=NULL;
-  }
+  const uint32_t m=0x5bd1e995;
+  const int r=24;
+  const unsigned char *data=(const unsigned char *)key;
+  uint32_t h=seed ^ len;
+  int align=(int)(size_t)data & 3;
+  int sl,sr;
 
-  cache_sym=hashmap_get(&symbol_cache_map,sym->name);
-  if (cache_sym==NULL) {
-    if (hashmap_put(&symbol_cache_map,sym->name,new_cache_sym)==NULL)
-      error(103);       /* insufficient memory */
+  if (align && (len>=4)) {
+    // Pre-load the temp registers
+    uint32_t t=0,d=0;
+
+    switch (align) {
+      case 1: t |= data[2] << 16;
+      case 2: t |= data[1] << 8;
+      case 3: t |= data[0];
+    } /* switch */
+
+    t <<= (8*align);
+
+    data += 4-align;
+    len -= 4-align;
+
+    sl=8*(4-align);
+    sr=8*align;
+
+    // Mix
+    while (len>=4) {
+      uint32_t k;
+
+      d=*(uint32_t *)data;
+      t=(t >> sr) | (d << sl);
+
+      k=t;
+
+      MIX(h,k,m);
+
+      t=d;
+
+      data += 4;
+      len -= 4;
+    } /* while */
+
+    // Handle leftover data in temp registers
+    d=0;
+    if (len>=align) {
+      uint32_t k;
+
+      switch (align) {
+      case 3: d |= data[2] << 16;
+      case 2: d |= data[1] << 8;
+      case 1: d |= data[0];
+      } /* switch */
+
+      k=(t >> sr) | (d << sl);
+      MIX(h,k,m);
+
+      data += align;
+      len -= align;
+
+      //----------
+      // Handle tail bytes
+      switch (len) {
+      case 3: h ^= data[2] << 16;
+      case 2: h ^= data[1] << 8;
+      case 1: h ^= data[0];
+          h *= m;
+      } /* switch */
+    } else {
+      switch (len) {
+      case 3: d |= data[2] << 16;
+      case 2: d |= data[1] << 8;
+      case 1: d |= data[0];
+      case 0: h ^= (t >> sr) | (d << sl);
+          h *= m;
+      } /* switch */
+    } /* if */
+
+    h ^= h >> 13;
+    h *= m;
+    h ^= h >> 15;
+
+    return h;
   } else {
-    while(cache_sym->next!=NULL)
-      cache_sym=cache_sym->next;
-    cache_sym->next=new_cache_sym;
-  }
+    while (len>=4) {
+      uint32_t k=*(uint32_t *)data;
+
+      MIX(h,k,m);
+
+      data += 4;
+      len -= 4;
+    } /* while */
+
+    //----------
+    // Handle tail bytes
+    switch (len) {
+    case 3: h ^= data[2] << 16;
+    case 2: h ^= data[1] << 8;
+    case 1: h ^= data[0];
+        h *= m;
+    } /* switch */
+
+    h ^= h >> 13;
+    h *= m;
+    h ^= h >> 15;
+
+    return h;
+  } /* if */
+
+  #undef MIX
 }
 
-static symbol2 *symbol_cache_remove(symbol *sym,int free_cache_sym)
-{
-  symbol2 *cache_sym;
-  symbol2 *parent_cache_sym=NULL;
+#define namehash(name) \
+        (HASHTABLE_U64)murmurhash2_aligned(name,strlen(name),0)
 
-  cache_sym=hashmap_get(&symbol_cache_map,sym->name);
+static void symbol_cache_add(symbol *sym)
+{
+  const HASHTABLE_U64 key=namehash(sym->name);
+  symbol **pcache_sym=(symbol **)hashtable_find(&symbol_cache_ht,key);
+  symbol *cache_sym;
+
+  if (pcache_sym==NULL) {
+    if (hashtable_insert(&symbol_cache_ht,key,&sym)==0)
+      error(103);       /* insufficient memory */
+    return;
+  } /* if */
+  cache_sym=*pcache_sym;
+  while (cache_sym->htnext!=NULL)
+    cache_sym=cache_sym->htnext;
+  cache_sym->htnext=sym;
+}
+
+static void symbol_cache_remove(symbol *sym)
+{
+  const HASHTABLE_U64 key=namehash(sym->name);
+  symbol **pcache_sym;
+  symbol *cache_sym=NULL;
+  symbol *parent_cache_sym=NULL;
+
+  pcache_sym=(symbol **)hashtable_find(&symbol_cache_ht,key);
+  if (pcache_sym!=NULL)
+    cache_sym=*pcache_sym;
   for ( ;; ) {
     if (cache_sym==NULL)
-      return NULL;
-    if (cache_sym->symbol==sym)
+      return;
+    if (cache_sym==sym)
       break;
     parent_cache_sym=cache_sym;
-    cache_sym=cache_sym->next;
-  }
+    cache_sym=cache_sym->htnext;
+  } /* for */
 
-  if (parent_cache_sym!=NULL) {
-    parent_cache_sym->next=cache_sym->next;
+  if (parent_cache_sym==NULL) {
+    if (cache_sym->htnext==NULL)
+      hashtable_remove(&symbol_cache_ht,key);
+    else
+      *pcache_sym=cache_sym->htnext;
   } else {
-    hashmap_remove(&symbol_cache_map,sym->name);
-    if (cache_sym->next!=NULL)
-      if (hashmap_put(&symbol_cache_map,sym->name,cache_sym->next)==NULL)
-        error(103);     /* insufficient memory */
-  }
-  if (free_cache_sym) {
-    free(cache_sym);
-    return NULL;
-  }
-  cache_sym->next=NULL;
-  return cache_sym;
+    parent_cache_sym->htnext=cache_sym->htnext;
+  } /* if */
 }
 
 /* The local variable table must be searched backwards, so that the deepest
@@ -2697,8 +2810,9 @@ static symbol *add_symbol(symbol *root,symbol *entry,int sort)
   memcpy(newsym,entry,sizeof(symbol));
   newsym->next=root->next;
   root->next=newsym;
+  newsym->htnext=NULL;
   if (newsym->vclass==sGLOBAL)
-    symbol_cache_add(newsym,NULL);
+    symbol_cache_add(newsym);
   return newsym;
 }
 
@@ -2744,7 +2858,7 @@ static void free_symbol(symbol *sym)
   if (sym->documentation!=NULL)
     free(sym->documentation);
   if (sym->vclass==sGLOBAL)
-    symbol_cache_remove(sym,1);
+    symbol_cache_remove(sym);
   free(sym);
 }
 
@@ -2849,31 +2963,26 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
 
 SC_FUNC void rename_symbol(symbol *sym,const char *newname)
 {
-  int is_global=(sym->vclass==sGLOBAL);
-  symbol2 *cache_sym;
+  const int isglobal=(sym->vclass==sGLOBAL);
 
-  if (is_global)
-    cache_sym=symbol_cache_remove(sym,0);
+  if (isglobal)
+    symbol_cache_remove(sym);
   strcpy(sym->name,newname);
-  if (is_global && cache_sym!=NULL)
-    symbol_cache_add(sym,cache_sym);
+  if (isglobal)
+    symbol_cache_add(sym);
 }
 
 static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int automaton,int *cmptag)
 {
   symbol *firstmatch=NULL;
   symbol *sym=root->next;
-  symbol2 *cache_sym=NULL;
   int count=0;
-  int is_global=(root==&glbtab);
+  const int is_global=(root==&glbtab);
 
   if (is_global) {
-    cache_sym=hashmap_get(&symbol_cache_map,name);
-    if (cache_sym)
-      sym=cache_sym->symbol;
-    else
-      sym=NULL;
-  }
+    symbol **pcache_sym=(symbol **)hashtable_find(&symbol_cache_ht,namehash(name));
+    sym=(pcache_sym!=NULL) ? *pcache_sym : NULL;
+  } /* if */
 
   while (sym!=NULL) {
     if ( (is_global || strcmp(name,sym->name)==0)           /* check name */
@@ -2898,16 +3007,8 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
             break;
         } /* if */
       } /* if */
-    } /*  */
-    if (is_global) {
-      cache_sym=cache_sym->next;
-      if (cache_sym)
-        sym=cache_sym->symbol;
-      else
-        sym=NULL;
-    } else {
-      sym=sym->next;
-    }
+    } /* if */
+    sym=(is_global) ? sym->htnext : sym->next;
   } /* while */
   if (cmptag!=NULL && firstmatch!=NULL) {
     if (*cmptag==0)

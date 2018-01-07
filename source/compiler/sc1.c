@@ -769,7 +769,7 @@ cleanup:
                                            * done (i.e. on a fatal error) */
   delete_symbols(&glbtab,0,TRUE,TRUE);
   line_sym=NULL;
-  hashmap_destroy(&symbol_cache_map);
+  hashtable_term(&symbol_cache_ht);
   delete_consttable(&tagname_tab);
   delete_consttable(&libname_tab);
   delete_consttable(&sc_automaton_tab);
@@ -937,7 +937,7 @@ static void initglobals(void)
   litq=NULL;             /* the literal queue */
   glbtab.next=NULL;      /* clear global variables/constants table */
   loctab.next=NULL;      /*   "   local      "    /    "       "   */
-  hashmap_init(&symbol_cache_map,hashmap_hash_string,hashmap_compare_string,10000);
+  hashtable_init(&symbol_cache_ht, sizeof(symbol *),(16384/3*2),NULL); /* 16384 slots */
   tagname_tab.next=NULL; /* tagname table */
   libname_tab.next=NULL; /* library table (#pragma library "..." syntax) */
 
