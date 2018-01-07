@@ -1112,12 +1112,17 @@ static int command(void)
             sc_ctrlchar=(char)val;
           } /* if */
         } else if (strcmp(str,"deprecated")==0) {
+          /* remove leading whitespace */
           while (*lptr<=' ' && *lptr!='\0')
             lptr++;
-          pc_deprecate=(char*)malloc(strlen((char*)lptr)+1);
+          pc_deprecate=strdup((const char *)lptr);
           if (pc_deprecate!=NULL) {
-            strcpy(pc_deprecate,(const char *)lptr);
-            pc_deprecate[strcspn(pc_deprecate,"\r\n")]='\0';
+            char *ptr=pc_deprecate+strlen(pc_deprecate)-1;
+            /* remove trailing whitespace */
+            while (*ptr<= ' ')
+              *ptr--='\0';
+          } else {
+            error(103); /* insufficient memory */
           } /* if */
           lptr=(unsigned char*)strchr((char*)lptr,'\0'); /* skip to end (ignore "extra characters on line") */
         } else if (strcmp(str,"dynamic")==0) {
@@ -1488,23 +1493,25 @@ static int command(void)
     break;
 #endif
   case tpERROR:
-    while (*lptr<=' ' && *lptr!='\0')
-      lptr++;
-    if (!SKIPPING)
-      error(111,lptr);  /* user error */
-    break;
   case tpWARNING:
     while (*lptr<=' ' && *lptr!='\0')
       lptr++;
+    while (*lptr<=' ' && *lptr!='\0')
+      lptr++;
     if (!SKIPPING) {
-      char *usermsg=(char*)malloc(strlen((const char *)lptr)+1);
-      if(usermsg!=NULL) {
-        strcpy(usermsg,(const char *)lptr);
-        usermsg[strcspn(usermsg,"\r\n")]='\0';
-        error(237,usermsg);  /* user warning */
+      char *usermsg=strdup((const char *)lptr);
+      if (usermsg!=NULL) {
+        char *ptr=usermsg+strlen(usermsg)-1;
+        /* remove trailing whitespace and newlines */
+        while (*ptr<=' ')
+          *ptr--='\0';
+        if (tok==tpERROR)
+          error(111,usermsg); /* user error */
+        else
+          error(237,usermsg); /* user warning */
         free(usermsg);
       } else {
-        error(237,lptr);
+        error(103); /* insufficient memory */
       } /* if */
     } /* if */
     break;
