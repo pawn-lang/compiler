@@ -1424,10 +1424,13 @@ static int hier2(value *lval)
       else if (level==sym->dim.array.level+1 && idxsym!=NULL)
         tag=idxsym->x.tags.index;
     } /* if */
-    exporttag(tag);
+    if (tag!=0) {
+      exporttag(tag);
+      tag |= PUBLICTAG;
+    } /* if */
     clear_value(lval);
     lval->ident=iCONSTEXPR;
-    lval->constval=tag | PUBLICTAG;
+    lval->constval=tag;
     ldconst(lval->constval,sPRI);
     while (paranthese--)
       needtoken(')');
