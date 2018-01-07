@@ -2856,10 +2856,9 @@ static void decl_const(int vclass)
     /* add_constant() checks for duplicate definitions */
     if (!matchtag(tag,exprtag,FALSE)) {
       /* temporarily reset the line number to where the symbol was defined */
-      int orgfline=fline;
-      fline=symbolline;
+      errorset(sSETPOS,symbolline);
       error(213);                       /* tagname mismatch */
-      fline=orgfline;
+      errorset(sSETPOS,0);
     } /* if */
     sym=add_constant(constname,val,vclass,tag);
     if (sym!=NULL)
@@ -4781,6 +4780,7 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
         } else if ((sym->usage & uREAD)==0) {
           errorset(sSETPOS,sym->lnumber);
           error(203,sym->name);     /* symbol isn't used: ... */
+          errorset(sSETPOS,0);
         } /* if */
       } /* if */
       break;
@@ -4800,6 +4800,7 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
       if (testconst && (sym->usage & uREAD)==0) {
         errorset(sSETPOS,sym->lnumber);
         error(203,sym->name);       /* symbol isn't used: ... */
+        errorset(sSETPOS,0);
       } /* if */
       break;
     default:
@@ -4810,13 +4811,17 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
         if (testconst)
           errorset(sSETPOS,sym->lnumber);
         error(203,sym->name,sym->lnumber);  /* symbol isn't used (and not stock) */
+        if (testconst)
+          errorset(sSETPOS,0);
       } else if ((sym->usage & (uREAD | uSTOCK | uPUBLIC))==0) {
         errorset(sSETPOS,sym->lnumber);
         error(204,sym->name);       /* value assigned to symbol is never used */
+        errorset(sSETPOS,0);
 #if 0 // ??? not sure whether it is a good idea to force people use "const"
       } else if ((sym->usage & (uWRITTEN | uPUBLIC | uCONST))==0 && sym->ident==iREFARRAY) {
         errorset(sSETPOS,sym->lnumber);
         error(214,sym->name);       /* make array argument "const" */
+        errorset(sSETPOS,0);
 #endif
       } /* if */
       /* also mark the variable (local or global) to the debug information */
