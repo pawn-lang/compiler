@@ -3867,6 +3867,8 @@ static int declargs(symbol *sym,int chkshadow)
       case '&':
         if (ident!=iVARIABLE || numtags>0)
           error(1,"-identifier-","&");
+        if (fconst)
+          error(238, "const reference"); /* meaningless combination of class specifiers */
         ident=iREFERENCE;
         break;
       case tCONST:
@@ -3941,6 +3943,8 @@ static int declargs(symbol *sym,int chkshadow)
       case tELLIPS:
         if (ident!=iVARIABLE)
           error(10);                    /* illegal function or declaration */
+        if (fconst)
+          error(238, "const variable arguments"); /* meaningless combination of class specifiers */
         if (numtags==0)
           tags[numtags++]=0;            /* default tag */
         if ((sym->usage & uPROTOTYPED)==0) {

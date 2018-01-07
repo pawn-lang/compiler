@@ -191,7 +191,8 @@ static char *warnmsg[] = {
 /*234*/  "function is deprecated (symbol \"%s\") %s\n",
 /*235*/  "public function lacks forward declaration (symbol \"%s\")\n",
 /*236*/  "unknown parameter in substitution (incorrect #define pattern)\n",
-/*237*/  "user warning: %s\n"
+/*237*/  "user warning: %s\n",
+/*238*/  "meaningless combination of class specifiers (%s)\n"
 };
 
 #define NUM_WARNINGS    (sizeof warnmsg / sizeof warnmsg[0])
