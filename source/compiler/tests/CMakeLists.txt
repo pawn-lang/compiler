@@ -33,6 +33,13 @@ set_tests_properties(reset_errline_gh_230 PROPERTIES PASS_REGULAR_EXPRESSION "\
 .*\\.pwn\\(4\\) : warning 204: symbol is assigned a value that is never used: \\\"x\\\"\
 ")
 
+add_compiler_test(unused_symbol_line_gh_252 ${CMAKE_CURRENT_SOURCE_DIR}/unused_symbol_line_gh_252.pwn)
+set_tests_properties(unused_symbol_line_gh_252 PROPERTIES PASS_REGULAR_EXPRESSION "\
+.*\\.pwn\\(4\\) : warning 203: symbol is never used: \\\"y\\\"
+.*\\.pwn\\(8\\) : warning 203: symbol is never used: \\\"z\\\"
+.*\\.pwn\\(1\\) : warning 203: symbol is never used: \\\"x\\\"
+")
+
 # Crashers
 #
 # These tests simply check that the compiler doesn't crash.

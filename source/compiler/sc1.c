@@ -4808,11 +4808,9 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
       if (sym->parent!=NULL)
         break;                      /* hierarchical data type */
       if ((sym->usage & (uWRITTEN | uREAD | uSTOCK | uPUBLIC))==0) {
-        if (testconst)
-          errorset(sSETPOS,sym->lnumber);
+        errorset(sSETPOS,sym->lnumber);
         error(203,sym->name,sym->lnumber);  /* symbol isn't used (and not stock) */
-        if (testconst)
-          errorset(sSETPOS,0);
+        errorset(sSETPOS,0);
       } else if ((sym->usage & (uREAD | uSTOCK | uPUBLIC))==0) {
         errorset(sSETPOS,sym->lnumber);
         error(204,sym->name);       /* value assigned to symbol is never used */
