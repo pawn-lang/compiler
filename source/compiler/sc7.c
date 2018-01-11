@@ -1332,14 +1332,12 @@ SC_FUNC void stgmark(char mark)
 static int rebuffer(char *str)
 {
   if (sc_status==statWRITE) {
+    int st_len=strlen(str);
     if (pipeidx>=2 && stgpipe[pipeidx-1]=='\0' && stgpipe[pipeidx-2]!='\n')
-      pipeidx-=1;                      /* overwrite last '\0' */
-    while (*str!='\0') {               /* copy to staging buffer */
-      CHECK_STGPIPE(pipeidx);
-      stgpipe[pipeidx++]=*str++;
-    } /* while */
-    CHECK_STGPIPE(pipeidx);
-    stgpipe[pipeidx++]='\0';
+      pipeidx-=1;                           /* overwrite last '\0' */
+    CHECK_STGPIPE(pipeidx+st_len+1);
+    memcpy(stgpipe+pipeidx,str,st_len+1);   /* copy to staging buffer */
+    pipeidx+=st_len+1;
   } /* if */
   return TRUE;
 }
@@ -1372,22 +1370,18 @@ static int filewrite(char *str)
 SC_FUNC void stgwrite(const char *st)
 {
   int len;
-  int st_len;
+  int st_len=strlen(st);
 
   if (staging) {
     assert(stgidx==0 || stgbuf!=NULL);  /* staging buffer must be valid if there is (apparently) something in it */
     if (stgidx>=2 && stgbuf[stgidx-1]=='\0' && stgbuf[stgidx-2]!='\n')
-      stgidx-=1;                       /* overwrite last '\0' */
-    while (*st!='\0') {                /* copy to staging buffer */
-      CHECK_STGBUFFER(stgidx);
-      stgbuf[stgidx++]=*st++;
-      stglen++;
-    } /* while */
-    CHECK_STGBUFFER(stgidx);
-    stgbuf[stgidx++]='\0';
+      stgidx-=1;                        /* overwrite last '\0' */
+    CHECK_STGBUFFER(stgidx+st_len+1);
+    memcpy(stgbuf+stgidx,st,st_len+1);  /* copy to staging buffer */
+    stgidx+=st_len+1;
+    stglen+=st_len;
   } else {
     len=(stgbuf!=NULL) ? stglen : 0;
-    st_len=strlen(st);
     CHECK_STGBUFFER(len+st_len+1);
     memcpy(stgbuf+len,st,st_len+1);
     len=len+st_len;
