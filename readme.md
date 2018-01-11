@@ -16,6 +16,18 @@ The project is now maintained by me (Southclaws). I will likely just handle pull
 
 See [Known compiler bugs](../../wiki/Known-compiler-bugs) for the list of fixed bugs and [What's new](../../wiki/What's-new) for the list of features and other notable changes.
 
+[Release notes](https://github.com/Southclaws/pawn/releases) descibe changes in each version of the compiler.
+
+## Download
+
+Binary packages can be downloads from [Releases](https://github.com/Southclaws/pawn/releases). 
+
+You can also get the latest development binaries for Windows on [AppVeyor](https://ci.appveyor.com/project/Southclaws/pawn/branch/master/artifacts). This archive is built automatically on every Git commit and can be pretty unstable, so use at your own risk.
+
+## Installation on Windows
+
+Download the ZIP archive and extract `pawnc.dll`, `pawncc.exe`, `pawndisasmsm.exe` to your pawno directory or another directory of your choice if you're using a different editor.
+
 ## Installation on openSUSE/SLES
 
 There is an installation package available for openSUSE/SLES users so that you can easily install the compiler on your distribution. Please follow these steps:
