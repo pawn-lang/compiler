@@ -269,7 +269,7 @@ static short lastfile;
   assert(errstart<=errline);
   va_start(argptr,number);
   if (strlen(errfname)==0) {
-    int start= (errstart==errline) ? -1 : errstart;
+    int start=(errstart==errline) ? -1 : errstart;
     if (pc_error(number,msg,inpfname,start,errline,argptr)) {
       if (outf!=NULL) {
         pc_closeasm(outf,TRUE);
@@ -356,7 +356,7 @@ int pc_enablewarning(int number,int enable)
 
   if (number<200)
     return FALSE;       /* errors and fatal errors cannot be disabled */
-  number -= 200;
+  number-=200;
   if (number>=NUM_WARNINGS)
     return FALSE;
 
