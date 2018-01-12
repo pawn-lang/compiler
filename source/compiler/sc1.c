@@ -4906,8 +4906,8 @@ static void destructsymbols(symbol *root,int level)
     popreg(sPRI);
 }
 
-static constvalue *insert_constval(constvalue *prev,constvalue *next,const char *name,cell val,
-                                   int index)
+static constvalue *insert_constval(constvalue *prev,constvalue *next,
+                                   const char *name,cell val,int index)
 {
   constvalue *cur;
 
@@ -4927,12 +4927,12 @@ static constvalue *insert_constval(constvalue *prev,constvalue *next,const char 
 
 SC_FUNC constvalue *append_constval(constvalue *table,const char *name,cell val,int index)
 {
-  constvalue *cur,*prev;
+  constvalue_root *root=(constvalue_root *)table;
+  constvalue *newvalue;
 
-  /* find the end of the constant table */
-  for (prev=table, cur=table->next; cur!=NULL; prev=cur, cur=cur->next)
-    /* nothing */;
-  return insert_constval(prev,NULL,name,val,index);
+  newvalue=insert_constval(((root->last!=NULL) ? root->last : table),NULL,name,val,index);
+  root->last=newvalue;
+  return newvalue;
 }
 
 SC_FUNC constvalue *find_constval(constvalue *table,char *name,int index)
@@ -4962,12 +4962,15 @@ static constvalue *find_constval_byval(constvalue *table,cell val)
 #if 0   /* never used */
 static int delete_constval(constvalue *table,char *name)
 {
-  constvalue *prev = table;
-  constvalue *cur = prev->next;
+  constvalue *prev=table;
+  constvalue *cur=prev->next;
+  constvalue_root *root=(constvalue_root *)table;
 
   while (cur!=NULL) {
     if (strcmp(name,cur->name)==0) {
       prev->next=cur->next;
+      if (root->last==cur)
+        root->last=prev;
       free(cur);
       return TRUE;
     } /* if */

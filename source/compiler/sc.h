@@ -113,6 +113,10 @@ typedef struct s_constvalue {
                          * tag for enumeration lists */
 } constvalue;
 
+typedef struct s_constvalue_root {
+  constvalue *next,*last;
+} constvalue_root;
+
 /*  Symbol table format
  *
  *  The symbol name read from the input file is stored in "name", the
