@@ -40,6 +40,12 @@ set_tests_properties(unused_symbol_line_gh_252 PROPERTIES PASS_REGULAR_EXPRESSIO
 .*\\.pwn\\(1\\) : warning 203: symbol is never used: \\\"x\\\"
 ")
 
+add_compiler_test(meaningless_class_specifiers_gh_172 ${CMAKE_CURRENT_SOURCE_DIR}/meaningless_class_specifiers_gh_172.pwn)
+set_tests_properties(meaningless_class_specifiers_gh_172 PROPERTIES PASS_REGULAR_EXPRESSION "\
+.*\\.pwn\\(1\\) : warning 238: meaningless combination of class specifiers \\(const reference\\)\
+.*\\.pwn\\(2\\) : warning 238: meaningless combination of class specifiers \\(const variable arguments\\)\
+")
+
 # Crashers
 #
 # These tests simply check that the compiler doesn't crash.
