@@ -3752,6 +3752,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     declared=0;
   } /* if */
   if ((lastst!=tRETURN) && (lastst!=tGOTO)){
+    destructsymbols(&loctab, 0);
     ldconst(0,sPRI);
     ffret(strcmp(sym->name,uENTRYFUNC)!=0);
     if ((sym->usage & uRETVALUE)!=0 && (sym->flags & flagNAKED)==0) {
