@@ -3752,7 +3752,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     declared=0;
   } /* if */
   if ((lastst!=tRETURN) && (lastst!=tGOTO)){
-    destructsymbols(&loctab, 0);
+    destructsymbols(&loctab,0);
     ldconst(0,sPRI);
     ffret(strcmp(sym->name,uENTRYFUNC)!=0);
     if ((sym->usage & uRETVALUE)!=0 && (sym->flags & flagNAKED)==0) {
@@ -4861,7 +4861,7 @@ static void destructsymbols(symbol *root,int level)
   int savepri=FALSE;
   symbol *sym=root->next;
   while (sym!=NULL && sym->compound>=level) {
-    if ((sym->ident==iVARIABLE || sym->ident==iARRAY) && !(sym->vclass == sSTATIC && sym->fnumber == -1)) {
+    if ((sym->ident==iVARIABLE || sym->ident==iARRAY) && !(sym->vclass==sSTATIC && sym->fnumber==-1)) {
       char symbolname[16];
       symbol *opsym;
       cell elements;
@@ -4880,10 +4880,10 @@ static void destructsymbols(symbol *root,int level)
            * if the array is a part of a larger array, it must be ignored
            * as it's parent would(or has already) trigger(ed) the destructor
            */
-          if (sym->parent != NULL) {
+          if (sym->parent!=NULL) {
             sym=sym->next;
             continue;
-          }
+          } /* if */
           elements=calc_array_datasize(sym,&offset);
           /* "elements" can be zero when the variable is declared like
            *    new mytag: myvar[2][] = { {1, 2}, {3, 4} }
