@@ -4845,7 +4845,7 @@ static cell calc_array_datasize(symbol *sym, cell *offset)
     if (offset!=NULL)
       *offset=length*(*offset+sizeof(cell));
     if (sublength>0)
-      length*=length*sublength;
+      length*=sublength;
     else
       length=0;
   } else {
@@ -4875,6 +4875,15 @@ static void destructsymbols(symbol *root,int level)
         } /* if */
         /* if the variable is an array, get the number of elements */
         if (sym->ident==iARRAY) {
+          /* according to the PAWN Implementer Guide, the destructor
+           * should be triggered for the data of the array only; hence
+           * if the array is a part of a larger array, it must be ignored
+           * as it's parent would(or has already) trigger(ed) the destructor
+           */
+          if (sym->parent != NULL) {
+            sym=sym->next;
+            continue;
+          }
           elements=calc_array_datasize(sym,&offset);
           /* "elements" can be zero when the variable is declared like
            *    new mytag: myvar[2][] = { {1, 2}, {3, 4} }
