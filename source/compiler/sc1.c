@@ -2352,8 +2352,7 @@ static int declloc(int fstatic)
         assert(staging);        /* end staging phase (optimize expression) */
         stgout(staging_start);
         stgset(FALSE);
-        if (!matchtag(tag,ctag,TRUE))
-          error(213);           /* tag mismatch */
+        check_tagmismatch(tag,ctag,TRUE,-1);
         /* if the variable was not explicitly initialized, reset the
          * "uWRITTEN" flag that store() set */
         if (!explicit_init)
@@ -2508,8 +2507,7 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
   if (ident==iVARIABLE) {
     assert(*size==1);
     init(ident,&ctag,NULL);
-    if (!matchtag(tag,ctag,TRUE))
-      error(213);       /* tag mismatch */
+    check_tagmismatch(tag,ctag,TRUE,-1);
   } else {
     assert(numdim>0);
     if (numdim==1) {
@@ -2736,14 +2734,12 @@ static cell initvector(int ident,int tag,cell size,int startlit,int fillzero,
         rtag=symfield->x.tags.index;  /* set the expected tag to the index tag */
         enumfield=enumfield->next;
       } /* if */
-      if (!matchtag(rtag,ctag,TRUE))
-        error(213);            /* tag mismatch */
+      check_tagmismatch(rtag,ctag,TRUE,-1);
     } while (matchtoken(',')); /* do */
     needtoken('}');
   } else {
     init(ident,&ctag,errorfound);
-    if (!matchtag(tag,ctag,TRUE))
-      error(213);               /* tagname mismatch */
+    check_tagmismatch(tag,ctag,TRUE,-1);
   } /* if */
   /* fill up the literal queue with a series */
   if (ellips) {
@@ -2854,12 +2850,7 @@ static void decl_const(int vclass)
     needtoken('=');
     constexpr(&val,&exprtag,NULL);      /* get value */
     /* add_constant() checks for duplicate definitions */
-    if (!matchtag(tag,exprtag,FALSE)) {
-      /* temporarily reset the line number to where the symbol was defined */
-      errorset(sSETPOS,symbolline);
-      error(213);                       /* tagname mismatch */
-      errorset(sSETPOS,-1);
-    } /* if */
+    check_tagmismatch(tag,exprtag,FALSE,symbolline);
     sym=add_constant(constname,val,vclass,tag);
     if (sym!=NULL)
       sc_attachdocumentation(sym);/* attach any documenation to the constant */
@@ -3403,6 +3394,46 @@ static constvalue *find_tag_byval(int tag)
   if (tagsym==NULL)
     tagsym=find_constval_byval(&tagname_tab,tag | PUBLICTAG);
   return tagsym;
+}
+
+SC_FUNC void check_tagmismatch(int formaltag,int actualtag,int allowcoerce,int errline)
+{
+  if (!matchtag(formaltag,actualtag,allowcoerce)) {
+    constvalue *tagsym;
+    char *formaltag_name,*actualtag_name;
+    tagsym=find_tag_byval(formaltag);
+    formaltag_name=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+    tagsym=find_tag_byval(actualtag);
+    actualtag_name=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+    if(errline>0)
+      errorset(sSETPOS,errline);
+    error(213,formaltag_name,actualtag_name); /* tag mismatch */
+    if(errline>0)
+      errorset(sSETPOS,-1);    
+  } /* if */
+}
+
+SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualtag,int errline)
+{
+  if (!checktag(formaltags, numtags, actualtag)) {
+    int i;
+    constvalue *tagsym;
+    char formal_tagnames[sLINEMAX],*actual_tagname;
+    formal_tagnames[0]='\0';
+    for (i=0; i<numtags; i++) {
+      tagsym=find_tag_byval(formaltags[i]);
+      strlcat(formal_tagnames,(tagsym!=NULL) ? tagsym->name : "-unknown-",sizeof(formal_tagnames));
+      if((i+1)!=numtags)
+        strlcat(formal_tagnames,"\" or \"",sizeof(formal_tagnames));
+    } /* for */
+    tagsym=find_tag_byval(actualtag);
+    actual_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+    if(errline>0)
+      errorset(sSETPOS,errline);
+    error(213,formal_tagnames,actual_tagname); /* tag mismatch */
+    if(errline>0)
+      errorset(sSETPOS,-1);  
+  } /* if */
 }
 
 SC_FUNC char *funcdisplayname(char *dest,char *funcname)
@@ -4112,8 +4143,7 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
       } else {
         constexpr(&arg->defvalue.val,&arg->defvalue_tag,NULL);
         assert(numtags>0);
-        if (!matchtag(tags[0],arg->defvalue_tag,TRUE))
-          error(213);           /* tagname mismatch */
+        check_tagmismatch(tags[0],arg->defvalue_tag,TRUE,-1);  
       } /* if */
     } /* if */
   } /* if */
@@ -6773,8 +6803,7 @@ static void doreturn(void)
     rettype|=uRETVALUE;                 /* function returns a value */
     /* check tagname with function tagname */
     assert(curfunc!=NULL);
-    if (!matchtag(curfunc->tag,tag,TRUE))
-      error(213);                       /* tagname mismatch */
+    check_tagmismatch(curfunc->tag,tag,TRUE,-1);
     if (ident==iARRAY || ident==iREFARRAY) {
       int dim[sDIMEN_MAX],numdim=0;
       cell arraysize;

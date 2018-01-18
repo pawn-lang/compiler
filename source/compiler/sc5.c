@@ -167,7 +167,7 @@ static char *warnmsg[] = {
 /*210*/  "possible use of symbol before initialization: \"%s\"\n",
 /*211*/  "possibly unintended assignment\n",
 /*212*/  "possibly unintended bitwise operation\n",
-/*213*/  "tag mismatch\n",
+/*213*/  "tag mismatch: expected tag(s) \"%s\", but found \"%s\"\n",
 /*214*/  "possibly a \"const\" array argument was intended: \"%s\"\n",
 /*215*/  "expression has no effect\n",
 /*216*/  "nested comment\n",
