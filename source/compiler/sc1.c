@@ -4134,8 +4134,6 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
     assert(numtags>0);
     argsym=addvariable(name,offset,ident,sLOCAL,tags[0],
                        arg->dim,arg->numdim,arg->idxtag,0);
-    if (ident==iREFERENCE)
-      argsym->usage|=uREAD;     /* because references are passed back */
     if (fpublic)
       argsym->usage|=uREAD;     /* arguments of public functions are always "used" */
     if (fconst)
@@ -4811,7 +4809,7 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
         errorset(sSETPOS,sym->lnumber);
         error(203,sym->name,sym->lnumber);  /* symbol isn't used (and not stock) */
         errorset(sSETPOS,-1);
-      } else if ((sym->usage & (uREAD | uSTOCK | uPUBLIC))==0) {
+      } else if ((sym->usage & (uREAD | uSTOCK | uPUBLIC))==0 && sym->ident!=iREFERENCE) {
         errorset(sSETPOS,sym->lnumber);
         error(204,sym->name);       /* value assigned to symbol is never used */
         errorset(sSETPOS,-1);
