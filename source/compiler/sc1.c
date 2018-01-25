@@ -3400,14 +3400,18 @@ SC_FUNC void check_tagmismatch(int formaltag,int actualtag,int allowcoerce,int e
 {
   if (!matchtag(formaltag,actualtag,allowcoerce)) {
     constvalue *tagsym;
-    char *formaltag_name,*actualtag_name;
-    tagsym=find_tag_byval(formaltag);
-    formaltag_name=(tagsym!=NULL) ? tagsym->name : "-unknown-";
-    tagsym=find_tag_byval(actualtag);
-    actualtag_name=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+    char formal_tagname[sNAMEMAX+3]="none (\"_\"),",actual_tagname[sNAMEMAX+2]="none (\"_\")"; /* two extra characters for quotes */  
+    if(formaltag!=0) {
+      tagsym=find_tag_byval(formaltag);
+      sprintf(formal_tagname,"\"%s\",", (tagsym!=NULL) ? tagsym->name : "-unknown-");
+    } /* if */
+    if(actualtag!=0) {
+      tagsym=find_tag_byval(actualtag);
+      sprintf(actual_tagname,"\"%s\"",(tagsym!=NULL) ? tagsym->name : "-unknown-");
+    } /* if */
     if(errline>0)
       errorset(sSETPOS,errline);
-    error(213,formaltag_name,actualtag_name); /* tag mismatch */
+    error(213,"tag",formal_tagname,actual_tagname); /* tag mismatch */
     if(errline>0)
       errorset(sSETPOS,-1);    
   } /* if */
@@ -3418,19 +3422,34 @@ SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualt
   if (!checktag(formaltags, numtags, actualtag)) {
     int i;
     constvalue *tagsym;
-    char formal_tagnames[sLINEMAX],*actual_tagname;
-    formal_tagnames[0]='\0';
-    for (i=0; i<numtags; i++) {
-      tagsym=find_tag_byval(formaltags[i]);
-      strlcat(formal_tagnames,(tagsym!=NULL) ? tagsym->name : "-unknown-",sizeof(formal_tagnames));
-      if((i+1)!=numtags)
-        strlcat(formal_tagnames,"\" or \"",sizeof(formal_tagnames));
+    char formal_tagnames[sLINEMAX]="",actual_tagname[sNAMEMAX+2]="none (\"_\")";
+    int notag_allowed=FALSE,add_comma=FALSE;
+    for (i=0; i<numtags; i++) {      
+      if(formaltags[i]!=0) {
+        if((i+1)==numtags && add_comma==TRUE && notag_allowed==FALSE)
+          strlcat(formal_tagnames,", or ",sizeof(formal_tagnames));
+        else if(add_comma)
+          strlcat(formal_tagnames,", ",sizeof(formal_tagnames));
+        add_comma=TRUE;
+        tagsym=find_tag_byval(formaltags[i]);
+        sprintf(formal_tagnames,"%s\"%s\"",formal_tagnames,(tagsym!=NULL) ? tagsym->name : "-unknown-"); 
+      } else {
+        notag_allowed=TRUE;
+      } /* if */      
     } /* for */
-    tagsym=find_tag_byval(actualtag);
-    actual_tagname=(tagsym!=NULL) ? tagsym->name : "-unknown-";
+    if(notag_allowed==TRUE) {
+      if(add_comma==TRUE)
+        strlcat(formal_tagnames,", or ",sizeof(formal_tagnames));
+      strlcat(formal_tagnames,"none (\"_\")",sizeof(formal_tagnames));
+    } /* if */
+    strlcat(formal_tagnames,(numtags==1) ? "," : ";",sizeof(formal_tagnames));
+    if(actualtag!=0) {
+      tagsym=find_tag_byval(actualtag);
+      sprintf(actual_tagname,"\"%s\"",(tagsym!=NULL) ? tagsym->name : "-unknown-");
+    } /* if */  
     if(errline>0)
       errorset(sSETPOS,errline);
-    error(213,formal_tagnames,actual_tagname); /* tag mismatch */
+    error(213,(numtags==1) ? "tag" : "tags",formal_tagnames,actual_tagname); /* tag mismatch */
     if(errline>0)
       errorset(sSETPOS,-1);  
   } /* if */
