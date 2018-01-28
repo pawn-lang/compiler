@@ -549,6 +549,8 @@ long pc_lengthbin(void *handle); /* return the length of the file */
 SC_FUNC void set_extension(char *filename,char *extension,int force);
 SC_FUNC symbol *fetchfunc(char *name,int tag);
 SC_FUNC char *operator_symname(char *symname,char *opername,int tag1,int tag2,int numtags,int resulttag);
+SC_FUNC void check_tagmismatch(int formaltag,int actualtag,int allowcoerce,int errline);
+SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualtag,int errline);
 SC_FUNC char *funcdisplayname(char *dest,char *funcname);
 SC_FUNC int constexpr(cell *val,int *tag,symbol **symptr);
 SC_FUNC constvalue *append_constval(constvalue *table,const char *name,cell val,int index);
@@ -603,6 +605,7 @@ SC_FUNC char *itoh(ucell val);
 SC_FUNC int check_userop(void (*oper)(void),int tag1,int tag2,int numparam,
                          value *lval,int *resulttag);
 SC_FUNC int matchtag(int formaltag,int actualtag,int allowcoerce);
+SC_FUNC int checktag(int tags[],int numtags,int exprtag);
 SC_FUNC int expression(cell *val,int *tag,symbol **symptr,int chkfuncresult);
 SC_FUNC int sc_getstateid(constvalue **automaton,constvalue **state);
 SC_FUNC cell array_totalsize(symbol *sym);
