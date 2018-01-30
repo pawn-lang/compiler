@@ -10,7 +10,7 @@ This is a modified copy of the Pawn compiler version 3.2.3664 by Compuphase that
 
 This project was originally maintained and managed by Zeex who left the project due to lack of time on 2017-12-31. Thank you for all your hard work on keeping this project alive Zeex!
 
-The project is now maintained by me (Southclaws). I will likely just handle pull-requests from contributors and busywork such as maintaining the CI, releases and general housework. I may contribute code in the future but for now, I'm just acting as an active manager of the repository.
+The project is now maintained by the [Compiler Team](https://github.com/orgs/pawn-lang/teams/compiler) here at the pawn-lang GitHub org.
 
 ## List of changes
 
