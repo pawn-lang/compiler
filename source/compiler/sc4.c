@@ -1379,19 +1379,28 @@ SC_FUNC void outval(cell val,int newline)
 }
 
 /* write an instruction with arguments */
-SC_FUNC void outinstr(const char *name,ucell args[],int numargs)
+SC_FUNC void outinstr(const char *name, emit_outval params[],int numparams)
 {
   int i;
 
   stgwrite("\t");
   stgwrite(name);
 
-  for (i=0; i<numargs; i++) {
+  for (i=0; i<numparams; i++) {
     stgwrite(" ");
-    stgwrite(itoh(args[i]));
+    switch (params[i].type)
+    {
+    case eotNUMBER:
+      stgwrite(itoh(params[i].value.ucell));
+      break;
+    case eotFUNCTION:
+      stgwrite(".");
+      stgwrite(params[i].value.string);
+      break;
+    }
   } /* for */
 
   stgwrite("\n");
 
-  code_idx+=opargs(numargs)+opcodes(1);
+  code_idx+=opcodes(1)+opargs(numparams);
 }

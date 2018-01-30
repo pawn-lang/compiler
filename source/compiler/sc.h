@@ -475,6 +475,16 @@ typedef enum s_optmark {
 
 #define MAX_INSTR_LEN   30
 
+#define eotNUMBER        0
+#define eotFUNCTION      1
+typedef struct s_emit_outval {
+  int type;
+  union {
+    ucell ucell;
+    const char *string;
+  } value;
+} emit_outval;
+
 /* interface functions */
 #if defined __cplusplus
   extern "C" {
@@ -699,7 +709,7 @@ SC_FUNC void dec(value *lval);
 SC_FUNC void jmp_ne0(int number);
 SC_FUNC void jmp_eq0(int number);
 SC_FUNC void outval(cell val,int newline);
-SC_FUNC void outinstr(const char *name,ucell args[],int numargs);
+SC_FUNC void outinstr(const char *name, emit_outval params[],int numparams);
 
 /* function prototypes in SC5.C */
 SC_FUNC int error(int number,...);
