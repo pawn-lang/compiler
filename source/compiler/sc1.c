@@ -5984,6 +5984,8 @@ fetchtok:
       goto invalid_token;
     } /* if */
     if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
+      if (neg!=FALSE)
+        goto invalid_token_neg;
       if ((sym->usage & uNATIVE)!=0 && (sym->usage & uREAD)==0 && sym->addr>=0)
         sym->addr=ntv_funcid++;
       markusage(sym,uREAD);
@@ -6012,9 +6014,10 @@ fetchtok:
       neg=TRUE;
       goto fetchtok;
     } else {
-      char ival[sNAMEMAX+2]="-";
-      strcpy(ival+1,str);
-      error(1,sc_tokens[tSYMBOL-tFIRST],ival);
+      char ival[sNAMEMAX+2];
+    invalid_token_neg:
+      sprintf(ival,"-%s",str);
+      error(1,sc_tokens[teNUMERIC-tFIRST],ival);
       break;
     } /* if */
   default:
