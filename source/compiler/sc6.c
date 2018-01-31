@@ -444,7 +444,7 @@ static cell SC_FASTCALL do_dumpn(FILE *fbin,char *params,cell opcode)
   value=hex2long(params,&params);
   num=(int)hex2long(params,NULL);
   if (fbin!=NULL)
-      write_encoded_n(fbin,value,num);
+    write_encoded_n(fbin,value,num);
   return num*sizeof(cell);
 }
 
