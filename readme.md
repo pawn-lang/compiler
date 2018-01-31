@@ -16,13 +16,13 @@ The project is now maintained by the [Compiler Team](https://github.com/orgs/paw
 
 See [Known compiler bugs](../../wiki/Known-compiler-bugs) for the list of fixed bugs and [What's new](../../wiki/What's-new) for the list of features and other notable changes.
 
-[Release notes](https://github.com/Southclaws/pawn/releases) descibe changes in each version of the compiler.
+[Release notes](https://github.com/pawn-lang/compiler/releases) descibe changes in each version of the compiler.
 
 ## Download
 
-Binary packages can be downloads from [Releases](https://github.com/Southclaws/pawn/releases). 
+Binary packages can be downloads from [Releases](https://github.com/pawn-lang/compiler/releases). 
 
-You can also get the latest development binaries for Windows on [AppVeyor](https://ci.appveyor.com/project/Southclaws/pawn/branch/master/artifacts). This archive is built automatically on every Git commit and can be pretty unstable, so use at your own risk.
+You can also get the latest development binaries for Windows on [AppVeyor](https://ci.appveyor.com/project/pawn-lang/compiler/branch/master/artifacts). This archive is built automatically on every Git commit and can be pretty unstable, so use at your own risk.
 
 ## Installation on Windows
 
@@ -128,7 +128,7 @@ SA-MP uses a modified version of Pawn 3.2.3664 [1] with Windows-only executables
 
 [1] It's worth noting that the version of the AMX embedded into the SA-MP server seems to be based on an older release of Pawn.
 
-[build]: https://travis-ci.org/Southclaws/pawn
-[build_status]: https://travis-ci.org/Southclaws/pawn.svg?branch=master
-[build_win]: https://ci.appveyor.com/project/Southclaws/pawn/branch/master
+[build]: https://travis-ci.org/pawn-lang/compiler
+[build_status]: https://travis-ci.org/pawn-lang/compiler.svg?branch=master
+[build_win]: https://ci.appveyor.com/project/pawn-lang/compiler/branch/master
 [build_status_win]: https://ci.appveyor.com/api/projects/status/o8ae9hqhg8o9m50u?svg=true
