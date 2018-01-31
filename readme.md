@@ -129,6 +129,7 @@ SA-MP uses a modified version of Pawn 3.2.3664 [1] with Windows-only executables
 [1] It's worth noting that the version of the AMX embedded into the SA-MP server seems to be based on an older release of Pawn.
 
 [build]: https://travis-ci.org/pawn-lang/compiler
-[build_status]: https://travis-ci.org/pawn-lang/compiler.svg?branch=master
-[build_win]: https://ci.appveyor.com/project/pawn-lang/compiler/branch/master
-[build_status_win]: https://ci.appveyor.com/api/projects/status/o8ae9hqhg8o9m50u?svg=true
+[build_status]: https://travis-ci.org/Southclaws/compiler.svg?branch=master
+[build_win]: https://ci.appveyor.com/project/Southclaws/compiler/branch/master
+[build_status_win]: https://ci.appveyor.com/api/projects/status/k112tbr1afrkif0n?svg=true
+
