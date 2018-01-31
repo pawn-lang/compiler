@@ -6113,7 +6113,7 @@ static void SC_FASTCALL emit_param_local(emit_outval *p)
   } /* switch */
 }
 
-static void SC_FASTCALL emit_param_index(emit_outval *p,const cell *valid_values,int numvalues)
+static void SC_FASTCALL emit_param_index(emit_outval *p,int isrange,const cell *valid_values,int numvalues)
 {
   cell val;
   char *str;
@@ -6121,7 +6121,7 @@ static void SC_FASTCALL emit_param_index(emit_outval *p,const cell *valid_values
   int tok,i,global;
   int neg=FALSE;
 
-  assert(numvalues>0);
+  assert(isrange ? (numvalues==2) : (numvalues>0));
 fetchtok:
   tok=lex(&val,&str);
   switch (tok) {
@@ -6175,9 +6175,14 @@ fetchtok:
 
   p->type=eotNUMBER;
   p->value.ucell=(ucell)val;
-  for (i=0; i<numvalues; i++)
-    if (val==valid_values[i])
+  if (isrange) {
+    if (valid_values[0]<=val && val<=valid_values[1])
       return;
+  } else {
+    for (i=0; i<numvalues; i++)
+      if (val==valid_values[i])
+        return;
+  } /* if */
   error(50);    /* invalid range */
 }
 
@@ -6335,6 +6340,15 @@ static void SC_FASTCALL emit_parm1_nonneg(char *name)
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
+static void SC_FASTCALL emit_parm1_shift(char *name)
+{
+  static const cell valid_values[] = { 0,sizeof(cell)*8-1 };
+  emit_outval p[1];
+
+  emit_param_index(&p[0],TRUE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
+  outinstr(name,p,(sizeof p / sizeof p[0]));
+}
+
 static void SC_FASTCALL emit_do_casetbl(char *name)
 {
   emit_outval p[2];
@@ -6361,16 +6375,16 @@ static void SC_FASTCALL emit_do_lodb_strb(char *name)
   static const cell valid_values[] = { 1,2,4 };
   emit_outval p[1];
 
-  emit_param_index(&p[0],valid_values,(sizeof valid_values / sizeof valid_values[0]));
+  emit_param_index(&p[0],FALSE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void SC_FASTCALL emit_do_lctrl(char *name)
 {
-  static const cell valid_values[] = { 0,1,2,3,4,5,6,7,8,9 };
+  static const cell valid_values[] = { 0,9 };
   emit_outval p[1];
 
-  emit_param_index(&p[0],valid_values,(sizeof valid_values / sizeof valid_values[0]));
+  emit_param_index(&p[0],TRUE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
@@ -6379,7 +6393,7 @@ static void SC_FASTCALL emit_do_sctrl(char *name)
   static const cell valid_values[] = { 2,4,5,6,8,9 };
   emit_outval p[1];
 
-  emit_param_index(&p[0],valid_values,(sizeof valid_values / sizeof valid_values[0]));
+  emit_param_index(&p[0],FALSE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
@@ -6703,11 +6717,11 @@ static EMIT_OPCODE emit_opcodelist[] = {
   {104, "sgeq",       emit_parm0 },
   {103, "sgrtr",      emit_parm0 },
   { 65, "shl",        emit_parm0 },
-  { 69, "shl.c.alt",  emit_parm1_any },
-  { 68, "shl.c.pri",  emit_parm1_any },
+  { 69, "shl.c.alt",  emit_parm1_shift },
+  { 68, "shl.c.pri",  emit_parm1_shift },
   { 66, "shr",        emit_parm0 },
-  { 71, "shr.c.alt",  emit_parm1_any },
-  { 70, "shr.c.pri",  emit_parm1_any },
+  { 71, "shr.c.alt",  emit_parm1_shift },
+  { 70, "shr.c.pri",  emit_parm1_shift },
   { 94, "sign.alt",   emit_parm0 },
   { 93, "sign.pri",   emit_parm0 },
   {102, "sleq",       emit_parm0 },
