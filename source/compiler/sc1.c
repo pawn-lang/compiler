@@ -6181,6 +6181,53 @@ fetchtok:
   error(50);    /* invalid range */
 }
 
+static void SC_FASTCALL emit_param_nonneg(emit_outval *p)
+{
+  cell val;
+  char *str;
+  symbol *sym;
+  int tok,global;
+
+  tok=lex(&val,&str);
+  switch (tok) {
+  case tNUMBER:
+    break;
+  case tSYMBOL:
+    global=FALSE;
+    sym=findloc(str);
+    if (sym==NULL) {
+      global=TRUE;
+      sym=findglb(str,sSTATEVAR);
+    } /* if */
+    if (sym==NULL) {
+      error(17,str);    /* undefined symbol */
+      return;
+    } /* if */
+    switch (sym->ident) {
+    case iCONSTEXPR:
+      break;
+    case iLABEL:
+      tok=tLABEL;
+      goto invalid_token;
+    case iFUNCTN:
+    case iREFFUNC:
+      tok=((sym->usage & uNATIVE)!=0) ? teNATIVE : teFUNCTN;
+      goto invalid_token;
+    default:
+      tok=(global==FALSE && sym->vclass!=sSTATIC) ? teLOCAL : teDATA;
+      goto invalid_token;
+    } /* switch */
+    markusage(sym,uREAD);
+  default:
+  invalid_token:
+    emit_invalid_token(teNONNEG,tok);
+    return;
+  } /* switch */
+
+  p->type=eotNUMBER;
+  p->value.ucell=(ucell)val;
+}
+
 static void SC_FASTCALL emit_param_label(emit_outval *p)
 {
   cell val;
@@ -6280,12 +6327,20 @@ static void SC_FASTCALL emit_parm1_label(char *name)
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
+static void SC_FASTCALL emit_parm1_nonneg(char *name)
+{
+  emit_outval p[1];
+
+  emit_param_nonneg(&p[0]);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
+}
+
 static void SC_FASTCALL emit_do_casetbl(char *name)
 {
   emit_outval p[2];
 
   (void)name;
-  emit_param_any(&p[0]);
+  emit_param_nonneg(&p[0]);
   emit_param_label(&p[1]);
   stgwrite("\tcasetbl\n");
   outinstr("case",p,(sizeof p / sizeof p[0]));
@@ -6542,13 +6597,13 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { 30, "align.alt",  emit_parm1_any },
   { 29, "align.pri",  emit_parm1_any },
   { 81, "and",        emit_parm0 },
-  {121, "bounds",     emit_parm1_any },
+  {121, "bounds",     emit_parm1_nonneg },
   {137, "break",      emit_parm0 },
   { 49, "call",       emit_do_call },
   { 50, "call.pri",   emit_parm0 },
   {  0, "case",       emit_do_case },
   {130, "casetbl",    emit_do_casetbl },
-  {118, "cmps",       emit_parm1_any },
+  {118, "cmps",       emit_parm1_nonneg },
   {156, "const",      emit_do_const },
   { 12, "const.alt",  emit_parm1_any },
   { 11, "const.pri",  emit_parm1_any },
@@ -6561,10 +6616,10 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { 95, "eq",         emit_parm0 },
   {106, "eq.c.alt",   emit_parm1_any },
   {105, "eq.c.pri",   emit_parm1_any },
-  {119, "fill",       emit_parm1_any },
+  {119, "fill",       emit_parm1_nonneg },
   {100, "geq",        emit_parm0 },
   { 99, "grtr",       emit_parm0 },
-  {120, "halt",       emit_parm1_any },
+  {120, "halt",       emit_parm1_nonneg },
   { 45, "heap",       emit_parm1_any },
   { 27, "idxaddr",    emit_parm0 },
   { 28, "idxaddr.b",  emit_parm1_any },
@@ -6608,7 +6663,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   {  7, "lref.s.pri", emit_parm1_local },
   { 34, "move.alt",   emit_parm0 },
   { 33, "move.pri",   emit_parm0 },
-  {117, "movs",       emit_parm1_any },
+  {117, "movs",       emit_parm1_nonneg },
   { 85, "neg",        emit_parm0 },
   { 96, "neq",        emit_parm0 },
   {134, "nop",        emit_parm0 },
