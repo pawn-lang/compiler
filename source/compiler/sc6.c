@@ -102,7 +102,7 @@ static ucell getparam(const char *s,char **n)
   char name[sNAMEMAX+1];
   symbol *sym;
 
-  if (*s=='.') {
+  if (s[0]=='.') {
     /* this is a function, find it in the global symbol table */
     for (i=0; !isspace(*(++s)); i++) {
       assert(*s!='\0');
@@ -115,6 +115,12 @@ static ucell getparam(const char *s,char **n)
     assert(sym->ident==iFUNCTN || sym->ident==iREFFUNC);
     assert(sym->vclass==sGLOBAL);
     result=sym->addr;
+  } else if (s[0]=='l' && s[1]=='.') {
+    /* this is a label */
+    i=(int)hex2long(s+2,NULL);
+    assert(i>=0 && i<sc_labnum);
+    assert(lbltab!=NULL);
+    result=lbltab[i];
   } else {
     for ( ;; ) {
       result+=hex2long(s,(char**)&s);

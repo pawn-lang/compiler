@@ -1390,6 +1390,9 @@ SC_FUNC void outinstr(const char *name, emit_outval params[],int numparams)
     stgwrite(" ");
     switch (params[i].type)
     {
+    case eotLABEL:
+      stgwrite("l.");
+      /* fallthrough */
     case eotNUMBER:
       stgwrite(itoh(params[i].value.ucell));
       break;

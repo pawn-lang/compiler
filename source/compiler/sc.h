@@ -478,6 +478,7 @@ typedef enum s_optmark {
 
 #define eotNUMBER        0
 #define eotFUNCTION      1
+#define eotLABEL         2
 typedef struct s_emit_outval {
   int type;
   union {
