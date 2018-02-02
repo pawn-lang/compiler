@@ -157,6 +157,7 @@ typedef struct s_symbol {
   constvalue *states;   /* list of state function/state variable ids + addresses */
   int fnumber;          /* static global variables: file number in which the declaration is visible */
   int lnumber;          /* line number (in the current source file) for the declaration */
+  int lnumber_end;      /* line number (in the current source file) for the end of declaration */
   struct s_symbol **refer;  /* referrer list, functions that "use" this symbol */
   int numrefers;        /* number of entries in the referrer list */
   char *documentation;  /* optional documentation string */
@@ -560,7 +561,7 @@ SC_FUNC symbol *add_constant(char *name,cell val,int vclass,int tag);
 SC_FUNC symbol *add_builtin_constant(char *name,cell val,int vclass,int tag);
 SC_FUNC symbol *add_builtin_string_constant(char *name,const char *val,int vclass);
 SC_FUNC void exporttag(int tag);
-SC_FUNC void sc_attachdocumentation(symbol *sym);
+SC_FUNC void sc_attachdocumentation(symbol *sym,int onlylastblock);
 SC_FUNC void emit_parse_line(void);
 
 /* function prototypes in SC2.C */

@@ -500,7 +500,7 @@ static void stripcomment(unsigned char *line)
              * to the global documentation
              */
             if (curfunc==NULL && get_docstring(0)!=NULL)
-              sc_attachdocumentation(NULL);
+              sc_attachdocumentation(NULL,FALSE);
             icomment=2; /* documentation comment */
           } /* if */
           commentidx=0;
@@ -525,7 +525,7 @@ static void stripcomment(unsigned char *line)
              * block to the global documentation
              */
             if (!singleline && curfunc==NULL && get_docstring(0)!=NULL)
-              sc_attachdocumentation(NULL);
+              sc_attachdocumentation(NULL,FALSE);
             insert_docstring(str);
             prev_singleline=TRUE;
           } /* if */
