@@ -1910,7 +1910,7 @@ void sc_attachdocumentation(symbol *sym,int onlylastblock)
         size_t len;
         strcpy(doc,sym->documentation);
         len=strlen(doc);
-        if (len>0 && doc[len-1]!='>' || ((str=get_docstring(0))!=NULL && *str!=sDOCSEP && *str!='<'))
+        if ((len>0 && doc[len-1]!='>') || ((str=get_docstring(0))!=NULL && *str!=sDOCSEP && *str!='<'))
           strcat(doc,"<p/>");
         free(sym->documentation);
         sym->documentation=NULL;
