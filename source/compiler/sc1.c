@@ -2017,6 +2017,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
   char *str;
   int dim[sDIMEN_MAX];
   int numdim;
+  int linenum;
   short filenum;
   symbol *sym;
   constvalue *enumroot;
@@ -2028,6 +2029,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
   insert_docstring_separator();         /* see comment in newfunc() */
   filenum=fcurrent;                     /* save file number at the start of the declaration */
   do {
+    linenum=fline;                      /* save line number at the start of the declaration */
     size=1;                             /* single size (no array) */
     numdim=0;                           /* no dimensions */
     ident=iVARIABLE;
@@ -2048,7 +2050,6 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
       ispublic=TRUE;                    /* implicitly public variable */
       assert(!fstatic);
     } /* if */
-    //START_LINE
     while (matchtoken('[')) {
       ident=iARRAY;
       if (numdim == sDIMEN_MAX) {
@@ -2245,7 +2246,10 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
     if (fstock)
       sym->usage|=uSTOCK;
     if (fstatic)
-      sym->fnumber=filenum;
+      sym->usage|=uSTATIC;
+    sym->fnumber=filenum;
+    sym->lnumber_decl=linenum;
+    sym->lnumber_end=fline;
     sc_attachdocumentation(sym,TRUE);/* attach any documentation to the variable */
     if (sc_status==statSKIP) {
       sc_status=statWRITE;
@@ -2959,7 +2963,9 @@ static void decl_enum(int vclass,int fstatic)
     if (enumsym!=NULL) {
       enumsym->usage |= uENUMROOT;
       if (fstatic)
-        enumsym->fnumber=filenum;
+        enumsym->usage|=uSTATIC;
+      enumsym->fnumber=filenum;
+      enumsym->lnumber_decl=fline;
 
       sc_attachdocumentation(enumsym,FALSE);  /* attach any documentation to the enumeration */
     }
@@ -3012,7 +3018,10 @@ static void decl_enum(int vclass,int fstatic)
     if (enumsym)
       enumsym->child=sym;
     if (fstatic)
-      sym->fnumber=filenum;
+      sym->usage|=uSTATIC;
+    sym->fnumber=filenum;
+    sym->lnumber_decl=fline;
+    sym->lnumber_end=fline;
     
     sc_attachdocumentation(sym,FALSE);  /* attach any documenation to item */
 
@@ -3032,6 +3041,7 @@ static void decl_enum(int vclass,int fstatic)
   /* set the enum name to the "next" value (typically the last value plus one) */
   if (enumsym!=NULL) {
     assert((enumsym->usage & uENUMROOT)!=0);
+    enumsym->lnumber_end=fline;
     enumsym->addr=value;
     /* assign the constant list */
     assert(enumroot!=NULL);
@@ -3743,7 +3753,9 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   if (fpublic)
     sym->usage|=uPUBLIC;
   if (fstatic)
-    sym->fnumber=filenum;
+    sym->usage|=uSTATIC;
+
+  sym->fnumber=filenum;
   check_reparse(sym);
   /* we want public functions to be explicitly prototyped, as they are called
    * from the outside
@@ -3771,6 +3783,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     delete_symbols(&loctab,0,TRUE,TRUE);  /* prototype is done; forget everything */
     return TRUE;
   } /* if */
+  sym->lnumber_decl=funcline;
   /* so it is not a prototype, proceed */
   /* if this is a function that is not referred to (this can only be detected
    * in the second stage), shut code generation off */
@@ -3853,6 +3866,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     } /* if */
   } /* if */
   endfunc();
+  sym->lnumber_end=fline;
   sym->codeaddr=code_idx;
   sc_attachdocumentation(sym,FALSE);  /* attach collected documentation to the function */
   if (litidx) {                 /* if there are literals defined */
@@ -4364,6 +4378,14 @@ static char *xmlencode(char *dest,char *source)
       strcpy(ptr,"&amp;");
       ptr+=5;
       break;
+    case '\"':
+      strcpy(ptr,"&quot;");
+      ptr+=6;
+      break;
+    case '\'':
+      strcpy(ptr,"&apos;");
+      ptr+=6;
+      break;
     default:
       *ptr++=*source;
     } /* switch */
@@ -4372,6 +4394,99 @@ static char *xmlencode(char *dest,char *source)
   *ptr='\0';
   strcpy(dest,temp);
   return dest;
+}
+
+
+static void write_docattributes(FILE *log, symbol *sym)
+{
+  if ((sym->usage & uREAD)==0)
+      fprintf(log,"\t\t\t<attribute name=\"unused\"/>\n");
+  if (sym->ident==iCONSTEXPR && (sym->usage & uENUMROOT)) { 
+    if ((sym->usage & uCONST)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"const\"/>\n");
+    if ((sym->usage & uPUBLIC)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"public\"/>\n");
+    if ((sym->usage & uSTOCK)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"stock\"/>\n");
+    if ((sym->usage & uSTATIC)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"static\"/>\n");
+  }
+  if (sym->ident==iCONSTEXPR && (sym->usage & (uENUMFIELD | uENUMROOT))==0) { 
+    if ((sym->flags & flagPREDEF)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"pre_defined\"/>\n");
+    if ((sym->usage & uENUMROOT)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"enum\"/>\n");
+    if ((sym->usage & uENUMFIELD)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"enum_field\"/>\n");
+    if ((sym->usage & uSTATIC)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"static\"/>\n");
+  }
+  if (sym->ident==iVARIABLE || sym->ident==iARRAY) { 
+    if ((sym->usage & uCONST)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"const\"/>\n");
+    if ((sym->usage & uPUBLIC)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"public\"/>\n");
+    if ((sym->usage & uSTOCK)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"stock\"/>\n");
+    if ((sym->usage & uSTATIC)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"static\"/>\n");
+  }
+  if (sym->ident==iFUNCTN) { 
+    if (strcmp(sym->name,uMAINFUNC)==0 || strcmp(sym->name,uENTRYFUNC)==0)
+      fprintf(log,"\t\t\t<attribute name=\"entry\"/>\n");
+    if ((sym->flags & flgDEPRECATED)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"deprecated\"/>\n");
+    if ((sym->flags & flagNAKED)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"naked\"/>\n");
+    if ((sym->usage & uRETVALUE)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"returns\"/>\n");
+    if ((sym->usage & uPROTOTYPED)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"prototyped\"/>\n");
+    if ((sym->usage & uPUBLIC)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"public\"/>\n");
+    if ((sym->usage & uNATIVE)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"native\"/>\n");
+    if ((sym->usage & uSTOCK)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"stock\"/>\n");
+    if ((sym->usage & uMISSING)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"missing\"/>\n");
+    /*if ((sym->usage & uFORWARD)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"forward\"/>\n");*/
+    if ((sym->usage & uSTATIC)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"static\"/>\n");
+  }
+}
+static void write_docstring(FILE *log,const char *string)
+{
+  int len;
+  const char *ptr;
+
+  if (string==NULL)
+    return;
+  while (*string<=' ' && *string!='\0')
+    string++;                 /* skip white space */
+  if (*string=='\0')
+    return;
+
+  assert(strchr(string,sDOCSEP)==NULL);
+  /* optionally wrap in "<summary>...</summary>", check whether this must happen */
+  if (*string!='<') {       /* wrap in "summary" */
+    len=0;
+    for (ptr=string; *ptr!='\0' && *ptr!='<' && *ptr!='.'; ptr++)
+      len++;
+    if (*ptr=='.')
+      len++;
+    assert(len>0);
+    fprintf(log,"\t\t\t<summary>%.*s</summary>\n",len,string);
+    string+=len;
+    while (*string<=' ' && *string!='\0')
+      string++;             /* skip white space */
+  } else {
+    len=0;
+  } /* if */
+
+  if (*string!='\0')
+    fprintf(log,"\t\t\t%s\n",string);
 }
 
 static void make_report(symbol *root,FILE *log,char *sourcefile)
@@ -4425,10 +4540,14 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
     if (sym->ident!=iCONSTEXPR || (sym->usage & uENUMROOT)==0)
       continue;
     fprintf(log,"\t\t<member name=\"T:%s\" value=\"%"PRIdC"\">\n",funcdisplayname(symname,sym->name),sym->addr);
+    fprintf(log,"\t\t<location file=\"%s\" startline=\"%"PRIdC"\" endline=\"%"PRIdC"\">\n", get_sourcefile(sym->fnumber), sym->lnumber_decl, sym->lnumber_end);
+    write_docattributes(log,sym);
     if (sym->tag!=0) {
       tagsym=find_tag_byval(sym->tag);
       assert(tagsym!=NULL);
       fprintf(log,"\t\t\t<tagname value=\"%s\"/>\n",tagsym->name);
+    } else {
+      fprintf(log,"\t\t\t<tagname value=\"anonymous\"/>\n");
     } /* if */
 
     /* browse through all fields */
@@ -4446,8 +4565,8 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
           } /* if */
           if (ref->dim.array.length!=1)
             fprintf(log,"\t\t\t\t<size value=\"%ld\"/>\n",(long)ref->dim.array.length);
-          if (ref->documentation!=NULL)
-            fprintf(log,"\t\t\t\t%s\n",ref->documentation);
+          fprintf(log,"\t");
+          write_docstring(log,ref->documentation);
         } /* if */
         fprintf(log,"\t\t\t</member>\n");
         enumroot=enumroot->next;
@@ -4458,8 +4577,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
       if ((ref=sym->refer[i])!=NULL)
         fprintf(log,"\t\t\t<referrer name=\"%s\"/>\n",xmlencode(symname,funcdisplayname(symname,ref->name)));
     } /* for */
-    if (sym->documentation!=NULL)
-      fprintf(log,"\t\t\t%s\n",sym->documentation);
+    write_docstring(log,ref->documentation);
     fprintf(log,"\t\t</member>\n");
   } /* for */
 
@@ -4474,6 +4592,8 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
     if ((sym->usage & uREAD)==0 || (sym->usage & (uENUMFIELD | uENUMROOT))!=0)
       continue;
     fprintf(log,"\t\t<member name=\"C:%s\" value=\"%"PRIdC"\">\n",funcdisplayname(symname,sym->name),sym->addr);
+    fprintf(log,"\t\t<location file=\"%s\" startline=\"%"PRIdC"\" endline=\"%"PRIdC"\">\n", get_sourcefile(sym->fnumber), sym->lnumber_decl, sym->lnumber_end);
+    write_docattributes(log,sym);
     if (sym->tag!=0) {
       tagsym=find_tag_byval(sym->tag);
       assert(tagsym!=NULL);
@@ -4484,8 +4604,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
       if ((ref=sym->refer[i])!=NULL)
         fprintf(log,"\t\t\t<referrer name=\"%s\"/>\n",xmlencode(symname,funcdisplayname(symname,ref->name)));
     } /* for */
-    if (sym->documentation!=NULL)
-      fprintf(log,"\t\t\t%s\n",sym->documentation);
+    write_docstring(log,sym->documentation);
     fprintf(log,"\t\t</member>\n");
   } /* for */
 
@@ -4496,20 +4615,19 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
     if (sym->ident!=iVARIABLE && sym->ident!=iARRAY)
       continue;
     fprintf(log,"\t\t<member name=\"F:%s\">\n",funcdisplayname(symname,sym->name));
+    fprintf(log,"\t\t<location file=\"%s\" startline=\"%"PRIdC"\" endline=\"%"PRIdC"\">\n", get_sourcefile(sym->fnumber), sym->lnumber_decl, sym->lnumber_end);
+    write_docattributes(log,sym);
     if (sym->tag!=0) {
       tagsym=find_tag_byval(sym->tag);
       assert(tagsym!=NULL);
       fprintf(log,"\t\t\t<tagname value=\"%s\"/>\n",tagsym->name);
     } /* if */
     assert(sym->refer!=NULL);
-    if ((sym->usage & uPUBLIC)!=0)
-      fprintf(log,"\t\t\t<attribute name=\"public\"/>\n");
     for (i=0; i<sym->numrefers; i++) {
       if ((ref=sym->refer[i])!=NULL)
         fprintf(log,"\t\t\t<referrer name=\"%s\"/>\n",xmlencode(symname,funcdisplayname(symname,ref->name)));
     } /* for */
-    if (sym->documentation!=NULL)
-      fprintf(log,"\t\t\t%s\n",sym->documentation);
+    write_docstring(log,sym->documentation);
     fprintf(log,"\t\t</member>\n");
   } /* for */
 
@@ -4539,8 +4657,12 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
         break;
       case iREFARRAY:
         fprintf(log,"%s",sym->dim.arglist[arg].name);
-        for (dim=0; dim<sym->dim.arglist[arg].numdim;dim++)
-          fprintf(log,"[]");
+        for (dim=0; dim<sym->dim.arglist[arg].numdim;dim++) {
+          if (sym->dim.arglist[arg].dim[dim])
+            fprintf(log,"[%d]",sym->dim.arglist[arg].dim[dim]);
+          else
+            fprintf(log,"[]");
+        } /* for */
         break;
       case iVARARGS:
         fprintf(log,"...");
@@ -4549,18 +4671,14 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
     } /* for */
     /* ??? should also print an "array return" size */
     fprintf(log,")\">\n");
+    fprintf(log,"\t\t<location file=\"%s\" startline=\"%"PRIdC"\" endline=\"%"PRIdC"\">\n", get_sourcefile(sym->fnumber), sym->lnumber_decl, sym->lnumber_end);
+    write_docattributes(log,sym);
     if (sym->tag!=0) {
       tagsym=find_tag_byval(sym->tag);
       assert(tagsym!=NULL);
       fprintf(log,"\t\t\t<tagname value=\"%s\"/>\n",tagsym->name);
     } /* if */
     /* check whether this function is called from the outside */
-    if ((sym->usage & uNATIVE)!=0)
-      fprintf(log,"\t\t\t<attribute name=\"native\"/>\n");
-    if ((sym->usage & uPUBLIC)!=0)
-      fprintf(log,"\t\t\t<attribute name=\"public\"/>\n");
-    if (strcmp(sym->name,uMAINFUNC)==0 || strcmp(sym->name,uENTRYFUNC)==0)
-      fprintf(log,"\t\t\t<attribute name=\"entry\"/>\n");
     if ((sym->usage & uNATIVE)==0)
       fprintf(log,"\t\t\t<stacksize value=\"%ld\"/>\n",(long)sym->x.stacksize);
     if (sym->states!=NULL) {
@@ -4653,8 +4771,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
       } /* if */
       fprintf(log,"\t\t\t</param>\n");
     } /* for */
-    if (sym->documentation!=NULL)
-      fprintf(log,"\t\t\t%s\n",sym->documentation);
+    write_docstring(log,sym->documentation);
     fprintf(log,"\t\t</member>\n");
   } /* for */
 

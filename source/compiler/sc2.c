@@ -2987,7 +2987,7 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
   while (sym!=NULL) {
     if ( (is_global || strcmp(name,sym->name)==0)           /* check name */
         && (sym->parent==NULL || sym->ident==iCONSTEXPR)    /* sub-types (hierarchical types) are skipped, except for enum fields */
-        && (sym->fnumber<0 || sym->fnumber==fnumber))       /* check file number for scope */
+        && (!(sym->usage&uSTATIC) || sym->fnumber==fnumber))       /* check file number for scope */
     {
       assert(sym->states==NULL || sym->states->next!=NULL); /* first element of the state list is the "root" */
       if (sym->ident==iFUNCTN
