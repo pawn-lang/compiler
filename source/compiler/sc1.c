@@ -2893,10 +2893,12 @@ static void decl_const(int vclass)
     /* add_constant() checks for duplicate definitions */
     check_tagmismatch(tag,exprtag,FALSE,symbolline);
     sym=add_constant(constname,val,vclass,tag);
-    if (sym!=NULL)
-      //LINE_START
-      //LINE_END
+    if (sym!=NULL) {
+      sym->fnumber = fcurrent;
+      sym->lnumber_decl = symbolline;
+      sym->lnumber_end = symbolline;
       sc_attachdocumentation(sym,TRUE);/* attach any documentation to the constant */
+    }
   } while (matchtoken(',')); /* enddo */   /* more? */
   needtoken(tTERM);
 }
@@ -4533,7 +4535,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
     if (sym->ident!=iCONSTEXPR || (sym->usage & uENUMROOT)==0)
       continue;
     fprintf(log,"\t\t<member name=\"T:%s\" value=\"%"PRIdC"\">\n",funcdisplayname(symname,sym->name),sym->addr);
-    fprintf(log,"\t\t<location file=\"%s\" startline=\"%"PRIdC"\" endline=\"%"PRIdC"\">\n", get_sourcefile(sym->fnumber), sym->lnumber_decl, sym->lnumber_end);
+    fprintf(log,"\t\t<location file=\"%s\" startline=\"%"PRIdC"\" endline=\"%"PRIdC"\"/>\n", get_sourcefile(sym->fnumber), sym->lnumber_decl, sym->lnumber_end);
     write_docattributes(log,sym);
     if (sym->tag!=0) {
       tagsym=find_tag_byval(sym->tag);
@@ -4585,7 +4587,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
     if ((sym->usage & uREAD)==0 || (sym->usage & (uENUMFIELD | uENUMROOT))!=0)
       continue;
     fprintf(log,"\t\t<member name=\"C:%s\" value=\"%"PRIdC"\">\n",funcdisplayname(symname,sym->name),sym->addr);
-    fprintf(log,"\t\t<location file=\"%s\" startline=\"%"PRIdC"\" endline=\"%"PRIdC"\">\n", get_sourcefile(sym->fnumber), sym->lnumber_decl, sym->lnumber_end);
+    fprintf(log,"\t\t<location file=\"%s\" startline=\"%"PRIdC"\" endline=\"%"PRIdC"\"/>\n", get_sourcefile(sym->fnumber), sym->lnumber_decl, sym->lnumber_end);
     write_docattributes(log,sym);
     if (sym->tag!=0) {
       tagsym=find_tag_byval(sym->tag);
@@ -4608,7 +4610,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
     if (sym->ident!=iVARIABLE && sym->ident!=iARRAY)
       continue;
     fprintf(log,"\t\t<member name=\"F:%s\">\n",funcdisplayname(symname,sym->name));
-    fprintf(log,"\t\t<location file=\"%s\" startline=\"%"PRIdC"\" endline=\"%"PRIdC"\">\n", get_sourcefile(sym->fnumber), sym->lnumber_decl, sym->lnumber_end);
+    fprintf(log,"\t\t<location file=\"%s\" startline=\"%"PRIdC"\" endline=\"%"PRIdC"\"/>\n", get_sourcefile(sym->fnumber), sym->lnumber_decl, sym->lnumber_end);
     write_docattributes(log,sym);
     if (sym->tag!=0) {
       tagsym=find_tag_byval(sym->tag);
@@ -4664,7 +4666,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
     } /* for */
     /* ??? should also print an "array return" size */
     fprintf(log,")\">\n");
-    fprintf(log,"\t\t<location file=\"%s\" startline=\"%"PRIdC"\" endline=\"%"PRIdC"\">\n", get_sourcefile(sym->fnumber), sym->lnumber_decl, sym->lnumber_end);
+    fprintf(log,"\t\t<location file=\"%s\" startline=\"%"PRIdC"\" endline=\"%"PRIdC"\"/>\n", get_sourcefile(sym->fnumber), sym->lnumber_decl, sym->lnumber_end);
     write_docattributes(log,sym);
     if (sym->tag!=0) {
       tagsym=find_tag_byval(sym->tag);
