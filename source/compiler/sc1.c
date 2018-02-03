@@ -4453,35 +4453,9 @@ static void write_docattributes(FILE *log, symbol *sym)
 
 static void write_docstring(FILE *log,const char *string)
 {
-  int len;
-  const char *ptr;
-
   if (string==NULL)
     return;
-  while (*string<=' ' && *string!='\0')
-    string++;                 /* skip white space */
-  if (*string=='\0')
-    return;
-
-  assert(strchr(string,sDOCSEP)==NULL);
-  /* optionally wrap in "<summary>...</summary>", check whether this must happen */
-  if (*string!='<') {       /* wrap in "summary" */
-    len=0;
-    for (ptr=string; *ptr!='\0' && *ptr!='<' && *ptr!='.'; ptr++)
-      len++;
-    if (*ptr=='.')
-      len++;
-    assert(len>0);
-    fprintf(log,"\t\t\t<summary>%.*s</summary>\n",len,string);
-    string+=len;
-    while (*string<=' ' && *string!='\0')
-      string++;             /* skip white space */
-  } else {
-    len=0;
-  } /* if */
-
-  if (*string!='\0')
-    fprintf(log,"\t\t\t%s\n",string);
+  fprintf(log,"\t\t\t%s\n",string);
 }
 
 static void make_report(symbol *root,FILE *log,char *sourcefile)
