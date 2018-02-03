@@ -4378,14 +4378,6 @@ static char *xmlencode(char *dest,char *source)
       strcpy(ptr,"&amp;");
       ptr+=5;
       break;
-    case '\"':
-      strcpy(ptr,"&quot;");
-      ptr+=6;
-      break;
-    case '\'':
-      strcpy(ptr,"&apos;");
-      ptr+=6;
-      break;
     default:
       *ptr++=*source;
     } /* switch */
@@ -4456,6 +4448,7 @@ static void write_docattributes(FILE *log, symbol *sym)
       fprintf(log,"\t\t\t<attribute name=\"static\"/>\n");
   }
 }
+
 static void write_docstring(FILE *log,const char *string)
 {
   int len;
@@ -4577,7 +4570,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
       if ((ref=sym->refer[i])!=NULL)
         fprintf(log,"\t\t\t<referrer name=\"%s\"/>\n",xmlencode(symname,funcdisplayname(symname,ref->name)));
     } /* for */
-    write_docstring(log,ref->documentation);
+    write_docstring(log,sym->documentation);
     fprintf(log,"\t\t</member>\n");
   } /* for */
 
@@ -7269,7 +7262,6 @@ static void dostate(void)
   #endif
   delete_autolisttable();
 }
-
 
 static void addwhile(int *ptr)
 {
