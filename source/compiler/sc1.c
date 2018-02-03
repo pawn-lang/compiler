@@ -7242,7 +7242,7 @@ static void dostate(void)
         length+=strlen(str);
       if ((doc=(char*)malloc(length*sizeof(char)))!=NULL) {
         do {
-          sprintf(doc,"<transition target=\"%s\"",state->name);
+          sprintf(doc,"\t\t\t<transition target=\"%s\"",state->name);
           if (listid>=0) {
             /* get the source state */
             stateindex=state_listitem(listid,listindex);
