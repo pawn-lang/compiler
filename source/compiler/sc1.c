@@ -6012,6 +6012,15 @@ fetchtok:
     needtoken(')');
     p->value.ucell=(ucell)(negate ? -val : val);
     break;
+  case ':':
+    tok=lex(&val,&str);
+    if (tok!=tSYMBOL)
+      emit_invalid_token(tSYMBOL,tok);
+    sym=fetchlab(str);
+    sym->usage|=uREAD;
+    p->type=eotLABEL;
+    p->value.ucell=(ucell)sym->addr;
+    break;
   case '-':
     if (!negate) {
       negate=TRUE;
@@ -6242,12 +6251,23 @@ static void SC_FASTCALL emit_param_label(emit_outval *p)
   int tok;
 
   tok=lex(&val,&str);
-  if (tok!=tSYMBOL)
-    emit_invalid_token(tSYMBOL,tok);
-  sym=fetchlab(str);
-  sym->usage|=uREAD;
-  p->type=eotNUMBER;
-  p->value.ucell=(ucell)sym->addr;
+  switch (tok)
+  {
+  case ':':
+    tok=lex(&val,&str);
+    if (tok!=tSYMBOL)
+      emit_invalid_token(tSYMBOL,tok);
+    /* fallthrough */
+  case tSYMBOL:
+    sym=fetchlab(str);
+    sym->usage|=uREAD;
+    p->type=eotNUMBER;
+    p->value.ucell=(ucell)sym->addr;
+    break;
+  default:
+  invalid_token:
+    emit_invalid_token(tSYMBOL, tok);
+  }
 }
 
 static void SC_FASTCALL emit_param_function(emit_outval *p,int isnative)
