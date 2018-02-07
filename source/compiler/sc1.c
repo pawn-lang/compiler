@@ -5951,7 +5951,8 @@ static void SC_FASTCALL emit_invalid_token(int expected_token,int found_token)
   } /* if */
 }
 
-static void SC_FASTCALL emit_param_any(emit_outval *p)
+static int SC_FASTCALL emit_param_any_internal(emit_outval *p,int expected_tok,
+                                               int allow_nonint,int allow_expr)
 {
   char *str;
   cell val,cidx;
@@ -5968,6 +5969,8 @@ fetchtok:
     p->value.ucell=(ucell)(negate ? -val : val);
     break;
   case tRATIONAL:
+    if (!allow_nonint)
+      goto invalid_token;
     p->value.ucell=(ucell)(negate ? (val|((cell)1 << (PAWN_CELL_SIZE-1))) : val);
     break;
   case tSYMBOL:
@@ -5976,46 +5979,64 @@ fetchtok:
       sym=findglb(str,sSTATEVAR);
     if (sym==NULL || (sym->ident!=iFUNCTN && sym->ident!=iREFFUNC && (sym->usage & uDEFINE)==0)) {
       error(17,str);    /* undefined symbol */
-      break;
+      return FALSE;
     } /* if */
     if (sym->ident==iLABEL) {
       if (negate)
         goto invalid_token_neg;
+      if (!allow_nonint) {
+        tok=tLABEL;
+        goto invalid_token;
+      } /* if */
       sym->usage|=uREAD;
       p->type=eotLABEL;
       p->value.ucell=(ucell)sym->addr;
     } else if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
       if (negate)
         goto invalid_token_neg;
+      if (!allow_nonint) {
+        tok=(sym->usage & uNATIVE) ? teNATIVE : teFUNCTN;
+        goto invalid_token;
+      } /* if */
       if ((sym->usage & uNATIVE)!=0 && (sym->usage & uREAD)==0 && sym->addr>=0)
         sym->addr=ntv_funcid++;
       markusage(sym,uREAD);
       p->type=eotFUNCTION;
       p->value.string=str;
     } else {
+      if (!allow_nonint && sym->ident!=iCONSTEXPR) {
+        tok=(sym->vclass==sLOCAL) ? teLOCAL : teDATA;
+        goto invalid_token;
+      } /* if */
       markusage(sym,uREAD | uWRITTEN);
       p->value.ucell=(ucell)(negate ? -sym->addr : sym->addr);
     } /* if */
     break;
   case '(':
+    if (!allow_expr)
+      goto invalid_token;
     if ((emit_flags & efEXPR)==0)
       stgset(TRUE);
     stgget(&index,&cidx);
     errorset(sEXPRMARK,0);
     ident=expression(&val,NULL,NULL,FALSE);
-    if (ident!=iCONSTEXPR)
-      error(8);         /* must be constant expression */
     errorset(sEXPRRELEASE,0);
     stgdel(index,cidx);
     if ((emit_flags & efEXPR)==0)
       stgset(FALSE);
     needtoken(')');
     p->value.ucell=(ucell)(negate ? -val : val);
+    if (ident!=iCONSTEXPR) {
+      error(8);         /* must be constant expression */
+      return FALSE;
+    } /* if */
     break;
   case ':':
     tok=lex(&val,&str);
-    if (tok!=tSYMBOL)
+    if (tok!=tSYMBOL) {
       emit_invalid_token(tSYMBOL,tok);
+      return FALSE;
+    } /* if */
     sym=fetchlab(str);
     sym->usage|=uREAD;
     p->type=eotLABEL;
@@ -6029,12 +6050,62 @@ fetchtok:
       char ival[sNAMEMAX+2];
     invalid_token_neg:
       sprintf(ival,"-%s",str);
-      error(1,sc_tokens[teNUMERIC-tFIRST],ival);
-      break;
+      error(1,sc_tokens[expected_tok-tFIRST],ival);
+      return FALSE;
     } /* if */
   default:
-    emit_invalid_token(teNUMERIC,tok);
+  invalid_token:
+    emit_invalid_token(expected_tok,tok);
+    return FALSE;
   } /* switch */
+  return TRUE;
+}
+
+static void SC_FASTCALL emit_param_any(emit_outval *p)
+{
+  emit_param_any_internal(p,teNUMERIC,TRUE,TRUE);
+}
+
+static void SC_FASTCALL emit_param_index(emit_outval *p,int isrange,const cell *valid_values,int numvalues)
+{
+  int i;
+  cell val;
+
+  assert(isrange ? (numvalues==2) : (numvalues>0));
+  if (!emit_param_any_internal(p,tNUMBER,FALSE,FALSE))
+    return;
+  val=(cell)p->value.ucell;
+  if (isrange) {
+    if (valid_values[0]<=val && val<=valid_values[1])
+      return;
+  } else {
+    for (i=0; i<numvalues; i++)
+      if (val==valid_values[i])
+        return;
+  } /* if */
+  error(50);    /* invalid range */
+}
+
+static void SC_FASTCALL emit_param_nonneg(emit_outval *p)
+{
+  if (!emit_param_any_internal(p,teNONNEG,FALSE,TRUE))
+    return;
+  if ((cell)p->value.ucell<(cell)0) {
+    extern char *sc_tokens[];
+#if PAWN_CELL_SIZE==16
+    char ival[7];
+    sprintf(ival,"%ld",(long)p->value.ucell);
+#elif PAWN_CELL_SIZE==32
+    char ival[12];
+    sprintf(ival,"%ld",(long)p->value.ucell);
+#elif PAWN_CELL_SIZE==64
+    char ival[21];
+    sprintf(ival,"%lld",(long long)p->value.ucell);
+#else
+  #error Unsupported cell size
+#endif
+    error(1,sc_tokens[teNONNEG-tFIRST],ival);
+  } /* if */
 }
 
 static void SC_FASTCALL emit_param_data(emit_outval *p)
@@ -6119,128 +6190,6 @@ static void SC_FASTCALL emit_param_local(emit_outval *p)
   invalid_token:
     emit_invalid_token(tSYMBOL,tok);
   } /* switch */
-}
-
-static void SC_FASTCALL emit_param_index(emit_outval *p,int isrange,const cell *valid_values,int numvalues)
-{
-  cell val;
-  char *str;
-  symbol *sym;
-  int tok,i,global;
-  int negate=FALSE;
-
-  assert(isrange ? (numvalues==2) : (numvalues>0));
-fetchtok:
-  tok=lex(&val,&str);
-  switch (tok) {
-  case tNUMBER:
-    if (negate)
-      val=-val;
-    break;
-  case tRATIONAL:
-    if (negate)
-      val=val|((cell)1 << (PAWN_CELL_SIZE-1));
-    break;
-  case tSYMBOL:
-    global=FALSE;
-    sym=findloc(str);
-    if (sym==NULL) {
-      global=TRUE;
-      sym=findglb(str,sSTATEVAR);
-    } /* if */
-    if (sym==NULL) {
-      error(17,str);    /* undefined symbol */
-      return;
-    } /* if */
-    switch (sym->ident) {
-    case iCONSTEXPR:
-      break;
-    case iLABEL:
-      tok=tLABEL;
-      goto invalid_token;
-    case iFUNCTN:
-    case iREFFUNC:
-      tok=((sym->usage & uNATIVE)!=0) ? teNATIVE : teFUNCTN;
-      goto invalid_token;
-    default:
-      tok=(global==FALSE && sym->vclass!=sSTATIC) ? teLOCAL : teDATA;
-      goto invalid_token;
-    } /* switch */
-    markusage(sym,uREAD);
-    val=negate ? -sym->addr : sym->addr;
-    break;
-  case '-':
-    if (!negate) {
-      negate=TRUE;
-      goto fetchtok;
-    } /* if */
-    /* fallthrough */
-  default:
-  invalid_token:
-    emit_invalid_token(teNUMERIC,tok);
-    return;
-  } /* switch */
-
-  p->type=eotNUMBER;
-  p->value.ucell=(ucell)val;
-  if (isrange) {
-    if (valid_values[0]<=val && val<=valid_values[1])
-      return;
-  } else {
-    for (i=0; i<numvalues; i++)
-      if (val==valid_values[i])
-        return;
-  } /* if */
-  error(50);    /* invalid range */
-}
-
-static void SC_FASTCALL emit_param_nonneg(emit_outval *p)
-{
-  cell val;
-  char *str;
-  symbol *sym;
-  int tok,global;
-
-  tok=lex(&val,&str);
-  switch (tok) {
-  case tNUMBER:
-    break;
-  case tSYMBOL:
-    global=FALSE;
-    sym=findloc(str);
-    if (sym==NULL) {
-      global=TRUE;
-      sym=findglb(str,sSTATEVAR);
-    } /* if */
-    if (sym==NULL) {
-      error(17,str);    /* undefined symbol */
-      return;
-    } /* if */
-    switch (sym->ident) {
-    case iCONSTEXPR:
-      break;
-    case iLABEL:
-      tok=tLABEL;
-      goto invalid_token;
-    case iFUNCTN:
-    case iREFFUNC:
-      tok=((sym->usage & uNATIVE)!=0) ? teNATIVE : teFUNCTN;
-      goto invalid_token;
-    default:
-      tok=(global==FALSE && sym->vclass!=sSTATIC) ? teLOCAL : teDATA;
-      goto invalid_token;
-    } /* switch */
-    markusage(sym,uREAD);
-    val=sym->addr;
-    break;
-  default:
-  invalid_token:
-    emit_invalid_token(teNONNEG,tok);
-    return;
-  } /* switch */
-
-  p->type=eotNUMBER;
-  p->value.ucell=(ucell)val;
 }
 
 static void SC_FASTCALL emit_param_label(emit_outval *p)
