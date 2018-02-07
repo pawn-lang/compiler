@@ -6066,6 +6066,11 @@ static void SC_FASTCALL emit_param_any(emit_outval *p)
   emit_param_any_internal(p,teNUMERIC,TRUE,TRUE);
 }
 
+static void SC_FASTCALL emit_param_integer(emit_outval *p)
+{
+  emit_param_any_internal(p,teNUMERIC,FALSE,TRUE);
+}
+
 static void SC_FASTCALL emit_param_index(emit_outval *p,int isrange,const cell *valid_values,int numvalues)
 {
   int i;
@@ -6280,6 +6285,14 @@ static void SC_FASTCALL emit_parm1_any(char *name)
   emit_outval p[1];
 
   emit_param_any(&p[0]);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
+}
+
+static void SC_FASTCALL emit_parm1_integer(char *name)
+{
+  emit_outval p[1];
+
+  emit_param_integer(&p[0]);
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
@@ -6586,7 +6599,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { 30, "align.alt",  emit_parm1_any },
   { 29, "align.pri",  emit_parm1_any },
   { 81, "and",        emit_parm0 },
-  {121, "bounds",     emit_parm1_nonneg },
+  {121, "bounds",     emit_parm1_integer },
   {137, "break",      emit_parm0 },
   { 49, "call",       emit_do_call },
   { 50, "call.pri",   emit_parm0 },
@@ -6609,7 +6622,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   {100, "geq",        emit_parm0 },
   { 99, "grtr",       emit_parm0 },
   {120, "halt",       emit_parm1_nonneg },
-  { 45, "heap",       emit_parm1_any },
+  { 45, "heap",       emit_parm1_integer },
   { 27, "idxaddr",    emit_parm0 },
   { 28, "idxaddr.b",  emit_parm1_any },
   {109, "inc",        emit_parm1_data },
@@ -6666,7 +6679,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { 37, "push.alt",   emit_parm0 },
   { 39, "push.c",     emit_parm1_any },
   { 36, "push.pri",   emit_parm0 },
-  { 38, "push.r",     emit_parm1_any },
+  { 38, "push.r",     emit_parm1_integer },
   { 41, "push.s",     emit_parm1_local },
   {139, "push2",      emit_do_pushn },
   {141, "push2.adr",  emit_do_pushn_s_adr },
@@ -6702,13 +6715,13 @@ static EMIT_OPCODE emit_opcodelist[] = {
   {102, "sleq",       emit_parm0 },
   {101, "sless",      emit_parm0 },
   { 72, "smul",       emit_parm0 },
-  { 88, "smul.c",     emit_parm1_any },
+  { 88, "smul.c",     emit_parm1_integer },
   { 20, "sref.alt",   emit_parm1_data },
   { 19, "sref.pri",   emit_parm1_data },
   { 22, "sref.s.alt", emit_parm1_local },
   { 21, "sref.s.pri", emit_parm1_local },
   { 67, "sshr",       emit_parm0 },
-  { 44, "stack",      emit_parm1_any },
+  { 44, "stack",      emit_parm1_integer },
   { 16, "stor.alt",   emit_parm1_data },
   { 23, "stor.i",     emit_parm0 },
   { 15, "stor.pri",   emit_parm1_data },
