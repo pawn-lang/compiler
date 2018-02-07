@@ -711,7 +711,7 @@ SC_FUNC void dec(value *lval);
 SC_FUNC void jmp_ne0(int number);
 SC_FUNC void jmp_eq0(int number);
 SC_FUNC void outval(cell val,int newline);
-SC_FUNC void outinstr(const char *name, emit_outval params[],int numparams);
+SC_FUNC void outinstr(const char *name,emit_outval params[],int numparams);
 
 /* function prototypes in SC5.C */
 SC_FUNC int error(int number,...);

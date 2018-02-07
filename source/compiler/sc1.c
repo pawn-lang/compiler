@@ -5957,7 +5957,6 @@ static int SC_FASTCALL emit_param_any_internal(emit_outval *p,int expected_tok,
   char *str;
   cell val,cidx;
   symbol *sym;
-  extern char *sc_tokens[];
   int tok,negate,ident,index;
 
   negate=FALSE;
@@ -5982,16 +5981,17 @@ fetchtok:
       return FALSE;
     } /* if */
     if (sym->ident==iLABEL) {
+      sym->usage|=uREAD;
       if (negate)
         goto invalid_token_neg;
       if (!allow_nonint) {
         tok=tLABEL;
         goto invalid_token;
       } /* if */
-      sym->usage|=uREAD;
       p->type=eotLABEL;
       p->value.ucell=(ucell)sym->addr;
     } else if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
+      markusage(sym,uREAD);
       if (negate)
         goto invalid_token_neg;
       if (!allow_nonint) {
@@ -6000,15 +6000,14 @@ fetchtok:
       } /* if */
       if ((sym->usage & uNATIVE)!=0 && (sym->usage & uREAD)==0 && sym->addr>=0)
         sym->addr=ntv_funcid++;
-      markusage(sym,uREAD);
       p->type=eotFUNCTION;
       p->value.string=str;
     } else {
+      markusage(sym,uREAD | uWRITTEN);
       if (!allow_nonint && sym->ident!=iCONSTEXPR) {
         tok=(sym->vclass==sLOCAL) ? teLOCAL : teDATA;
         goto invalid_token;
       } /* if */
-      markusage(sym,uREAD | uWRITTEN);
       p->value.ucell=(ucell)(negate ? -sym->addr : sym->addr);
     } /* if */
     break;
@@ -6047,6 +6046,7 @@ fetchtok:
       negate=TRUE;
       goto fetchtok;
     } else {
+      extern char *sc_tokens[];
       char ival[sNAMEMAX+2];
     invalid_token_neg:
       sprintf(ival,"-%s",str);
@@ -6124,6 +6124,7 @@ static void SC_FASTCALL emit_param_data(emit_outval *p)
   case tSYMBOL:
     sym=findloc(str);
     if (sym!=NULL) {
+      markusage(sym,uREAD | uWRITTEN);
       if (sym->ident==iLABEL) {
         tok=tLABEL;
         goto invalid_token;
@@ -6138,12 +6139,12 @@ static void SC_FASTCALL emit_param_data(emit_outval *p)
         error(17,str);  /* undefined symbol */
         break;
       } /* if */
+      markusage(sym,uREAD | uWRITTEN);
       if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
         tok=((sym->usage & uNATIVE)!=0) ? teNATIVE : teFUNCTN;
         goto invalid_token;
       } /* if */
     } /* if */
-    markusage(sym,uREAD | uWRITTEN);
     p->value.ucell=(ucell)sym->addr;
     break;
   default:
@@ -6168,6 +6169,7 @@ static void SC_FASTCALL emit_param_local(emit_outval *p)
   case tSYMBOL:
     sym=findloc(str);
     if (sym!=NULL) {
+      markusage(sym,uREAD | uWRITTEN);
       if (sym->ident==iLABEL) {
         tok=tLABEL;
         goto invalid_token;
@@ -6178,12 +6180,15 @@ static void SC_FASTCALL emit_param_local(emit_outval *p)
       } /* if */
     } else {
       sym=findglb(str,sSTATEVAR);
-      if (sym==NULL || sym->ident!=iCONSTEXPR) {
+      if (sym==NULL) {
+      undefined_sym:
         error(17,str);  /* undefined symbol */
         break;
       } /* if */
+      markusage(sym,uREAD | uWRITTEN);
+      if (sym->ident!=iCONSTEXPR)
+        goto undefined_sym;
     } /* if */
-    markusage(sym,uREAD | uWRITTEN);
     p->value.ucell=(ucell)sym->addr;
     break;
   default:
@@ -6199,23 +6204,23 @@ static void SC_FASTCALL emit_param_label(emit_outval *p)
   symbol *sym;
   int tok;
 
+  p->type=eotNUMBER;
   tok=lex(&val,&str);
   switch (tok)
   {
   case ':':
     tok=lex(&val,&str);
     if (tok!=tSYMBOL)
-      emit_invalid_token(tSYMBOL,tok);
+      goto invalid_token;
     /* fallthrough */
   case tSYMBOL:
     sym=fetchlab(str);
     sym->usage|=uREAD;
-    p->type=eotNUMBER;
     p->value.ucell=(ucell)sym->addr;
     break;
   default:
   invalid_token:
-    emit_invalid_token(tSYMBOL, tok);
+    emit_invalid_token(tSYMBOL,tok);
   }
 }
 
@@ -6226,6 +6231,7 @@ static void SC_FASTCALL emit_param_function(emit_outval *p,int isnative)
   symbol *sym;
   int tok;
 
+  p->type=eotNUMBER;
   tok=lex(&val,&str);
   switch (tok)
   {
@@ -6235,6 +6241,7 @@ static void SC_FASTCALL emit_param_function(emit_outval *p,int isnative)
       error(17,str);    /* undefined symbol */
       return;
     } /* if */
+    markusage(sym,uREAD);
     if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
       if (!!(sym->usage & uNATIVE)==isnative)
         break;
@@ -6251,13 +6258,11 @@ static void SC_FASTCALL emit_param_function(emit_outval *p,int isnative)
   if (isnative!=FALSE) {
     if ((sym->usage & uREAD)==0 && sym->addr>=0)
       sym->addr=ntv_funcid++;
-    p->type=eotNUMBER;
     p->value.ucell=(ucell)sym->addr;
   } else {
     p->type=eotFUNCTION;
     p->value.string=str;
   } /* if */
-  markusage(sym,uREAD);
 }
 
 static void SC_FASTCALL emit_noop(char *name)
@@ -6275,6 +6280,23 @@ static void SC_FASTCALL emit_parm1_any(char *name)
   emit_outval p[1];
 
   emit_param_any(&p[0]);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
+}
+
+static void SC_FASTCALL emit_parm1_nonneg(char *name)
+{
+  emit_outval p[1];
+
+  emit_param_nonneg(&p[0]);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
+}
+
+static void SC_FASTCALL emit_parm1_shift(char *name)
+{
+  static const cell valid_values[] = { 0,sizeof(cell)*8-1 };
+  emit_outval p[1];
+
+  emit_param_index(&p[0],TRUE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
@@ -6299,23 +6321,6 @@ static void SC_FASTCALL emit_parm1_label(char *name)
   emit_outval p[1];
 
   emit_param_label(&p[0]);
-  outinstr(name,p,(sizeof p / sizeof p[0]));
-}
-
-static void SC_FASTCALL emit_parm1_nonneg(char *name)
-{
-  emit_outval p[1];
-
-  emit_param_nonneg(&p[0]);
-  outinstr(name,p,(sizeof p / sizeof p[0]));
-}
-
-static void SC_FASTCALL emit_parm1_shift(char *name)
-{
-  static const cell valid_values[] = { 0,sizeof(cell)*8-1 };
-  emit_outval p[1];
-
-  emit_param_index(&p[0],TRUE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
@@ -6757,12 +6762,12 @@ static int emit_findopcode(const char *instr,int maxlen)
 
 SC_FUNC void emit_parse_line(void)
 {
+  extern char *sc_tokens[];
   cell val;
   char* st;
   int tok,len,i;
   symbol *sym;
   char name[MAX_INSTR_LEN];
-  extern char *sc_tokens[];
 
   tok=tokeninfo(&val,&st);
   if (tok==tSYMBOL || (tok>tMIDDLE && tok<=tLAST)) {

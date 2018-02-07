@@ -1379,7 +1379,7 @@ SC_FUNC void outval(cell val,int newline)
 }
 
 /* write an instruction with arguments */
-SC_FUNC void outinstr(const char *name, emit_outval params[],int numparams)
+SC_FUNC void outinstr(const char *name,emit_outval params[],int numparams)
 {
   int i;
 
