@@ -1119,7 +1119,7 @@ static int command(void)
           if (pc_deprecate!=NULL) {
             char *ptr=pc_deprecate+strlen(pc_deprecate)-1;
             /* remove trailing whitespace */
-            while (*ptr<= ' ')
+            while (ptr>=pc_deprecate && *ptr<= ' ')
               *ptr--='\0';
           } else {
             error(103); /* insufficient memory */

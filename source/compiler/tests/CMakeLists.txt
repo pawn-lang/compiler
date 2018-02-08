@@ -40,6 +40,11 @@ set_tests_properties(unused_symbol_line_gh_252 PROPERTIES PASS_REGULAR_EXPRESSIO
 .*\\.pwn\\(1\\) : warning 203: symbol is never used: \\\"x\\\"
 ")
 
+add_compiler_test(gh_283 ${CMAKE_CURRENT_SOURCE_DIR}/gh_283.pwn)
+set_tests_properties(gh_283 PROPERTIES PASS_REGULAR_EXPRESSION "\
+.*\\.pwn\\(5\\) : warning 234: function is deprecated \\(symbol \"print\"\\)\
+")
+
 # Crashers
 #
 # These tests simply check that the compiler doesn't crash.
