@@ -6367,6 +6367,15 @@ static void SC_FASTCALL emit_do_lodb_strb(char *name)
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
+static void SC_FASTCALL emit_do_align(char *name)
+{
+  static const cell valid_values[] = { 0,sizeof(cell)-1 };
+  emit_outval p[1];
+
+  emit_param_index(&p[0],TRUE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
+  outinstr(name,p,(sizeof p / sizeof p[0]));
+}
+
 static void SC_FASTCALL emit_do_lctrl(char *name)
 {
   static const cell valid_values[] = { 0,9 };
@@ -6596,8 +6605,8 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { 87, "add.c",      emit_parm1_any },
   { 14, "addr.alt",   emit_parm1_local },
   { 13, "addr.pri",   emit_parm1_local },
-  { 30, "align.alt",  emit_parm1_any },
-  { 29, "align.pri",  emit_parm1_any },
+  { 30, "align.alt",  emit_do_align },
+  { 29, "align.pri",  emit_do_align },
   { 81, "and",        emit_parm0 },
   {121, "bounds",     emit_parm1_integer },
   {137, "break",      emit_parm0 },
@@ -6751,10 +6760,7 @@ static int emit_findopcode(const char *instr,int maxlen)
 {
   int low,high,mid,cmp;
 
-  /* look up the instruction with a binary search
-   * the assembler is case insensitive to instructions (but case sensitive
-   * to symbols)
-   */
+  /* look up the instruction with a binary search */
   low=1;                /* entry 0 is reserved (for "not found") */
   high=(sizeof emit_opcodelist / sizeof emit_opcodelist[0])-1;
   while (low<high) {
