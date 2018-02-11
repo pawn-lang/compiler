@@ -6068,7 +6068,7 @@ static void SC_FASTCALL emit_param_any(emit_outval *p)
 
 static void SC_FASTCALL emit_param_integer(emit_outval *p)
 {
-  emit_param_any_internal(p,teNUMERIC,FALSE,TRUE);
+  emit_param_any_internal(p,tNUMBER,FALSE,TRUE);
 }
 
 static void SC_FASTCALL emit_param_index(emit_outval *p,int isrange,const cell *valid_values,int numvalues)
@@ -6647,7 +6647,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { 57, "jless",      emit_parm1_label },
   { 56, "jneq",       emit_parm1_label },
   { 54, "jnz",        emit_parm1_label },
-  { 52, "jrel",       emit_parm1_any },
+  { 52, "jrel",       emit_parm1_integer },
   { 64, "jsgeq",      emit_parm1_label },
   { 63, "jsgrtr",     emit_parm1_label },
   { 62, "jsleq",      emit_parm1_label },
