@@ -6063,7 +6063,7 @@ fetchtok:
 
 static void SC_FASTCALL emit_param_any(emit_outval *p)
 {
-  emit_param_any_internal(p,teNUMERIC,TRUE,TRUE);
+  emit_param_any_internal(p,teANY,TRUE,TRUE);
 }
 
 static void SC_FASTCALL emit_param_integer(emit_outval *p)

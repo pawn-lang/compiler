@@ -398,15 +398,16 @@ typedef struct s_valuepair {
 #define tLABEL      337
 #define tSTRING     338
 /* argument types for emit/__emit */
-#define teNUMERIC   339 /* integer/rational number */
-#define teDATA      340 /* data (variable name or address) */
-#define teLOCAL     341 /* local variable (name or offset) */
-#define teFUNCTN    342 /* Pawn function */
-#define teNATIVE    343 /* native function */
-#define teNONNEG    344 /* nonnegative integer */
+#define teANY       339 /* any value */
+#define teNUMERIC   340 /* integer/rational number */
+#define teDATA      341 /* data (variable name or address) */
+#define teLOCAL     342 /* local variable (name or offset) */
+#define teFUNCTN    343 /* Pawn function */
+#define teNATIVE    344 /* native function */
+#define teNONNEG    345 /* nonnegative integer */
 /* for assigment to "lastst" only (see SC1.C) */
-#define tEXPR       345
-#define tENDLESS    346 /* endless loop */
+#define tEXPR       346
+#define tENDLESS    347 /* endless loop */
 
 /* (reversed) evaluation of staging buffer */
 #define sSTARTREORDER 0x01
