@@ -92,14 +92,14 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,
 static int declloc(int fstatic);
 static void decl_const(int table);
 static void decl_enum(int table,int fstatic);
-static cell needsub(int *tag,constvalue **enumroot);
+static cell needsub(int *tag,constvalue_root **enumroot);
 static void initials(int ident,int tag,cell *size,int dim[],int numdim,
-                     constvalue *enumroot);
+                     constvalue_root *enumroot);
 static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
-                      int startlit,int counteddim[],constvalue *lastdim,
-                      constvalue *enumroot,int *errorfound);
+                      int startlit,int counteddim[],constvalue_root *lastdim,
+                      constvalue_root *enumroot,int *errorfound);
 static cell initvector(int ident,int tag,cell size,int startlit,int fillzero,
-                       constvalue *enumroot,int *errorfound);
+                       constvalue_root *enumroot,int *errorfound);
 static cell init(int ident,int *tag,int *errorfound);
 static int getstates(const char *funcname);
 static void attachstatelist(symbol *sym, int state_id);
@@ -113,7 +113,7 @@ static void reduce_referrers(symbol *root);
 static long max_stacksize(symbol *root,int *recursion);
 static int testsymbols(symbol *root,int level,int testlabs,int testconst);
 static void destructsymbols(symbol *root,int level);
-static constvalue *find_constval_byval(constvalue *table,cell val);
+static constvalue *find_constval_byval(constvalue_root *table,cell val);
 static symbol *fetchlab(char *name);
 static void statement(int *lastindent,int allow_decl);
 static void compound(int stmt_sameline,int starttok);
@@ -842,7 +842,7 @@ int pc_addtag(char *name)
 
   assert(strchr(name,':')==NULL); /* colon should already have been stripped */
   last=0;
-  ptr=tagname_tab.next;
+  ptr=tagname_tab.first;
   while (ptr!=NULL) {
     tag=(int)(ptr->value & TAGMASK);
     if (strcmp(name,ptr->name)==0)
@@ -938,8 +938,8 @@ static void initglobals(void)
   glbtab.next=NULL;      /* clear global variables/constants table */
   loctab.next=NULL;      /*   "   local      "    /    "       "   */
   hashtable_init(&symbol_cache_ht, sizeof(symbol *),(16384/3*2),NULL); /* 16384 slots */
-  tagname_tab.next=NULL; /* tagname table */
-  libname_tab.next=NULL; /* library table (#pragma library "..." syntax) */
+  tagname_tab.first=tagname_tab.last=NULL; /* tagname table */
+  libname_tab.first=libname_tab.last=NULL; /* library table (#pragma library "..." syntax) */
 
   pline[0]='\0';         /* the line read from the input file */
   lptr=NULL;             /* points to the current position in "pline" */
@@ -1983,7 +1983,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
   int numdim;
   short filenum;
   symbol *sym;
-  constvalue *enumroot;
+  constvalue_root *enumroot;
   #if !defined NDEBUG
     cell glbdecl=0;
   #endif
@@ -2054,11 +2054,11 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
      */
     assert(sym==NULL
            || sym->states==NULL && sc_curstates==0
-           || sym->states!=NULL && sym->next!=NULL && sym->states->next->index==sc_curstates);
+           || sym->states!=NULL && sym->next!=NULL && sym->states->first->index==sc_curstates);
     /* a state variable may only have a single id in its list (so either this
      * variable has no states, or it has a single list)
      */
-    assert(sym==NULL || sym->states==NULL || sym->states->next->next==NULL);
+    assert(sym==NULL || sym->states==NULL || sym->states->first->next==NULL);
     /* it is okay for the (global) variable to exist, as long as it belongs to
      * a different automaton
      */
@@ -2116,7 +2116,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
             continue;   /* a function or a constant */
           if ((sweep->usage & uDEFINE)==0)
             continue;   /* undefined variable, ignore */
-          if (fsa!=state_getfsa(sweep->states->next->index))
+          if (fsa!=state_getfsa(sweep->states->first->index))
             continue;   /* wrong automaton */
           /* when arrived here, this is a global variable, with states and
            * belonging to the same automaton as the variable we are declaring
@@ -2138,7 +2138,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
             continue;   /* a function or a constant */
           if ((sweep->usage & uDEFINE)==0)
             continue;   /* undefined variable, ignore */
-          if (fsa!=state_getfsa(sweep->states->next->index))
+          if (fsa!=state_getfsa(sweep->states->first->index))
             continue;   /* wrong automaton */
           /* when arrived here, this is a global variable, with states and
            * belonging to the same automaton as the variable we are declaring
@@ -2147,7 +2147,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
            * variable have a non-empty intersection, this is not a suitable
            * overlap point -> wipe the address range
            */
-          if (state_conflict_id(sc_curstates,sweep->states->next->index)) {
+          if (state_conflict_id(sc_curstates,sweep->states->first->index)) {
             sweepsize=(sweep->ident==iVARIABLE) ? 1 : array_totalsize(sweep);
             assert(sweep->addr % sizeof(cell) == 0);
             addr=sweep->addr/sizeof(cell);
@@ -2194,7 +2194,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
         attachstatelist(sym,sc_curstates);
     } else {            /* if declared but not yet defined, adjust the variable's address */
       assert(sym->states==NULL && sc_curstates==0
-             || sym->states->next!=NULL && sym->states->next->index==sc_curstates && sym->states->next->next==NULL);
+             || sym->states->first!=NULL && sym->states->first->index==sc_curstates && sym->states->first->next==NULL);
       sym->addr=address;
       sym->codeaddr=code_idx;
       sym->usage|=uDEFINE;
@@ -2236,7 +2236,7 @@ static int declloc(int fstatic)
   int idxtag[sDIMEN_MAX];
   char name[sNAMEMAX+1];
   symbol *sym;
-  constvalue *enumroot;
+  constvalue_root *enumroot;
   cell val,size;
   char *str;
   value lval = {0};
@@ -2419,7 +2419,7 @@ static cell calc_arraysize(int dim[],int numdim,int cur)
 }
 
 static void adjust_indirectiontables(int dim[],int numdim,int startlit,
-                                     constvalue *lastdim,int *skipdim)
+                                     constvalue_root *lastdim,int *skipdim)
 {
 static int base;
   int cur;
@@ -2445,7 +2445,7 @@ static int base;
       accum=0;
       for (i=0; i<size; i++) {
         /* skip the final dimension sizes for all earlier major dimensions */
-        for (d=0,ld=lastdim->next; d<*skipdim; d++,ld=ld->next) {
+        for (d=0,ld=lastdim->first; d<*skipdim; d++,ld=ld->next) {
           assert(ld!=NULL);
         } /* for */
         for (d=0; d<dim[cur]; d++) {
@@ -2471,7 +2471,7 @@ static int base;
  *  Global references: litidx (altered)
  */
 static void initials(int ident,int tag,cell *size,int dim[],int numdim,
-                     constvalue *enumroot)
+                     constvalue_root *enumroot)
 {
   int ctag;
   cell tablesize;
@@ -2518,7 +2518,7 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
       int errorfound=FALSE;
       int counteddim[sDIMEN_MAX];
       int idx;
-      constvalue lastdim={NULL,"",0,0};     /* sizes of the final dimension */
+      constvalue_root lastdim = { NULL, NULL};     /* sizes of the final dimension */
       int skipdim=0;
 
       /* check if size specified for all dimensions */
@@ -2554,7 +2554,7 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
         /* also look whether, by any chance, all "counted" final dimensions are
          * the same value; if so, we can store this
          */
-        constvalue *ld=lastdim.next;
+        constvalue *ld=lastdim.first;
         int d,match;
         for (d=0; d<dim[numdim-2]; d++) {
           assert(ld!=NULL);
@@ -2582,8 +2582,8 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
 }
 
 static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
-                      int startlit,int counteddim[],constvalue *lastdim,
-                      constvalue *enumroot,int *errorfound)
+                      int startlit,int counteddim[],constvalue_root *lastdim,
+                      constvalue_root *enumroot,int *errorfound)
 {
   cell dsize,totalsize;
   int idx,idx_ellips,vidx,do_insert;
@@ -2672,7 +2672,7 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
  *  Initialize a single dimensional array
  */
 static cell initvector(int ident,int tag,cell size,int startlit,int fillzero,
-                       constvalue *enumroot,int *errorfound)
+                       constvalue_root *enumroot,int *errorfound)
 {
   cell prev1=0,prev2=0;
   int ellips=FALSE;
@@ -2680,7 +2680,7 @@ static cell initvector(int ident,int tag,cell size,int startlit,int fillzero,
 
   assert(ident==iARRAY || ident==iREFARRAY);
   if (matchtoken('{')) {
-    constvalue *enumfield=(enumroot!=NULL) ? enumroot->next : NULL;
+    constvalue *enumfield=(enumroot!=NULL) ? enumroot->first : NULL;
     do {
       int fieldlit=litidx;
       int matchbrace,i;
@@ -2800,7 +2800,7 @@ static cell init(int ident,int *tag,int *errorfound)
  *
  *  Get required array size
  */
-static cell needsub(int *tag,constvalue **enumroot)
+static cell needsub(int *tag,constvalue_root **enumroot)
 {
   cell val;
   symbol *sym;
@@ -2877,7 +2877,7 @@ static void decl_enum(int vclass,int fstatic)
   char *str;
   int tag,explicittag;
   cell increment,multiplier;
-  constvalue *enumroot;
+  constvalue_root *enumroot;
   symbol *enumsym;
   short filenum;
 
@@ -2931,9 +2931,9 @@ static void decl_enum(int vclass,int fstatic)
         enumsym->fnumber=filenum;
     }
     /* start a new list for the element names */
-    if ((enumroot=(constvalue*)malloc(sizeof(constvalue)))==NULL)
+    if ((enumroot=(constvalue_root*)malloc(sizeof(constvalue_root)))==NULL)
       error(103);                       /* insufficient memory (fatal error) */
-    memset(enumroot,0,sizeof(constvalue));
+    memset(enumroot,0,sizeof(constvalue_root));
   } else {
     enumsym=NULL;
     enumroot=NULL;
@@ -3085,15 +3085,15 @@ static void attachstatelist(symbol *sym, int state_id)
     /* add the state list id */
     constvalue *stateptr;
     if (sym->states==NULL) {
-      if ((sym->states=(constvalue*)malloc(sizeof(constvalue)))==NULL)
+      if ((sym->states=(constvalue_root*)malloc(sizeof(constvalue_root)))==NULL)
         error(103);             /* insufficient memory (fatal error) */
-      memset(sym->states,0,sizeof(constvalue));
+      memset(sym->states,0,sizeof(constvalue_root));
     } /* if */
     /* see whether the id already exists (add new state only if it does not
      * yet exist
      */
     assert(sym->states!=NULL);
-    for (stateptr=sym->states->next; stateptr!=NULL && stateptr->index!=state_id; stateptr=stateptr->next)
+    for (stateptr=sym->states->first; stateptr!=NULL && stateptr->index!=state_id; stateptr=stateptr->next)
       /* nothing */;
     assert(state_id<=SHRT_MAX);
     if (stateptr==NULL)
@@ -3108,7 +3108,7 @@ static void attachstatelist(symbol *sym, int state_id)
     if (state_id==-1 && sc_status!=statFIRST) {
       /* in the second round, all states should have been accumulated */
       assert(sym->states!=NULL);
-      for (stateptr=sym->states->next; stateptr!=NULL && stateptr->index==-1; stateptr=stateptr->next)
+      for (stateptr=sym->states->first; stateptr!=NULL && stateptr->index==-1; stateptr=stateptr->next)
         /* nothing */;
       if (stateptr==NULL)
         error(85,sym->name);      /* no states are defined for this function */
@@ -3703,7 +3703,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     sym->usage &= ~uDEFINE;
   /* if the function has states, dump the label to the start of the function */
   if (state_id!=0) {
-    constvalue *ptr=sym->states->next;
+    constvalue *ptr=sym->states->first;
     while (ptr!=NULL) {
       assert(sc_status!=statWRITE || strlen(ptr->name)>0);
       if (ptr->index==state_id) {
@@ -4027,7 +4027,7 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
                   int fpublic,int fconst,int chkshadow,arginfo *arg)
 {
   symbol *argsym;
-  constvalue *enumroot;
+  constvalue_root *enumroot;
   cell size;
 
   strcpy(arg->name,name);
@@ -4291,7 +4291,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
   int i,arg;
   symbol *sym,*ref;
   constvalue *tagsym;
-  constvalue *enumroot;
+  constvalue_root *enumroot;
   char *ptr;
 
   /* adapt the installation directory */
@@ -4345,11 +4345,11 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
     } /* if */
     /* browse through all fields */
     if ((enumroot=sym->dim.enumlist)!=NULL) {
-      enumroot=enumroot->next;  /* skip root */
-      while (enumroot!=NULL) {
-        fprintf(log,"\t\t\t<member name=\"C:%s\" value=\"%"PRIdC"\">\n",funcdisplayname(symname,enumroot->name),enumroot->value);
+      constvalue *cur=enumroot->first;  /* skip root */
+      while (cur!=NULL) {
+        fprintf(log,"\t\t\t<member name=\"C:%s\" value=\"%"PRIdC"\">\n",funcdisplayname(symname,cur->name),cur->value);
         /* find the constant with this name and get the tag */
-        ref=findglb(enumroot->name,sGLOBAL);
+        ref=findglb(cur->name,sGLOBAL);
         if (ref!=NULL) {
           if (ref->x.tags.index!=0) {
             tagsym=find_tag_byval(ref->x.tags.index);
@@ -4360,7 +4360,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
             fprintf(log,"\t\t\t\t<size value=\"%ld\"/>\n",(long)ref->dim.array.length);
         } /* if */
         fprintf(log,"\t\t\t</member>\n");
-        enumroot=enumroot->next;
+        cur=cur->next;
       } /* while */
     } /* if */
     assert(sym->refer!=NULL);
@@ -4474,7 +4474,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
     if ((sym->usage & uNATIVE)==0)
       fprintf(log,"\t\t\t<stacksize value=\"%ld\"/>\n",(long)sym->x.stacksize);
     if (sym->states!=NULL) {
-      constvalue *stlist=sym->states->next;
+      constvalue *stlist=sym->states->first;
       assert(stlist!=NULL);     /* there should be at least one state item */
       while (stlist!=NULL && stlist->index==-1)
         stlist=stlist->next;
@@ -4921,23 +4921,29 @@ static constvalue *insert_constval(constvalue *prev,constvalue *next,
   cur->value=val;
   cur->index=index;
   cur->next=next;
-  prev->next=cur;
+  if (prev!=NULL)
+    prev->next=cur;
   return cur;
 }
 
-SC_FUNC constvalue *append_constval(constvalue *table,const char *name,cell val,int index)
+SC_FUNC constvalue *append_constval(constvalue_root *table,const char *name,
+                                    cell val,int index)
 {
-  constvalue_root *root=(constvalue_root *)table;
   constvalue *newvalue;
 
-  newvalue=insert_constval(((root->last!=NULL) ? root->last : table),NULL,name,val,index);
-  root->last=newvalue;
+  if (table->last!=NULL) {
+    newvalue=insert_constval(table->last,NULL,name,val,index);
+  } else {
+    newvalue=insert_constval(NULL,NULL,name,val,index);
+    table->first=newvalue;
+  } /* if */
+  table->last=newvalue;
   return newvalue;
 }
 
-SC_FUNC constvalue *find_constval(constvalue *table,char *name,int index)
+SC_FUNC constvalue *find_constval(constvalue_root *table,char *name,int index)
 {
-  constvalue *ptr = table->next;
+  constvalue *ptr = table->first;
 
   while (ptr!=NULL) {
     if (strcmp(name,ptr->name)==0 && ptr->index==index)
@@ -4947,9 +4953,9 @@ SC_FUNC constvalue *find_constval(constvalue *table,char *name,int index)
   return NULL;
 }
 
-static constvalue *find_constval_byval(constvalue *table,cell val)
+static constvalue *find_constval_byval(constvalue_root *table,cell val)
 {
-  constvalue *ptr = table->next;
+  constvalue *ptr = table->first;
 
   while (ptr!=NULL) {
     if (ptr->value==val)
@@ -4960,17 +4966,19 @@ static constvalue *find_constval_byval(constvalue *table,cell val)
 }
 
 #if 0   /* never used */
-static int delete_constval(constvalue *table,char *name)
+static int delete_constval(constvalue_root *table,char *name)
 {
-  constvalue *prev=table;
-  constvalue *cur=prev->next;
-  constvalue_root *root=(constvalue_root *)table;
+  constvalue *prev=NULL;
+  constvalue *cur=table->first;
 
   while (cur!=NULL) {
     if (strcmp(name,cur->name)==0) {
-      prev->next=cur->next;
-      if (root->last==cur)
-        root->last=prev;
+      if (prev!=NULL)
+        prev->next=cur->next;
+      else
+        table->first=cur->next;
+      if (table->last==cur)
+        table->last=prev;
       free(cur);
       return TRUE;
     } /* if */
@@ -4981,16 +4989,16 @@ static int delete_constval(constvalue *table,char *name)
 }
 #endif
 
-SC_FUNC void delete_consttable(constvalue *table)
+SC_FUNC void delete_consttable(constvalue_root *table)
 {
-  constvalue *cur=table->next, *next;
+  constvalue *cur=table->first, *next;
 
   while (cur!=NULL) {
     next=cur->next;
     free(cur);
     cur=next;
   } /* while */
-  memset(table,0,sizeof(constvalue));
+  memset(table,0,sizeof(constvalue_root));
 }
 
 /*  add_constant
@@ -5665,8 +5673,8 @@ static void doswitch(void)
   int tok,endtok;
   cell val;
   char *str;
-  constvalue caselist = { NULL, "", 0, 0};   /* case list starts empty */
-  constvalue *cse,*csp;
+  constvalue_root caselist = { NULL, NULL};   /* case list starts empty */
+  constvalue *cse,*csp,*newval;
   char labelname[sNAMEMAX+1];
 
   endtok= matchtoken('(') ? ')' : tDO;
@@ -5714,7 +5722,7 @@ static void doswitch(void)
          * that advanced abstract machines can sift the case table with a
          * binary search). Check for duplicate case values at the same time.
          */
-        for (csp=&caselist, cse=caselist.next;
+        for (csp=NULL, cse=caselist.first;
              cse!=NULL && cse->value<val;
              csp=cse, cse=cse->next)
           /* nothing */;
@@ -5727,9 +5735,10 @@ static void doswitch(void)
         #if sNAMEMAX < 8
           #error Length of identifier (sNAMEMAX) too small.
         #endif
-        assert(csp!=NULL);
-        assert(csp->next==cse);
-        insert_constval(csp,cse,itoh(lbl_case),val,0);
+        assert(csp==NULL || csp->next==cse);
+        newval=insert_constval(csp,cse,itoh(lbl_case),val,0);
+        if (csp==NULL)
+          caselist.first=newval;
         if (matchtoken(tDBLDOT)) {
           cell end;
           constexpr(&end,NULL,NULL);
@@ -5738,14 +5747,13 @@ static void doswitch(void)
           while (++val<=end) {
             casecount++;
             /* find the new insertion point */
-            for (csp=&caselist, cse=caselist.next;
+            for (csp=NULL, cse=caselist.first;
                  cse!=NULL && cse->value<val;
                  csp=cse, cse=cse->next)
               /* nothing */;
             if (cse!=NULL && cse->value==val)
               error(40,val);            /* duplicate "case" label */
-            assert(csp!=NULL);
-            assert(csp->next==cse);
+            assert(csp==NULL || csp->next==cse);
             insert_constval(csp,cse,itoh(lbl_case),val,0);
           } /* if */
         } /* if */
@@ -5783,7 +5791,7 @@ static void doswitch(void)
     /* verify that the case table is sorted (unfortunatly, duplicates can
      * occur; there really shouldn't be duplicate cases, but the compiler
      * may not crash or drop into an assertion for a user error). */
-    for (cse=caselist.next; cse!=NULL && cse->next!=NULL; cse=cse->next)
+    for (cse=caselist.first; cse!=NULL && cse->next!=NULL; cse=cse->next)
       assert(cse->value <= cse->next->value);
   #endif
   /* generate the table here, before lbl_exit (general jump target) */
@@ -5798,7 +5806,7 @@ static void doswitch(void)
   } /* if */
   ffcase(casecount,labelname,TRUE);
   /* generate the rest of the table */
-  for (cse=caselist.next; cse!=NULL; cse=cse->next)
+  for (cse=caselist.first; cse!=NULL; cse=cse->next)
     ffcase(cse->value,cse->name,FALSE);
 
   setlabel(lbl_exit);
@@ -6922,7 +6930,7 @@ SC_FUNC void exporttag(int tag)
    */
   if (tag!=0 && (tag & PUBLICTAG)==0) {
     constvalue *ptr;
-    for (ptr=tagname_tab.next; ptr!=NULL && tag!=(int)(ptr->value & TAGMASK); ptr=ptr->next)
+    for (ptr=tagname_tab.first; ptr!=NULL && tag!=(int)(ptr->value & TAGMASK); ptr=ptr->next)
       /* nothing */;
     if (ptr!=NULL)
       ptr->value |= PUBLICTAG;
@@ -7002,7 +7010,7 @@ static void dostate(void)
   /* find the optional entry() function for the state */
   sym=findglb(uENTRYFUNC,sGLOBAL);
   if (sc_status==statWRITE && sym!=NULL && sym->ident==iFUNCTN && sym->states!=NULL) {
-    for (stlist=sym->states->next; stlist!=NULL; stlist=stlist->next) {
+    for (stlist=sym->states->first; stlist!=NULL; stlist=stlist->next) {
       assert(strlen(stlist->name)!=0);
       if (state_getfsa(stlist->index)==automaton->index && state_inlist(stlist->index,(int)state->value))
         break;      /* found! */
@@ -7024,7 +7032,7 @@ static void dostate(void)
       /* get the last list id attached to the function, this contains the source states */
       assert(curfunc!=NULL);
       if (curfunc->states!=NULL) {
-        stlist=curfunc->states->next;
+        stlist=curfunc->states->first;
         assert(stlist!=NULL);
         while (stlist->next!=NULL)
           stlist=stlist->next;

@@ -37,8 +37,8 @@ SC_VDEFINE struct hashtable_t symbol_cache_ht;
 SC_VDEFINE cell *litq;                      /* the literal queue */
 SC_VDEFINE unsigned char pline[sLINEMAX+1]; /* the line read from the input file */
 SC_VDEFINE const unsigned char *lptr;       /* points to the current position in "pline" */
-SC_VDEFINE constvalue tagname_tab={ NULL, "", 0, 0};  /* tagname table */
-SC_VDEFINE constvalue libname_tab={ NULL, "", 0, 0};  /* library table (#pragma library "..." syntax) */
+SC_VDEFINE constvalue_root tagname_tab={ NULL, NULL};  /* tagname table */
+SC_VDEFINE constvalue_root libname_tab={ NULL, NULL};  /* library table (#pragma library "..." syntax) */
 SC_VDEFINE constvalue *curlibrary=NULL;     /* current library */
 SC_VDEFINE int pc_addlibtable=TRUE;         /* is the library table added to the AMX file? */
 SC_VDEFINE symbol *curfunc;                 /* pointer to current function */
@@ -96,8 +96,8 @@ SC_VDEFINE int pc_naked=FALSE;              /* if true mark following function a
 SC_VDEFINE int pc_compat=FALSE;             /* running in compatibility mode? */
 SC_VDEFINE int pc_recursion=FALSE;          /* enable detailed recursion report? */
 
-SC_VDEFINE constvalue sc_automaton_tab = { NULL, "", 0, 0}; /* automaton table */
-SC_VDEFINE constvalue sc_state_tab = { NULL, "", 0, 0};   /* state table */
+SC_VDEFINE constvalue_root sc_automaton_tab = { NULL, NULL}; /* automaton table */
+SC_VDEFINE constvalue_root sc_state_tab = { NULL, NULL};   /* state table */
 
 SC_VDEFINE FILE *inpf    = NULL;   /* file read from (source or include) */
 SC_VDEFINE FILE *inpf_org= NULL;   /* main source file */

@@ -75,7 +75,7 @@ SC_FUNC void writeleader(symbol *root)
    */
   assert(glb_declared==0);
   begdseg();
-  for (fsa=sc_automaton_tab.next; fsa!=NULL; fsa=fsa->next) {
+  for (fsa=sc_automaton_tab.first; fsa!=NULL; fsa=fsa->next) {
     defstorage();
     stgwrite("0\t; automaton ");
     if (strlen(fsa->name)==0)
@@ -91,7 +91,7 @@ SC_FUNC void writeleader(symbol *root)
   begcseg();
   for (sym=root->next; sym!=NULL; sym=sym->next) {
     if (sym->ident==iFUNCTN && (sym->usage & (uPUBLIC | uREAD))!=0 && sym->states!=NULL) {
-      stlist=sym->states->next;
+      stlist=sym->states->first;
       assert(stlist!=NULL);     /* there should be at least one state item */
       listid=stlist->index;
       assert(listid==-1 || listid>0);
@@ -109,7 +109,7 @@ SC_FUNC void writeleader(symbol *root)
         continue;
       } /* if */
       /* generate label numbers for all statelist ids */
-      for (stlist=sym->states->next; stlist!=NULL; stlist=stlist->next) {
+      for (stlist=sym->states->first; stlist!=NULL; stlist=stlist->next) {
         assert(strlen(stlist->name)==0);
         strcpy(stlist->name,itoh(getlabel()));
       } /* for */
@@ -126,7 +126,7 @@ SC_FUNC void writeleader(symbol *root)
        */
       statecount=0;
       strcpy(lbl_default,itoh(lbl_nostate));
-      for (stlist=sym->states->next; stlist!=NULL; stlist=stlist->next) {
+      for (stlist=sym->states->first; stlist!=NULL; stlist=stlist->next) {
         if (stlist->index==-1) {
           assert(strlen(stlist->name)<sizeof lbl_default);
           strcpy(lbl_default,stlist->name);
@@ -146,10 +146,10 @@ SC_FUNC void writeleader(symbol *root)
       /* generate the jump table */
       setlabel(lbl_table);
       ffcase(statecount,lbl_default,TRUE);
-      for (state=sc_state_tab.next; state!=NULL; state=state->next) {
+      for (state=sc_state_tab.first; state!=NULL; state=state->next) {
         if (state->index==fsa_id) {
           /* find the label for this list id */
-          for (stlist=sym->states->next; stlist!=NULL; stlist=stlist->next) {
+          for (stlist=sym->states->first; stlist!=NULL; stlist=stlist->next) {
             if (stlist->index!=-1 && state_inlist(stlist->index,(int)state->value)) {
               ffcase(state->value,stlist->name,FALSE);
               break;

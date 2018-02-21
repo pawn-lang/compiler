@@ -2949,7 +2949,7 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
         sym->usage &= ~uDEFINE; /* clear "defined" flag */
       /* set all states as "undefined" too */
       if (sym->states!=NULL)
-        for (stateptr=sym->states->next; stateptr!=NULL; stateptr=stateptr->next)
+        for (stateptr=sym->states->first; stateptr!=NULL; stateptr=stateptr->next)
           stateptr->value=0;
       /* for user defined operators, also remove the "prototyped" flag, as
        * user-defined operators *must* be declared before use
@@ -2989,10 +2989,10 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
         && (sym->parent==NULL || sym->ident==iCONSTEXPR)    /* sub-types (hierarchical types) are skipped, except for enum fields */
         && (sym->fnumber<0 || sym->fnumber==fnumber))       /* check file number for scope */
     {
-      assert(sym->states==NULL || sym->states->next!=NULL); /* first element of the state list is the "root" */
+      assert(sym->states==NULL || sym->states->first!=NULL); /* first element of the state list is the "root" */
       if (sym->ident==iFUNCTN
           || (automaton<0 && sym->states==NULL)
-          || (automaton>=0 && sym->states!=NULL && state_getfsa(sym->states->next->index)==automaton))
+          || (automaton>=0 && sym->states!=NULL && state_getfsa(sym->states->first->index)==automaton))
       {
         if (cmptag==NULL && sym->fnumber==fnumber)
           return sym;     /* return first match */
@@ -3110,8 +3110,8 @@ SC_FUNC symbol *findglb(const char *name,int filter)
        * also verify whether there is an intersection between the symbol's
        * state list and the current state list
        */
-      assert(sym->states!=NULL && sym->states->next!=NULL);
-      if (!state_conflict_id(sc_curstates,sym->states->next->index))
+      assert(sym->states!=NULL && sym->states->first!=NULL);
+      if (!state_conflict_id(sc_curstates,sym->states->first->index))
         sym=NULL;
     } /* if */
   } /* if */
