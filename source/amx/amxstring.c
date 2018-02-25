@@ -1,24 +1,20 @@
 /*  String functions for the Pawn Abstract Machine
  *
- *  Copyright (c) ITB CompuPhase, 2005-2006
+ *  Copyright (c) ITB CompuPhase, 2005-2016
  *
- *  This software is provided "as-is", without any express or implied warranty.
- *  In no event will the authors be held liable for any damages arising from
- *  the use of this software.
+ *  Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ *  use this file except in compliance with the License. You may obtain a copy
+ *  of the License at
  *
- *  Permission is granted to anyone to use this software for any purpose,
- *  including commercial applications, and to alter it and redistribute it
- *  freely, subject to the following restrictions:
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *  1.  The origin of this software must not be misrepresented; you must not
- *      claim that you wrote the original software. If you use this software in
- *      a product, an acknowledgment in the product documentation would be
- *      appreciated but is not required.
- *  2.  Altered source versions must be plainly marked as such, and must not be
- *      misrepresented as being the original software.
- *  3.  This notice may not be removed or altered from any source distribution.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ *  License for the specific language governing permissions and limitations
+ *  under the License.
  *
- *  Version: $Id: amxstring.c 3656 2006-10-24 07:20:26Z thiadmer $
+ *  Version: $Id: amxstring.c 5514 2016-05-20 14:26:51Z  $
  */
 #include <limits.h>
 #include <string.h>
@@ -51,11 +47,14 @@
 #if !defined isdigit
 # define isdigit(c)     ((unsigned)((c)-'0')<10u)
 #endif
+#if !defined sizearray
+# define sizearray(a)   (sizeof(a) / sizeof((a)[0]))
+#endif
 
 
 /* dest     the destination buffer; the buffer must point to the start of a cell
  * source   the source buffer, this must be aligned to a cell edge
- * len      the number of characters (bytes) to copy
+ * len      the number of characters (bytes) to copy, excluding the zero terminator
  * offs     the offset in dest, in characters (bytes)
  */
 static int amx_StrPack(cell *dest,cell *source,int len,int offs)
@@ -126,6 +125,10 @@ static int amx_StrPack(cell *dest,cell *source,int len,int offs)
   return AMX_ERR_NONE;
 }
 
+/* dest     the destination buffer, this must be aligned to a cell edge
+ * source   the source buffer, it must point to the start of a cell
+ * len      the number of cells to copy, excluding the zero terminator
+ */
 static int amx_StrUnpack(cell *dest,cell *source,int len)
 {
   /* len excludes the terminating '\0' byte */
@@ -179,17 +182,6 @@ static cell extractchar(cell *string,int index,int mklower)
   return c;
 }
 
-static int verify_addr(AMX *amx,cell addr)
-{
-  int err;
-  cell *cdest;
-
-  err=amx_GetAddr(amx,addr,&cdest);
-  if (err!=AMX_ERR_NONE)
-    amx_RaiseError(amx,err);
-  return err;
-}
-
 /* strlen(const string[])
  */
 static cell AMX_NATIVE_CALL n_strlen(AMX *amx,const cell *params)
@@ -197,8 +189,9 @@ static cell AMX_NATIVE_CALL n_strlen(AMX *amx,const cell *params)
   cell *cptr;
   int len = 0;
 
-  if (amx_GetAddr(amx,params[1],&cptr)==AMX_ERR_NONE)
-    amx_StrLen(cptr,&len);
+  (void)(amx);
+  cptr=amx_Address(amx,params[1]);
+  amx_StrLen(cptr,&len);
   return len;
 }
 
@@ -207,21 +200,14 @@ static cell AMX_NATIVE_CALL n_strlen(AMX *amx,const cell *params)
 static cell AMX_NATIVE_CALL n_strpack(AMX *amx,const cell *params)
 {
   cell *cdest,*csrc;
-  int len,needed,err;
-  size_t lastaddr;
+  int len,err;
 
-  /* calculate number of cells needed for (packed) destination */
-  amx_GetAddr(amx,params[2],&csrc);
+  csrc=amx_Address(amx,params[2]);
   amx_StrLen(csrc,&len);
   if ((unsigned)len>params[3]*sizeof(cell)-1)
     len=params[3]*sizeof(cell)-1;
-  needed=(len+sizeof(cell))/sizeof(cell);     /* # of cells needed */
-  assert(needed>0);
-  lastaddr=(size_t)(params[1]+sizeof(cell)*needed-1);
-  if (verify_addr(amx,(cell)lastaddr)!=AMX_ERR_NONE)
-    return amx_RaiseError(amx,AMX_ERR_NATIVE);
 
-  amx_GetAddr(amx,params[1],&cdest);
+  cdest=amx_Address(amx,params[1]);
   err=amx_StrPack(cdest,csrc,len,0);
   if (err!=AMX_ERR_NONE)
     return amx_RaiseError(amx,err);
@@ -235,19 +221,14 @@ static cell AMX_NATIVE_CALL n_strunpack(AMX *amx,const cell *params)
 {
   cell *cdest,*csrc;
   int len,err;
-  size_t lastaddr;
 
-  /* calculate number of cells needed for (unpacked) destination */
-  amx_GetAddr(amx,params[2],&csrc);
+  csrc=amx_Address(amx,params[2]);
   amx_StrLen(csrc,&len);
   assert(len>=0);
   if (len>=params[3])
     len=params[3]-1;
-  lastaddr=(size_t)(params[1]+sizeof(cell)*(len+1)-1);
-  if (verify_addr(amx,(cell)lastaddr)!=AMX_ERR_NONE)
-    return amx_RaiseError(amx,AMX_ERR_NATIVE);
 
-  amx_GetAddr(amx,params[1],&cdest);
+  cdest=amx_Address(amx,params[1]);
   err=amx_StrUnpack(cdest,csrc,len);
   if (err!=AMX_ERR_NONE)
     return amx_RaiseError(amx,err);
@@ -262,29 +243,22 @@ static cell AMX_NATIVE_CALL n_strunpack(AMX *amx,const cell *params)
 static cell AMX_NATIVE_CALL n_strcat(AMX *amx,const cell *params)
 {
   cell *cdest,*csrc;
-  int len,len2,needed;
+  int len,len2;
   int packed,err;
-  size_t lastaddr;
 
   /* calculate number of cells needed for (packed) destination */
-  amx_GetAddr(amx,params[2],&csrc);
-  amx_GetAddr(amx,params[1],&cdest);
+  csrc=amx_Address(amx,params[2]);
+  cdest=amx_Address(amx,params[1]);
   amx_StrLen(csrc,&len);
   amx_StrLen(cdest,&len2);
   packed=(*cdest==0) ? ((ucell)*csrc>UNPACKEDMAX) : ((ucell)*cdest>UNPACKEDMAX);
   if (packed) {
     if ((unsigned)(len+len2)>params[3]*sizeof(cell)-1)
       len=params[3]*sizeof(cell)-len2-1;
-    needed=(len+len2+sizeof(cell))/sizeof(cell);   /* # of cells needed */
-    assert(needed>0);
-    lastaddr=(size_t)(params[1]+sizeof(cell)*needed-1);
   } else {
     if (len+len2>params[3]-1)
       len=params[3]-len2-1;
-    lastaddr=(size_t)(params[1]+sizeof(cell)*(len+len2+1)-1);
   } /* if */
-  if (verify_addr(amx,(cell)lastaddr)!=AMX_ERR_NONE)
-    return amx_RaiseError(amx,AMX_ERR_NATIVE);
 
   if (packed) {
     err=amx_StrPack(cdest,csrc,len,len2);
@@ -293,6 +267,37 @@ static cell AMX_NATIVE_CALL n_strcat(AMX *amx,const cell *params)
     assert((ucell)*cdest<=UNPACKEDMAX || len2==0);
     err=amx_StrUnpack(cdest+len2,csrc,len);
   } /* if */
+  if (err!=AMX_ERR_NONE)
+    return amx_RaiseError(amx,err);
+
+  return len;
+}
+
+/* strcopy(dest[], const source[], maxlength=sizeof dest)
+ * packed/unpacked attribute from source[]
+ */
+static cell AMX_NATIVE_CALL n_strcopy(AMX *amx,const cell *params)
+{
+  cell *cdest,*csrc;
+  int len,packed,err;
+
+  /* calculate number of cells needed for (packed) destination */
+  csrc=amx_Address(amx,params[2]);
+  cdest=amx_Address(amx,params[1]);
+  amx_StrLen(csrc,&len);
+  packed=(ucell)*csrc>UNPACKEDMAX;
+  if (packed) {
+    if ((unsigned)len>params[3]*sizeof(cell)-1)
+      len=params[3]*sizeof(cell)-1;
+  } else {
+    if (len>params[3]-1)
+      len=params[3]-1;
+  } /* if */
+
+  if (packed)
+    err=amx_StrPack(cdest,csrc,len,0);
+  else
+    err=amx_StrUnpack(cdest,csrc,len);
   if (err!=AMX_ERR_NONE)
     return amx_RaiseError(amx,err);
 
@@ -327,8 +332,9 @@ static cell AMX_NATIVE_CALL n_strcmp(AMX *amx,const cell *params)
   int len1,len2,len;
   cell result;
 
-  amx_GetAddr(amx,params[1],&cstr1);
-  amx_GetAddr(amx,params[2],&cstr2);
+  (void)(amx);
+  cstr1=amx_Address(amx,params[1]);
+  cstr2=amx_Address(amx,params[2]);
 
   /* get the maximum length to compare */
   amx_StrLen(cstr1,&len1);
@@ -338,12 +344,16 @@ static cell AMX_NATIVE_CALL n_strcmp(AMX *amx,const cell *params)
     len=len2;
   if (len>params[4])
     len=params[4];
-  if (len==0)
-    return 0;
-
-  result=compare(cstr1,cstr2,params[3],len,0);
-  if (result==0 && len!=params[4])
-    result=len1-len2;
+  if (len==0) {
+    if (params[4]==0 || len1==len2)
+      result=0;
+    else
+      result=(len1<len2) ? -1 : 1;
+  } else {
+    result=compare(cstr1,cstr2,params[3],len,0);
+    if (result==0 && len!=params[4] && len1!=len2)
+      result=(len1<len2) ? -1 : 1;
+  }
   return result;
 }
 
@@ -355,8 +365,9 @@ static cell AMX_NATIVE_CALL n_strfind(AMX *amx,const cell *params)
   int lenstr,lensub,offs;
   cell c,f;
 
-  amx_GetAddr(amx,params[1],&cstr);
-  amx_GetAddr(amx,params[2],&csub);
+  (void)(amx);
+  cstr=amx_Address(amx,params[1]);
+  csub=amx_Address(amx,params[2]);
 
   /* get the maximum length to compare */
   amx_StrLen(cstr,&lenstr);
@@ -386,17 +397,16 @@ static cell AMX_NATIVE_CALL n_strfind(AMX *amx,const cell *params)
 static cell AMX_NATIVE_CALL n_strmid(AMX *amx,const cell *params)
 {
   cell *cdest,*csrc;
-  int len,needed,err;
+  int len,err;
   int soffs,doffs;
-  size_t lastaddr;
   unsigned char *ptr;
   unsigned char c;
   int start=params[3];
   int end=params[4];
 
   /* calculate number of cells needed for (packed) destination */
-  amx_GetAddr(amx,params[2],&csrc);
-  amx_GetAddr(amx,params[1],&cdest);
+  csrc=amx_Address(amx,params[2]);
+  cdest=amx_Address(amx,params[1]);
   amx_StrLen(csrc,&len);
 
   /* clamp the start/end parameters */
@@ -413,16 +423,10 @@ static cell AMX_NATIVE_CALL n_strmid(AMX *amx,const cell *params)
   if ((ucell)*csrc>UNPACKEDMAX) {
     if ((unsigned)len>params[5]*sizeof(cell)-1)
       len=params[5]*sizeof(cell)-1;
-    needed=(len+sizeof(cell))/sizeof(cell);   /* # of cells needed */
-    assert(needed>0);
-    lastaddr=(size_t)(params[1]+sizeof(cell)*needed-1);
   } else {
     if (len>params[5]-1)
       len=params[5]-1;
-    lastaddr=(size_t)(params[1]+sizeof(cell)*(len+1)-1);
   } /* if */
-  if (verify_addr(amx,(cell)lastaddr)!=AMX_ERR_NONE)
-    return amx_RaiseError(amx,AMX_ERR_NATIVE);
 
   if ((ucell)*csrc>UNPACKEDMAX) {
     /* first align the source to a cell boundary */
@@ -458,8 +462,9 @@ static cell AMX_NATIVE_CALL n_strdel(AMX *amx,const cell *params)
   unsigned char *ptr;
   unsigned char c;
 
+  (void)(amx);
   /* calculate number of cells needed for (packed) destination */
-  amx_GetAddr(amx,params[1],&cstr);
+  cstr=amx_Address(amx,params[1]);
   amx_StrLen(cstr,&length);
   index=(int)params[2];
   offs=(int)params[3]-index;
@@ -494,34 +499,28 @@ static cell AMX_NATIVE_CALL n_strdel(AMX *amx,const cell *params)
 static cell AMX_NATIVE_CALL n_strins(AMX *amx,const cell *params)
 {
   cell *cstr,*csub;
-  int index,lenstr,lensub,count;
-  int needed;
-  size_t lastaddr;
+  int index,lenstr,lensub,maxlen,count;
   unsigned char *ptr;
   cell c;
 
   /* calculate number of cells needed for (packed) destination */
-  amx_GetAddr(amx,params[1],&cstr);
-  amx_GetAddr(amx,params[2],&csub);
+  cstr=amx_Address(amx,params[1]);
+  csub=amx_Address(amx,params[2]);
   amx_StrLen(cstr,&lenstr);
   amx_StrLen(csub,&lensub);
   index=(int)params[3];
-  if (index>lenstr)
+  maxlen=(int)params[4];
+  if ((ucell)*cstr>UNPACKEDMAX)
+    maxlen*=sizeof(cell);
+  maxlen-=1;
+  if (index>lenstr || index>maxlen)
     return amx_RaiseError(amx,AMX_ERR_NATIVE);
 
-  if (((ucell)*cstr>UNPACKEDMAX)) {
-    needed=(lenstr+lensub+sizeof(cell))/sizeof(cell);   /* # of cells needed */
-    assert(needed>0);
-    lastaddr=(size_t)(params[1]+sizeof(cell)*needed-1);
-  } else {
-    lastaddr=(size_t)(params[1]+sizeof(cell)*(lenstr+lensub+1)-1);
-  } /* if */
-  if (verify_addr(amx,(cell)lastaddr)!=AMX_ERR_NONE)
-    return amx_RaiseError(amx,AMX_ERR_NATIVE);
-
-  if (*cstr==0) {
+  if (lenstr==0) {
     /* current string is empty (and the insertion point is zero), just make a copy */
     assert(index==0);
+    if (lensub>maxlen)
+      lensub=maxlen;
     if ((ucell)*csub>UNPACKEDMAX)
       amx_StrPack(cstr,csub,lensub,0);
     else
@@ -529,9 +528,12 @@ static cell AMX_NATIVE_CALL n_strins(AMX *amx,const cell *params)
     return 1;
   } /* if */
 
-  if (((ucell)*cstr>UNPACKEDMAX)) {
+  lenstr+=lensub; /* length after insertion */
+  if (lenstr>=maxlen)
+    lenstr=maxlen-1;
+  if ((ucell)*cstr>UNPACKEDMAX) {
     /* make room for the new characters */
-    for (count=lenstr+lensub; count>index; count--) {
+    for (count=lenstr; count>index; count--) {
       ptr=packedptr(cstr,count-lensub);
       c=*ptr;
       ptr=packedptr(cstr,count);
@@ -545,7 +547,7 @@ static cell AMX_NATIVE_CALL n_strins(AMX *amx,const cell *params)
     } /* for */
   } else {
     /* make room for the new characters */
-    for (count=lenstr+lensub; count>index; count--)
+    for (count=lenstr; count>index; count--)
       cstr[count]=cstr[count-lensub];
     /* copy in the new characters */
     for (count=0; count<lensub; count++) {
@@ -566,8 +568,9 @@ static cell AMX_NATIVE_CALL n_strval(AMX *amx,const cell *params)
   int len,negate=0;
   int offset=0;
 
+  (void)(amx);
   /* get parameters */
-  amx_GetAddr(amx,params[1],&cstr);
+  cstr=amx_Address(amx,params[1]);
   amx_StrLen(cstr,&len);
   if ((unsigned)params[0]>=2*sizeof(cell))
     offset=params[2];
@@ -577,16 +580,22 @@ static cell AMX_NATIVE_CALL n_strval(AMX *amx,const cell *params)
     offset=len-1;
 
   /* skip a number of cells */
-  while (offset>=(int)sizeof(cell)) {
-    cstr++;
-    offset-=sizeof(cell);
-    len-=sizeof(cell);
-  } /* while */
-
-  if (len>=(int)sizeof str) {
-    amx_RaiseError(amx,AMX_ERR_NATIVE);
-    return 0;
+  if ((ucell)*cstr>UNPACKEDMAX) {
+    /* packed string */
+    while (offset>=(int)sizeof(cell)) {
+      cstr++;
+      offset-=sizeof(cell);
+      len-=sizeof(cell);
+    } /* while */
+  } else {
+    /* unpacked string, one character per cell */
+    while (offset>0) {
+      cstr++;
+      offset--;
+      len--;
+    } /* while */
   } /* if */
+
   amx_GetString(str,cstr,sizeof(TCHAR)>1,sizeof str);
   assert(offset<(int)sizeof(cell) && offset>=0);
   ptr=str+offset;
@@ -612,12 +621,12 @@ static cell AMX_NATIVE_CALL n_strval(AMX *amx,const cell *params)
 static cell AMX_NATIVE_CALL n_valstr(AMX *amx,const cell *params)
 {
   TCHAR str[50];
-  cell value,mult;
+  cell value,temp;
   cell *cstr;
   int len,result,negate=0;
 
+  (void)(amx);
   /* find out how many digits are needed */
-  mult=10;
   len=1;
   value=params[2];
   if (value<0) {
@@ -625,10 +634,9 @@ static cell AMX_NATIVE_CALL n_valstr(AMX *amx,const cell *params)
     len++;
     value=-value;
   } /* if */
-  while (value>=mult) {
+  for (temp=value; temp>=10; temp/=10)
     len++;
-    mult*=10;
-  } /* while */
+  assert(len<=sizearray(str));
 
   /* put in the string */
   result=len;
@@ -639,16 +647,16 @@ static cell AMX_NATIVE_CALL n_valstr(AMX *amx,const cell *params)
   } /* while */
   if (negate)
     str[0]='-';
-  amx_GetAddr(amx,params[1],&cstr);
-  amx_SetString(cstr,str,params[3],sizeof(TCHAR)>1,UNLIMITED);
+  cstr=amx_Address(amx,params[1]);
+  amx_SetString(cstr,str,params[3],sizeof(TCHAR)>1,sizearray(str));
   return result;
 }
 
 /* ispacked(const string[]) */
 static cell AMX_NATIVE_CALL n_ispacked(AMX *amx,const cell *params)
 {
-  cell *cstr;
-  amx_GetAddr(amx,params[1],&cstr);
+  cell *cstr=amx_Address(amx,params[1]);
+  (void)(amx);
   return *cstr>=UNPACKEDMAX;
 }
 
@@ -727,13 +735,14 @@ static cell AMX_NATIVE_CALL n_uudecode(AMX *amx,const cell *params)
   int len;
   size_t size;
 
+  (void)(amx);
   /* get the source */
-  amx_GetAddr(amx,params[2],&cstr);
+  cstr=amx_Address(amx,params[2]);
   amx_GetString(src,cstr,0,sizeof src);
   /* decode */
   len=uudecode(dst,src);
   /* store */
-  amx_GetAddr(amx,params[1],&cstr);
+  cstr=amx_Address(amx,params[1]);
   size=len;
   if (size>params[3]*sizeof(cell))
     size=params[3]*sizeof(cell);
@@ -754,12 +763,14 @@ static cell AMX_NATIVE_CALL n_uuencode(AMX *amx,const cell *params)
   unsigned char src[BITMASK+2];
   char dst[BITMASK+BITMASK/3+2];
 
+  (void)(amx);
   /* get the source */
-  amx_GetAddr(amx,params[2],&cstr);
+  cstr=amx_Address(amx,params[2]);
+  amx_GetString((char *)src,cstr,0,sizeof src);
   /* encode (and check for errors) */
   if (uuencode(dst,src,params[3])) {
     if (params[4]>0) {
-      amx_GetAddr(amx,params[1],&cstr);
+      cstr=amx_Address(amx,params[1]);
       *cstr=0;
     } /* if */
     return 0;
@@ -768,9 +779,140 @@ static cell AMX_NATIVE_CALL n_uuencode(AMX *amx,const cell *params)
   assert(strlen(dst)+1<sizeof dst);
   strcat(dst,"\n");
   /* store */
-  amx_GetAddr(amx,params[1],&cstr);
+  cstr=amx_Address(amx,params[1]);
   amx_SetString(cstr,dst,1,0,params[4]);
   return (((params[3]+2)/3) << 2)+2;
+}
+
+/* urldecode(dest[], const source[], maxlength=sizeof dest, bool:pack=false)
+ * Returns the number of characters decoded; if the dest buffer is
+ * too small, not all bytes are stored.
+ * A buffer may be decoded "in-place"; the destination size is always
+ * smaller than the source size.
+ */
+static cell AMX_NATIVE_CALL n_urldecode(AMX *amx,const cell *params)
+{
+  cell *cstr;
+  TCHAR *str;
+  int idx_src=0,idx_dst=0;
+
+  /* get the source */
+  (void)(amx);
+  amx_StrParam(amx,params[2],str);
+
+  /* decode */
+  while (idx_src!='\0') {
+    assert(idx_dst<=idx_src);
+    if (str[idx_src]=='%') {
+      int p,q;
+      if (str[idx_src+1]>='0' && str[idx_src+1]<='9')
+        p=str[idx_src+1]-'0';
+      else if (str[idx_src+1]>='A' && str[idx_src+1]<='F')
+        p=str[idx_src+1]-'A'+10;
+      else if (str[idx_src+1]>='a' && str[idx_src+1]<='f')
+        p=str[idx_src+1]-'a'+10;
+      else
+        p=-1;
+      if (p>=0) {
+        if (str[idx_src+2]>='0' && str[idx_src+2]<='9')
+          q=str[idx_src+2]-'0';
+        else if (str[idx_src+2]>='A' && str[idx_src+2]<='F')
+          q=str[idx_src+2]-'A'+10;
+        else if (str[idx_src+2]>='a' && str[idx_src+2]<='f')
+          q=str[idx_src+2]-'a'+10;
+        else
+          q=-1;
+      } /* if */
+      if (p>=0 && q >=0) {
+        assert(p<=15 && q<=15);
+        str[idx_dst]=(TCHAR)((p<<4) | q);
+        idx_src+=3;
+      } else {
+        /* invalid '%xx' syntax, copy literal '%' */
+        str[idx_dst]=str[idx_src++];
+      } /* if */
+    } else {
+      str[idx_dst]=str[idx_src++];
+    } /* if */
+    idx_dst++;
+  } /* while */
+  str[idx_dst]='\0';
+
+  /* store */
+  cstr=amx_Address(amx,params[1]);
+  amx_SetString(cstr,str,1,0,params[4]); /* store as packed ot unpacked */
+
+  return idx_dst;
+}
+
+#define INVALIDURI(c) ((c)<','               \
+                       || (c)>'9' && (c)<'A' \
+                       || (c)>'Z' && (c)<'_' \
+                       || (c)>'_' && (c)<'a' \
+                       || (c)>'z' && (unsigned)(c)<0xa1)
+
+#define TOHEX(c)      (TCHAR)((c)<10 ? '0'+(c) : 'A'-10+(c))
+
+/* urlencode(dest[], const source[], maxlength=sizeof dest, bool:pack=false)
+ * Returns the number of characters encoded, excluding the zero string
+ * terminator; if the dest buffer is too small, not all bytes are stored.
+ * Always creates a packed string. This string has a newline character at the
+ * end. A buffer may be encoded "in-place" if the destination is large enough.
+ * Endian issues (for multi-byte values in the data stream) are not handled.
+ */
+static cell AMX_NATIVE_CALL n_urlencode(AMX *amx,const cell *params)
+{
+  cell *cstr;
+  int length,destlen,count,lastwidth;
+  TCHAR *str;
+
+  /* allocate memory and get the source */
+  (void)(amx);
+  if ((length=(int)params[3])==0)
+    return 0;
+  if ((str = (TCHAR*)alloca(length * sizeof(TCHAR)))==NULL)
+    return 0;
+  cstr=amx_Address(amx,params[2]);
+  amx_GetString((char*)str, cstr, sizeof(TCHAR)>1, length);
+
+  /* run through the string and determine the new length */
+  destlen=1;  /* space for the '\0' terminator */
+  lastwidth=0;
+  for (count=0; str[count]!='\0' && destlen<length; count++) {
+    if (INVALIDURI(str[count]))
+      lastwidth=3;
+    else
+      lastwidth=1;
+    destlen+=lastwidth;
+  } /* for */
+  if (destlen>length) {   /* correct for overrun */
+    destlen-=lastwidth;
+    count--;
+  } /* if */
+  assert(destlen<=length);
+  assert(count>=0);
+
+  /* store string terminator */
+  assert(destlen>0);
+  str[--destlen]='\0';
+  /* convert string from end to start */
+  while (--count>=0) {
+    assert(destlen>count);
+    if (INVALIDURI(str[count])) {
+      str[--destlen]=TOHEX(str[count] & 0x0f);
+      str[--destlen]=TOHEX((str[count] >> 4) & 0x0f);
+      str[--destlen]='%';
+    } else {
+      str[--destlen]=str[count];
+    } /* if */
+  } /* while */
+  assert(destlen==0);
+
+  /* store the result */
+  cstr=amx_Address(amx,params[1]);
+  amx_SetString(cstr,str,1,0,params[4]); /* store as packed ot unpacked */
+
+  return (cell)strlen(str);
 }
 
 /* memcpy(dest[], const source[], index=0, numbytes, maxlength=sizeof dest)
@@ -785,10 +927,11 @@ static cell AMX_NATIVE_CALL n_memcpy(AMX *amx,const cell *params)
   cell *cdest,*csrc;
   unsigned char *pdest,*psrc;
 
+  (void)(amx);
   if (params[3]<0 || params[4]<0 || (params[3]+params[4])>params[5]*(int)sizeof(cell))
     return 0;
-  amx_GetAddr(amx,params[1],&cdest);
-  amx_GetAddr(amx,params[2],&csrc);
+  cdest=amx_Address(amx,params[1]);
+  csrc=amx_Address(amx,params[2]);
   pdest=(unsigned char*)cdest+params[3];
   psrc=(unsigned char*)csrc;
   memmove(pdest,psrc,params[4]);
@@ -805,7 +948,7 @@ static cell AMX_NATIVE_CALL n_memcpy(AMX *amx,const cell *params)
 
   static int str_putchar(void *dest,TCHAR ch)
   {
-    int len=_tcslen((TCHAR*)dest);
+    int len=(int)_tcslen((TCHAR*)dest);
     if (len<MAX_FORMATSTR-1) {
       ((TCHAR*)dest)[len]=ch;
       ((TCHAR*)dest)[len+1]='\0';
@@ -837,11 +980,11 @@ static cell AMX_NATIVE_CALL n_strformat(AMX *amx,const cell *params)
     info.user=output;
     output[0] = __T('\0');
 
-    amx_GetAddr(amx,params[4],&cstr);
+    cstr=amx_Address(amx,params[4]);
     amx_printstring(amx,cstr,&info);
 
     /* store the output string */
-    amx_GetAddr(amx,params[1],&cstr);
+    cstr=amx_Address(amx,params[1]);
     amx_SetString(cstr,(char*)output,(int)params[3],sizeof(TCHAR)>1,(int)params[2]);
     return 1;
   #endif
@@ -856,6 +999,7 @@ const AMX_NATIVE_INFO string_Natives[] = {
   { "memcpy",    n_memcpy },
   { "strcat",    n_strcat },
   { "strcmp",    n_strcmp },
+  { "strcopy",   n_strcopy },
   { "strdel",    n_strdel },
   { "strfind",   n_strfind },
   { "strformat", n_strformat },
@@ -867,16 +1011,18 @@ const AMX_NATIVE_INFO string_Natives[] = {
   { "strval",    n_strval },
   { "uudecode",  n_uudecode },
   { "uuencode",  n_uuencode },
+  { "urldecode", n_urldecode },
+  { "urlencode", n_urlencode },
   { "valstr",    n_valstr },
   { NULL, NULL }        /* terminator */
 };
 
-int AMXEXPORT amx_StringInit(AMX *amx)
+int AMXEXPORT AMXAPI amx_StringInit(AMX *amx)
 {
   return amx_Register(amx, string_Natives, -1);
 }
 
-int AMXEXPORT amx_StringCleanup(AMX *amx)
+int AMXEXPORT AMXAPI amx_StringCleanup(AMX *amx)
 {
   (void)amx;
   return AMX_ERR_NONE;
