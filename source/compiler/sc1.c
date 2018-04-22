@@ -993,7 +993,7 @@ static int toggle_option(const char *optptr, int option)
 {
   switch (*option_value(optptr)) {
   case '\0':
-    option=!option;
+    option=TRUE;
     break;
   case '-':
     option=FALSE;
@@ -1064,7 +1064,8 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
         if (chdir(ptr)==-1)
           ; /* silently ignore chdir() errors */
         break;
-      case 'd':
+      case 'd': {
+        int debug;
         switch (*option_value(ptr)) {
         case '0':
           sc_debug=0;
@@ -1083,7 +1084,14 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
         default:
           about();
         } /* switch */
+        debug=0;
+        if ((sc_debug & (sCHKBOUNDS | sSYMBOLIC))==(sCHKBOUNDS | sSYMBOLIC))
+          debug=2;
+        else if ((sc_debug & sCHKBOUNDS)==sCHKBOUNDS)
+          debug=1;
+        add_builtin_constant("debug",debug,sGLOBAL,0);
         break;
+      } /* case */
       case 'e':
         if (ename)
           strlcpy(ename,option_value(ptr),_MAX_PATH); /* set name of error file */
@@ -1207,9 +1215,16 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
             about();
         } /* if */
         break;
-      case 'Z':
+      case 'Z': {
+        symbol *sym;
         pc_compat=toggle_option(ptr,pc_compat);
+        sym=findconst("__compat",NULL);
+        if (sym!=NULL) {
+          assert(sym!=NULL);
+          sym->addr=pc_compat;
+        } /* if */
         break;
+      } /* case */
       case '\\':                /* use \ instead for escape characters */
         sc_ctrlchar='\\';
         break;
