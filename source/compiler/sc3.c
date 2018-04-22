@@ -2078,8 +2078,10 @@ static int nesting=0;
        * of the function; check it again for functions with a variable
        * argument list
        */
-      if (argpos>=sMAXARGS)
+      if (argpos>=sMAXARGS) {
         error(45);                /* too many function arguments */
+        break;
+      } /* if */
       stgmark((char)(sEXPRSTART+argpos));/* mark beginning of new expression in stage */
       if (arglist[argpos]!=ARG_UNHANDLED)
         error(58);                /* argument already set */

@@ -45,6 +45,9 @@ set_tests_properties(gh_283 PROPERTIES PASS_REGULAR_EXPRESSION "\
 .*\\.pwn\\(5\\) : warning 234: function is deprecated \\(symbol \"print\"\\)\
 ")
 
+add_compiler_test(too_many_args_crash_gh_298 ${CMAKE_CURRENT_SOURCE_DIR}/too_many_args_crash_gh_298.pwn)
+set_tests_properties(too_many_args_crash_gh_298 PROPERTIES PASS_REGULAR_EXPRESSION "too many function arguments")
+
 # Crashers
 #
 # These tests simply check that the compiler doesn't crash.
