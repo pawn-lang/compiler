@@ -84,6 +84,7 @@
 				<h3>Depends on</h3>
 				<ul><xsl:apply-templates select="dependency"/></ul>
 			</xsl:if>
+			<xsl:apply-templates select="location"/>
 			<xsl:if test="seealso">
 				<h3>See Also</h3>
 				<ul><xsl:apply-templates select="seealso"/></ul>
@@ -108,6 +109,7 @@
 				<h3>Depends on</h3>
 				<ul><xsl:apply-templates select="dependency"/></ul>
 			</xsl:if>
+			<xsl:apply-templates select="location"/>
 			<xsl:if test="seealso">
 				<h3>See Also</h3>
 				<ul><xsl:apply-templates select="seealso"/></ul>
@@ -135,6 +137,7 @@
 				<h3>Depends on</h3>
 				<ul><xsl:apply-templates select="dependency"/></ul>
 			</xsl:if>
+			<xsl:apply-templates select="location"/>
 			<xsl:if test="attribute">
 				<h3>Attributes</h3>
 				<ul><xsl:apply-templates select="attribute"/></ul>
@@ -172,6 +175,7 @@
 				<h3>Depends on</h3>
 				<ul><xsl:apply-templates select="dependency"/></ul>
 			</xsl:if>
+			<xsl:apply-templates select="location"/>
 			<xsl:if test="seealso">
 				<h3>See Also</h3>
 				<ul><xsl:apply-templates select="seealso"/></ul>
@@ -212,6 +216,11 @@
 <xsl:template match="returns">
 	<h3>Returns</h3>
 	<p><xsl:apply-templates/></p>
+</xsl:template>
+
+<xsl:template match="location">
+	<h3>Defined in</h3>
+	<p><xsl:value-of select="@file"/>, line <xsl:value-of select="@startline"/> to <xsl:value-of select="@endline"/></p>
 </xsl:template>
 
 <xsl:template match="remarks">

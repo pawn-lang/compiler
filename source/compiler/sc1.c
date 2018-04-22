@@ -165,7 +165,8 @@ static int wq[wqTABSZ];         /* "while queue", internal stack for nested loop
 static int *wqptr;              /* pointer to next entry */
 #if !defined SC_LIGHT
   static char sc_rootpath[_MAX_PATH];
-  static char *sc_documentation=NULL;/* main documentation */
+  static char *pc_globaldoc=NULL;/* main documentation */
+  static char *pc_recentdoc=NULL;    /* documentation from the most recent comment block */
 #endif
 #if defined	__WIN32__ || defined _WIN32 || defined _Windows
   static HWND hwndFinish = 0;
@@ -643,9 +644,9 @@ int pc_compile(int argc, char *argv[])
         if (strlen(reportname)>0)
           fclose(frep);
       } /* if */
-      if (sc_documentation!=NULL) {
-        free(sc_documentation);
-        sc_documentation=NULL;
+      if (pc_globaldoc!=NULL) {
+        free(pc_globaldoc);
+        pc_globaldoc=NULL;
       } /* if */
     } /* if */
   #endif
@@ -784,8 +785,10 @@ cleanup:
   #endif
   #if !defined SC_LIGHT
     delete_docstringtable();
-    if (sc_documentation!=NULL)
-      free(sc_documentation);
+    if (pc_globaldoc!=NULL)
+      free(pc_globaldoc);
+    if (pc_recentdoc!=NULL)
+      free(pc_recentdoc);
   #endif
   delete_autolisttable();
   delete_heaplisttable();
@@ -949,7 +952,8 @@ static void initglobals(void)
   wqptr=wq;              /* initialize while queue pointer */
 
 #if !defined SC_LIGHT
-  sc_documentation=NULL;
+  pc_globaldoc=NULL;
+  pc_recentdoc=NULL;
   sc_makereport=FALSE;   /* do not generate a cross-reference report */
 #endif
 }
@@ -1832,7 +1836,7 @@ static void aligndata(int numbytes)
  * appends documentation comments to the passed-in symbol, or to a global
  * string if "sym" is NULL.
  */
-void sc_attachdocumentation(symbol *sym)
+void sc_attachdocumentation(symbol *sym,int onlylastblock)
 {
   int line;
   size_t length;
@@ -1850,6 +1854,43 @@ void sc_attachdocumentation(symbol *sym)
    */
   // assert(sym==NULL || sym->documentation==NULL || sym->states!=NULL);
 
+  if (pc_recentdoc!=NULL) {
+    /* either copy the most recent comment block to the current symbol, or
+     * append it to the global documentation
+     */
+    length=strlen(pc_recentdoc);
+    if (onlylastblock) {
+      assert(sym!=NULL);
+      str=sym->documentation;
+    } else {
+      str=pc_globaldoc;
+    } /* if */
+    /* set the documentation, or append it to it */
+    if (str!=NULL)
+      length+=strlen(str)+1+4;   /* plus 4 for "<p/>" */
+    doc=(char*)malloc((length+1)*sizeof(char));
+    if (doc!=NULL) {
+      if (str!=NULL) {
+        strcpy(doc,str);
+        free(str);
+        strcat(doc,"<p/>");
+      } else {
+        *doc='\0';
+      } /* if */
+      strcat(doc,pc_recentdoc);
+      if (onlylastblock) {
+        sym->documentation=doc;
+        /* force adding the new strings (if any) to the global data */
+        sym=NULL;
+      } else {
+        pc_globaldoc=doc;
+      } /* if */
+    } /* if */
+    /* remove the "recent block" string */
+    free(pc_recentdoc);
+    pc_recentdoc=NULL;
+  } /* if */
+
   /* first check the size */
   length=0;
   for (line=0; (str=get_docstring(line))!=NULL && *str!=sDOCSEP; line++) {
@@ -1857,24 +1898,20 @@ void sc_attachdocumentation(symbol *sym)
       length++;   /* count 1 extra for a separating space */
     length+=strlen(str);
   } /* for */
-  if (sym==NULL && sc_documentation!=NULL) {
-    length += strlen(sc_documentation) + 1 + 4; /* plus 4 for "<p/>" */
-    assert(length>strlen(sc_documentation));
-  } /* if */
 
   if (length>0) {
     /* allocate memory for the documentation */
     if (sym!=NULL && sym->documentation!=NULL)
-      length+=strlen(sym->documentation) + 1 + 4;/* plus 4 for "<p/>" */
+      length+=strlen(sym->documentation)+1+4;   /* plus 4 for "<p/>" */
     doc=(char*)malloc((length+1)*sizeof(char));
     if (doc!=NULL) {
       /* initialize string or concatenate */
-      if (sym==NULL && sc_documentation!=NULL) {
-        strcpy(doc,sc_documentation);
-        strcat(doc,"<p/>");
-      } else if (sym!=NULL && sym->documentation!=NULL) {
+      if (sym!=NULL && sym->documentation!=NULL) {
+        size_t len;
         strcpy(doc,sym->documentation);
-        strcat(doc,"<p/>");
+        len=strlen(doc);
+        if ((len>0 && doc[len-1]!='>') || ((str=get_docstring(0))!=NULL && *str!=sDOCSEP && *str!='<'))
+          strcat(doc,"<p/>");
         free(sym->documentation);
         sym->documentation=NULL;
       } else {
@@ -1882,7 +1919,7 @@ void sc_attachdocumentation(symbol *sym)
       } /* if */
       /* collect all documentation */
       while ((str=get_docstring(0))!=NULL && *str!=sDOCSEP) {
-        if (doc[0]!='\0')
+        if (doc[0]!='\0' && str[0]!='<')
           strcat(doc," ");
         strcat(doc,str);
         delete_docstring(0);
@@ -1896,9 +1933,8 @@ void sc_attachdocumentation(symbol *sym)
         assert(sym->documentation==NULL);
         sym->documentation=doc;
       } else {
-        if (sc_documentation!=NULL)
-          free(sc_documentation);
-        sc_documentation=doc;
+        assert(pc_recentdoc==NULL);
+        pc_recentdoc=doc;
       } /* if */
     } /* if */
   } else {
@@ -1914,7 +1950,7 @@ static void insert_docstring_separator(void)
   insert_docstring(sep);
 }
 #else
-  #define sc_attachdocumentation(s)      (void)(s)
+  #define sc_attachdocumentation(s,f)      (void)(s,f)
   #define insert_docstring_separator()
 #endif
 
@@ -1981,6 +2017,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
   char *str;
   int dim[sDIMEN_MAX];
   int numdim;
+  int linenum;
   short filenum;
   symbol *sym;
   constvalue *enumroot;
@@ -1992,6 +2029,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
   insert_docstring_separator();         /* see comment in newfunc() */
   filenum=fcurrent;                     /* save file number at the start of the declaration */
   do {
+    linenum=fline;                      /* save line number at the start of the declaration */
     size=1;                             /* single size (no array) */
     numdim=0;                           /* no dimensions */
     ident=iVARIABLE;
@@ -2208,8 +2246,11 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
     if (fstock)
       sym->usage|=uSTOCK;
     if (fstatic)
-      sym->fnumber=filenum;
-    sc_attachdocumentation(sym);/* attach any documenation to the variable */
+      sym->usage|=uSTATIC;
+    sym->fnumber=filenum;
+    sym->lnumber_decl=linenum;
+    sym->lnumber_end=fline;
+    sc_attachdocumentation(sym,TRUE);/* attach any documentation to the variable */
     if (sc_status==statSKIP) {
       sc_status=statWRITE;
       code_idx=cidx;
@@ -2852,8 +2893,12 @@ static void decl_const(int vclass)
     /* add_constant() checks for duplicate definitions */
     check_tagmismatch(tag,exprtag,FALSE,symbolline);
     sym=add_constant(constname,val,vclass,tag);
-    if (sym!=NULL)
-      sc_attachdocumentation(sym);/* attach any documenation to the constant */
+    if (sym!=NULL) {
+      sym->fnumber = fcurrent;
+      sym->lnumber_decl = symbolline;
+      sym->lnumber_end = symbolline;
+      sc_attachdocumentation(sym,TRUE);/* attach any documentation to the constant */
+    }
   } while (matchtoken(',')); /* enddo */   /* more? */
   needtoken(tTERM);
 }
@@ -2900,6 +2945,7 @@ static void decl_enum(int vclass,int fstatic)
   /* get increment and multiplier */
   increment=1;
   multiplier=1;
+
   if (matchtoken('(')) {
     if (matchtoken(taADD)) {
       constexpr(&increment,NULL,NULL);
@@ -2919,7 +2965,11 @@ static void decl_enum(int vclass,int fstatic)
     if (enumsym!=NULL) {
       enumsym->usage |= uENUMROOT;
       if (fstatic)
-        enumsym->fnumber=filenum;
+        enumsym->usage|=uSTATIC;
+      enumsym->fnumber=filenum;
+      enumsym->lnumber_decl=fline;
+
+      sc_attachdocumentation(enumsym,FALSE);  /* attach any documentation to the enumeration */
     }
     /* start a new list for the element names */
     if ((enumroot=(constvalue*)malloc(sizeof(constvalue)))==NULL)
@@ -2969,9 +3019,13 @@ static void decl_enum(int vclass,int fstatic)
     sym->parent=enumsym;
     if (enumsym)
       enumsym->child=sym;
-
     if (fstatic)
-      sym->fnumber=filenum;
+      sym->usage|=uSTATIC;
+    sym->fnumber=filenum;
+    sym->lnumber_decl=fline;
+    sym->lnumber_end=fline;
+    
+    sc_attachdocumentation(sym,FALSE);  /* attach any documenation to item */
 
     /* add the constant to a separate list as well */
     if (enumroot!=NULL) {
@@ -2989,11 +3043,11 @@ static void decl_enum(int vclass,int fstatic)
   /* set the enum name to the "next" value (typically the last value plus one) */
   if (enumsym!=NULL) {
     assert((enumsym->usage & uENUMROOT)!=0);
+    enumsym->lnumber_end=fline;
     enumsym->addr=value;
     /* assign the constant list */
     assert(enumroot!=NULL);
     enumsym->dim.enumlist=enumroot;
-    sc_attachdocumentation(enumsym);  /* attach any documenation to the enumeration */
   } /* if */
 }
 
@@ -3400,7 +3454,7 @@ SC_FUNC void check_tagmismatch(int formaltag,int actualtag,int allowcoerce,int e
 {
   if (!matchtag(formaltag,actualtag,allowcoerce)) {
     constvalue *tagsym;
-    char formal_tagname[sNAMEMAX+3]="none (\"_\"),",actual_tagname[sNAMEMAX+2]="none (\"_\")"; /* two extra characters for quotes */  
+    char formal_tagname[sNAMEMAX+4]="none (\"_\"),",actual_tagname[sNAMEMAX+3]="none (\"_\")"; /* two extra characters for quotes */  
     if(formaltag!=0) {
       tagsym=find_tag_byval(formaltag);
       sprintf(formal_tagname,"\"%s\",", (tagsym!=NULL) ? tagsym->name : "-unknown-");
@@ -3422,7 +3476,7 @@ SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualt
   if (!checktag(formaltags, numtags, actualtag)) {
     int i;
     constvalue *tagsym;
-    char formal_tagnames[sLINEMAX]="",actual_tagname[sNAMEMAX+2]="none (\"_\")";
+    char formal_tagnames[sLINEMAX]="",actual_tagname[sNAMEMAX+3]="none (\"_\")";
     int notag_allowed=FALSE,add_comma=FALSE;
     for (i=0; i<numtags; i++) {      
       if(formaltags[i]!=0) {
@@ -3577,7 +3631,7 @@ static void funcstub(int fnative)
 
   declargs(sym,FALSE);
   /* "declargs()" found the ")" */
-  sc_attachdocumentation(sym);  /* attach any documenation to the function */
+  sc_attachdocumentation(sym,TRUE);  /* attach any documentation to the function */
   if (!operatoradjust(opertok,sym,symbolname,tag))
     sym->usage &= ~uDEFINE;
 
@@ -3701,7 +3755,9 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   if (fpublic)
     sym->usage|=uPUBLIC;
   if (fstatic)
-    sym->fnumber=filenum;
+    sym->usage|=uSTATIC;
+
+  sym->fnumber=filenum;
   check_reparse(sym);
   /* we want public functions to be explicitly prototyped, as they are called
    * from the outside
@@ -3729,6 +3785,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     delete_symbols(&loctab,0,TRUE,TRUE);  /* prototype is done; forget everything */
     return TRUE;
   } /* if */
+  sym->lnumber_decl=funcline;
   /* so it is not a prototype, proceed */
   /* if this is a function that is not referred to (this can only be detected
    * in the second stage), shut code generation off */
@@ -3811,8 +3868,9 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     } /* if */
   } /* if */
   endfunc();
+  sym->lnumber_end=fline;
   sym->codeaddr=code_idx;
-  sc_attachdocumentation(sym);  /* attach collected documenation to the function */
+  sc_attachdocumentation(sym,FALSE);  /* attach collected documentation to the function */
   if (litidx) {                 /* if there are literals defined */
     glb_declared+=litidx;
     begdseg();                  /* flip to DATA segment */
@@ -4332,6 +4390,74 @@ static char *xmlencode(char *dest,char *source)
   return dest;
 }
 
+
+static void write_docattributes(FILE *log, symbol *sym)
+{
+  if ((sym->usage & uREAD)==0)
+      fprintf(log,"\t\t\t<attribute name=\"unused\"/>\n");
+  if (sym->ident==iCONSTEXPR && (sym->usage & uENUMROOT)) { 
+    if ((sym->usage & uCONST)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"const\"/>\n");
+    if ((sym->usage & uPUBLIC)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"public\"/>\n");
+    if ((sym->usage & uSTOCK)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"stock\"/>\n");
+    if ((sym->usage & uSTATIC)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"static\"/>\n");
+  }
+  if (sym->ident==iCONSTEXPR && (sym->usage & (uENUMFIELD | uENUMROOT))==0) { 
+    if ((sym->flags & flagPREDEF)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"pre_defined\"/>\n");
+    if ((sym->usage & uENUMROOT)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"enum\"/>\n");
+    if ((sym->usage & uENUMFIELD)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"enum_field\"/>\n");
+    if ((sym->usage & uSTATIC)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"static\"/>\n");
+  }
+  if (sym->ident==iVARIABLE || sym->ident==iARRAY) { 
+    if ((sym->usage & uCONST)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"const\"/>\n");
+    if ((sym->usage & uPUBLIC)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"public\"/>\n");
+    if ((sym->usage & uSTOCK)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"stock\"/>\n");
+    if ((sym->usage & uSTATIC)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"static\"/>\n");
+  }
+  if (sym->ident==iFUNCTN) { 
+    if (strcmp(sym->name,uMAINFUNC)==0 || strcmp(sym->name,uENTRYFUNC)==0)
+      fprintf(log,"\t\t\t<attribute name=\"entry\"/>\n");
+    if ((sym->flags & flgDEPRECATED)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"deprecated\"/>\n");
+    if ((sym->flags & flagNAKED)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"naked\"/>\n");
+    if ((sym->usage & uRETVALUE)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"returns\"/>\n");
+    if ((sym->usage & uPROTOTYPED)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"prototyped\"/>\n");
+    if ((sym->usage & uPUBLIC)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"public\"/>\n");
+    if ((sym->usage & uNATIVE)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"native\"/>\n");
+    if ((sym->usage & uSTOCK)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"stock\"/>\n");
+    if ((sym->usage & uMISSING)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"missing\"/>\n");
+    /*if ((sym->usage & uFORWARD)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"forward\"/>\n");*/
+    if ((sym->usage & uSTATIC)!=0)
+      fprintf(log,"\t\t\t<attribute name=\"static\"/>\n");
+  }
+}
+
+static void write_docstring(FILE *log,const char *string)
+{
+  if (string==NULL)
+    return;
+  fprintf(log,"\t\t\t%s\n",string);
+}
+
 static void make_report(symbol *root,FILE *log,char *sourcefile)
 {
   char symname[_MAX_PATH];
@@ -4362,10 +4488,10 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
   fprintf(log,"\t<assembly>\n\t\t<name>%s</name>\n\t</assembly>\n",ptr);
 
   /* attach the global documentation, if any */
-  if (sc_documentation!=NULL) {
+  if (pc_globaldoc!=NULL) {
     fprintf(log,"\n\t<!-- general -->\n");
     fprintf(log,"\t<general>\n\t\t");
-    fputs(sc_documentation,log);
+    fputs(pc_globaldoc,log);
     fprintf(log,"\n\t</general>\n\n");
   } /* if */
 
@@ -4382,14 +4508,17 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
            || sym->ident==iARRAY || sym->ident==iFUNCTN);
     if (sym->ident!=iCONSTEXPR || (sym->usage & uENUMROOT)==0)
       continue;
-    if ((sym->usage & uREAD)==0)
-      continue;
     fprintf(log,"\t\t<member name=\"T:%s\" value=\"%"PRIdC"\">\n",funcdisplayname(symname,sym->name),sym->addr);
+    fprintf(log,"\t\t<location file=\"%s\" startline=\"%"PRIdC"\" endline=\"%"PRIdC"\"/>\n", get_sourcefile(sym->fnumber), sym->lnumber_decl, sym->lnumber_end);
+    write_docattributes(log,sym);
     if (sym->tag!=0) {
       tagsym=find_tag_byval(sym->tag);
       assert(tagsym!=NULL);
       fprintf(log,"\t\t\t<tagname value=\"%s\"/>\n",tagsym->name);
+    } else {
+      fprintf(log,"\t\t\t<tagname value=\"anonymous\"/>\n");
     } /* if */
+
     /* browse through all fields */
     if ((enumroot=sym->dim.enumlist)!=NULL) {
       enumroot=enumroot->next;  /* skip root */
@@ -4405,6 +4534,8 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
           } /* if */
           if (ref->dim.array.length!=1)
             fprintf(log,"\t\t\t\t<size value=\"%ld\"/>\n",(long)ref->dim.array.length);
+          fprintf(log,"\t");
+          write_docstring(log,ref->documentation);
         } /* if */
         fprintf(log,"\t\t\t</member>\n");
         enumroot=enumroot->next;
@@ -4415,8 +4546,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
       if ((ref=sym->refer[i])!=NULL)
         fprintf(log,"\t\t\t<referrer name=\"%s\"/>\n",xmlencode(symname,funcdisplayname(symname,ref->name)));
     } /* for */
-    if (sym->documentation!=NULL)
-      fprintf(log,"\t\t\t%s\n",sym->documentation);
+    write_docstring(log,sym->documentation);
     fprintf(log,"\t\t</member>\n");
   } /* for */
 
@@ -4431,6 +4561,8 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
     if ((sym->usage & uREAD)==0 || (sym->usage & (uENUMFIELD | uENUMROOT))!=0)
       continue;
     fprintf(log,"\t\t<member name=\"C:%s\" value=\"%"PRIdC"\">\n",funcdisplayname(symname,sym->name),sym->addr);
+    fprintf(log,"\t\t<location file=\"%s\" startline=\"%"PRIdC"\" endline=\"%"PRIdC"\"/>\n", get_sourcefile(sym->fnumber), sym->lnumber_decl, sym->lnumber_end);
+    write_docattributes(log,sym);
     if (sym->tag!=0) {
       tagsym=find_tag_byval(sym->tag);
       assert(tagsym!=NULL);
@@ -4441,8 +4573,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
       if ((ref=sym->refer[i])!=NULL)
         fprintf(log,"\t\t\t<referrer name=\"%s\"/>\n",xmlencode(symname,funcdisplayname(symname,ref->name)));
     } /* for */
-    if (sym->documentation!=NULL)
-      fprintf(log,"\t\t\t%s\n",sym->documentation);
+    write_docstring(log,sym->documentation);
     fprintf(log,"\t\t</member>\n");
   } /* for */
 
@@ -4453,20 +4584,19 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
     if (sym->ident!=iVARIABLE && sym->ident!=iARRAY)
       continue;
     fprintf(log,"\t\t<member name=\"F:%s\">\n",funcdisplayname(symname,sym->name));
+    fprintf(log,"\t\t<location file=\"%s\" startline=\"%"PRIdC"\" endline=\"%"PRIdC"\"/>\n", get_sourcefile(sym->fnumber), sym->lnumber_decl, sym->lnumber_end);
+    write_docattributes(log,sym);
     if (sym->tag!=0) {
       tagsym=find_tag_byval(sym->tag);
       assert(tagsym!=NULL);
       fprintf(log,"\t\t\t<tagname value=\"%s\"/>\n",tagsym->name);
     } /* if */
     assert(sym->refer!=NULL);
-    if ((sym->usage & uPUBLIC)!=0)
-      fprintf(log,"\t\t\t<attribute name=\"public\"/>\n");
     for (i=0; i<sym->numrefers; i++) {
       if ((ref=sym->refer[i])!=NULL)
         fprintf(log,"\t\t\t<referrer name=\"%s\"/>\n",xmlencode(symname,funcdisplayname(symname,ref->name)));
     } /* for */
-    if (sym->documentation!=NULL)
-      fprintf(log,"\t\t\t%s\n",sym->documentation);
+    write_docstring(log,sym->documentation);
     fprintf(log,"\t\t</member>\n");
   } /* for */
 
@@ -4496,8 +4626,12 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
         break;
       case iREFARRAY:
         fprintf(log,"%s",sym->dim.arglist[arg].name);
-        for (dim=0; dim<sym->dim.arglist[arg].numdim;dim++)
-          fprintf(log,"[]");
+        for (dim=0; dim<sym->dim.arglist[arg].numdim;dim++) {
+          if (sym->dim.arglist[arg].dim[dim])
+            fprintf(log,"[%d]",sym->dim.arglist[arg].dim[dim]);
+          else
+            fprintf(log,"[]");
+        } /* for */
         break;
       case iVARARGS:
         fprintf(log,"...");
@@ -4506,18 +4640,14 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
     } /* for */
     /* ??? should also print an "array return" size */
     fprintf(log,")\">\n");
+    fprintf(log,"\t\t<location file=\"%s\" startline=\"%"PRIdC"\" endline=\"%"PRIdC"\"/>\n", get_sourcefile(sym->fnumber), sym->lnumber_decl, sym->lnumber_end);
+    write_docattributes(log,sym);
     if (sym->tag!=0) {
       tagsym=find_tag_byval(sym->tag);
       assert(tagsym!=NULL);
       fprintf(log,"\t\t\t<tagname value=\"%s\"/>\n",tagsym->name);
     } /* if */
     /* check whether this function is called from the outside */
-    if ((sym->usage & uNATIVE)!=0)
-      fprintf(log,"\t\t\t<attribute name=\"native\"/>\n");
-    if ((sym->usage & uPUBLIC)!=0)
-      fprintf(log,"\t\t\t<attribute name=\"public\"/>\n");
-    if (strcmp(sym->name,uMAINFUNC)==0 || strcmp(sym->name,uENTRYFUNC)==0)
-      fprintf(log,"\t\t\t<attribute name=\"entry\"/>\n");
     if ((sym->usage & uNATIVE)==0)
       fprintf(log,"\t\t\t<stacksize value=\"%ld\"/>\n",(long)sym->x.stacksize);
     if (sym->states!=NULL) {
@@ -4610,8 +4740,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
       } /* if */
       fprintf(log,"\t\t\t</param>\n");
     } /* for */
-    if (sym->documentation!=NULL)
-      fprintf(log,"\t\t\t%s\n",sym->documentation);
+    write_docstring(log,sym->documentation);
     fprintf(log,"\t\t</member>\n");
   } /* for */
 
@@ -7082,7 +7211,7 @@ static void dostate(void)
         length+=strlen(str);
       if ((doc=(char*)malloc(length*sizeof(char)))!=NULL) {
         do {
-          sprintf(doc,"<transition target=\"%s\"",state->name);
+          sprintf(doc,"\t\t\t<transition target=\"%s\"",state->name);
           if (listid>=0) {
             /* get the source state */
             stateindex=state_listitem(listid,listindex);
@@ -7109,7 +7238,6 @@ static void dostate(void)
   #endif
   delete_autolisttable();
 }
-
 
 static void addwhile(int *ptr)
 {

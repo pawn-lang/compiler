@@ -500,7 +500,7 @@ static void stripcomment(unsigned char *line)
              * to the global documentation
              */
             if (curfunc==NULL && get_docstring(0)!=NULL)
-              sc_attachdocumentation(NULL);
+              sc_attachdocumentation(NULL,FALSE);
             icomment=2; /* documentation comment */
           } /* if */
           commentidx=0;
@@ -525,7 +525,7 @@ static void stripcomment(unsigned char *line)
              * block to the global documentation
              */
             if (!singleline && curfunc==NULL && get_docstring(0)!=NULL)
-              sc_attachdocumentation(NULL);
+              sc_attachdocumentation(NULL,FALSE);
             insert_docstring(str);
             prev_singleline=TRUE;
           } /* if */
@@ -2987,7 +2987,7 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
   while (sym!=NULL) {
     if ( (is_global || strcmp(name,sym->name)==0)           /* check name */
         && (sym->parent==NULL || sym->ident==iCONSTEXPR)    /* sub-types (hierarchical types) are skipped, except for enum fields */
-        && (sym->fnumber<0 || sym->fnumber==fnumber))       /* check file number for scope */
+        && (!(sym->usage&uSTATIC) || sym->fnumber==fnumber))       /* check file number for scope */
     {
       assert(sym->states==NULL || sym->states->next!=NULL); /* first element of the state list is the "root" */
       if (sym->ident==iFUNCTN

@@ -155,8 +155,10 @@ typedef struct s_symbol {
     } array;
   } dim;                /* for 'dimension', both functions and arrays */
   constvalue *states;   /* list of state function/state variable ids + addresses */
-  int fnumber;          /* static global variables: file number in which the declaration is visible */
+  int fnumber;          /* file number where is declared */
   int lnumber;          /* line number (in the current source file) for the declaration */
+  int lnumber_decl;     /* line number where starts the declaration (ignore prototype) */
+  int lnumber_end;      /* line number for the end of declaration */
   struct s_symbol **refer;  /* referrer list, functions that "use" this symbol */
   int numrefers;        /* number of entries in the referrer list */
   char *documentation;  /* optional documentation string */
@@ -193,6 +195,7 @@ typedef struct s_symbol {
  *        3     (uCONST) the variable is constant (may not be assigned to)
  *        4     (uPUBLIC) the variable is public
  *        6     (uSTOCK) the variable is discardable (without warning)
+ *        7     (uSTATIC) the variable is static
  *
  *  FUNCTION
  *  bits: 0     (uDEFINE) the function is defined ("implemented") in the source file
@@ -204,6 +207,7 @@ typedef struct s_symbol {
  *        6     (uSTOCK) the function is discardable (without warning)
  *        7     (uMISSING) the function is not implemented in this source file
  *        8     (uFORWARD) the function is explicitly forwardly declared
+ *        9     (uSTATIC) the function is static
  *
  *  CONSTANT
  *  bits: 0     (uDEFINE) the symbol is defined in the source file
@@ -212,6 +216,7 @@ typedef struct s_symbol {
  *        3     (uPREDEF) the constant is pre-defined and should be kept between passes
  *        5     (uENUMROOT) the constant is the "root" of an enumeration
  *        6     (uENUMFIELD) the constant is a field in a named enumeration
+ *        7     (uSTATIC) the function is static
  */
 #define uDEFINE     0x001
 #define uREAD       0x002
@@ -227,6 +232,7 @@ typedef struct s_symbol {
 #define uENUMFIELD  0x040
 #define uMISSING    0x080
 #define uFORWARD    0x100
+#define uSTATIC     0x200
 /* uRETNONE is not stored in the "usage" field of a symbol. It is
  * used during parsing a function, to detect a mix of "return;" and
  * "return value;" in a few special cases.
@@ -560,7 +566,7 @@ SC_FUNC symbol *add_constant(char *name,cell val,int vclass,int tag);
 SC_FUNC symbol *add_builtin_constant(char *name,cell val,int vclass,int tag);
 SC_FUNC symbol *add_builtin_string_constant(char *name,const char *val,int vclass);
 SC_FUNC void exporttag(int tag);
-SC_FUNC void sc_attachdocumentation(symbol *sym);
+SC_FUNC void sc_attachdocumentation(symbol *sym,int onlylastblock);
 SC_FUNC void emit_parse_line(void);
 
 /* function prototypes in SC2.C */
