@@ -1981,8 +1981,8 @@ static int nesting=0;
   value lval = {0};
   arginfo *arg;
   char arglist[sMAXARGS];
-  constvalue arrayszlst = { NULL, "", 0, 0};/* array size list starts empty */
-  constvalue taglst = { NULL, "", 0, 0};    /* tag list starts empty */
+  constvalue_root arrayszlst = { NULL, NULL};/* array size list starts empty */
+  constvalue_root taglst = { NULL, NULL};    /* tag list starts empty */
   symbol *symret;
   cell lexval;
   char *lexstr;

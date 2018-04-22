@@ -113,6 +113,10 @@ typedef struct s_constvalue {
                          * tag for enumeration lists */
 } constvalue;
 
+typedef struct s_constvalue_root {
+  constvalue *first,*last;
+} constvalue_root;
+
 /*  Symbol table format
  *
  *  The symbol name read from the input file is stored in "name", the
@@ -148,13 +152,13 @@ typedef struct s_symbol {
   } x;                  /* 'x' for 'extra' */
   union {
     arginfo *arglist;   /* types of all parameters for functions */
-    constvalue *enumlist;/* list of names for the "root" of an enumeration */
+    constvalue_root *enumlist;/* list of names for the "root" of an enumeration */
     struct {
       cell length;      /* arrays: length (size) */
       short level;      /* number of dimensions below this level */
     } array;
   } dim;                /* for 'dimension', both functions and arrays */
-  constvalue *states;   /* list of state function/state variable ids + addresses */
+  constvalue_root *states;/* list of state function/state variable ids + addresses */
   int fnumber;          /* static global variables: file number in which the declaration is visible */
   int lnumber;          /* line number (in the current source file) for the declaration */
   struct s_symbol **refer;  /* referrer list, functions that "use" this symbol */
@@ -566,9 +570,9 @@ SC_FUNC void check_tagmismatch(int formaltag,int actualtag,int allowcoerce,int e
 SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualtag,int errline);
 SC_FUNC char *funcdisplayname(char *dest,char *funcname);
 SC_FUNC int constexpr(cell *val,int *tag,symbol **symptr);
-SC_FUNC constvalue *append_constval(constvalue *table,const char *name,cell val,int index);
-SC_FUNC constvalue *find_constval(constvalue *table,char *name,int index);
-SC_FUNC void delete_consttable(constvalue *table);
+SC_FUNC constvalue *append_constval(constvalue_root *table,const char *name,cell val,int index);
+SC_FUNC constvalue *find_constval(constvalue_root *table,char *name,int index);
+SC_FUNC void delete_consttable(constvalue_root *table);
 SC_FUNC symbol *add_constant(char *name,cell val,int vclass,int tag);
 SC_FUNC symbol *add_builtin_constant(char *name,cell val,int vclass,int tag);
 SC_FUNC symbol *add_builtin_string_constant(char *name,const char *val,int vclass);
@@ -814,8 +818,8 @@ SC_VDECL symbol *line_sym;
 SC_VDECL cell *litq;          /* the literal queue */
 SC_VDECL unsigned char pline[]; /* the line read from the input file */
 SC_VDECL const unsigned char *lptr;/* points to the current position in "pline" */
-SC_VDECL constvalue tagname_tab;/* tagname table */
-SC_VDECL constvalue libname_tab;/* library table (#pragma library "..." syntax) */
+SC_VDECL constvalue_root tagname_tab;/* tagname table */
+SC_VDECL constvalue_root libname_tab;/* library table (#pragma library "..." syntax) */
 SC_VDECL constvalue *curlibrary;/* current library */
 SC_VDECL int pc_addlibtable;  /* is the library table added to the AMX file? */
 SC_VDECL symbol *curfunc;     /* pointer to current function */
@@ -872,8 +876,8 @@ SC_VDECL int pc_naked;        /* if true mark following function as naked */
 SC_VDECL int pc_compat;       /* running in compatibility mode? */
 SC_VDECL int pc_recursion;    /* enable detailed recursion report? */
 
-SC_VDECL constvalue sc_automaton_tab; /* automaton table */
-SC_VDECL constvalue sc_state_tab;     /* state table */
+SC_VDECL constvalue_root sc_automaton_tab; /* automaton table */
+SC_VDECL constvalue_root sc_state_tab;     /* state table */
 
 SC_VDECL FILE *inpf;          /* file read from (source or include) */
 SC_VDECL FILE *inpf_org;      /* main source file */

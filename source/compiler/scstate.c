@@ -76,7 +76,7 @@ static constvalue *find_automaton(const char *name,int *last)
 
   assert(last!=NULL);
   *last=0;
-  ptr=sc_automaton_tab.next;
+  ptr=sc_automaton_tab.first;
   while (ptr!=NULL) {
     if (strcmp(name,ptr->name)==0)
       return ptr;
@@ -110,7 +110,7 @@ SC_FUNC constvalue *automaton_find(const char *name)
 SC_FUNC constvalue *automaton_findid(int id)
 {
   constvalue *ptr;
-  for (ptr=sc_automaton_tab.next; ptr!=NULL && ptr->index!=id; ptr=ptr->next)
+  for (ptr=sc_automaton_tab.first; ptr!=NULL && ptr->index!=id; ptr=ptr->next)
     /* nothing */;
   return ptr;
 }
@@ -122,7 +122,7 @@ static constvalue *find_state(const char *name,int fsa,int *last)
 
   assert(last!=NULL);
   *last=0;
-  ptr=sc_state_tab.next;
+  ptr=sc_state_tab.first;
   while (ptr!=NULL) {
     if (ptr->index==fsa) {
       if (strcmp(name,ptr->name)==0)
@@ -158,7 +158,7 @@ SC_FUNC constvalue *state_find(const char *name,int fsa_id)
 SC_FUNC constvalue *state_findid(int id)
 {
   constvalue *ptr;
-  for (ptr=sc_state_tab.next; ptr!=NULL && ptr->value!=id; ptr=ptr->next)
+  for (ptr=sc_state_tab.first; ptr!=NULL && ptr->value!=id; ptr=ptr->next)
     /* nothing */;
   return ptr;
 }
@@ -341,7 +341,7 @@ SC_FUNC void state_conflict(symbol *root)
       continue;                 /* hierarchical data type or no function */
     if (sym->states==NULL)
       continue;                 /* this function has no states */
-    for (srcptr=sym->states->next; srcptr!=NULL; srcptr=srcptr->next) {
+    for (srcptr=sym->states->first; srcptr!=NULL; srcptr=srcptr->next) {
       if (srcptr->index==-1)
         continue;               /* state list id -1 is a special case */
       psrc=state_getlist_ptr(srcptr->index);
