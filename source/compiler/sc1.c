@@ -3807,7 +3807,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   sc_curstates=0;
   if ((rettype & uRETVALUE)!=0)
     sym->usage|=uRETVALUE;
-  if (declared!=0) {
+  if (declared!=0 && (curfunc->flags & flagNAKED)==0) {
     /* This happens only in a very special (and useless) case, where a function
      * has only a single statement in its body (no compound block) and that
      * statement declares a new variable
@@ -3815,10 +3815,10 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     modstk((int)declared*sizeof(cell)); /* remove all local variables */
     declared=0;
   } /* if */
-  if ((lastst!=tRETURN) && (lastst!=tGOTO)){
+  if ((lastst!=tRETURN) && (lastst!=tGOTO) && (sym->flags & flagNAKED)==0){
     ldconst(0,sPRI);
     ffret(strcmp(sym->name,uENTRYFUNC)!=0);
-    if ((sym->usage & uRETVALUE)!=0 && (sym->flags & flagNAKED)==0) {
+    if ((sym->usage & uRETVALUE)!=0) {
       char symname[2*sNAMEMAX+16];  /* allow space for user defined operators */
       funcdisplayname(symname,sym->name);
       error(209,symname);       /* function should return a value */
@@ -5379,9 +5379,11 @@ static void compound(int stmt_sameline,int starttok)
     } /* if */
   } /* while */
   if (lastst!=tRETURN)
-    destructsymbols(&loctab,nestlevel);
+    if (nestlevel >= 1 || (curfunc->flags & flagNAKED)==0)
+      destructsymbols(&loctab,nestlevel);
   if (lastst!=tRETURN && lastst!=tGOTO)
-    modstk((int)(declared-save_decl)*sizeof(cell)); /* delete local variable space */
+    if (nestlevel >= 1 || (curfunc->flags & flagNAKED)==0)
+      modstk((int)(declared-save_decl)*sizeof(cell)); /* delete local variable space */
   testsymbols(&loctab,nestlevel,FALSE,TRUE);        /* look for unused block locals */
   declared=save_decl;
   delete_symbols(&loctab,nestlevel,FALSE,TRUE);     /* erase local symbols, but
