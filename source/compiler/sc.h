@@ -398,14 +398,16 @@ typedef struct s_valuepair {
 #define tLABEL      337
 #define tSTRING     338
 /* argument types for emit/__emit */
-#define teNUMERIC   339 /* integer/rational number */
-#define teDATA      340 /* data (variable name or address) */
-#define teLOCAL     341 /* local variable (name or offset) */
-#define teFUNCTN    342 /* Pawn function */
-#define teNATIVE    343 /* native function */
+#define teANY       339 /* any value */
+#define teNUMERIC   340 /* integer/rational number */
+#define teDATA      341 /* data (variable name or address) */
+#define teLOCAL     342 /* local variable (name or offset) */
+#define teFUNCTN    343 /* Pawn function */
+#define teNATIVE    344 /* native function */
+#define teNONNEG    345 /* nonnegative integer */
 /* for assigment to "lastst" only (see SC1.C) */
-#define tEXPR       344
-#define tENDLESS    345 /* endless loop */
+#define tEXPR       346
+#define tENDLESS    347 /* endless loop */
 
 /* (reversed) evaluation of staging buffer */
 #define sSTARTREORDER 0x01
@@ -474,6 +476,17 @@ typedef enum s_optmark {
 #define CELL_MAX      (((ucell)1 << (sizeof(cell)*8-1)) - 1)
 
 #define MAX_INSTR_LEN   30
+
+#define eotNUMBER       0
+#define eotFUNCTION     1
+#define eotLABEL        2
+typedef struct s_emit_outval {
+  int type;
+  union {
+    ucell ucell;
+    const char *string;
+  } value;
+} emit_outval;
 
 /* interface functions */
 #if defined __cplusplus
@@ -699,7 +712,7 @@ SC_FUNC void dec(value *lval);
 SC_FUNC void jmp_ne0(int number);
 SC_FUNC void jmp_eq0(int number);
 SC_FUNC void outval(cell val,int newline);
-SC_FUNC void outinstr(const char *name,ucell args[],int numargs);
+SC_FUNC void outinstr(const char *name,emit_outval params[],int numparams);
 
 /* function prototypes in SC5.C */
 SC_FUNC int error(int number,...);
