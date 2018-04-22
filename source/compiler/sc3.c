@@ -2337,6 +2337,8 @@ static int nesting=0;
         check_userop(NULL,arg[argidx].defvalue_tag,arg[argidx].tags[0],2,NULL,&dummytag);
         assert(dummytag==arg[argidx].tags[0]);
       } /* if */
+      if (arg[argidx].defvalue_tag!=0)
+        append_constval(&taglst,arg[argidx].name,arg[argidx].defvalue_tag,0);
       pushreg(sPRI);            /* store the function argument on the stack */
       markexpr(sPARM,NULL,0);   /* mark the end of a sub-expression */
       nest_stkusage++;
