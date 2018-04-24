@@ -38,4 +38,4 @@ deploy:
   skip_cleanup: true
   on:
     tags: true
-    repo: Zeex/pawn
+    repo: pawn-lang/compiler
