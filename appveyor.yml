@@ -25,7 +25,7 @@ deploy:
   description: '<Put release description here>'
   provider: GitHub
   auth_token:
-    secure: ++mk9GhXTpN/hdVjIIi/nHpu0gYpDybMJNDPB3lld8r1UyfoPbz08SVGeSS84HjR
+    secure: dEyljMC1z2hb032HYJQY+CIZIdQ382cuHU/3LJA96nbqOl5xfGYPVP/TGbJANbtz
   artifact: /pawnc-.*-windows\.zip/
   draft: true
   prerelease: true
