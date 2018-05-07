@@ -478,7 +478,7 @@ int static_check(int warning)
         } /* while */
         *str='\0';
       } else {
-        strlcpy(usermsg,exprstart,exprend-exprstart+1);
+        strlcpy(usermsg,(const char*)exprstart,exprend-exprstart+1);
       } /* if */      
       error(warning==TRUE ? 239 : 110,usermsg);
       free(usermsg);
