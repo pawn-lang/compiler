@@ -310,108 +310,119 @@ typedef struct s_valuepair {
 /*  Tokens recognized by lex()
  *  Some of these constants are assigned as well to the variable "lastst" (see SC1.C)
  */
-#define tFIRST      256 /* value of first multi-character operator */
-#define tMIDDLE     280 /* value of last multi-character operator */
-#define tLAST       331 /* value of last multi-character match-able token */
-/* multi-character operators */
-#define taMULT      256 /* *= */
-#define taDIV       257 /* /= */
-#define taMOD       258 /* %= */
-#define taADD       259 /* += */
-#define taSUB       260 /* -= */
-#define taSHL       261 /* <<= */
-#define taSHRU      262 /* >>>= */
-#define taSHR       263 /* >>= */
-#define taAND       264 /* &= */
-#define taXOR       265 /* ^= */
-#define taOR        266 /* |= */
-#define tlOR        267 /* || */
-#define tlAND       268 /* && */
-#define tlEQ        269 /* == */
-#define tlNE        270 /* != */
-#define tlLE        271 /* <= */
-#define tlGE        272 /* >= */
-#define tSHL        273 /* << */
-#define tSHRU       274 /* >>> */
-#define tSHR        275 /* >> */
-#define tINC        276 /* ++ */
-#define tDEC        277 /* -- */
-#define tELLIPS     278 /* ... */
-#define tDBLDOT     279 /* .. */
-#define tDBLCOLON   280 /* :: */
-/* reserved words (statements) */
-#define tASSERT     281
-#define tBEGIN      282
-#define tBREAK      283
-#define tCASE       284
-#define tCHAR       285
-#define tCONST      286
-#define tCONTINUE   287
-#define tDEFAULT    288
-#define tDEFINED    289
-#define tDO         290
-#define tELSE       291
-#define tEMIT       292
-#define t__EMIT     293
-#define tEND        294
-#define tENUM       295
-#define tEXIT       296
-#define tFOR        297
-#define tFORWARD    298
-#define tGOTO       299
-#define tIF         300
-#define tNATIVE     301
-#define tNEW        302
-#define tOPERATOR   303
-#define tPUBLIC     304
-#define tRETURN     305
-#define tSIZEOF     306
-#define tSLEEP      307
-#define tSTATE      308
-#define tSTATIC     309
-#define tSTOCK      310
-#define tSWITCH     311
-#define tTAGOF      312
-#define tTHEN       313
-#define tWHILE      314
-/* compiler directives */
-#define tpASSERT    315 /* #assert */
-#define tpDEFINE    316
-#define tpELSE      317 /* #else */
-#define tpELSEIF    318 /* #elseif */
-#define tpEMIT      319
-#define tpENDIF     320
-#define tpENDINPUT  321
-#define tpENDSCRPT  322
-#define tpERROR     323
-#define tpFILE      324
-#define tpIF        325 /* #if */
-#define tINCLUDE    326
-#define tpLINE      327
-#define tpPRAGMA    328
-#define tpTRYINCLUDE 329
-#define tpUNDEF     330
-#define tpWARNING   331
-/* semicolon is a special case, because it can be optional */
-#define tTERM       332 /* semicolon or newline */
-#define tENDEXPR    333 /* forced end of expression */
-/* other recognized tokens */
-#define tNUMBER     334 /* integer number */
-#define tRATIONAL   335 /* rational number */
-#define tSYMBOL     336
-#define tLABEL      337
-#define tSTRING     338
-/* argument types for emit/__emit */
-#define teANY       339 /* any value */
-#define teNUMERIC   340 /* integer/rational number */
-#define teDATA      341 /* data (variable name or address) */
-#define teLOCAL     342 /* local variable (name or offset) */
-#define teFUNCTN    343 /* Pawn function */
-#define teNATIVE    344 /* native function */
-#define teNONNEG    345 /* nonnegative integer */
-/* for assigment to "lastst" only (see SC1.C) */
-#define tEXPR       346
-#define tENDLESS    347 /* endless loop */
+
+enum {
+  /* multi-character operators */
+  tFIRST  = 256,  /* value of first multi-character operator */
+
+  taMULT  =  tFIRST,  /* *= */
+  taDIV,  /* /= */
+  taMOD,  /* %= */
+  taADD,  /* += */
+  taSUB,  /* -= */
+  taSHL,  /* <<= */
+  taSHRU, /* >>>= */
+  taSHR,  /* >>= */
+  taAND,  /* &= */
+  taXOR,  /* ^= */
+  taOR,   /* |= */
+  tlOR,   /* || */
+  tlAND,  /* && */
+  tlEQ,   /* == */
+  tlNE,   /* != */
+  tlLE,   /* <= */
+  tlGE,   /* >= */
+  tSHL,   /* << */
+  tSHRU,  /* >>> */
+  tSHR,   /* >> */
+  tINC,   /* ++ */
+  tDEC,   /* -- */
+  tELLIPS,  /* ... */
+  tDBLDOT,  /* .. */
+  tDBLCOLON, /* :: */
+
+  tMIDDLE = tDBLCOLON, /* value of last multi-character operator */
+
+  /* reserved words (statements) */
+  tASSERT,
+  tBEGIN,
+  tBREAK,
+  tCASE,
+  tCHAR,
+  tCONST,
+  tCONTINUE,
+  tDEFAULT,
+  tDEFINED,
+  tDO,
+  tELSE,
+  tEMIT,
+  t__EMIT,
+  tEND,
+  tENUM,
+  tEXIT,
+  tFOR,
+  tFORWARD,
+  tGOTO,
+  tIF,
+  tNATIVE,
+  tNEW,
+  tOPERATOR,
+  tPUBLIC,
+  tRETURN,
+  tSIZEOF,
+  tSLEEP,
+  tSTATE,
+  tSTATIC,
+  tSTATIC_ASSERT,
+  tSTATIC_CHECK,
+  tSTOCK,
+  tSWITCH,
+  tTAGOF,
+  tTHEN,
+  tWHILE,
+
+  /* compiler directives */
+  tpASSERT, /* #assert */
+  tpDEFINE,
+  tpELSE, /* #else */
+  tpELSEIF, /* #elseif */
+  tpEMIT,
+  tpENDIF,
+  tpENDINPUT,
+  tpENDSCRPT,
+  tpERROR,
+  tpFILE,
+  tpIF,/* #if */
+  tINCLUDE,
+  tpLINE,
+  tpPRAGMA,
+  tpTRYINCLUDE,
+  tpUNDEF,
+  tpWARNING,
+
+  tLAST = tpWARNING, /* value of last multi-character match-able token */
+
+  /* semicolon is a special case, because it can be optional */
+  tTERM,/* semicolon or newline */
+  tENDEXPR, /* forced end of expression */
+  /* other recognized tokens */
+  tNUMBER,/* integer number */
+  tRATIONAL, /* rational number */
+  tSYMBOL,
+  tLABEL  ,
+  tSTRING,
+  /* argument types for emit/__emit */
+  teANY , /* any value */
+  teNUMERIC, /* integer/rational number */
+  teDATA  , /* data (variable name or address) */
+  teLOCAL, /* local variable (name or offset) */
+  teFUNCTN, /* Pawn function */
+  teNATIVE, /* native function */
+  teNONNEG , /* nonnegative integer */
+  /* for assigment to "lastst" only (see SC1.C) */
+  tEXPR,
+  tENDLESS, /* endless loop */
+};
 
 /* (reversed) evaluation of staging buffer */
 #define sSTARTREORDER 0x01
@@ -721,6 +732,7 @@ SC_FUNC void outinstr(const char *name,emit_outval params[],int numparams);
 /* function prototypes in SC5.C */
 SC_FUNC int error(int number,...);
 SC_FUNC void errorset(int code,int line);
+SC_FUNC int static_check(int warning);
 
 /* function prototypes in SC6.C */
 SC_FUNC int assemble(FILE *fout,FILE *fin);

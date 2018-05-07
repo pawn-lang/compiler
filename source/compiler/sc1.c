@@ -1756,6 +1756,14 @@ static void parse(void)
     case '{':
       error(55);                /* start of function body without function header */
       break;
+    case tSTATIC_ASSERT:
+      static_check(FALSE);
+      needtoken(tTERM);
+      break;
+    case tSTATIC_CHECK:
+      static_check(TRUE);
+      needtoken(tTERM);
+      break;
     default:
       if (freading) {
         error(10);              /* illegal function or declaration */

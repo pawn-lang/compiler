@@ -1389,6 +1389,14 @@ static int hier2(value *lval)
     while (paranthese--)
       needtoken(')');
     return FALSE;
+  case tSTATIC_ASSERT:    
+    static_check(FALSE);
+    pc_sideeffect = TRUE;
+    return FALSE;
+  case tSTATIC_CHECK:
+    static_check(TRUE);
+    pc_sideeffect=TRUE;
+    return FALSE;
   case tTAGOF:
     paranthese=0;
     while (matchtoken('('))

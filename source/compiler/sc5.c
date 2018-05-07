@@ -35,6 +35,7 @@
 #if defined FORTIFY
   #include <alloc/fortify.h>
 #endif
+#include "lstring.h"
 #include "sc.h"
 
 static char *errmsg[] = {
@@ -192,7 +193,8 @@ static char *warnmsg[] = {
 /*235*/  "public function lacks forward declaration (symbol \"%s\")\n",
 /*236*/  "unknown parameter in substitution (incorrect #define pattern)\n",
 /*237*/  "user warning: %s\n",
-/*238*/  "meaningless combination of class specifiers (%s)\n"
+/*238*/  "meaningless combination of class specifiers (%s)\n",
+/*239*/  "check failed: %s\n"
 };
 
 #define NUM_WARNINGS    (sizeof warnmsg / sizeof warnmsg[0])
@@ -421,3 +423,67 @@ int pc_geterrorwarnings()
   return errwarn;
 }
 
+/* static_check()
+ * checks compile-time assertions and triggers an error or warning
+ *
+ * Parameters:
+ * FALSE for error if assertion fails
+ * TRUE for warning if assertion fails
+ */
+int static_check(int warning)
+{
+  cell val;
+  int result,usermsg_present=FALSE;
+  char *usermsg, *str;
+  const unsigned char *exprstart,*exprend;
+  if (needtoken('(')) {
+    exprstart=lptr;
+    result=constexpr(&val,NULL,NULL);
+    exprend=lptr-1;
+    if (!result)
+      error(8); /* must be constant expression */
+    if (matchtoken(',')) {
+      while (*lptr<=' ' && *lptr!='\0')
+        lptr++;
+      if (*lptr!='"') {
+        error(1,"-string-","-unknown-"); /* expected string */
+        result=0; /* prevent 112 fatal error */
+      } /* if */
+      lptr++; /* skip opening " character */
+      exprstart=lptr;
+      while (*lptr) {
+        if (*lptr=='\\') {
+          lptr++; /* skip the escaped character */
+        } else if (*lptr=='"') {
+          break;
+        } /* if */
+        lptr++;
+      } /* while */
+      exprend=lptr;
+      usermsg_present=TRUE;
+      if (*lptr!='"') {
+        error(37); /* invalid string (possibly non-terminated string) */
+        result=0; /* prevent 112 fatal error */
+      } /* if */
+      lptr++; /* skip closing " character */
+    } /* if */
+    if (val==0 && result) {
+      usermsg=malloc(exprend-exprstart+1);      
+      if (usermsg_present==TRUE) {
+        str=usermsg;
+        while (exprstart!=exprend) {
+          if (*exprstart=='\\')
+            exprstart++;
+          *str++=*exprstart++;
+        } /* while */
+        *str='\0';
+      } else {
+        strlcpy(usermsg,exprstart,exprend-exprstart+1);
+      } /* if */      
+      error(warning==TRUE ? 239 : 110,usermsg);
+      free(usermsg);
+    } /* if */
+   } /* if */
+  needtoken(')');
+  return val;
+}
