@@ -183,7 +183,7 @@ static char *warnmsg[] = {
 /*226*/  "a variable is assigned to itself (symbol \"%s\")\n",
 /*227*/  "more initiallers than enum fields\n",
 /*228*/  "length of initialler exceeds size of the enum field\n",
-/*229*/  "index tag mismatch (symbol \"%s\")\n",
+/*229*/  "index tag mismatch (symbol \"%s\"): expected tag %s but found %s\n",
 /*230*/  "no implementation for state \"%s\" in function \"%s\", no fall-back\n",
 /*231*/  "state specification on forward declaration is ignored\n",
 /*232*/  "output file is written, but with compact encoding disabled\n",
