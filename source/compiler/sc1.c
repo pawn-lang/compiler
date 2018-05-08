@@ -3410,6 +3410,28 @@ static constvalue *find_tag_byval(int tag)
   return tagsym;
 }
 
+SC_FUNC void check_index_tagmismatch(char *symname,int expectedtag,int actualtag,int allowcoerce,int errline)
+{
+  assert(symname!=NULL);
+  if (!matchtag(expectedtag,actualtag,allowcoerce)) {
+    constvalue *tagsym;
+    char expected_tagname[sNAMEMAX+3]="none (\"_\"),",actual_tagname[sNAMEMAX+2]="none (\"_\")"; /* two extra characters for quotes */  
+    if(expectedtag!=0) {
+      tagsym=find_tag_byval(expectedtag);
+      sprintf(expected_tagname,"\"%s\",",(tagsym!=NULL) ? tagsym->name : "-unknown-");
+    } /* if */
+    if(actualtag!=0) {
+      tagsym=find_tag_byval(actualtag);
+      sprintf(actual_tagname,"\"%s\"",(tagsym!=NULL) ? tagsym->name : "-unknown-");
+    } /* if */
+    if(errline>0)
+      errorset(sSETPOS,errline);
+    error(229,symname,expected_tagname,actual_tagname); /* index tag mismatch */
+    if(errline>0)
+      errorset(sSETPOS,-1);    
+  } /* if */
+}
+
 SC_FUNC void check_tagmismatch(int formaltag,int actualtag,int allowcoerce,int errline)
 {
   if (!matchtag(formaltag,actualtag,allowcoerce)) {
@@ -3417,7 +3439,7 @@ SC_FUNC void check_tagmismatch(int formaltag,int actualtag,int allowcoerce,int e
     char formal_tagname[sNAMEMAX+3]="none (\"_\"),",actual_tagname[sNAMEMAX+2]="none (\"_\")"; /* two extra characters for quotes */  
     if(formaltag!=0) {
       tagsym=find_tag_byval(formaltag);
-      sprintf(formal_tagname,"\"%s\",", (tagsym!=NULL) ? tagsym->name : "-unknown-");
+      sprintf(formal_tagname,"\"%s\",",(tagsym!=NULL) ? tagsym->name : "-unknown-");
     } /* if */
     if(actualtag!=0) {
       tagsym=find_tag_byval(actualtag);

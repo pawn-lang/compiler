@@ -1014,8 +1014,8 @@ static int hier14(value *lval1)
       return error(48); /* array dimensions must match */
     else if (ltlength<val || (exactmatch && ltlength>val) || val==0)
       return error(47); /* array sizes must match */
-    else if (lval3.ident!=iARRAYCELL && !matchtag(lval3.sym->x.tags.index,idxtag,TRUE))
-      error(229,(lval2.sym!=NULL) ? lval2.sym->name : lval3.sym->name); /* index tag mismatch */
+    else if (lval3.ident!=iARRAYCELL)
+      check_index_tagmismatch((lval2.sym!=NULL) ? lval2.sym->name : lval3.sym->name,lval3.sym->x.tags.index,idxtag,TRUE,0);
     if (level>0) {
       /* check the sizes of all sublevels too */
       symbol *sym1 = lval3.sym;
@@ -1036,8 +1036,8 @@ static int hier14(value *lval1)
          */
         if (sym1->dim.array.length!=sym2->dim.array.length)
           error(47);    /* array sizes must match */
-        else if (!matchtag(sym1->x.tags.index,sym2->x.tags.index,TRUE))
-          error(229,sym2->name);  /* index tag mismatch */
+        else
+          check_index_tagmismatch(sym2->name,sym1->x.tags.index,sym2->x.tags.index,TRUE,0);
       } /* for */
       /* get the total size in cells of the multi-dimensional array */
       val=array_totalsize(lval3.sym);
@@ -2250,8 +2250,8 @@ static int nesting=0;
               assert(level<sDIMEN_MAX);
               if (arg[argidx].dim[level]!=0 && sym->dim.array.length!=arg[argidx].dim[level])
                 error(47);        /* array sizes must match */
-              else if (!matchtag(arg[argidx].idxtag[level],sym->x.tags.index,TRUE))
-                error(229,sym->name);   /* index tag mismatch */
+              else
+                check_index_tagmismatch(sym->name,arg[argidx].idxtag[level],sym->x.tags.index,TRUE,0);
               append_constval(&arrayszlst,arg[argidx].name,sym->dim.array.length,level);
               sym=finddepend(sym);
               assert(sym!=NULL);
@@ -2262,8 +2262,8 @@ static int nesting=0;
             assert(sym!=NULL);
             if (arg[argidx].dim[level]!=0 && sym->dim.array.length!=arg[argidx].dim[level])
               error(47);          /* array sizes must match */
-            else if (!matchtag(arg[argidx].idxtag[level],sym->x.tags.index,TRUE))
-              error(229,sym->name);   /* index tag mismatch */
+            else
+              check_index_tagmismatch(sym->name,arg[argidx].idxtag[level],sym->x.tags.index,TRUE,0);
             append_constval(&arrayszlst,arg[argidx].name,sym->dim.array.length,level);
           } /* if */
           /* address already in PRI */
