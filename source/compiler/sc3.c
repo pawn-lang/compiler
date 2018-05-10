@@ -2214,19 +2214,23 @@ static int nesting=0;
           if (lval.sym==NULL || lval.ident==iARRAYCELL) {
             if (arg[argidx].numdim!=1) {
               error(48);        /* array dimensions must match */
-            } else if (arg[argidx].dim[0]!=0) {
-              assert(arg[argidx].dim[0]>0);
-              if (lval.ident==iARRAYCELL) {
-                error(47);        /* array sizes must match */
-              } else {
-                assert(lval.constval!=0); /* literal array must have a size */
-                /* A literal array must have exactly the same size as the
-                 * function argument; a literal string may be smaller than
-                 * the function argument.
-                 */
-                if ((lval.constval>0 && arg[argidx].dim[0]!=lval.constval)
-                    || (lval.constval<0 && arg[argidx].dim[0] < -lval.constval))
-                  error(47);      /* array sizes must match */
+            } else {
+              if (lval.sym==NULL && (arg[argidx].usage & uCONST)==0)
+                    error(239);
+              if (arg[argidx].dim[0]!=0) {
+                assert(arg[argidx].dim[0]>0);
+                if (lval.ident==iARRAYCELL) {
+                  error(7);        /* array sizes must match */
+                } else {
+                  assert(lval.constval!=0); /* literal array must have a size */
+                  /* A literal array must have exactly the same size as the
+                   * function argument; a literal string may be smaller than
+                   * the function argument.
+                   */
+                  if ((lval.constval>0 && arg[argidx].dim[0]!=lval.constval)
+                    || (lval.constval<0 && arg[argidx].dim[0]<-lval.constval))
+                    error(47);      /* array sizes must match */
+                } /* if */
               } /* if */
             } /* if */
             if (lval.ident!=iARRAYCELL || lval.constval > 0) {
