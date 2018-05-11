@@ -331,6 +331,11 @@ static void doinclude(int silent)
      * between <...> are only read from the list of include directories.
      */
     result=plungefile(name,(c!='>'),TRUE);
+    if(!result && (c=='>')) {
+      strlcat(name,"/default",sizeof(name));
+      result=plungefile(name,(c!='>'),TRUE);
+      name[i]='\0';
+    }
     if (result && pc_compat)
       add_constant(symname,1,sGLOBAL,0);
     else if (!result && !silent)
