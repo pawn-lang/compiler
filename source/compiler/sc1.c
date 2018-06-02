@@ -4903,12 +4903,10 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
         errorset(sSETPOS,sym->lnumber);
         error(204,sym->name);       /* value assigned to symbol is never used */
         errorset(sSETPOS,-1);
-#if 0 // ??? not sure whether it is a good idea to force people use "const"
       } else if ((sym->usage & (uWRITTEN | uPUBLIC | uCONST))==0 && sym->ident==iREFARRAY) {
         errorset(sSETPOS,sym->lnumber);
         error(214,sym->name);       /* make array argument "const" */
         errorset(sSETPOS,-1);
-#endif
       } /* if */
       /* also mark the variable (local or global) to the debug information */
       if ((sym->usage & (uWRITTEN | uREAD))!=0 && (sym->usage & uNATIVE)==0)
