@@ -512,6 +512,7 @@ static int plnge_rel(int *opstr,int opoff,int (*hier)(value *lval),value *lval)
       error(212);
     if (count>0) {
       relop_prefix();
+      lval2.boolresult=lval->boolresult;
       *lval=lval2;      /* copy right hand expression of the previous iteration */
     } /* if */
     opidx+=opoff;
