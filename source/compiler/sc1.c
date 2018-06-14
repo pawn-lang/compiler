@@ -2490,17 +2490,21 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
   cell tablesize;
   int curlit=litidx;
   int err=0;
+  int i;
 
   if (!matchtoken('=')) {
     assert(ident!=iARRAY || numdim>0);
-    if (ident==iARRAY && dim[numdim-1]==0) {
-      /* declared as "myvar[];" which is senseless (note: this *does* make
-       * sense in the case of a iREFARRAY, which is a function parameter)
-       */
-      error(9);         /* array has zero length -> invalid size */
-    } /* if */
     if (ident==iARRAY) {
       assert(numdim>0 && numdim<=sDIMEN_MAX);
+      for (i=0; i<numdim; i++) {
+        if (dim[i]==0) {
+          /* declared like "myvar[];" which is senseless (note: this *does* make
+           * sense in the case of a iREFARRAY, which is a function parameter)
+           */
+          error(9); /* array has zero length -> invalid size */
+          return;
+        } /* if */
+      } /* for */      
       *size=calc_arraysize(dim,numdim,0);
       if (*size==(cell)CELL_MAX) {
         error(9);       /* array is too big -> invalid size */
