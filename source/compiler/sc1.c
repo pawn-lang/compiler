@@ -4223,8 +4223,12 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
     assert(numtags>0);
     argsym=addvariable(name,offset,ident,sLOCAL,tags[0],
                        arg->dim,arg->numdim,arg->idxtag,0);
-    if (fpublic)
+    if (fpublic) {
       argsym->usage|=uREAD;     /* arguments of public functions are always "used" */
+      if(argsym->ident==iREFARRAY || argsym->ident==iREFERENCE)
+        argsym->usage|=uWRITTEN;
+    }
+      
     if (fconst)
       argsym->usage|=uCONST;
   } /* if */
