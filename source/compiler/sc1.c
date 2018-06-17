@@ -5605,14 +5605,47 @@ static int doif(void)
   int flab1,flab2;
   int ifindent;
   int lastst_true;
+  int index;
 
   ifindent=stmtindent;          /* save the indent of the "if" instruction */
   flab1=getlabel();             /* get label number for false branch */
   test(flab1,TEST_THEN,FALSE);  /* get expression, branch to flab1 if false */
   statement(NULL,FALSE);        /* if true, do a statement */
-  if (!matchtoken(tELSE)) {     /* if...else ? */
-    setlabel(flab1);            /* no, simple if..., print false label */
-  } else {
+  /*
+  ** The 'statement()' takes care of generating the code inside the TRUE
+  ** branch. When it returns, the entire TRUE block would have its
+  ** code generated. 'matchtoken()' is called to look for an ELSE
+  ** branch. If there isn't an ELSE branch, the false branch label is put.
+  ** But the 'matchtoken()' function calls 'lex()' which in turn invokes
+  ** the preprocessor. If there are #emit directives present, the preprocessor
+  ** dumps those instructions. This would cause these instructions to appear
+  ** before the false label, i.e. the instructions appear in the TRUE branch
+  ** even though they are outside the TRUE branch.
+  **
+  ** To deal with this, we assume that there is no ELSE branch and add the false
+  ** label into the staging buffer. Thereby, any #emit instructions present will end
+  ** up in the false branch.
+  **
+  ** In case, there is an 'else' statement following 'if', then
+  ** we flush the staging buffer (which removes the #emit instructions
+  ** along with the false label). The label is supposed to be removed as the 'else'
+  ** branch handling code will add the false label again after a jump instruction.
+  ** The #emit instructions are also removed forever but that is not our concern
+  ** because it has been wrongly placed and the programmer needs to fix it.
+  **
+  ** if(expr) { }
+  ** #emit NOP // this is meaningless, the programmer has to fix the code
+  ** else { }
+  **
+  ** - Yashas
+  */
+  assert(!staging);
+  stgset(TRUE);
+  assert(stgidx==0);
+  index=stgidx;
+  setlabel(flab1);              /* we assume that there is no 'else' branch */
+  if (matchtoken(tELSE)) {
+    stgidx=index;               /* our assumption was wrong; flush the staging buffer */
     lastst_true=lastst;         /* save last statement of the "true" branch */
     /* to avoid the "dangling else" error, we want a warning if the "else"
      * has a lower indent than the matching "if" */
@@ -5628,9 +5661,14 @@ static int doif(void)
      * kind of statement, set the last statement id to that kind, rather than
      * to the generic tIF; this allows for better "unreachable code" checking
      */
-    if (lastst==lastst_true)
+    if (lastst == lastst_true) {
+      stgout(index);
+      stgset(FALSE);
       return lastst;
+    } /* if */
   } /* if */
+  stgout(index);
+  stgset(FALSE);
   return tIF;
 }
 
