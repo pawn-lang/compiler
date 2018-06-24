@@ -5606,6 +5606,7 @@ static int doif(void)
   int ifindent;
   int lastst_true;
   int index;
+  cell cidx;
 
   ifindent=stmtindent;          /* save the indent of the "if" instruction */
   flab1=getlabel();             /* get label number for false branch */
@@ -5626,16 +5627,18 @@ static int doif(void)
   ** label into the staging buffer. Thereby, any #emit instructions present will end
   ** up in the false branch.
   **
-  ** In case, there is an 'else' statement following 'if', then
-  ** we flush the staging buffer (which removes the #emit instructions
-  ** along with the false label). The label is supposed to be removed as the 'else'
+  ** In case there is an 'else' statement following 'if', then
+  ** we flush the staging buffer. The label is supposed to be removed as the 'else'
   ** branch handling code will add the false label again after a jump instruction.
-  ** The #emit instructions are also removed forever but that is not our concern
-  ** because it has been wrongly placed and the programmer needs to fix it.
+  **
+  ** There is a possiblity that #emit was used after the TRUE branch but before the
+  ** FALSE branch as shown below:
   **
   ** if(expr) { }
   ** #emit NOP // this is meaningless, the programmer has to fix the code
   ** else { }
+  **
+  ** In this case, error 29 (invalid expression) is triggered for the 'else' keyword.
   **
   ** - Yashas
   */
@@ -5644,7 +5647,11 @@ static int doif(void)
   assert(stgidx==0);
   index=stgidx;
   setlabel(flab1);              /* we assume that there is no 'else' branch */
+  cidx=code_idx;                /* note down so that we can track silent #emit */
   if (matchtoken(tELSE)) {
+    /* check #emit was used before 'else' */
+    if (cidx != code_idx)
+      error(29); /* error 029: invalid expression, assumed zero */ 
     stgidx=index;               /* our assumption was wrong; flush the staging buffer */
     lastst_true=lastst;         /* save last statement of the "true" branch */
     /* to avoid the "dangling else" error, we want a warning if the "else"
