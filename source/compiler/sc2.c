@@ -448,6 +448,7 @@ static void readline(unsigned char *line)
 static void stripcomment(unsigned char *line)
 {
   char c;
+  char* continuation;
   #if !defined SC_LIGHT
     #define COMMENT_LIMIT 100
     #define COMMENT_MARGIN 40   /* length of the longest word */
@@ -519,8 +520,24 @@ static void stripcomment(unsigned char *line)
         if (icomment==2)
           *line++=' ';
       } else if (*line=='/' && *(line+1)=='/'){  /* comment to end of line */
-        if (strchr((char*)line,'\a')!=NULL)
-          error(49);    /* invalid line continuation */
+        continuation=line;
+        while ((continuation=strchr(continuation,'\a'))!=NULL){
+          /* don't give the error if the next line is also commented out.
+             it is quite annoying to get an error for commenting out a define using:
+             
+             // 
+             // #define LONG_MACRO\
+             //             did span \
+             //             multiple lines
+             // 
+          */
+          while (*continuation<=' ' && *continuation!='\0')
+            continuation++;             /* skip whitespace */
+          if (*continuation!='/' || *(continuation+1)!='/') {
+            error(49);    /* invalid line continuation */
+            break;
+          }
+        }
         #if !defined SC_LIGHT
           if (*(line+2)=='/' && *(line+3)<=' ') {
             /* documentation comment */
@@ -2062,7 +2079,7 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
 
   if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';' ||
       *lptr==':' || *lptr=='\n' || *lptr=='\r')
-    lptr=stringize;						/* backtrack to end of last string for closing " */
+    lptr=stringize;     /* backtrack to end of last string for closing " */
   return lptr;
 }
 
