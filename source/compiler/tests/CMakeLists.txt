@@ -16,12 +16,12 @@ endfunction()
 # doesn't match the expected pattern.
 
 add_compiler_test(gh_217 ${CMAKE_CURRENT_SOURCE_DIR}/gh_217.pwn)
-set_tests_properties(gh_217 PROPERTIES PASS_REGULAR_EXPRESSION ".*\\.pwn\\(11\\) : warning 237: user warning: this is    warning 1
-.*\\.pwn\\(13\\) : warning 237: user warning: this iswarning 2
-.*\\.pwn\\(15\\) : warning 237: user warning: this is warning 3
-.*\\.pwn\\(17\\) : warning 237: user warning: this is     warning 4
-.*\\.pwn\\(27\\) : warning 234: function is deprecated \\(symbol \"f\"\\) don't    use this     functionplease
-.*\\.pwn\\(32\\) : warning 234: function is deprecated \\(symbol \"f\"\\) don't    use this     functionplease
+set_tests_properties(gh_217 PROPERTIES PASS_REGULAR_EXPRESSION ".*\\.pwn\\(11\\) : warning 237: user warning: this is warning 1
+.*\\.pwn\\(13\\) : warning 237: user warning: this is warning 2
+.*\\.pwn\\(15\\) : warning 237: user warning: this is  warning 3
+.*\\.pwn\\(17\\) : warning 237: user warning: this is  warning 4
+.*\\.pwn\\(27\\) : warning 234: function is deprecated \\(symbol \"f\"\\) don't use  this  function please
+.*\\.pwn\\(32\\) : warning 234: function is deprecated \\(symbol \"f\"\\) don't use  this  function please
 ")
 
 add_compiler_test(reset_errline_gh_230 ${CMAKE_CURRENT_SOURCE_DIR}/reset_errline_gh_230.pwn)
