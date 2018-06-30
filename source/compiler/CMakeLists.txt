@@ -182,4 +182,3 @@ else()
 endif()
 set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/../../license.txt)
 include(CPack)
-
