@@ -520,7 +520,7 @@ static void stripcomment(unsigned char *line)
         if (icomment==2)
           *line++=' ';
       } else if (*line=='/' && *(line+1)=='/'){  /* comment to end of line */
-        continuation=line;
+        continuation=(char*)line;
         while ((continuation=strchr(continuation,'\a'))!=NULL){
           /* don't give the error if the next line is also commented out.
              it is quite annoying to get an error for commenting out a define using:
