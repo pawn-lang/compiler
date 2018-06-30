@@ -20,8 +20,8 @@ set_tests_properties(gh_217 PROPERTIES PASS_REGULAR_EXPRESSION ".*\\.pwn\\(11\\)
 .*\\.pwn\\(13\\) : warning 237: user warning: this is warning 2
 .*\\.pwn\\(15\\) : warning 237: user warning: this is  warning 3
 .*\\.pwn\\(17\\) : warning 237: user warning: this is  warning 4
-.*\\.pwn\\(27\\) : warning 234: function is deprecated \\(symbol \"f\"\\) don't use  this  function please
-.*\\.pwn\\(32\\) : warning 234: function is deprecated \\(symbol \"f\"\\) don't use  this  function please
+.*\\.pwn\\(28\\) : warning 234: function is deprecated \\(symbol \"f\"\\) don't use  this  function please
+.*\\.pwn\\(33\\) : warning 234: function is deprecated \\(symbol \"f\"\\) don't use  this  function please
 ")
 
 add_compiler_test(reset_errline_gh_230 ${CMAKE_CURRENT_SOURCE_DIR}/reset_errline_gh_230.pwn)
