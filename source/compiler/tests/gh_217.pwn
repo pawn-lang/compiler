@@ -17,7 +17,8 @@ warning 3
     warning 4
 
 // single-line comments can span \
-multiple lines if you really want it
+//multiple lines if you really want it
+// no they can't, only with more //s.
 
 #pragma deprecated don't\
     use \
