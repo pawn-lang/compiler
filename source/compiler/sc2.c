@@ -417,6 +417,10 @@ static void readline(unsigned char *line)
           ptr--;        /* skip trailing whitespace */
         if (*ptr=='\\') {
           cont=TRUE;
+          /* set '\a' at the position of '\\' to make it possible to check
+           * for a line continuation in a single line comment (error 49)
+           */
+          *ptr++='\a';
           *ptr='\0';    /* erase '\n' (and any trailing whitespace) */
         } /* if */
       } /* if */
@@ -920,7 +924,7 @@ static char* strdupwithouta(const char* sourcestring)
     return NULL;
   }
   while ((a=strchr(a,'\a'))!=NULL) {
-    strcpy(a,a+1);
+    *a=' ';
   }
   return result;
 }
