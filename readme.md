@@ -10,11 +10,9 @@ enhancements.
 
 This project was originally founded by Zeex but on 2017-12-31, the project was
 taken over by some members of the SA:MP community. Zeex still contributes to the
-project, along with the
-[Compiler Team](https://github.com/orgs/pawn-lang/teams/compiler).
+project, along with the [Compiler Team][team].
 
-The original readme is available
-[here](https://github.com/pawn-lang/tree/master/readme_compuphase.txt)
+The original readme is available [here][original_readme]
 
 ## Why
 
@@ -23,10 +21,9 @@ This project exists to:
 - Fix known bugs with the original compiler
 - Provide a better development experience for the SA:MP community
 
-If you find problem, you can
-[open an issue](https://github.com/pawn-lang/compiler/issues) and contributors
-can work on a fix. This isn't true of the original compiler that comes with the
-SA:MP server distribution.
+If you find problem, you can [open an issue][issues] and contributors can work
+on a fix. This isn't true of the original compiler that comes with the SA:MP
+server distribution.
 
 There are also new features that enhance the development experience, such as
 telling you which tags are involved in a "tag mismatch" or showing you where
@@ -36,24 +33,21 @@ There are plenty of features and fixes that are documented, see below for links:
 
 ## List of changes
 
-- [Known compiler bugs](https://github.com/pawn-lang/compiler/wiki/Known-compiler-bugs)
-  contains a list of bugs that the team are aware of with their status.
+- [Known compiler bugs][bugs] contains a list of bugs that the team are aware of
+  with their status.
 
-- [What's new](https://github.com/pawn-lang/compiler/wiki/What's-new) lists new
-  features and other notable changes.
+- [What's new][new] contains features and other notable changes.
 
-- [Release notes](https://github.com/pawn-lang/compiler/releases) contains a
-  list of all official releases of the compiler binaries.
+- [Release notes][releases] list of all official releases of the compiler
+  binaries.
 
 ## How to Use
 
-Binary packages can be downloads from
-[Releases](https://github.com/pawn-lang/compiler/releases).
+Binary packages can be downloads from [Releases][releases].
 
 You can also get the latest development binaries for Windows on
-[AppVeyor](https://ci.appveyor.com/project/pawn-lang/compiler/branch/master/artifacts).
-This archive is built automatically on every Git commit and can be pretty
-unstable, so use at your own risk.
+[AppVeyor][artifacts]. This archive is built automatically on every Git commit
+and can be pretty unstable, so use at your own risk.
 
 ### Windows
 
@@ -70,7 +64,7 @@ will be in the `pawno/` folder that's inside your server directory.
 There is an installation package available for openSUSE/SLES users so that you
 can easily install the compiler on your distribution. Please follow these steps:
 
-1.  Go to https://build.opensuse.org/package/show/home:mschnitzer/pawncc
+1.  Go to <https://build.opensuse.org/package/show/home:mschnitzer/pawncc>
 2.  On the right side, select your distribution (only if it's not disabled!)
 3.  Click "Go to download repository"
 4.  Copy the link and enter in sudo mode in your shell:
@@ -207,3 +201,12 @@ seems to be based on an older release of Pawn.
 [build_win]: https://ci.appveyor.com/project/pawn-lang/compiler/branch/master
 [build_status_win]:
   https://ci.appveyor.com/api/projects/status/k112tbr1afrkif0n?svg=true
+[team]: https://github.com/orgs/pawn-lang/teams/compiler
+[original_readme]:
+  https://github.com/pawn-lang/tree/master/readme_compuphase.txt
+[issues]: https://github.com/pawn-lang/compiler/issues
+[bugs]: https://github.com/pawn-lang/compiler/wiki/Known-compiler-bugs
+[new]: https://github.com/pawn-lang/compiler/wiki/What's-new
+[releases]: https://github.com/pawn-lang/compiler/releases
+[artifacts]:
+  https://ci.appveyor.com/project/pawn-lang/compiler/branch/master/artifacts
