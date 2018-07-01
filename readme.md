@@ -5,30 +5,28 @@
 
 ## What
 
-This is a modified copy of the Pawn compiler version 3.2.3664 by Compuphase that
-fixes some bugs and adds a few features.
+This is a modified version of the Pawn 3.2.3664 compiler with many bug fixes and
+enhancements.
 
-This project was originally maintained and managed by Zeex who left the project
-due to lack of time on 2017-12-31. Thank you for all your hard work on keeping
-this project alive Zeex!
+This project was originally founded by Zeex but on 2017-12-31, the project was
+taken over by some members of the SA:MP community. Zeex still contributes to the
+project, along with the
+[Compiler Team](https://github.com/orgs/pawn-lang/teams/compiler).
 
-The project is now maintained by the
-[Compiler Team](https://github.com/orgs/pawn-lang/teams/compiler) at the
-pawn-lang GitHub org.
-
-[Original readme](readme_compuphase.txt)
+The original readme is available
+[here](https://github.com/pawn-lang/tree/master/readme_compuphase.txt)
 
 ## Why
 
-The reason this exists is to:
+This project exists to:
 
 - Fix known bugs with the original compiler
 - Provide a better development experience for the SA:MP community
 
-You shouldn't have any reason _not_ to use this compiler. If you find problem,
-you can [open an issue](https://github.com/pawn-lang/compiler/issues) and
-contributors can work on a fix. This isn't true of the original compiler that
-comes with the SA:MP server distribution.
+If you find problem, you can
+[open an issue](https://github.com/pawn-lang/compiler/issues) and contributors
+can work on a fix. This isn't true of the original compiler that comes with the
+SA:MP server distribution.
 
 There are also new features that enhance the development experience, such as
 telling you which tags are involved in a "tag mismatch" or showing you where
@@ -103,19 +101,21 @@ Pawn from source code.
 
 ### Building on Windows
 
-- Clone this repo: `git clone https://github.com/Zeex/pawn.git C:\pawn` (you can
-  use another directory instead of `C:\Pawn`, but make sure the path doesn't
-  have spaces).
-- Install [Visual Studio Community](https://www.visualstudio.com/vs/community/),
-  it's free.
-- Install [CMake](https://cmake.org/).
+If you have VS 2017 or later:
 
-  When installing make sure to check "Add CMake to system PATH" to make your
-  life easier.
+- Clone this repo: `git clone https://github.com/Zeex/pawn.git`
+- In VS 2017: File > Open > CMake > Select the `CMakeLists.txt` file in the root
+  of the compiler repository.
 
-- Generate a Visual Studio project.
+Otherwise:
 
-  In Command promprt or Powershell execute the following:
+- Install [Visual Studio Community](https://www.visualstudio.com/vs/community/)
+- Clone this repo: `git clone https://github.com/Zeex/pawn.git`
+- Install [CMake](https://cmake.org/). When installing make sure to check "Add
+  CMake to system PATH" to make your life easier.
+
+- Generate a Visual Studio project. In Command promprt or Powershell execute the
+  following:
 
   ```cmd
   cd C:\Pawn
@@ -125,7 +125,7 @@ Pawn from source code.
 
 - From the same directory as in the previous step run:
 
-  ```
+  ```cmd
   cmake --build . --config Release
   ```
 
@@ -204,6 +204,6 @@ seems to be based on an older release of Pawn.
 
 [build]: https://travis-ci.org/pawn-lang/compiler
 [build_status]: https://travis-ci.org/pawn-lang/compiler.svg?branch=master
-[build_win]: https://ci.appveyor.com/project/Southclaws/compiler/branch/master
+[build_win]: https://ci.appveyor.com/project/pawn-lang/compiler/branch/master
 [build_status_win]:
   https://ci.appveyor.com/api/projects/status/k112tbr1afrkif0n?svg=true
