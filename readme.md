@@ -1,4 +1,4 @@
-# Pawn Compiler v3.10.x
+# Pawn Community Compiler
 
 [![Build Status][build_status]][build]
 [![Build Status - Windows][build_status_win]][build_win]
