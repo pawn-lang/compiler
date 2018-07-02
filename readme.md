@@ -1,6 +1,6 @@
 # Pawn Community Compiler
 
-[![Build Status][build_status]][build]
+[![Build Status][build_status_linux]][build_linux]
 [![Build Status - Windows][build_status_win]][build_win]
 
 ## What
@@ -43,7 +43,7 @@ There are plenty of features and fixes that are documented, see below for links:
 
 ## How to Use
 
-Binary packages can be downloads from [Releases][releases].
+Binary packages can be downloaded from [Releases][releases].
 
 You can also get the latest development binaries for Windows on
 [AppVeyor][artifacts]. This archive is built automatically on every Git commit
@@ -196,9 +196,9 @@ that were previously made by the devs as well as fix all known compiler bugs.
 [1] It's worth noting that the version of the AMX embedded into the SA-MP server
 seems to be based on an older release of Pawn.
 
-[build]: https://travis-ci.org/pawn-lang/compiler
-[build_status]: https://travis-ci.org/pawn-lang/compiler.svg?branch=master
-[build_win]: https://ci.appveyor.com/project/pawn-lang/compiler/branch/master
+[build_linux]: https://travis-ci.org/pawn-lang/compiler
+[build_status_linux]: https://travis-ci.org/pawn-lang/compiler.svg?branch=master
+[build_win]: https://ci.appveyor.com/project/Southclaws/compiler/branch/master
 [build_status_win]:
   https://ci.appveyor.com/api/projects/status/k112tbr1afrkif0n?svg=true
 [team]: https://github.com/orgs/pawn-lang/teams/compiler
@@ -209,4 +209,4 @@ seems to be based on an older release of Pawn.
 [new]: https://github.com/pawn-lang/compiler/wiki/What's-new
 [releases]: https://github.com/pawn-lang/compiler/releases
 [artifacts]:
-  https://ci.appveyor.com/project/pawn-lang/compiler/branch/master/artifacts
+  https://ci.appveyor.com/project/Southclaws/compiler/branch/master/artifacts
