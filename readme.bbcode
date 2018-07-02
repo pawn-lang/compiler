@@ -4,24 +4,22 @@
 
 [COLOR="RoyalBlue"][SIZE="6"][B]What[/B][/SIZE][/COLOR]
 
-This is a modified copy of the Pawn compiler version 3.2.3664 by Compuphase that fixes some bugs and adds a few features.
+This is a modified version of the Pawn 3.2.3664 compiler with many bug fixes and enhancements.
 
-This project was originally maintained and managed by Zeex who left the project due to lack of time on 2017-12-31. Thank you for all your hard work on keeping this project alive Zeex!
+This project was originally founded by Zeex but on 2017-12-31, the project was taken over by some members of the SA:MP community. Zeex still contributes to the project, along with the [URL="https://github.com/orgs/pawn-lang/teams/compiler"]Compiler Team[/URL].
 
-The project is now maintained by the [URL="https://github.com/orgs/pawn-lang/teams/compiler"]Compiler Team[/URL] at the pawn-lang GitHub org.
-
-[URL="readme_compuphase.txt"]Original readme[/URL]
+The original readme is available [URL="https://github.com/pawn-lang/tree/master/readme_compuphase.txt"]here[/URL]
 
 [COLOR="RoyalBlue"][SIZE="6"][B]Why[/B][/SIZE][/COLOR]
 
-The reason this exists is to:
+This project exists to:
 
 [LIST]
 [*]Fix known bugs with the original compiler
 [*]Provide a better development experience for the SA:MP community
 [/LIST]
 
-You shouldn’t have any reason [i]not[/i] to use this compiler. If you find problem, you can [URL="https://github.com/pawn-lang/compiler/issues"]open an issue[/URL] and contributors can work on a fix. This isn’t true of the original compiler that comes with the SA:MP server distribution.
+If you find problem, you can [URL="https://github.com/pawn-lang/compiler/issues"]open an issue[/URL] and contributors can work on a fix. This isn’t true of the original compiler that comes with the SA:MP server distribution.
 
 There are also new features that enhance the development experience, such as telling you which tags are involved in a “tag mismatch” or showing you where that pesky “symbol is never used” is actually declared.
 
@@ -30,21 +28,20 @@ There are plenty of features and fixes that are documented, see below for links:
 [COLOR="RoyalBlue"][SIZE="6"][B]List of changes[/B][/SIZE][/COLOR]
 
 [LIST]
-[*][URL="https://github.com/pawn-lang/compiler/wiki/Known-compiler-bugs"]Known compiler bugs[/URL]
-contains a list of bugs that the team are aware of with their status.
+[*][URL="https://github.com/pawn-lang/compiler/wiki/Known-compiler-bugs"]Known compiler bugs[/URL] contains a list of bugs that the team are aware of
+with their status.
 
-[*][URL="https://github.com/pawn-lang/compiler/wiki/What's-new"]What’s new[/URL] lists new
-features and other notable changes.
+[*][URL="https://github.com/pawn-lang/compiler/wiki/What's-new"]What’s new[/URL] contains features and other notable changes.
 
-[*][URL="https://github.com/pawn-lang/compiler/releases"]Release notes[/URL] contains a
-list of all official releases of the compiler binaries.
+[*][URL="https://github.com/pawn-lang/compiler/releases"]Release notes[/URL] list of all official releases of the compiler
+binaries.
 [/LIST]
 
 [COLOR="RoyalBlue"][SIZE="6"][B]How to Use[/B][/SIZE][/COLOR]
 
-Binary packages can be downloads from [URL="https://github.com/pawn-lang/compiler/releases"]Releases[/URL].
+Binary packages can be downloaded from [URL="https://github.com/pawn-lang/compiler/releases"]Releases[/URL].
 
-You can also get the latest development binaries for Windows on [URL="https://ci.appveyor.com/project/pawn-lang/compiler/branch/master/artifacts"]AppVeyor[/URL]. This archive is built automatically on every Git commit and can be pretty unstable, so use at your own risk.
+You can also get the latest development binaries for Windows on [URL="https://ci.appveyor.com/project/Southclaws/compiler/branch/master/artifacts"]AppVeyor[/URL]. This archive is built automatically on every Git commit and can be pretty unstable, so use at your own risk.
 
 [COLOR="DeepSkyBlue"][SIZE="5"][B]Windows[/B][/SIZE][/COLOR]
 
@@ -88,22 +85,27 @@ In general you will need [URL="https://cmake.org/"]CMake[/URL] and a C compiller
 
 [COLOR="DeepSkyBlue"][SIZE="5"][B]Building on Windows[/B][/SIZE][/COLOR]
 
-[LIST]
-[*]Clone this repo: [FONT="courier new"]git clone https://github.com/Zeex/pawn.git C:\pawn[/FONT] (you can
-use another directory instead of [FONT="courier new"]C:\Pawn[/FONT], but make sure the path doesn’t
-have spaces).
-[*]Install [URL="https://www.visualstudio.com/vs/community/"]Visual Studio Community[/URL],
-it’s free.
-[*]Install [URL="https://cmake.org/"]CMake[/URL].
-[/LIST]
-
-When installing make sure to check “Add CMake to system PATH” to make your   life easier.
+If you have VS 2017 or later:
 
 [LIST]
-[*]Generate a Visual Studio project.
+[*]Clone this repo: [FONT="courier new"]git clone https://github.com/Zeex/pawn.git[/FONT]
+[*]In VS 2017: File > Open > CMake > Select the [FONT="courier new"]CMakeLists.txt[/FONT] file in the root
+of the compiler repository.
 [/LIST]
 
-In Command promprt or Powershell execute the following:
+Otherwise:
+
+[LIST]
+[*]Install [URL="https://www.visualstudio.com/vs/community/"]Visual Studio Community[/URL]
+
+[*]Clone this repo: [FONT="courier new"]git clone https://github.com/Zeex/pawn.git[/FONT]
+
+[*]Install [URL="https://cmake.org/"]CMake[/URL]. When installing make sure to check “Add
+CMake to system PATH” to make your life easier.
+
+[*]Generate a Visual Studio project. In Command promprt or Powershell execute the
+following:
+[/LIST]
 
 [CODE]
   cd C:\Pawn
@@ -115,8 +117,9 @@ In Command promprt or Powershell execute the following:
 [*]From the same directory as in the previous step run:
 [/LIST]
 
-[FONT="courier new"]  cmake --build . --config Release
-[/FONT]
+[CODE]
+  cmake --build . --config Release
+[/CODE]
 
 or open the pawnc.sln in Visual Studio and build from there (but make sure to   choose the “Release” configuration).
 
