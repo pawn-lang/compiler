@@ -20,7 +20,6 @@
  *  3.  This notice may not be removed or altered from any source distribution.
  */
 
-
 #include <stddef.h>
 #define HASHTABLE_SIZE_T size_t
 #define HASHTABLE_U64 size_t

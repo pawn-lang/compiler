@@ -14,29 +14,27 @@ before you include this file in *one* C/C++ file to create the implementation.
 #define hashtable_h
 
 #ifndef HASHTABLE_U64
-    #define HASHTABLE_U64 unsigned long long
+#define HASHTABLE_U64 unsigned long long
 #endif
 
 typedef struct hashtable_t hashtable_t;
 
-void hashtable_init( hashtable_t* table, int item_size, int initial_capacity, void* memctx );
-void hashtable_term( hashtable_t* table );
+void hashtable_init(hashtable_t* table, int item_size, int initial_capacity, void* memctx);
+void hashtable_term(hashtable_t* table);
 
-int hashtable_insert( hashtable_t* table, HASHTABLE_U64 key, void const* item );
-void hashtable_remove( hashtable_t* table, HASHTABLE_U64 key );
-void hashtable_clear( hashtable_t* table );
+int hashtable_insert(hashtable_t* table, HASHTABLE_U64 key, void const* item);
+void hashtable_remove(hashtable_t* table, HASHTABLE_U64 key);
+void hashtable_clear(hashtable_t* table);
 
-void* hashtable_find( hashtable_t const* table, HASHTABLE_U64 key );
+void* hashtable_find(hashtable_t const* table, HASHTABLE_U64 key);
 
-int hashtable_count( hashtable_t const* table );
-void* hashtable_items( hashtable_t const* table );
-HASHTABLE_U64 const* hashtable_keys( hashtable_t const* table );
+int hashtable_count(hashtable_t const* table);
+void* hashtable_items(hashtable_t const* table);
+HASHTABLE_U64 const* hashtable_keys(hashtable_t const* table);
 
-void hashtable_swap( hashtable_t* table, int index_a, int index_b );
-
+void hashtable_swap(hashtable_t* table, int index_a, int index_b);
 
 #endif /* hashtable_h */
-
 
 /**
 
@@ -308,18 +306,16 @@ retrieved by calling `hashtable_items` and `hashtable_keys`, while keeping the h
 #define hashtable_t_h
 
 #ifndef HASHTABLE_U32
-    #define HASHTABLE_U32 unsigned int
+#define HASHTABLE_U32 unsigned int
 #endif
 
-struct hashtable_internal_slot_t
-    {
+struct hashtable_internal_slot_t {
     HASHTABLE_U32 key_hash;
     int item_index;
     int base_count;
-    };
+};
 
-struct hashtable_t
-    {
+struct hashtable_t {
     void* memctx;
     int count;
     int item_size;
@@ -333,63 +329,61 @@ struct hashtable_t
     int item_capacity;
 
     void* swap_temp;
-    };
+};
 
 #endif /* hashtable_t_h */
-
 
 #ifdef HASHTABLE_IMPLEMENTATION
 #undef HASHTABLE_IMPLEMENTATION
 
 #ifndef HASHTABLE_SIZE_T
-    #undef _CRT_NONSTDC_NO_DEPRECATE
-    #define _CRT_NONSTDC_NO_DEPRECATE
-    #undef _CRT_SECURE_NO_WARNINGS
-    #define _CRT_SECURE_NO_WARNINGS
-    #include <stddef.h>
-    #define HASHTABLE_SIZE_T size_t
+#undef _CRT_NONSTDC_NO_DEPRECATE
+#define _CRT_NONSTDC_NO_DEPRECATE
+#undef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#include <stddef.h>
+#define HASHTABLE_SIZE_T size_t
 #endif
 
 #ifndef HASHTABLE_ASSERT
-    #undef _CRT_NONSTDC_NO_DEPRECATE
-    #define _CRT_NONSTDC_NO_DEPRECATE
-    #undef _CRT_SECURE_NO_WARNINGS
-    #define _CRT_SECURE_NO_WARNINGS
-    #include <assert.h>
-    #define HASHTABLE_ASSERT( x ) assert( x )
+#undef _CRT_NONSTDC_NO_DEPRECATE
+#define _CRT_NONSTDC_NO_DEPRECATE
+#undef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#include <assert.h>
+#define HASHTABLE_ASSERT(x) assert(x)
 #endif
 
 #ifndef HASHTABLE_MEMSET
-    #undef _CRT_NONSTDC_NO_DEPRECATE
-    #define _CRT_NONSTDC_NO_DEPRECATE
-    #undef _CRT_SECURE_NO_WARNINGS
-    #define _CRT_SECURE_NO_WARNINGS
-    #include <string.h>
-    #define HASHTABLE_MEMSET( ptr, val, cnt ) ( memset( ptr, val, cnt ) )
+#undef _CRT_NONSTDC_NO_DEPRECATE
+#define _CRT_NONSTDC_NO_DEPRECATE
+#undef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#include <string.h>
+#define HASHTABLE_MEMSET(ptr, val, cnt) (memset(ptr, val, cnt))
 #endif
 
 #ifndef HASHTABLE_MEMCPY
-    #undef _CRT_NONSTDC_NO_DEPRECATE
-    #define _CRT_NONSTDC_NO_DEPRECATE
-    #undef _CRT_SECURE_NO_WARNINGS
-    #define _CRT_SECURE_NO_WARNINGS
-    #include <string.h>
-    #define HASHTABLE_MEMCPY( dst, src, cnt ) ( memcpy( dst, src, cnt ) )
+#undef _CRT_NONSTDC_NO_DEPRECATE
+#define _CRT_NONSTDC_NO_DEPRECATE
+#undef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#include <string.h>
+#define HASHTABLE_MEMCPY(dst, src, cnt) (memcpy(dst, src, cnt))
 #endif
 
 #ifndef HASHTABLE_MALLOC
-    #undef _CRT_NONSTDC_NO_DEPRECATE
-    #define _CRT_NONSTDC_NO_DEPRECATE
-    #undef _CRT_SECURE_NO_WARNINGS
-    #define _CRT_SECURE_NO_WARNINGS
-    #include <stdlib.h>
-    #define HASHTABLE_MALLOC( ctx, size ) ( malloc( size ) )
-    #define HASHTABLE_FREE( ctx, ptr ) ( free( ptr ) )
+#undef _CRT_NONSTDC_NO_DEPRECATE
+#define _CRT_NONSTDC_NO_DEPRECATE
+#undef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdlib.h>
+#define HASHTABLE_MALLOC(ctx, size) (malloc(size))
+#define HASHTABLE_FREE(ctx, ptr) (free(ptr))
 #endif
 
-
-static HASHTABLE_U32 hashtable_internal_pow2ceil( HASHTABLE_U32 v )
-    {
+static HASHTABLE_U32 hashtable_internal_pow2ceil(HASHTABLE_U32 v)
+{
     --v;
     v |= v >> 1;
     v |= v >> 2;
@@ -397,86 +391,78 @@ static HASHTABLE_U32 hashtable_internal_pow2ceil( HASHTABLE_U32 v )
     v |= v >> 8;
     v |= v >> 16;
     ++v;
-    v += ( v == 0 );
+    v += (v == 0);
     return v;
-    }
+}
 
-
-void hashtable_init( hashtable_t* table, int item_size, int initial_capacity, void* memctx )
-    {
+void hashtable_init(hashtable_t* table, int item_size, int initial_capacity, void* memctx)
+{
     int slots_size;
-    initial_capacity = (int)hashtable_internal_pow2ceil( initial_capacity >=0 ? (HASHTABLE_U32) initial_capacity : 32U );
+    initial_capacity = (int)hashtable_internal_pow2ceil(initial_capacity >= 0 ? (HASHTABLE_U32)initial_capacity : 32U);
     table->memctx = memctx;
     table->count = 0;
     table->item_size = item_size;
-    table->slot_capacity = (int) hashtable_internal_pow2ceil( (HASHTABLE_U32) ( initial_capacity + initial_capacity / 2 ) );
-    slots_size = (int)( table->slot_capacity * sizeof( *table->slots ) );
-    table->slots = (struct hashtable_internal_slot_t*) HASHTABLE_MALLOC( table->memctx, (HASHTABLE_SIZE_T) slots_size );
-    HASHTABLE_ASSERT( table->slots );
-    HASHTABLE_MEMSET( table->slots, 0, (HASHTABLE_SIZE_T) slots_size );
-    table->item_capacity = (int) hashtable_internal_pow2ceil( (HASHTABLE_U32) initial_capacity );
-    table->items_key = (HASHTABLE_U64*) HASHTABLE_MALLOC( table->memctx,
-        table->item_capacity * ( sizeof( *table->items_key ) + sizeof( *table->items_slot ) + table->item_size ) + table->item_size );
-    HASHTABLE_ASSERT( table->items_key );
-    table->items_slot = (int*)( table->items_key + table->item_capacity );
-    table->items_data = (void*)( table->items_slot + table->item_capacity );
-    table->swap_temp = (void*)( ( (size_t) table->items_data ) + table->item_size * table->item_capacity );
-    }
+    table->slot_capacity = (int)hashtable_internal_pow2ceil((HASHTABLE_U32)(initial_capacity + initial_capacity / 2));
+    slots_size = (int)(table->slot_capacity * sizeof(*table->slots));
+    table->slots = (struct hashtable_internal_slot_t*)HASHTABLE_MALLOC(table->memctx, (HASHTABLE_SIZE_T)slots_size);
+    HASHTABLE_ASSERT(table->slots);
+    HASHTABLE_MEMSET(table->slots, 0, (HASHTABLE_SIZE_T)slots_size);
+    table->item_capacity = (int)hashtable_internal_pow2ceil((HASHTABLE_U32)initial_capacity);
+    table->items_key = (HASHTABLE_U64*)HASHTABLE_MALLOC(table->memctx,
+        table->item_capacity * (sizeof(*table->items_key) + sizeof(*table->items_slot) + table->item_size) + table->item_size);
+    HASHTABLE_ASSERT(table->items_key);
+    table->items_slot = (int*)(table->items_key + table->item_capacity);
+    table->items_data = (void*)(table->items_slot + table->item_capacity);
+    table->swap_temp = (void*)(((size_t)table->items_data) + table->item_size * table->item_capacity);
+}
 
-
-void hashtable_term( hashtable_t* table )
-    {
-    HASHTABLE_FREE( table->memctx, table->items_key );
-    HASHTABLE_FREE( table->memctx, table->slots );
-    }
-
+void hashtable_term(hashtable_t* table)
+{
+    HASHTABLE_FREE(table->memctx, table->items_key);
+    HASHTABLE_FREE(table->memctx, table->slots);
+}
 
 // from https://gist.github.com/badboy/6267743
-static HASHTABLE_U32 hashtable_internal_calculate_hash( HASHTABLE_U64 key )
-    {
-    key = ( ~key ) + ( key << 18 );
-    key = key ^ ( key >> 31 );
+static HASHTABLE_U32 hashtable_internal_calculate_hash(HASHTABLE_U64 key)
+{
+    key = (~key) + (key << 18);
+    key = key ^ (key >> 31);
     key = key * 21;
-    key = key ^ ( key >> 11 );
-    key = key + ( key << 6 );
-    key = key ^ ( key >> 22 );
-    HASHTABLE_ASSERT( key );
-    return (HASHTABLE_U32) key;
-    }
+    key = key ^ (key >> 11);
+    key = key + (key << 6);
+    key = key ^ (key >> 22);
+    HASHTABLE_ASSERT(key);
+    return (HASHTABLE_U32)key;
+}
 
-
-static int hashtable_internal_find_slot( hashtable_t const* table, HASHTABLE_U64 key )
-    {
+static int hashtable_internal_find_slot(hashtable_t const* table, HASHTABLE_U64 key)
+{
     int const slot_mask = table->slot_capacity - 1;
-    HASHTABLE_U32 const hash = hashtable_internal_calculate_hash( key );
+    HASHTABLE_U32 const hash = hashtable_internal_calculate_hash(key);
 
-    int const base_slot = (int)( hash & (HASHTABLE_U32)slot_mask );
-    int base_count = table->slots[ base_slot ].base_count;
+    int const base_slot = (int)(hash & (HASHTABLE_U32)slot_mask);
+    int base_count = table->slots[base_slot].base_count;
     int slot = base_slot;
 
-    while( base_count > 0 )
-        {
-        HASHTABLE_U32 slot_hash = table->slots[ slot ].key_hash;
-        if( slot_hash )
-            {
-            int slot_base = (int)( slot_hash & (HASHTABLE_U32)slot_mask );
-            if( slot_base == base_slot )
-                {
-                HASHTABLE_ASSERT( base_count > 0 );
+    while (base_count > 0) {
+        HASHTABLE_U32 slot_hash = table->slots[slot].key_hash;
+        if (slot_hash) {
+            int slot_base = (int)(slot_hash & (HASHTABLE_U32)slot_mask);
+            if (slot_base == base_slot) {
+                HASHTABLE_ASSERT(base_count > 0);
                 --base_count;
-                if( slot_hash == hash && table->items_key[ table->slots[ slot ].item_index ] == key )
+                if (slot_hash == hash && table->items_key[table->slots[slot].item_index] == key)
                     return slot;
-                }
             }
-        slot = ( slot + 1 ) & slot_mask;
         }
-
-    return -1;
+        slot = (slot + 1) & slot_mask;
     }
 
+    return -1;
+}
 
-static void hashtable_internal_expand_slots( hashtable_t* table )
-    {
+static void hashtable_internal_expand_slots(hashtable_t* table)
+{
     int const old_capacity = table->slot_capacity;
     struct hashtable_internal_slot_t* old_slots = table->slots;
     int slot_mask, size, i;
@@ -484,54 +470,51 @@ static void hashtable_internal_expand_slots( hashtable_t* table )
     table->slot_capacity *= 2;
     slot_mask = table->slot_capacity - 1;
 
-    size = (int)( table->slot_capacity * sizeof( *table->slots ) );
-    table->slots = (struct hashtable_internal_slot_t*) HASHTABLE_MALLOC( table->memctx, (HASHTABLE_SIZE_T) size );
-    HASHTABLE_ASSERT( table->slots );
-    HASHTABLE_MEMSET( table->slots, 0, (HASHTABLE_SIZE_T) size );
+    size = (int)(table->slot_capacity * sizeof(*table->slots));
+    table->slots = (struct hashtable_internal_slot_t*)HASHTABLE_MALLOC(table->memctx, (HASHTABLE_SIZE_T)size);
+    HASHTABLE_ASSERT(table->slots);
+    HASHTABLE_MEMSET(table->slots, 0, (HASHTABLE_SIZE_T)size);
 
-    for( i = 0; i < old_capacity; ++i )
-        {
-        HASHTABLE_U32 const hash = old_slots[ i ].key_hash;
-        if( hash )
-            {
+    for (i = 0; i < old_capacity; ++i) {
+        HASHTABLE_U32 const hash = old_slots[i].key_hash;
+        if (hash) {
             int item_index;
-            int const base_slot = (int)( hash & (HASHTABLE_U32)slot_mask );
+            int const base_slot = (int)(hash & (HASHTABLE_U32)slot_mask);
             int slot = base_slot;
-            while( table->slots[ slot ].key_hash )
-                slot = ( slot + 1 ) & slot_mask;
-            table->slots[ slot ].key_hash = hash;
-            item_index = old_slots[ i ].item_index;
-            table->slots[ slot ].item_index = item_index;
-            table->items_slot[ item_index ] = slot;
-            ++table->slots[ base_slot ].base_count;
-            }
+            while (table->slots[slot].key_hash)
+                slot = (slot + 1) & slot_mask;
+            table->slots[slot].key_hash = hash;
+            item_index = old_slots[i].item_index;
+            table->slots[slot].item_index = item_index;
+            table->items_slot[item_index] = slot;
+            ++table->slots[base_slot].base_count;
         }
-
-    HASHTABLE_FREE( table->memctx, old_slots );
     }
 
+    HASHTABLE_FREE(table->memctx, old_slots);
+}
 
-static int hashtable_internal_expand_items( hashtable_t* table )
-    {
+static int hashtable_internal_expand_items(hashtable_t* table)
+{
     HASHTABLE_U64* new_items_key;
     int* new_items_slot;
-    void* new_items_data, * new_swap_temp;
+    void *new_items_data, *new_swap_temp;
 
     table->item_capacity *= 2;
-    new_items_key = (HASHTABLE_U64*) HASHTABLE_MALLOC( table->memctx,
-         table->item_capacity * ( sizeof( *table->items_key ) + sizeof( *table->items_slot ) + table->item_size ) + table->item_size);
-    if( new_items_key == NULL )
+    new_items_key = (HASHTABLE_U64*)HASHTABLE_MALLOC(table->memctx,
+        table->item_capacity * (sizeof(*table->items_key) + sizeof(*table->items_slot) + table->item_size) + table->item_size);
+    if (new_items_key == NULL)
         return 0;
 
-    new_items_slot = (int*)( new_items_key + table->item_capacity );
-    new_items_data = (void*)( new_items_slot + table->item_capacity );
-    new_swap_temp = (void*)( ( (size_t) new_items_data ) + table->item_size * table->item_capacity );
+    new_items_slot = (int*)(new_items_key + table->item_capacity);
+    new_items_data = (void*)(new_items_slot + table->item_capacity);
+    new_swap_temp = (void*)(((size_t)new_items_data) + table->item_size * table->item_capacity);
 
-    HASHTABLE_MEMCPY( new_items_key, table->items_key, table->count * sizeof( *table->items_key ) );
-    HASHTABLE_MEMCPY( new_items_slot, table->items_slot, table->count * sizeof( *table->items_key ) );
-    HASHTABLE_MEMCPY( new_items_data, table->items_data, (HASHTABLE_SIZE_T) table->count * table->item_size );
+    HASHTABLE_MEMCPY(new_items_key, table->items_key, table->count * sizeof(*table->items_key));
+    HASHTABLE_MEMCPY(new_items_slot, table->items_slot, table->count * sizeof(*table->items_key));
+    HASHTABLE_MEMCPY(new_items_data, table->items_data, (HASHTABLE_SIZE_T)table->count * table->item_size);
 
-    HASHTABLE_FREE( table->memctx, table->items_key );
+    HASHTABLE_FREE(table->memctx, table->items_key);
 
     table->items_key = new_items_key;
     table->items_slot = new_items_slot;
@@ -539,162 +522,153 @@ static int hashtable_internal_expand_items( hashtable_t* table )
     table->swap_temp = new_swap_temp;
 
     return 1;
-    }
+}
 
-
-int hashtable_insert( hashtable_t* table, HASHTABLE_U64 key, void const* item )
-    {
+int hashtable_insert(hashtable_t* table, HASHTABLE_U64 key, void const* item)
+{
     int slot_mask, base_slot;
     int base_count, slot, first_free;
     void* dest_item;
     HASHTABLE_U32 hash;
 
-    HASHTABLE_ASSERT( hashtable_internal_find_slot( table, key ) < 0 );
+    HASHTABLE_ASSERT(hashtable_internal_find_slot(table, key) < 0);
 
-    if( table->count >= ( table->slot_capacity - table->slot_capacity / 3 ) )
-        hashtable_internal_expand_slots( table );
+    if (table->count >= (table->slot_capacity - table->slot_capacity / 3))
+        hashtable_internal_expand_slots(table);
 
     slot_mask = table->slot_capacity - 1;
-    hash = hashtable_internal_calculate_hash( key );
+    hash = hashtable_internal_calculate_hash(key);
 
-    base_slot = (int)( hash & (HASHTABLE_U32)slot_mask );
-    base_count = table->slots[ base_slot ].base_count;
+    base_slot = (int)(hash & (HASHTABLE_U32)slot_mask);
+    base_count = table->slots[base_slot].base_count;
     slot = base_slot;
     first_free = slot;
-    while( base_count )
-        {
+    while (base_count) {
         int slot_base;
-        HASHTABLE_U32 const slot_hash = table->slots[ slot ].key_hash;
-        if( slot_hash == 0 && table->slots[ first_free ].key_hash != 0 ) first_free = slot;
-        slot_base = (int)( slot_hash & (HASHTABLE_U32)slot_mask );
-        if( slot_base == base_slot )
+        HASHTABLE_U32 const slot_hash = table->slots[slot].key_hash;
+        if (slot_hash == 0 && table->slots[first_free].key_hash != 0)
+            first_free = slot;
+        slot_base = (int)(slot_hash & (HASHTABLE_U32)slot_mask);
+        if (slot_base == base_slot)
             --base_count;
-        slot = ( slot + 1 ) & slot_mask;
-        }
+        slot = (slot + 1) & slot_mask;
+    }
 
     slot = first_free;
-    while( table->slots[ slot ].key_hash )
-        slot = ( slot + 1 ) & slot_mask;
+    while (table->slots[slot].key_hash)
+        slot = (slot + 1) & slot_mask;
 
-    if( table->count >= table->item_capacity )
-        if( !hashtable_internal_expand_items( table ) )
+    if (table->count >= table->item_capacity)
+        if (!hashtable_internal_expand_items(table))
             return 0;
 
-    HASHTABLE_ASSERT( !table->slots[ slot ].key_hash && ( hash & (HASHTABLE_U32) slot_mask ) == (HASHTABLE_U32) base_slot );
-    HASHTABLE_ASSERT( hash );
-    table->slots[ slot ].key_hash = hash;
-    table->slots[ slot ].item_index = table->count;
-    ++table->slots[ base_slot ].base_count;
+    HASHTABLE_ASSERT(!table->slots[slot].key_hash && (hash & (HASHTABLE_U32)slot_mask) == (HASHTABLE_U32)base_slot);
+    HASHTABLE_ASSERT(hash);
+    table->slots[slot].key_hash = hash;
+    table->slots[slot].item_index = table->count;
+    ++table->slots[base_slot].base_count;
 
-
-    dest_item = (void*)( ( (size_t) table->items_data ) + table->count * table->item_size );
-    memcpy( dest_item, item, (HASHTABLE_SIZE_T) table->item_size );
-    table->items_key[ table->count ] = key;
-    table->items_slot[ table->count ] = slot;
+    dest_item = (void*)(((size_t)table->items_data) + table->count * table->item_size);
+    memcpy(dest_item, item, (HASHTABLE_SIZE_T)table->item_size);
+    table->items_key[table->count] = key;
+    table->items_slot[table->count] = slot;
     ++table->count;
 
     return 1;
-    }
+}
 
-
-void hashtable_remove( hashtable_t* table, HASHTABLE_U64 key )
-    {
+void hashtable_remove(hashtable_t* table, HASHTABLE_U64 key)
+{
     int slot, slot_mask, base_slot, index, last_index;
     HASHTABLE_U32 hash;
 
-    slot = hashtable_internal_find_slot( table, key );
-    HASHTABLE_ASSERT( slot >= 0 );
+    slot = hashtable_internal_find_slot(table, key);
+    HASHTABLE_ASSERT(slot >= 0);
 
     slot_mask = table->slot_capacity - 1;
-    hash = table->slots[ slot ].key_hash;
-    base_slot = (int)( hash & (HASHTABLE_U32) slot_mask );
-    HASHTABLE_ASSERT( hash );
-    --table->slots[ base_slot ].base_count;
-    table->slots[ slot ].key_hash = 0;
+    hash = table->slots[slot].key_hash;
+    base_slot = (int)(hash & (HASHTABLE_U32)slot_mask);
+    HASHTABLE_ASSERT(hash);
+    --table->slots[base_slot].base_count;
+    table->slots[slot].key_hash = 0;
 
-    index = table->slots[ slot ].item_index;
+    index = table->slots[slot].item_index;
     last_index = table->count - 1;
-    if( index != last_index )
-        {
-        void* src_item, * dst_item;
-        table->items_key[ index ] = table->items_key[ last_index ];
-        table->items_slot[ index ] = table->items_slot[ last_index ];
-        dst_item = (void*)( ( (size_t) table->items_data ) + index * table->item_size );
-        src_item = (void*)( ( (size_t) table->items_data ) + last_index * table->item_size );
-        HASHTABLE_MEMCPY( dst_item, src_item, (HASHTABLE_SIZE_T) table->item_size );
-        table->slots[ table->items_slot[ last_index ] ].item_index = index;
-        }
+    if (index != last_index) {
+        void *src_item, *dst_item;
+        table->items_key[index] = table->items_key[last_index];
+        table->items_slot[index] = table->items_slot[last_index];
+        dst_item = (void*)(((size_t)table->items_data) + index * table->item_size);
+        src_item = (void*)(((size_t)table->items_data) + last_index * table->item_size);
+        HASHTABLE_MEMCPY(dst_item, src_item, (HASHTABLE_SIZE_T)table->item_size);
+        table->slots[table->items_slot[last_index]].item_index = index;
+    }
     --table->count;
-    }
+}
 
-
-void hashtable_clear( hashtable_t* table )
-    {
+void hashtable_clear(hashtable_t* table)
+{
     table->count = 0;
-    HASHTABLE_MEMSET( table->slots, 0, table->slot_capacity * sizeof( *table->slots ) );
-    }
+    HASHTABLE_MEMSET(table->slots, 0, table->slot_capacity * sizeof(*table->slots));
+}
 
-
-void* hashtable_find( hashtable_t const* table, HASHTABLE_U64 key )
-    {
+void* hashtable_find(hashtable_t const* table, HASHTABLE_U64 key)
+{
     int slot, index;
     void* item;
 
-    slot = hashtable_internal_find_slot( table, key );
-    if( slot < 0 ) return 0;
+    slot = hashtable_internal_find_slot(table, key);
+    if (slot < 0)
+        return 0;
 
-    index = table->slots[ slot ].item_index;
-    item = (void*)( ( (size_t) table->items_data ) + index * table->item_size );
+    index = table->slots[slot].item_index;
+    item = (void*)(((size_t)table->items_data) + index * table->item_size);
     return item;
-    }
+}
 
-
-int hashtable_count( hashtable_t const* table )
-    {
+int hashtable_count(hashtable_t const* table)
+{
     return table->count;
-    }
+}
 
-
-void* hashtable_items( hashtable_t const* table )
-    {
+void* hashtable_items(hashtable_t const* table)
+{
     return table->items_data;
-    }
+}
 
-
-HASHTABLE_U64 const* hashtable_keys( hashtable_t const* table )
-    {
+HASHTABLE_U64 const* hashtable_keys(hashtable_t const* table)
+{
     return table->items_key;
-    }
+}
 
-
-void hashtable_swap( hashtable_t* table, int index_a, int index_b )
-    {
+void hashtable_swap(hashtable_t* table, int index_a, int index_b)
+{
     int slot_a, slot_b;
-    void* item_a, *item_b;
+    void *item_a, *item_b;
     HASHTABLE_U64 temp_key;
 
-    if( index_a < 0 || index_a >= table->count || index_b < 0 || index_b >= table->count ) return;
+    if (index_a < 0 || index_a >= table->count || index_b < 0 || index_b >= table->count)
+        return;
 
-    slot_a = table->items_slot[ index_a ];
-    slot_b = table->items_slot[ index_b ];
+    slot_a = table->items_slot[index_a];
+    slot_b = table->items_slot[index_b];
 
-    table->items_slot[ index_a ] = slot_b;
-    table->items_slot[ index_b ] = slot_a;
+    table->items_slot[index_a] = slot_b;
+    table->items_slot[index_b] = slot_a;
 
-    temp_key = table->items_key[ index_a ];
-    table->items_key[ index_a ] = table->items_key[ index_b ];
-    table->items_key[ index_b ] = temp_key;
+    temp_key = table->items_key[index_a];
+    table->items_key[index_a] = table->items_key[index_b];
+    table->items_key[index_b] = temp_key;
 
-    item_a = (void*)( ( (size_t) table->items_data ) + index_a * table->item_size );
-    item_b = (void*)( ( (size_t) table->items_data ) + index_b * table->item_size );
-    HASHTABLE_MEMCPY( table->swap_temp, item_a, table->item_size );
-    HASHTABLE_MEMCPY( item_a, item_b, table->item_size );
-    HASHTABLE_MEMCPY( item_b, table->swap_temp, table->item_size );
+    item_a = (void*)(((size_t)table->items_data) + index_a * table->item_size);
+    item_b = (void*)(((size_t)table->items_data) + index_b * table->item_size);
+    HASHTABLE_MEMCPY(table->swap_temp, item_a, table->item_size);
+    HASHTABLE_MEMCPY(item_a, item_b, table->item_size);
+    HASHTABLE_MEMCPY(item_b, table->swap_temp, table->item_size);
 
-    table->slots[ slot_a ].item_index = index_b;
-    table->slots[ slot_b ].item_index = index_a;
-    }
-
+    table->slots[slot_a].item_index = index_b;
+    table->slots[slot_b].item_index = index_a;
+}
 
 #endif /* HASHTABLE_IMPLEMENTATION */
 

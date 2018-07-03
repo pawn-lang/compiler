@@ -16,17 +16,17 @@
  */
 #include "getch.h"
 
-#define	stricmp(a,b)    strcasecmp(a,b)
-#define	strnicmp(a,b,c) strncasecmp(a,b,c)
+#define stricmp(a, b) strcasecmp(a, b)
+#define strnicmp(a, b, c) strncasecmp(a, b, c)
 
 /*
  * WinWorld wants '\'. Unices do not.
  */
-#define	DIRECTORY_SEP_CHAR      '/'
-#define	DIRECTORY_SEP_STR       "/"
+#define DIRECTORY_SEP_CHAR '/'
+#define DIRECTORY_SEP_STR "/"
 
 #if defined HAVE_ENDIAN_H
-# include <endian.h>
+#include <endian.h>
 #endif
 
 /*
@@ -35,23 +35,23 @@
  * For Linux, we must overrule these settings with those defined in glibc.
  */
 #if !defined __BYTE_ORDER
-# include <stdlib.h>
+#include <stdlib.h>
 #endif
 
 #if defined __OpenBSD__ || defined __FreeBSD__
-# define __BYTE_ORDER    BYTE_ORDER
-# define __LITTLE_ENDIAN LITTLE_ENDIAN
-# define __BIG_ENDIAN    BIG_ENDIAN
+#define __BYTE_ORDER BYTE_ORDER
+#define __LITTLE_ENDIAN LITTLE_ENDIAN
+#define __BIG_ENDIAN BIG_ENDIAN
 #endif
 
 #if defined __APPLE__
-# define __BYTE_ORDER    BYTE_ORDER
-# define __LITTLE_ENDIAN __DARWIN_LITTLE_ENDIAN
-# define __BIG_ENDIAN    __DARWIN_BIG_ENDIAN
+#define __BYTE_ORDER BYTE_ORDER
+#define __LITTLE_ENDIAN __DARWIN_LITTLE_ENDIAN
+#define __BIG_ENDIAN __DARWIN_BIG_ENDIAN
 #endif
 
 #if !defined __BYTE_ORDER
-# error	"Can't figure computer byte order (__BYTE_ORDER macro not found)"
+#error "Can't figure computer byte order (__BYTE_ORDER macro not found)"
 #endif
 
 #endif /* SCLINUX_H */
