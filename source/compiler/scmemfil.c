@@ -26,140 +26,141 @@
  *  Version: $Id: scmemfil.c 3645 2006-09-24 16:00:29Z thiadmer $
  */
 
+#include "memfile.h"
 #include <assert.h>
 #include <string.h>
-#include "memfile.h"
 
 #if defined FORTIFY
-  #include <alloc/fortify.h>
+#include <alloc/fortify.h>
 #endif
 
 typedef memfile_t MEMFILE;
-#define tMEMFILE  1
+#define tMEMFILE 1
 #include "sc.h"
 
-
-MEMFILE *mfcreate(const char *filename)
+MEMFILE* mfcreate(const char* filename)
 {
-  return memfile_creat(filename, 4096);
+    return memfile_creat(filename, 4096);
 }
 
-void mfclose(MEMFILE *mf)
+void mfclose(MEMFILE* mf)
 {
-  memfile_destroy(mf);
+    memfile_destroy(mf);
 }
 
-int mfdump(MEMFILE *mf)
+int mfdump(MEMFILE* mf)
 {
-  FILE *fp;
-  int okay;
+    FILE* fp;
+    int okay;
 
-  assert(mf!=NULL);
-  /* create the file */
-  fp=fopen(mf->name, "wb");
-  if (fp==NULL)
-    return 0;
+    assert(mf != NULL);
+    /* create the file */
+    fp = fopen(mf->name, "wb");
+    if (fp == NULL)
+        return 0;
 
-  okay = (fwrite(mf->base, mf->usedoffs, 1, fp)==(size_t)mf->usedoffs);
+    okay = (fwrite(mf->base, mf->usedoffs, 1, fp) == (size_t)mf->usedoffs);
 
-  fclose(fp);
-  return okay;
+    fclose(fp);
+    return okay;
 }
 
-long mflength(const MEMFILE *mf)
+long mflength(const MEMFILE* mf)
 {
-  return mf->usedoffs;
+    return mf->usedoffs;
 }
 
-long mfseek(MEMFILE *mf,long offset,int whence)
+long mfseek(MEMFILE* mf, long offset, int whence)
 {
-  long length;
+    long length;
 
-  assert(mf!=NULL);
-  if (mf->usedoffs == 0)
-    return 0L;          /* early exit: not a single byte in the file */
+    assert(mf != NULL);
+    if (mf->usedoffs == 0)
+        return 0L; /* early exit: not a single byte in the file */
 
-  /* find the size of the memory file */
-  length=mflength(mf);
+    /* find the size of the memory file */
+    length = mflength(mf);
 
-  /* convert the offset to an absolute position */
-  switch (whence) {
-  case SEEK_SET:
-    break;
-  case SEEK_CUR:
-    offset+=mf->offs;
-    break;
-  case SEEK_END:
-    assert(offset<=0);
-    offset+=length;
-    break;
-  } /* switch */
+    /* convert the offset to an absolute position */
+    switch (whence) {
+    case SEEK_SET:
+        break;
+    case SEEK_CUR:
+        offset += mf->offs;
+        break;
+    case SEEK_END:
+        assert(offset <= 0);
+        offset += length;
+        break;
+    } /* switch */
 
-  /* clamp to the file length limit */
-  if (offset<0)
-    offset=0;
-  else if (offset>length)
-    offset=length;
+    /* clamp to the file length limit */
+    if (offset < 0)
+        offset = 0;
+    else if (offset > length)
+        offset = length;
 
-  /* set new position and return it */
-  memfile_seek(mf, offset);
-  return offset;
+    /* set new position and return it */
+    memfile_seek(mf, offset);
+    return offset;
 }
 
-unsigned int mfwrite(MEMFILE *mf,const unsigned char *buffer,unsigned int size)
+unsigned int mfwrite(MEMFILE* mf,
+    const unsigned char* buffer,
+    unsigned int size)
 {
-  return (memfile_write(mf, buffer, size) ? size : 0);
+    return (memfile_write(mf, buffer, size) ? size : 0);
 }
 
-unsigned int mfread(MEMFILE *mf,unsigned char *buffer,unsigned int size)
+unsigned int mfread(MEMFILE* mf, unsigned char* buffer, unsigned int size)
 {
-  return memfile_read(mf, buffer, size);
+    return memfile_read(mf, buffer, size);
 }
 
-char *mfgets(MEMFILE *mf,char *string,unsigned int size)
+char* mfgets(MEMFILE* mf, char* string, unsigned int size)
 {
-  char *ptr;
-  unsigned int read;
-  long seek;
+    char* ptr;
+    unsigned int read;
+    long seek;
 
-  assert(mf!=NULL);
+    assert(mf != NULL);
 
-  read=mfread(mf,(unsigned char *)string,size);
-  if (read==0)
-    return NULL;
-  seek=0L;
+    read = mfread(mf, (unsigned char*)string, size);
+    if (read == 0)
+        return NULL;
+    seek = 0L;
 
-  /* make sure that the string is zero-terminated */
-  assert(read<=size);
-  if (read<size) {
-    string[read]='\0';
-  } else {
-    string[size-1]='\0';
-    seek=-1;            /* undo reading the character that gets overwritten */
-  } /* if */
+    /* make sure that the string is zero-terminated */
+    assert(read <= size);
+    if (read < size) {
+        string[read] = '\0';
+    } else {
+        string[size - 1] = '\0';
+        seek = -1; /* undo reading the character that gets overwritten */
+    } /* if */
 
-  /* find the first '\n' */
-  ptr=strchr(string,'\n');
-  if (ptr!=NULL) {
-    *(ptr+1)='\0';
-    seek=(long)(ptr-string)+1-(long)read;
-  } /* if */
+    /* find the first '\n' */
+    ptr = strchr(string, '\n');
+    if (ptr != NULL) {
+        *(ptr + 1) = '\0';
+        seek = (long)(ptr - string) + 1 - (long)read;
+    } /* if */
 
-  /* undo over-read */
-  assert(seek<=0);      /* should seek backward only */
-  if (seek!=0)
-    mfseek(mf,seek,SEEK_CUR);
+    /* undo over-read */
+    assert(seek <= 0); /* should seek backward only */
+    if (seek != 0)
+        mfseek(mf, seek, SEEK_CUR);
 
-  return string;
+    return string;
 }
 
-int mfputs(MEMFILE *mf,const char *string)
+int mfputs(MEMFILE* mf, const char* string)
 {
-  unsigned int written,length;
+    unsigned int written, length;
 
-  assert(mf!=NULL);
+    assert(mf != NULL);
 
-  length=strlen(string);
-  written=mfwrite(mf,(unsigned char *)string,length);
-  return written==length;
+    length = strlen(string);
+    written = mfwrite(mf, (unsigned char*)string, length);
+    return written == length;
 }
