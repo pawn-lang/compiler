@@ -59,6 +59,9 @@ Download the ZIP archive and extract `pawnc.dll`, `pawncc.exe`,
 `pawndisasmsm.exe` to your original `pawncc` directory. If you use Pawno, this
 will be in the `pawno/` folder that's inside your server directory.
 
+You must add the `-Z+` flag to your build configuration or add `#pragma compat`
+to your script. See [this page][compat] for more information.
+
 ### openSUSE/SLES
 
 There is an installation package available for openSUSE/SLES users so that you
@@ -210,3 +213,4 @@ seems to be based on an older release of Pawn.
 [releases]: https://github.com/pawn-lang/compiler/releases
 [artifacts]:
   https://ci.appveyor.com/project/Southclaws/compiler/branch/master/artifacts
+[compat]: https://github.com/pawn-lang/compiler/wiki/Compatibility-mode
