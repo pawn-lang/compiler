@@ -2157,7 +2157,8 @@ static int nesting=0;
           /* otherwise, the address is already in PRI */
           if (lval.sym!=NULL)
             markusage(lval.sym,uWRITTEN);
-          check_tagmismatch_multiple(arg[argidx].tags,arg[argidx].numtags,lval.tag,-1);
+          if (arg->wildcard_tag==FALSE)
+            check_tagmismatch_multiple(arg[argidx].tags,arg[argidx].numtags,lval.tag,-1);
           if (lval.tag!=0)
             append_constval(&taglst,arg[argidx].name,lval.tag,0);
           break;
@@ -2169,8 +2170,10 @@ static int nesting=0;
             rvalue(&lval);        /* get value (direct or indirect) */
           /* otherwise, the expression result is already in PRI */
           assert(arg[argidx].numtags>0);
-          check_userop(NULL,lval.tag,arg[argidx].tags[0],2,NULL,&lval.tag);
-          check_tagmismatch_multiple(arg[argidx].tags,arg[argidx].numtags,lval.tag,-1);
+          if (arg->wildcard_tag==FALSE) {
+            check_userop(NULL,lval.tag,arg[argidx].tags[0],2,NULL,&lval.tag);
+            check_tagmismatch_multiple(arg[argidx].tags,arg[argidx].numtags,lval.tag,-1);
+          }          
           if (lval.tag!=0)
             append_constval(&taglst,arg[argidx].name,lval.tag,0);
           argidx++;               /* argument done */
@@ -2191,7 +2194,8 @@ static int nesting=0;
             } /* if */
           } /* if */
           /* otherwise, the address is already in PRI */
-          check_tagmismatch_multiple(arg[argidx].tags,arg[argidx].numtags,lval.tag,-1);
+          if(arg->wildcard_tag==FALSE)
+            check_tagmismatch_multiple(arg[argidx].tags,arg[argidx].numtags,lval.tag,-1);
           if (lval.tag!=0)
             append_constval(&taglst,arg[argidx].name,lval.tag,0);
           argidx++;               /* argument done */
@@ -2271,7 +2275,8 @@ static int nesting=0;
             append_constval(&arrayszlst,arg[argidx].name,sym->dim.array.length,level);
           } /* if */
           /* address already in PRI */
-          check_tagmismatch_multiple(arg[argidx].tags,arg[argidx].numtags,lval.tag,-1);
+          if(arg->wildcard_tag==FALSE)
+            check_tagmismatch_multiple(arg[argidx].tags,arg[argidx].numtags,lval.tag,-1);
           if (lval.tag!=0)
             append_constval(&taglst,arg[argidx].name,lval.tag,0);
           if (lval.sym!=NULL && (arg[argidx].usage & uCONST)==0)

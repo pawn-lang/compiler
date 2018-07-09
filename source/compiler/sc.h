@@ -83,6 +83,7 @@ typedef struct s_arginfo {  /* function argument info */
   char usage;           /* uCONST */
   int *tags;            /* argument tag id. list */
   int numtags;          /* number of tags in the tag list */
+  int wildcard_tag;     /* argument accepts any tag */
   int dim[sDIMEN_MAX];
   int idxtag[sDIMEN_MAX];
   int numdim;           /* number of dimensions */

@@ -93,12 +93,12 @@ static int declloc(int fstatic);
 static void decl_const(int table);
 static void decl_enum(int table,int fstatic);
 static cell needsub(int *tag,constvalue_root **enumroot);
-static void initials(int ident,int tag,cell *size,int dim[],int numdim,
+static void initials(int ident,int tag,int wildcard_tag,cell *size,int dim[],int numdim,
                      constvalue_root *enumroot);
-static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
+static cell initarray(int ident,int tag,int wildcard_tag,int dim[],int numdim,int cur,
                       int startlit,int counteddim[],constvalue_root *lastdim,
                       constvalue_root *enumroot,int *errorfound);
-static cell initvector(int ident,int tag,cell size,int startlit,int fillzero,
+static cell initvector(int ident,int tag,int wildcard_tag,cell size,int startlit,int fillzero,
                        constvalue_root *enumroot,int *errorfound);
 static cell init(int ident,int *tag,int *errorfound);
 static int getstates(const char *funcname);
@@ -106,7 +106,7 @@ static void attachstatelist(symbol *sym, int state_id);
 static void funcstub(int fnative);
 static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stock);
 static int declargs(symbol *sym,int chkshadow);
-static void doarg(char *name,int ident,int offset,int tags[],int numtags,
+static void doarg(char *name,int ident,int offset,int tags[],int numtags,int wildcard_tag,
                   int fpublic,int fconst,int chkshadow,arginfo *arg);
 static void make_report(symbol *root,FILE *log,char *sourcefile);
 static void reduce_referrers(symbol *root);
@@ -2099,7 +2099,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
       litidx=0;         /* global initial data is dumped, so restart at zero */
     } /* if */
     assert(litidx==0);  /* literal queue should be empty (again) */
-    initials(ident,tag,&size,dim,numdim,enumroot);/* stores values in the literal queue */
+    initials(ident,tag,FALSE,&size,dim,numdim,enumroot);/* stores values in the literal queue */
     assert(size>=litidx);
     if (numdim==1)
       dim[0]=(int)size;
@@ -2309,7 +2309,7 @@ static int declloc(int fstatic)
         sc_alignnext=FALSE;
       } /* if */
       cur_lit=litidx;           /* save current index in the literal table */
-      initials(ident,tag,&size,dim,numdim,enumroot);
+      initials(ident,tag,FALSE,&size,dim,numdim,enumroot);
       if (size==0)
         return ident;           /* error message already given */
       if (numdim==1)
@@ -2483,7 +2483,7 @@ static int base;
  *
  *  Global references: litidx (altered)
  */
-static void initials(int ident,int tag,cell *size,int dim[],int numdim,
+static void initials(int ident,int tag,int wildcard_tag,cell *size,int dim[],int numdim,
                      constvalue_root *enumroot)
 {
   int ctag;
@@ -2521,11 +2521,12 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
   if (ident==iVARIABLE) {
     assert(*size==1);
     init(ident,&ctag,NULL);
-    check_tagmismatch(tag,ctag,TRUE,-1);
+    if(wildcard_tag==FALSE)
+      check_tagmismatch(tag,ctag,TRUE,-1);
   } else {
     assert(numdim>0);
     if (numdim==1) {
-      *size=initvector(ident,tag,dim[0],litidx,FALSE,enumroot,NULL);
+      *size=initvector(ident,tag,wildcard_tag,dim[0],litidx,FALSE,enumroot,NULL);
     } else {
       int errorfound=FALSE;
       int counteddim[sDIMEN_MAX];
@@ -2549,7 +2550,7 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
         litadd(0);
       /* now initialize the sub-arrays */
       memset(counteddim,0,sizeof counteddim);
-      initarray(ident,tag,dim,numdim,0,curlit,counteddim,&lastdim,enumroot,&errorfound);
+      initarray(ident,tag,wildcard_tag,dim,numdim,0,curlit,counteddim,&lastdim,enumroot,&errorfound);
       /* check the specified array dimensions with the initialler counts */
       for (idx=0; idx<numdim-1; idx++) {
         if (dim[idx]==0) {
@@ -2593,7 +2594,7 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
     *size=litidx-curlit;        /* number of elements defined */
 }
 
-static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
+static cell initarray(int ident,int tag,int wildcard_tag,int dim[],int numdim,int cur,
                       int startlit,int counteddim[],constvalue_root *lastdim,
                       constvalue_root *enumroot,int *errorfound)
 {
@@ -2631,7 +2632,7 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
       break;
     } /* if */
     if (cur+2<numdim) {
-      dsize=initarray(ident,tag,dim,numdim,cur+1,startlit,counteddim,
+      dsize=initarray(ident,tag,wildcard_tag,dim,numdim,cur+1,startlit,counteddim,
                       lastdim,enumroot,errorfound);
     } else {
       curlit=litidx;
@@ -2655,7 +2656,7 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
       } else {
         prev2_idx=prev1_idx;
         prev1_idx=litidx;
-        dsize=initvector(ident,tag,dim[cur+1],curlit,TRUE,enumroot,errorfound);
+        dsize=initvector(ident,tag,wildcard_tag,dim[cur+1],curlit,TRUE,enumroot,errorfound);
         /* The final dimension may be variable length. We need to save the
          * lengths of the final dimensions in order to set the indirection
          * vectors for the next-to-last dimension.
@@ -2683,7 +2684,7 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
 /*  initvector
  *  Initialize a single dimensional array
  */
-static cell initvector(int ident,int tag,cell size,int startlit,int fillzero,
+static cell initvector(int ident,int tag,int wildcard_tag,cell size,int startlit,int fillzero,
                        constvalue_root *enumroot,int *errorfound)
 {
   cell prev1=0,prev2=0;
@@ -2748,12 +2749,14 @@ static cell initvector(int ident,int tag,cell size,int startlit,int fillzero,
         rtag=symfield->x.tags.index;  /* set the expected tag to the index tag */
         enumfield=enumfield->next;
       } /* if */
-      check_tagmismatch(rtag,ctag,TRUE,-1);
+      if(wildcard_tag==FALSE)
+        check_tagmismatch(rtag,ctag,TRUE,-1);
     } while (matchtoken(',')); /* do */
     needtoken('}');
   } else {
     init(ident,&ctag,errorfound);
-    check_tagmismatch(tag,ctag,TRUE,-1);
+    if(wildcard_tag==FALSE)
+      check_tagmismatch(tag,ctag,TRUE,-1);
   } /* if */
   /* fill up the literal queue with a series */
   if (ellips) {
@@ -3922,7 +3925,7 @@ static int declargs(symbol *sym,int chkshadow)
 {
   #define MAXTAGS 16
   char *ptr;
-  int argcnt,oldargcnt,tok,tags[MAXTAGS],numtags;
+  int argcnt,oldargcnt,tok,tags[MAXTAGS],numtags,wildcard_tag;
   cell val;
   arginfo arg, *arglist;
   char name[sNAMEMAX+1];
@@ -3939,6 +3942,7 @@ static int declargs(symbol *sym,int chkshadow)
   argcnt=0;                             /* zero aruments up to now */
   ident=iVARIABLE;
   numtags=0;
+  wildcard_tag=FALSE;
   fconst=FALSE;
   fpublic= (sym->usage & uPUBLIC)!=0;
   /* the '(' parantheses has already been parsed */
@@ -3973,6 +3977,17 @@ static int declargs(symbol *sym,int chkshadow)
           error(1,"-identifier-","-tagname-");
         numtags=0;
         while (numtags<MAXTAGS) {
+          if (matchtoken(tELLIPS)) {
+            /* any tag */
+            if (numtags>0) {
+              /* makes no sense to have wildcard tags with other specific tags */
+              error(1,"-tagname-","..."); /* expected token: "-tagname-", but found "..." */
+            } /* if */
+            wildcard_tag=TRUE;
+            if(needtoken('}')) /* doesn't  make sense to have more tags with wildcard tag */
+              break;
+            needtoken(',');
+          }
           if (!matchtoken('_') && !needtoken(tSYMBOL))
             break;
           tokeninfo(&val,&ptr);
@@ -3999,7 +4014,7 @@ static int declargs(symbol *sym,int chkshadow)
          *   base + 3*sizeof(cell)  == first argument of the function
          * So the offset of each argument is "(argcnt+3) * sizeof(cell)".
          */
-        doarg(name,ident,(argcnt+3)*sizeof(cell),tags,numtags,fpublic,fconst,chkshadow,&arg);
+        doarg(name,ident,(argcnt+3)*sizeof(cell),tags,numtags,wildcard_tag,fpublic,fconst,chkshadow,&arg);
         if (fpublic && arg.hasdefault)
           error(59,name);       /* arguments of a public function may not have a default value */
         if ((sym->usage & uPROTOTYPED)==0) {
@@ -4024,6 +4039,7 @@ static int declargs(symbol *sym,int chkshadow)
         argcnt++;
         ident=iVARIABLE;
         numtags=0;
+        wildcard_tag=FALSE;
         fconst=FALSE;
         break;
       case tELLIPS:
@@ -4040,6 +4056,7 @@ static int declargs(symbol *sym,int chkshadow)
             error(103);                 /* insufficient memory */
           memset(&sym->dim.arglist[argcnt+1],0,sizeof(arginfo));  /* keep the list terminated */
           sym->dim.arglist[argcnt].ident=iVARARGS;
+          sym->dim.arglist[argcnt].wildcard_tag=wildcard_tag;
           sym->dim.arglist[argcnt].hasdefault=FALSE;
           sym->dim.arglist[argcnt].defvalue.val=0;
           sym->dim.arglist[argcnt].defvalue_tag=0;
@@ -4113,7 +4130,7 @@ static int declargs(symbol *sym,int chkshadow)
  *  "fpublic" indicates whether the function for this argument list is public.
  *  The arguments themselves are never public.
  */
-static void doarg(char *name,int ident,int offset,int tags[],int numtags,
+static void doarg(char *name,int ident,int offset,int tags[],int numtags,int wildcard_tag,
                   int fpublic,int fconst,int chkshadow,arginfo *arg)
 {
   symbol *argsym;
@@ -4121,6 +4138,7 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
   cell size;
 
   strcpy(arg->name,name);
+  arg->wildcard_tag=FALSE;
   arg->hasdefault=FALSE;        /* preset (most common case) */
   arg->defvalue.val=0;          /* clear */
   arg->defvalue_tag=0;
@@ -4146,7 +4164,7 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
       lexpush();                /* initials() needs the "=" token again */
       assert(litidx==0);        /* at the start of a function, this is reset */
       assert(numtags>0);
-      initials(ident,tags[0],&size,arg->dim,arg->numdim,enumroot);
+      initials(ident,tags[0],wildcard_tag,&size,arg->dim,arg->numdim,enumroot);
       assert(size>=litidx);
       /* allocate memory to hold the initial values */
       arg->defvalue.array.data=(cell *)malloc(litidx*sizeof(cell));
@@ -4201,13 +4219,16 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
           needtoken(')');
       } else {
         constexpr(&arg->defvalue.val,&arg->defvalue_tag,NULL);
-        assert(numtags>0);
-        check_tagmismatch(tags[0],arg->defvalue_tag,TRUE,-1);  
+        if (wildcard_tag==FALSE) {
+          assert(numtags>0);
+          check_tagmismatch(tags[0],arg->defvalue_tag,TRUE,-1);  
+        } /* if */
       } /* if */
     } /* if */
   } /* if */
   arg->ident=(char)ident;
   arg->usage=(char)(fconst ? uCONST : 0);
+  arg->wildcard_tag=wildcard_tag;
   arg->numtags=numtags;
   arg->tags=(int*)malloc(numtags*sizeof tags[0]);
   if (arg->tags==NULL)
