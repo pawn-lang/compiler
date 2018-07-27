@@ -3798,7 +3798,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
       ptr=ptr->next;
     } /* while */
   } /* if */
-  startfunc(sym->name); /* creates stack frame */
+  startfunc(sym->name,(sym->flags & flagNAKED)==0); /* creates stack frame */
   insert_dbgline(funcline);
   setline(FALSE);
   if (sc_alignnext) {
