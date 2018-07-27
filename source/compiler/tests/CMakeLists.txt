@@ -52,6 +52,14 @@ set_tests_properties(meaningless_class_specifiers_gh_172 PROPERTIES PASS_REGULAR
 .*\\.pwn\\(1 \\-\\- 2\\) : warning 238: meaningless combination of class specifiers \\(const variable arguments\\)
 ")
 
+add_compiler_test(constexpr_result_prop_gh_308 ${CMAKE_CURRENT_SOURCE_DIR}/constexpr_result_prop_gh_308.pwn)
+set_tests_properties(constexpr_result_prop_gh_308 PROPERTIES PASS_REGULAR_EXPRESSION
+".*\\.pwn\\(2\\) : warning 237: user warning: \\\"Test passed.\\\"
+.*\\.pwn\\(6\\) : warning 237: user warning: \\\"Test passed.\\\"
+.*\\.pwn\\(10\\) : warning 237: user warning: \\\"Test passed.\\\"
+.*\\.pwn\\(14\\) : warning 237: user warning: \\\"Test passed.\\\"
+")
+
 add_compiler_test(const_array_args_and_literals_gh_276 ${CMAKE_CURRENT_SOURCE_DIR}/const_array_args_and_literals_gh_276.pwn)
 set_tests_properties(const_array_args_and_literals_gh_276 PROPERTIES PASS_REGULAR_EXPRESSION
 ".*\\.pwn\\(13\\) : warning 214: possibly a \\\"const\\\" array argument was intended: \\\"arr\\\"
