@@ -343,9 +343,12 @@ SC_FUNC void markexpr(optmark type,const char *name,cell offset)
  *
  *  Global references: funcstatus  (referred to only)
  */
-SC_FUNC void startfunc(char *fname)
+SC_FUNC void startfunc(char *fname,int generateproc)
 {
-  stgwrite("\tproc");
+  if (generateproc) {
+    stgwrite("\tproc");
+    code_idx+=opcodes(1);
+  } /* if */
   if (sc_asmfile) {
     char symname[2*sNAMEMAX+16];
     funcdisplayname(symname,fname);
@@ -353,7 +356,6 @@ SC_FUNC void startfunc(char *fname)
     stgwrite(symname);
   } /* if */
   stgwrite("\n");
-  code_idx+=opcodes(1);
 }
 
 /*  endfunc

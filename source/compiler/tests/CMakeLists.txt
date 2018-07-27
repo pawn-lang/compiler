@@ -52,6 +52,16 @@ set_tests_properties(meaningless_class_specifiers_gh_172 PROPERTIES PASS_REGULAR
 .*\\.pwn\\(1 \\-\\- 2\\) : warning 238: meaningless combination of class specifiers \\(const variable arguments\\)
 ")
 
+add_compiler_test(const_array_args_and_literals_gh_276 ${CMAKE_CURRENT_SOURCE_DIR}/const_array_args_and_literals_gh_276.pwn)
+set_tests_properties(const_array_args_and_literals_gh_276 PROPERTIES PASS_REGULAR_EXPRESSION
+".*\\.pwn\\(13\\) : warning 214: possibly a \\\"const\\\" array argument was intended: \\\"arr\\\"
+.*\\.pwn\\(18\\) : warning 214: possibly a \\\"const\\\" array argument was intended: \\\"arr\\\"
+.*\\.pwn\\(30\\) : warning 214: possibly a \\\"const\\\" array argument was intended: \\\"arr\\\"
+.*\\.pwn\\(39\\) : warning 239: literal array/string passed to a non-const parameter
+.*\\.pwn\\(40\\) : warning 239: literal array/string passed to a non-const parameter
+.*\\.pwn\\(41\\) : warning 239: literal array/string passed to a non-const parameter
+")
+
 # Crashers
 #
 # These tests simply check that the compiler doesn't crash.
