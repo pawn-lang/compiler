@@ -3150,8 +3150,7 @@ SC_FUNC symbol *fetchfunc(char *name,int tag)
     sym=addsym(name,code_idx,iFUNCTN,sGLOBAL,tag,0);
     assert(sym!=NULL);          /* fatal error 103 must be given on error */
     /* assume no arguments */
-    sym->dim.arglist=(arginfo*)malloc(1*sizeof(arginfo));
-    sym->dim.arglist[0].ident=0;
+    sym->dim.arglist=(arginfo*)calloc(1,sizeof(arginfo));
     /* set library ID to NULL (only for native functions) */
     sym->x.lib=NULL;
     /* set the required stack size to zero (only for non-native functions) */
@@ -3799,7 +3798,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
       ptr=ptr->next;
     } /* while */
   } /* if */
-  startfunc(sym->name); /* creates stack frame */
+  startfunc(sym->name,(sym->flags & flagNAKED)==0); /* creates stack frame */
   insert_dbgline(funcline);
   setline(FALSE);
   if (sc_alignnext) {
@@ -4224,8 +4223,12 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
     assert(numtags>0);
     argsym=addvariable(name,offset,ident,sLOCAL,tags[0],
                        arg->dim,arg->numdim,arg->idxtag,0);
-    if (fpublic)
+    if (fpublic) {
       argsym->usage|=uREAD;     /* arguments of public functions are always "used" */
+      if(argsym->ident==iREFARRAY || argsym->ident==iREFERENCE)
+        argsym->usage|=uWRITTEN;
+    }
+      
     if (fconst)
       argsym->usage|=uCONST;
   } /* if */
@@ -4904,9 +4907,20 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
         error(204,sym->name);       /* value assigned to symbol is never used */
         errorset(sSETPOS,-1);
       } else if ((sym->usage & (uWRITTEN | uPUBLIC | uCONST))==0 && sym->ident==iREFARRAY) {
-        errorset(sSETPOS,sym->lnumber);
-        error(214,sym->name);       /* make array argument "const" */
-        errorset(sSETPOS,-1);
+        int warn = 1;
+        symbol* depend = finddepend(sym);
+        while (depend != NULL) {
+          if ((depend->usage & (uWRITTEN | uPUBLIC | uCONST)) != 0) {
+            warn = 0;
+            break;
+          }
+          depend = finddepend(depend);
+        } /* while */
+        if (warn) {
+          errorset(sSETPOS, sym->lnumber);
+          error(214, sym->name);       /* make array argument "const" */
+          errorset(sSETPOS, -1);
+        } /* if */
       } /* if */
       /* also mark the variable (local or global) to the debug information */
       if ((sym->usage & (uWRITTEN | uREAD))!=0 && (sym->usage & uNATIVE)==0)
