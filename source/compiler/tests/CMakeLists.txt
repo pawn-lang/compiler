@@ -70,6 +70,16 @@ set_tests_properties(const_array_args_and_literals_gh_276 PROPERTIES PASS_REGULA
 .*\\.pwn\\(41\\) : warning 239: literal array/string passed to a non-const parameter
 ")
 
+add_compiler_test(md_array_size_chk_gh_314 ${CMAKE_CURRENT_SOURCE_DIR}/md_array_size_chk_gh_314.pwn)
+set_tests_properties(md_array_size_chk_gh_314 PROPERTIES PASS_REGULAR_EXPRESSION
+"*\\.pwn\\(1\\) : error 009: invalid array size \\(negative, zero or out of bounds\\)
+.*\\.pwn\\(2\\) : error 009: invalid array size \\(negative, zero or out of bounds\\)
+.*\\.pwn\\(3\\) : error 009: invalid array size \\(negative, zero or out of bounds\\)
+.*\\.pwn\\(5\\) : error 009: invalid array size \\(negative, zero or out of bounds\\)
+.*\\.pwn\\(30\\) : warning 224: indeterminate array size in \"sizeof\" expression \\(symbol \"\"\\)
+")
+set_tests_properties(md_array_size_chk_gh_314 PROPERTIES WILL_FAIL TRUE)
+
 # Crashers
 #
 # These tests simply check that the compiler doesn't crash.
