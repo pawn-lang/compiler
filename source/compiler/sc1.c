@@ -4971,6 +4971,14 @@ static void destructsymbols(symbol *root,int level)
       /* check that the '~' operator is defined for this tag */
       operator_symname(symbolname,"~",sym->tag,0,1,0);
       if ((opsym=findglb(symbolname,sGLOBAL))!=NULL) {
+        if ((opsym->usage & uMISSING)!=0 || (opsym->usage & uPROTOTYPED)==0) {
+          char symname[2*sNAMEMAX+16];  /* allow space for user defined operators */
+          funcdisplayname(symname,opsym->name);
+          if ((opsym->usage & uMISSING)!=0)
+            error(4,symname);           /* function not defined */
+          if ((opsym->usage & uPROTOTYPED)==0)
+            error(71,symname);          /* operator must be declared before use */
+        } /* if */
         /* save PRI, in case of a return statment */
         if (!savepri) {
           pushreg(sPRI);        /* right-hand operand is in PRI */

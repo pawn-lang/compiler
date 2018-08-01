@@ -80,6 +80,12 @@ set_tests_properties(md_array_size_chk_gh_314 PROPERTIES PASS_REGULAR_EXPRESSION
 ")
 set_tests_properties(md_array_size_chk_gh_314 PROPERTIES WILL_FAIL TRUE)
 
+add_compiler_test(destructor_not_impl_gh_310 ${CMAKE_CURRENT_SOURCE_DIR}/destructor_not_impl_gh_310.pwn)
+set_tests_properties(destructor_not_impl_gh_310 PROPERTIES PASS_REGULAR_EXPRESSION
+".*\\.pwn\\(6\\) : error 004: function \"operator~(Error:)\" is not implemented
+")
+set_tests_properties(destructor_not_impl_gh_310 PROPERTIES WILL_FAIL TRUE)
+
 # Crashers
 #
 # These tests simply check that the compiler doesn't crash.
