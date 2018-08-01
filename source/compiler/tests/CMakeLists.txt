@@ -70,6 +70,12 @@ set_tests_properties(const_array_args_and_literals_gh_276 PROPERTIES PASS_REGULA
 .*\\.pwn\\(41\\) : warning 239: literal array/string passed to a non-const parameter
 ")
 
+add_compiler_test(destructor_not_impl_gh_310 ${CMAKE_CURRENT_SOURCE_DIR}/destructor_not_impl_gh_310.pwn)
+set_tests_properties(destructor_not_impl_gh_310 PROPERTIES PASS_REGULAR_EXPRESSION
+".*\\.pwn\\(6\\) : error 004: function \"operator~(Error:)\" is not implemented
+")
+set_tests_properties(destructor_not_impl_gh_310 PROPERTIES WILL_FAIL TRUE)
+
 # Crashers
 #
 # These tests simply check that the compiler doesn't crash.
