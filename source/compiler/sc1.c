@@ -1756,11 +1756,11 @@ static void parse(void)
     case '{':
       error(55);                /* start of function body without function header */
       break;
-    case tSTATIC_ASSERT:
+    case t__STATIC_ASSERT:
       static_check(FALSE);
       needtoken(tTERM);
       break;
-    case tSTATIC_CHECK:
+    case t__STATIC_CHECK:
       static_check(TRUE);
       needtoken(tTERM);
       break;
