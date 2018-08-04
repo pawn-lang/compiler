@@ -184,7 +184,7 @@ static char *warnmsg[] = {
 /*226*/  "a variable is assigned to itself (symbol \"%s\")\n",
 /*227*/  "more initiallers than enum fields\n",
 /*228*/  "length of initialler exceeds size of the enum field\n",
-/*229*/  "index tag mismatch (symbol \"%s\")\n",
+/*229*/  "index tag mismatch (symbol \"%s\"): expected tag %s but found %s\n",
 /*230*/  "no implementation for state \"%s\" in function \"%s\", no fall-back\n",
 /*231*/  "state specification on forward declaration is ignored\n",
 /*232*/  "output file is written, but with compact encoding disabled\n",
@@ -194,7 +194,8 @@ static char *warnmsg[] = {
 /*236*/  "unknown parameter in substitution (incorrect #define pattern)\n",
 /*237*/  "user warning: %s\n",
 /*238*/  "meaningless combination of class specifiers (%s)\n",
-/*239*/  "check failed: %s\n"
+/*239*/  "literal array/string passed to a non-const parameter\n",
+/*240*/  "check failed: %s\n"
 };
 
 #define NUM_WARNINGS    (sizeof warnmsg / sizeof warnmsg[0])
@@ -480,7 +481,7 @@ int static_check(int warning)
       } else {
         strlcpy(usermsg,(const char*)exprstart,exprend-exprstart+1);
       } /* if */      
-      error(warning==TRUE ? 239 : 110,usermsg);
+      error(warning==TRUE ? 240 : 110,usermsg);
       free(usermsg);
     } /* if */
    } /* if */

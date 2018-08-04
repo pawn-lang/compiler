@@ -3158,8 +3158,7 @@ SC_FUNC symbol *fetchfunc(char *name,int tag)
     sym=addsym(name,code_idx,iFUNCTN,sGLOBAL,tag,0);
     assert(sym!=NULL);          /* fatal error 103 must be given on error */
     /* assume no arguments */
-    sym->dim.arglist=(arginfo*)malloc(1*sizeof(arginfo));
-    sym->dim.arglist[0].ident=0;
+    sym->dim.arglist=(arginfo*)calloc(1,sizeof(arginfo));
     /* set library ID to NULL (only for native functions) */
     sym->x.lib=NULL;
     /* set the required stack size to zero (only for non-native functions) */
@@ -3418,6 +3417,28 @@ static constvalue *find_tag_byval(int tag)
   return tagsym;
 }
 
+SC_FUNC void check_index_tagmismatch(char *symname,int expectedtag,int actualtag,int allowcoerce,int errline)
+{
+  assert(symname!=NULL);
+  if (!matchtag(expectedtag,actualtag,allowcoerce)) {
+    constvalue *tagsym;
+    char expected_tagname[sNAMEMAX+3]="none (\"_\"),",actual_tagname[sNAMEMAX+2]="none (\"_\")"; /* two extra characters for quotes */  
+    if(expectedtag!=0) {
+      tagsym=find_tag_byval(expectedtag);
+      sprintf(expected_tagname,"\"%s\",",(tagsym!=NULL) ? tagsym->name : "-unknown-");
+    } /* if */
+    if(actualtag!=0) {
+      tagsym=find_tag_byval(actualtag);
+      sprintf(actual_tagname,"\"%s\"",(tagsym!=NULL) ? tagsym->name : "-unknown-");
+    } /* if */
+    if(errline>0)
+      errorset(sSETPOS,errline);
+    error(229,symname,expected_tagname,actual_tagname); /* index tag mismatch */
+    if(errline>0)
+      errorset(sSETPOS,-1);    
+  } /* if */
+}
+
 SC_FUNC void check_tagmismatch(int formaltag,int actualtag,int allowcoerce,int errline)
 {
   if (!matchtag(formaltag,actualtag,allowcoerce)) {
@@ -3425,7 +3446,7 @@ SC_FUNC void check_tagmismatch(int formaltag,int actualtag,int allowcoerce,int e
     char formal_tagname[sNAMEMAX+3]="none (\"_\"),",actual_tagname[sNAMEMAX+2]="none (\"_\")"; /* two extra characters for quotes */  
     if(formaltag!=0) {
       tagsym=find_tag_byval(formaltag);
-      sprintf(formal_tagname,"\"%s\",", (tagsym!=NULL) ? tagsym->name : "-unknown-");
+      sprintf(formal_tagname,"\"%s\",",(tagsym!=NULL) ? tagsym->name : "-unknown-");
     } /* if */
     if(actualtag!=0) {
       tagsym=find_tag_byval(actualtag);
@@ -3785,7 +3806,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
       ptr=ptr->next;
     } /* while */
   } /* if */
-  startfunc(sym->name); /* creates stack frame */
+  startfunc(sym->name,(sym->flags & flagNAKED)==0); /* creates stack frame */
   insert_dbgline(funcline);
   setline(FALSE);
   if (sc_alignnext) {
@@ -4210,8 +4231,12 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
     assert(numtags>0);
     argsym=addvariable(name,offset,ident,sLOCAL,tags[0],
                        arg->dim,arg->numdim,arg->idxtag,0);
-    if (fpublic)
+    if (fpublic) {
       argsym->usage|=uREAD;     /* arguments of public functions are always "used" */
+      if(argsym->ident==iREFARRAY || argsym->ident==iREFERENCE)
+        argsym->usage|=uWRITTEN;
+    }
+      
     if (fconst)
       argsym->usage|=uCONST;
   } /* if */
@@ -4889,12 +4914,21 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
         errorset(sSETPOS,sym->lnumber);
         error(204,sym->name);       /* value assigned to symbol is never used */
         errorset(sSETPOS,-1);
-#if 0 // ??? not sure whether it is a good idea to force people use "const"
       } else if ((sym->usage & (uWRITTEN | uPUBLIC | uCONST))==0 && sym->ident==iREFARRAY) {
-        errorset(sSETPOS,sym->lnumber);
-        error(214,sym->name);       /* make array argument "const" */
-        errorset(sSETPOS,-1);
-#endif
+        int warn = 1;
+        symbol* depend = finddepend(sym);
+        while (depend != NULL) {
+          if ((depend->usage & (uWRITTEN | uPUBLIC | uCONST)) != 0) {
+            warn = 0;
+            break;
+          }
+          depend = finddepend(depend);
+        } /* while */
+        if (warn) {
+          errorset(sSETPOS, sym->lnumber);
+          error(214, sym->name);       /* make array argument "const" */
+          errorset(sSETPOS, -1);
+        } /* if */
       } /* if */
       /* also mark the variable (local or global) to the debug information */
       if ((sym->usage & (uWRITTEN | uREAD))!=0 && (sym->usage & uNATIVE)==0)
@@ -4941,6 +4975,14 @@ static void destructsymbols(symbol *root,int level)
       /* check that the '~' operator is defined for this tag */
       operator_symname(symbolname,"~",sym->tag,0,1,0);
       if ((opsym=findglb(symbolname,sGLOBAL))!=NULL) {
+        if ((opsym->usage & uMISSING)!=0 || (opsym->usage & uPROTOTYPED)==0) {
+          char symname[2*sNAMEMAX+16];  /* allow space for user defined operators */
+          funcdisplayname(symname,opsym->name);
+          if ((opsym->usage & uMISSING)!=0)
+            error(4,symname);           /* function not defined */
+          if ((opsym->usage & uPROTOTYPED)==0)
+            error(71,symname);          /* operator must be declared before use */
+        } /* if */
         /* save PRI, in case of a return statment */
         if (!savepri) {
           pushreg(sPRI);        /* right-hand operand is in PRI */

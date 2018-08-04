@@ -577,6 +577,7 @@ long pc_lengthbin(void *handle); /* return the length of the file */
 SC_FUNC void set_extension(char *filename,char *extension,int force);
 SC_FUNC symbol *fetchfunc(char *name,int tag);
 SC_FUNC char *operator_symname(char *symname,char *opername,int tag1,int tag2,int numtags,int resulttag);
+SC_FUNC void check_index_tagmismatch(char *symname,int expectedtag,int actualtag,int allowcoerce,int errline);
 SC_FUNC void check_tagmismatch(int formaltag,int actualtag,int allowcoerce,int errline);
 SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualtag,int errline);
 SC_FUNC char *funcdisplayname(char *dest,char *funcname);
@@ -650,7 +651,7 @@ SC_FUNC void setlinedirect(int line);
 SC_FUNC void setlineconst(int line);
 SC_FUNC void setlabel(int index);
 SC_FUNC void markexpr(optmark type,const char *name,cell offset);
-SC_FUNC void startfunc(char *fname);
+SC_FUNC void startfunc(char *fname,int generateproc);
 SC_FUNC void endfunc(void);
 SC_FUNC void alignframe(int numbytes);
 SC_FUNC void rvalue(value *lval);

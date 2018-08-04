@@ -16,12 +16,12 @@ endfunction()
 # doesn't match the expected pattern.
 
 add_compiler_test(gh_217 ${CMAKE_CURRENT_SOURCE_DIR}/gh_217.pwn)
-set_tests_properties(gh_217 PROPERTIES PASS_REGULAR_EXPRESSION ".*\\.pwn\\(11\\) : warning 237: user warning: this is    warning 1
-.*\\.pwn\\(13\\) : warning 237: user warning: this iswarning 2
-.*\\.pwn\\(15\\) : warning 237: user warning: this is warning 3
-.*\\.pwn\\(17\\) : warning 237: user warning: this is     warning 4
-.*\\.pwn\\(27\\) : warning 234: function is deprecated \\(symbol \"f\"\\) don't    use this     functionplease
-.*\\.pwn\\(32\\) : warning 234: function is deprecated \\(symbol \"f\"\\) don't    use this     functionplease
+set_tests_properties(gh_217 PROPERTIES PASS_REGULAR_EXPRESSION ".*\\.pwn\\(11\\) : warning 237: user warning: this is warning 1
+.*\\.pwn\\(13\\) : warning 237: user warning: this is warning 2
+.*\\.pwn\\(15\\) : warning 237: user warning: this is  warning 3
+.*\\.pwn\\(17\\) : warning 237: user warning: this is  warning 4
+.*\\.pwn\\(28\\) : warning 234: function is deprecated \\(symbol \"f\"\\) don't use  this  function please
+.*\\.pwn\\(33\\) : warning 234: function is deprecated \\(symbol \"f\"\\) don't use  this  function please
 ")
 
 add_compiler_test(reset_errline_gh_230 ${CMAKE_CURRENT_SOURCE_DIR}/reset_errline_gh_230.pwn)
@@ -51,6 +51,30 @@ set_tests_properties(meaningless_class_specifiers_gh_172 PROPERTIES PASS_REGULAR
 ".*\\.pwn\\(1\\) : warning 238: meaningless combination of class specifiers \\(const reference\\)
 .*\\.pwn\\(1 \\-\\- 2\\) : warning 238: meaningless combination of class specifiers \\(const variable arguments\\)
 ")
+
+add_compiler_test(constexpr_result_prop_gh_308 ${CMAKE_CURRENT_SOURCE_DIR}/constexpr_result_prop_gh_308.pwn)
+set_tests_properties(constexpr_result_prop_gh_308 PROPERTIES PASS_REGULAR_EXPRESSION
+".*\\.pwn\\(2\\) : warning 237: user warning: \\\"Test passed.\\\"
+.*\\.pwn\\(6\\) : warning 237: user warning: \\\"Test passed.\\\"
+.*\\.pwn\\(10\\) : warning 237: user warning: \\\"Test passed.\\\"
+.*\\.pwn\\(14\\) : warning 237: user warning: \\\"Test passed.\\\"
+")
+
+add_compiler_test(const_array_args_and_literals_gh_276 ${CMAKE_CURRENT_SOURCE_DIR}/const_array_args_and_literals_gh_276.pwn)
+set_tests_properties(const_array_args_and_literals_gh_276 PROPERTIES PASS_REGULAR_EXPRESSION
+".*\\.pwn\\(13\\) : warning 214: possibly a \\\"const\\\" array argument was intended: \\\"arr\\\"
+.*\\.pwn\\(18\\) : warning 214: possibly a \\\"const\\\" array argument was intended: \\\"arr\\\"
+.*\\.pwn\\(30\\) : warning 214: possibly a \\\"const\\\" array argument was intended: \\\"arr\\\"
+.*\\.pwn\\(39\\) : warning 239: literal array/string passed to a non-const parameter
+.*\\.pwn\\(40\\) : warning 239: literal array/string passed to a non-const parameter
+.*\\.pwn\\(41\\) : warning 239: literal array/string passed to a non-const parameter
+")
+
+add_compiler_test(destructor_not_impl_gh_310 ${CMAKE_CURRENT_SOURCE_DIR}/destructor_not_impl_gh_310.pwn)
+set_tests_properties(destructor_not_impl_gh_310 PROPERTIES PASS_REGULAR_EXPRESSION
+".*\\.pwn\\(6\\) : error 004: function \"operator~(Error:)\" is not implemented
+")
+set_tests_properties(destructor_not_impl_gh_310 PROPERTIES WILL_FAIL TRUE)
 
 # Crashers
 #
