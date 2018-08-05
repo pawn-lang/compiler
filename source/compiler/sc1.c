@@ -1757,11 +1757,11 @@ static void parse(void)
       error(55);                /* start of function body without function header */
       break;
     case t__STATIC_ASSERT:
-      static_check(FALSE);
+      do_static_check(FALSE);
       needtoken(tTERM);
       break;
     case t__STATIC_CHECK:
-      static_check(TRUE);
+      do_static_check(TRUE);
       needtoken(tTERM);
       break;
     default:
@@ -6002,6 +6002,71 @@ static void dolabel(void)
    */
   setstk(-declared*sizeof(cell));
   sym->usage|=uDEFINE;  /* label is now defined */
+}
+
+/* do_static_check()
+ * checks compile-time assertions and triggers an error or warning
+ *
+ * Parameters:
+ * FALSE for error if assertion fails
+ * TRUE for warning if assertion fails
+ */
+SC_FUNC int do_static_check(int warning)
+{
+  cell val;
+  int result,usermsg_present=FALSE;
+  char *usermsg, *str;
+  const unsigned char *exprstart,*exprend;
+  if (needtoken('(')) {
+    exprstart=lptr;
+    result=constexpr(&val,NULL,NULL);
+    exprend=lptr-1;
+    if (!result)
+      error(8); /* must be constant expression */
+    if (matchtoken(',')) {
+      while (*lptr<=' ' && *lptr!='\0')
+        lptr++;
+      if (*lptr!='"') {
+        error(1,"-string-","-unknown-"); /* expected string */
+        result=0; /* prevent 112 fatal error */
+      } /* if */
+      lptr++; /* skip opening " character */
+      exprstart=lptr;
+      while (*lptr) {
+        if (*lptr=='\\') {
+          lptr++; /* skip the escaped character */
+        } else if (*lptr=='"') {
+          break;
+        } /* if */
+        lptr++;
+      } /* while */
+      exprend=lptr;
+      usermsg_present=TRUE;
+      if (*lptr!='"') {
+        error(37); /* invalid string (possibly non-terminated string) */
+        result=0; /* prevent 112 fatal error */
+      } /* if */
+      lptr++; /* skip closing " character */
+    } /* if */
+    if (val==0 && result) {
+      usermsg=malloc(exprend-exprstart+1);      
+      if (usermsg_present==TRUE) {
+        str=usermsg;
+        while (exprstart!=exprend) {
+          if (*exprstart=='\\')
+            exprstart++;
+          *str++=*exprstart++;
+        } /* while */
+        *str='\0';
+      } else {
+        strlcpy(usermsg,(const char*)exprstart,exprend-exprstart+1);
+      } /* if */      
+      error(warning==TRUE ? 240 : 110,usermsg);
+      free(usermsg);
+    } /* if */
+   } /* if */
+  needtoken(')');
+  return val;
 }
 
 /*  fetchlab
