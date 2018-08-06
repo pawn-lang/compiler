@@ -1,36 +1,37 @@
+<!-- pawn-lang compiler issue template -->
+
 <!--
-This area is for:
-- Bug reports
-- Feature suggestions
-- Questions directly regarding the compiler's implementation, command arguments
-  or usage. This is NOT a place to ask questions about compiler errors or
-  warnings you are getting UNLESS those errors or warnings are unexpected and
-  the result of a possible bug.
-
-For any other questions, post on the SA:MP forum or the unofficial SA:MP
-Discord server in the #programming channel.
-
-The issues section of this repository is managed by @Southclaws who will assign
-labels etc.
+Please ensure that your issue is directly related to the pawn-lang/compiler. Issues
+seeking help with scripting or doubts about SA-MP are not relevant to this project.
 -->
 
-**Is this a BUG REPORT, FEATURE REQUEST or QUESTION?**:
+### Issue description:
+<!--
+Information that could be useful:
+- how to reproduce the problem
+- observed behavior
+- expected behavior
+- other relevant information
+-->
 
-* [ ] Bug Report
-* [ ] Feature Request
-* [ ] Question
+### Minimal complete verifiable example (MCVE):
+<!--
+Please provide a minimal complete verifiable code which compiles
+and reproduces the problem. If the compiler is showing undefined (random) behavior,
+provide the code which invokes such behavior.
 
-**What happened**:
+Learn more about writing MCVE from [StackOverflow](https://stackoverflow.com/help/mcve).
 
-**What you expected to happen**:
+If this section is not relevant, feel free to remove this section from your issue.
+-->
 
-**How to reproduce it (as minimally and precisely as possible)**:
+```
+```
 
-**Anything else we need to know?**:
+<!-- comments on the code, if any -->
 
-**Environment**:
+### Workspace Information:
 
-* Operating System
-* Compiler version
-* How are you invoking the compiler? Pawno, Sublime, vscode, sampctl or command-line?
-* If using sampctl, the version number
+* Compiler version:
+* Command line arguments provided (or sampctl version):
+* Operating System:
