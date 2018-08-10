@@ -1,0 +1,9 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+constexpr_result_prop_gh_308.pwn(2) : warning 237: user warning: "Test passed."
+constexpr_result_prop_gh_308.pwn(6) : warning 237: user warning: "Test passed."
+constexpr_result_prop_gh_308.pwn(10) : warning 237: user warning: "Test passed."
+constexpr_result_prop_gh_308.pwn(14) : warning 237: user warning: "Test passed."
+"""
+}
