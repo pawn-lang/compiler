@@ -1,5 +1,7 @@
 // TODO: Check that string literals are concatenated correctly
 
+#include <console>
+
 #define d1\
     print("ok")
 #define d2 \
