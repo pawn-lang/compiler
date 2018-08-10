@@ -1,4 +1,6 @@
-f1(const &v) { }
+f1(const &v) {
+    #pragma unused v
+}
 f2(const ...) { }
 f3(const v) {
 	#pragma unused v
@@ -7,7 +9,9 @@ f4(...) { }
 f5(v) {
 	#pragma unused v
 }
-f6(&v) { }
+f6(&v) {
+    #pragma unused v
+}
 
 main() {
 	new a;

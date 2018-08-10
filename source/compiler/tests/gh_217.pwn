@@ -1,6 +1,6 @@
 // TODO: Check that string literals are concatenated correctly
 
-native print(const s[]);
+#include <console>
 
 #define d1\
     print("ok")

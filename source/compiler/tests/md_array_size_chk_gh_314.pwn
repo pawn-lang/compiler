@@ -1,8 +1,8 @@
-new arr1[] = {};
+new arr1[];
 new arr2[5][];
 new arr3[5][][5];
 new arr4[5][5];
-new arr5[][]= { { } };
+new arr5[][];
 
 f1(arr[]) {
 	#pragma unused arr
