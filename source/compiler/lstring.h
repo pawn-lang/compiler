@@ -7,10 +7,10 @@
   #define HAVE_SAFESTR
 #endif
 
-#if defined strlcpy
+#if defined strlcpy && !defined HAVE_STRLCPY
   #define HAVE_STRLCPY
 #endif
-#if defined strlcat
+#if defined strlcat && !defined HAVE_STRLCAT
   #define HAVE_STRLCAT
 #endif
 
