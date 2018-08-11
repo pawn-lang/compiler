@@ -27,6 +27,7 @@
  *
  *  Version: $Id: sc.h 3660 2006-11-05 13:05:09Z thiadmer $
  */
+
 #ifndef SC_H_INCLUDED
 #define SC_H_INCLUDED
 #include <limits.h>

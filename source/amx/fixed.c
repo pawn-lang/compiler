@@ -24,6 +24,7 @@
  *
  *  Version: $Id: fixed.c 3662 2006-11-07 08:44:33Z thiadmer $
  */
+
 #include <assert.h>
 #include <stdio.h>      /* for NULL */
 #include "amx.h"

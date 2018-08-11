@@ -20,6 +20,7 @@
  *
  *  Version: $Id: sc4.c 3633 2006-08-11 16:20:18Z thiadmer $
  */
+
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>

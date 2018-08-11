@@ -22,6 +22,7 @@
  *
  *  Version: $Id: sc1.c 3664 2006-11-08 12:09:25Z thiadmer $
  */
+
 #include <assert.h>
 #include <ctype.h>
 #include <limits.h>
@@ -2504,7 +2505,7 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
           error(9); /* array has zero length -> invalid size */
           return;
         } /* if */
-      } /* for */      
+      } /* for */
       *size=calc_arraysize(dim,numdim,0);
       if (*size==(cell)CELL_MAX) {
         error(9);       /* array is too big -> invalid size */
@@ -3418,7 +3419,7 @@ SC_FUNC void check_index_tagmismatch(char *symname,int expectedtag,int actualtag
   assert(symname!=NULL);
   if (!matchtag(expectedtag,actualtag,allowcoerce)) {
     constvalue *tagsym;
-    char expected_tagname[sNAMEMAX+3]="none (\"_\"),",actual_tagname[sNAMEMAX+2]="none (\"_\")"; /* two extra characters for quotes */  
+    char expected_tagname[sNAMEMAX+3]="none (\"_\"),",actual_tagname[sNAMEMAX+2]="none (\"_\")"; /* two extra characters for quotes */
     if(expectedtag!=0) {
       tagsym=find_tag_byval(expectedtag);
       sprintf(expected_tagname,"\"%s\",",(tagsym!=NULL) ? tagsym->name : "-unknown-");
@@ -3431,7 +3432,7 @@ SC_FUNC void check_index_tagmismatch(char *symname,int expectedtag,int actualtag
       errorset(sSETPOS,errline);
     error(229,symname,expected_tagname,actual_tagname); /* index tag mismatch */
     if(errline>0)
-      errorset(sSETPOS,-1);    
+      errorset(sSETPOS,-1);
   } /* if */
 }
 
@@ -3439,7 +3440,7 @@ SC_FUNC void check_tagmismatch(int formaltag,int actualtag,int allowcoerce,int e
 {
   if (!matchtag(formaltag,actualtag,allowcoerce)) {
     constvalue *tagsym;
-    char formal_tagname[sNAMEMAX+3]="none (\"_\"),",actual_tagname[sNAMEMAX+2]="none (\"_\")"; /* two extra characters for quotes */  
+    char formal_tagname[sNAMEMAX+3]="none (\"_\"),",actual_tagname[sNAMEMAX+2]="none (\"_\")"; /* two extra characters for quotes */
     if(formaltag!=0) {
       tagsym=find_tag_byval(formaltag);
       sprintf(formal_tagname,"\"%s\",",(tagsym!=NULL) ? tagsym->name : "-unknown-");
@@ -3452,7 +3453,7 @@ SC_FUNC void check_tagmismatch(int formaltag,int actualtag,int allowcoerce,int e
       errorset(sSETPOS,errline);
     error(213,"tag",formal_tagname,actual_tagname); /* tag mismatch */
     if(errline>0)
-      errorset(sSETPOS,-1);    
+      errorset(sSETPOS,-1);
   } /* if */
 }
 
@@ -3463,7 +3464,7 @@ SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualt
     constvalue *tagsym;
     char formal_tagnames[sLINEMAX]="",actual_tagname[sNAMEMAX+2]="none (\"_\")";
     int notag_allowed=FALSE,add_comma=FALSE;
-    for (i=0; i<numtags; i++) {      
+    for (i=0; i<numtags; i++) {
       if(formaltags[i]!=0) {
         if((i+1)==numtags && add_comma==TRUE && notag_allowed==FALSE)
           strlcat(formal_tagnames,", or ",sizeof(formal_tagnames));
@@ -3471,10 +3472,10 @@ SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualt
           strlcat(formal_tagnames,", ",sizeof(formal_tagnames));
         add_comma=TRUE;
         tagsym=find_tag_byval(formaltags[i]);
-        sprintf(formal_tagnames,"%s\"%s\"",formal_tagnames,(tagsym!=NULL) ? tagsym->name : "-unknown-"); 
+        sprintf(formal_tagnames,"%s\"%s\"",formal_tagnames,(tagsym!=NULL) ? tagsym->name : "-unknown-");
       } else {
         notag_allowed=TRUE;
-      } /* if */      
+      } /* if */
     } /* for */
     if(notag_allowed==TRUE) {
       if(add_comma==TRUE)
@@ -3485,12 +3486,12 @@ SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualt
     if(actualtag!=0) {
       tagsym=find_tag_byval(actualtag);
       sprintf(actual_tagname,"\"%s\"",(tagsym!=NULL) ? tagsym->name : "-unknown-");
-    } /* if */  
+    } /* if */
     if(errline>0)
       errorset(sSETPOS,errline);
     error(213,(numtags==1) ? "tag" : "tags",formal_tagnames,actual_tagname); /* tag mismatch */
     if(errline>0)
-      errorset(sSETPOS,-1);  
+      errorset(sSETPOS,-1);
   } /* if */
 }
 
@@ -4206,7 +4207,7 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
       } else {
         constexpr(&arg->defvalue.val,&arg->defvalue_tag,NULL);
         assert(numtags>0);
-        check_tagmismatch(tags[0],arg->defvalue_tag,TRUE,-1);  
+        check_tagmismatch(tags[0],arg->defvalue_tag,TRUE,-1);
       } /* if */
     } /* if */
   } /* if */
@@ -4232,7 +4233,7 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
       if(argsym->ident==iREFARRAY || argsym->ident==iREFERENCE)
         argsym->usage|=uWRITTEN;
     }
-      
+
     if (fconst)
       argsym->usage|=uCONST;
   } /* if */

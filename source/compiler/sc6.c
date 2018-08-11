@@ -20,6 +20,7 @@
  *
  *  Version: $Id: sc6.c 3648 2006-10-12 11:24:50Z thiadmer $
  */
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>     /* for macro max() */

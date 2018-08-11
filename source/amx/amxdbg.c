@@ -22,6 +22,7 @@
  *
  *  Version: $Id: amxdbg.c 3612 2006-07-22 09:59:46Z thiadmer $
  */
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
