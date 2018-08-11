@@ -33,14 +33,13 @@ def run_compiler(args):
                             stderr=subprocess.PIPE)
 
 class OutputCheckTest:
-  def __init__(self, name, source_file, errors=None, extra_args=None):
+  def __init__(self, name, errors=None, extra_args=None):
     self.name = name
-    self.source_file = source_file
     self.errors = errors
     self.extra_args = extra_args
 
   def run(self):
-    args = [self.source_file]
+    args = [self.name + '.pwn']
     if self.extra_args is not None:
       args += extra_args
     process = run_compiler(args=args)
@@ -63,25 +62,23 @@ class OutputCheckTest:
         ).format(expected_errors, errors)
       return result
 
-class CrashTest:
-  def __init__(self, name, source_file, extra_args=None):
-    self.name = name
-    self.source_file = source_file
-    self.extra_args = extra_args
-
-  def run(self):
-    # TODO: Check if the process crashed.
-    return True
-
 class RuntimeTest:
-  def __init__(self, name, amx_file, output, should_fail):
+  def __init__(self, name, output, should_fail):
     self.name = name
-    self.amx_file = amx_file
     self.output = output
     self.should_fail = should_fail
 
   def run(self):
-    process = subprocess.Popen([options.runner, self.amx_file],
+    process = run_compiler([self.name + '.pwn'])
+    stdout, stderr = process.communicate()
+    if process.returncode != 0:
+      self.fail_reason = \
+        'Compiler exited with status {}'.format(process.returncode)
+      errors = stderr.decode('utf-8')
+      if errors:
+        self.fail_reason += '\n\nErrors:\n\n{}'.format(errors)
+      return False
+    process = subprocess.Popen([options.runner, self.name + '.amx'],
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
@@ -116,14 +113,12 @@ for meta_file in glob.glob('*.meta'):
   test_type = metadata['test_type']
   if test_type == 'output_check':
     tests.append(OutputCheckTest(name=name,
-                                 source_file=name + '.pwn',
                                  errors=metadata.get('errors'),
                                  extra_args=metadata.get('extra_args')))
   elif test_type == 'crash':
-    tests.append(CrashTest(name=name, source_file=name + '.pwn'))
+    tests.append(CrashTest(name=name))
   elif test_type == 'runtime':
     tests.append(RuntimeTest(name=name,
-                             amx_file=name + '.amx',
                              output=metadata.get('output'),
                              should_fail=metadata.get('should_fail')))
   else:
