@@ -174,8 +174,8 @@ set(PAWNRUNS_SRCS
   ../amx/amxcore.c
 )
 if(UNIX)
-  set(PAWNRUN_SRCS
-    ${PAWNRUN_SRCS}
+  set(PAWNRUNS_SRCS
+    ${PAWNRUNS_SRCS}
     ../linux/getch.c
     ../linux/getch.h
     ../linux/binreloc.c
