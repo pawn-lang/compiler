@@ -14,9 +14,10 @@ addons:
       - cmake
 
 before_script:
-  - cmake . -DCMAKE_BUILD_TYPE=RelWithDebInfo
-            -DCMAKE_C_FLAGS="-m32 -Werror -Wno-address-of-packed-member"
-            -DCPACK_GENERATOR="TGZ;ZIP"
+  - mkdir build && cd build
+  - cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo
+             -DCMAKE_C_FLAGS="-m32 -Werror -Wno-address-of-packed-member"
+             -DCPACK_GENERATOR="TGZ;ZIP"
 
 script:
   - make
