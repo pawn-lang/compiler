@@ -139,6 +139,9 @@ target_link_libraries(pawncc pawnc)
 # The Pawn disassembler
 set(PAWNDISASM_SRCS
   pawndisasm.c
+  sc.h
+  ../amx/amx.h
+  ../amx/amxdbg.h
   ../amx/amxdbg.c
 )
 add_executable(pawndisasm ${PAWNDISASM_SRCS})
@@ -161,6 +164,15 @@ if(MSVC)
 endif()
 
 # Generate targets for running compiler tests
+set(PAWNRUNS_SRCS
+  pawnruns.c
+  ../amx/amx.c
+  ../amx/amx.h
+  ../amx/amxaux.c
+  ../amx/amxaux.h
+  ../amx/amxcons.c
+  ../amx/amxcore.c)
+add_executable(pawnruns ${PAWNRUNS_SRCS})
 add_subdirectory(tests)
 
 # Generate a binary package with CPack

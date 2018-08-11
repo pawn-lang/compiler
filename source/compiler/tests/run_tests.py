@@ -10,11 +10,14 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument('-c', '--compiler',
                     required=True,
-                    help='path to the pawncc executable')
+                    help='path to compiler executable (pawncc or pawncc.exe)')
 parser.add_argument('-i', '--include',
                     dest='include_dirs',
                     action='append',
-                    help='add specified directory to include path')
+                    help='add custom include directories for compile tests')
+parser.add_argument('-r', '--runner',
+                    required=True,
+                    help='path to runner executable (pawnrun or pawnrun.exe)')
 options = parser.parse_args(sys.argv[1:])
 
 def run_compiler(args):
@@ -30,11 +33,7 @@ def run_compiler(args):
                             stderr=subprocess.PIPE)
 
 class OutputCheckTest:
-  def __init__(self,
-               name,
-               source_file,
-               errors=None,
-               extra_args=None):
+  def __init__(self, name, source_file, errors=None, extra_args=None):
     self.name = name
     self.source_file = source_file
     self.errors = errors
@@ -54,19 +53,14 @@ class OutputCheckTest:
           No errors specified and process exited with non-zero status
         """
     else:
-      errors = stderr.decode('utf-8').splitlines()
-      errors = [e.strip() for e in errors if e.strip()]
-      expected_errors = self.errors.splitlines()
-      expected_errors = [e.strip() for e in expected_errors if e.strip()]
+      errors = stderr.decode('utf-8').strip(' \t\r\n').replace('\r', '')
+      expected_errors = self.errors.strip(' \t\r\n').replace('\r', '')
       if errors != expected_errors:
         result = False
         self.fail_reason = (
           'Error output didn\'t match\n\nExpected errors:\n\n{}\n\n'
           'Actual errors:\n\n{}'
-        ).format(
-          '\n'.join(expected_errors).strip(' \t\r\n'),
-          '\n'.join(errors).strip(' \t\r\n')
-        )
+        ).format(expected_errors, errors)
       return result
 
 class CrashTest:
@@ -79,10 +73,37 @@ class CrashTest:
     # TODO: Check if the process crashed.
     return True
 
-test_types = {
-  'output_check': OutputCheckTest,
-  'crash': CrashTest
-}
+class RuntimeTest:
+  def __init__(self, name, amx_file, output, should_fail):
+    self.name = name
+    self.amx_file = amx_file
+    self.output = output
+    self.should_fail = should_fail
+
+  def run(self):
+    process = subprocess.Popen([options.runner, self.amx_file],
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    output = ''
+    if stdout is not None:
+      output = stdout.decode('utf-8')
+    if stderr is not None:
+      output += stderr.decode('utf-8')
+    output = output.strip(' \t\r\n').replace('\r', '')
+    expected_output = self.output.strip(' \t\r\n').replace('\r', '')
+    if not self.should_fail and process.returncode != 0:
+      self.fail_reason = (
+        'Runner exited with status {}\n\nOutput: {}'
+      ).format(process.returncode, output)
+      return False
+    if output != expected_output:
+      self.fail_reason = (
+        'Output didn\'t match\n\nExpected output:\n\n{}\n\n'
+        'Actual output:\n\n{}'
+      ).format(expected_output, output)
+      return False
+    return True
 
 tests = []
 num_tests_disabled = 0
@@ -100,6 +121,11 @@ for meta_file in glob.glob('*.meta'):
                                  extra_args=metadata.get('extra_args')))
   elif test_type == 'crash':
     tests.append(CrashTest(name=name, source_file=name + '.pwn'))
+  elif test_type == 'runtime':
+    tests.append(RuntimeTest(name=name,
+                             amx_file=name + '.amx',
+                             output=metadata.get('output'),
+                             should_fail=metadata.get('should_fail')))
   else:
     raise KeyError('Unknown test type: ' + test_type)
 

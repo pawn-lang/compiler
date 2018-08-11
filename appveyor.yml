@@ -5,7 +5,8 @@ configuration:
   - RelWithDebInfo
 
 before_build:
-  - cmake . -G "Visual Studio 14 2015" -DCPACK_GENERATOR=ZIP -DCMAKE_GENERATOR_TOOLSET=v100
+  - mkdir build && cd build
+  - cmake ../source -G "Visual Studio 14 2015" -DCPACK_GENERATOR=ZIP -DCMAKE_GENERATOR_TOOLSET=v100
 
 build_script:
   - cmake --build . --config %CONFIGURATION%
@@ -15,7 +16,7 @@ test_script:
   - cmake --build . --config %CONFIGURATION% --target pawncc_tests
 
 artifacts:
-  - path: pawnc-*-windows.zip
+  - path: build/pawnc-*-windows.zip
     name: Binary package
 
 deploy:
