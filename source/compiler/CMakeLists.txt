@@ -171,8 +171,20 @@ set(PAWNRUNS_SRCS
   ../amx/amxaux.c
   ../amx/amxaux.h
   ../amx/amxcons.c
-  ../amx/amxcore.c)
+  ../amx/amxcore.c
+)
+if(UNIX)
+  set(PAWNRUN_SRCS
+    ${PAWNRUN_SRCS}
+    ../linux/getch.c
+    ../linux/getch.h
+    ../linux/binreloc.c
+  )
+endif()
 add_executable(pawnruns ${PAWNRUNS_SRCS})
+if(UNIX)
+  target_link_libraries(pawnruns dl)
+endif()
 add_subdirectory(tests)
 
 # Generate a binary package with CPack

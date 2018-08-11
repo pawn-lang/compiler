@@ -34,7 +34,7 @@ size_t AMXAPI aux_ProgramSize(char *filename)
 
   if ((fp=fopen(filename,"rb")) == NULL)
     return 0;
-  fread(&hdr, sizeof hdr, 1, fp);
+  (void)fread(&hdr, sizeof hdr, 1, fp);
   fclose(fp);
 
   amx_Align16(&hdr.magic);
@@ -51,7 +51,7 @@ int AMXAPI aux_LoadProgram(AMX *amx, char *filename, void *memblock)
   /* open the file, read and check the header */
   if ((fp = fopen(filename, "rb")) == NULL)
     return AMX_ERR_NOTFOUND;
-  fread(&hdr, sizeof hdr, 1, fp);
+  (void)fread(&hdr, sizeof hdr, 1, fp);
   amx_Align16(&hdr.magic);
   amx_Align32((uint32_t *)&hdr.size);
   amx_Align32((uint32_t *)&hdr.stp);
@@ -73,7 +73,7 @@ int AMXAPI aux_LoadProgram(AMX *amx, char *filename, void *memblock)
 
   /* read in the file */
   rewind(fp);
-  fread(memblock, 1, (size_t)hdr.size, fp);
+  (void)fread(memblock, 1, (size_t)hdr.size, fp);
   fclose(fp);
 
   /* initialize the abstract machine */
