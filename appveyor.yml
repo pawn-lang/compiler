@@ -5,7 +5,7 @@ configuration:
   - RelWithDebInfo
 
 before_build:
-  - cmake -G "Visual Studio 14 2015" source/compiler -DCPACK_GENERATOR=ZIP -DCMAKE_GENERATOR_TOOLSET=v100
+  - cmake . -G "Visual Studio 14 2015" -DCPACK_GENERATOR=ZIP -DCMAKE_GENERATOR_TOOLSET=v100
 
 build_script:
   - cmake --build . --config %CONFIGURATION%
@@ -13,9 +13,6 @@ build_script:
 
 test_script:
   - cmake --build . --config %CONFIGURATION% --target pawncc_tests
-
-on_failure:
-  - type Testing\Temporary\LastTest.log<Paste>
 
 artifacts:
   - path: pawnc-*-windows.zip

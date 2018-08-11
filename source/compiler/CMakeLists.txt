@@ -160,12 +160,8 @@ if(MSVC)
     DESTINATION bin)
 endif()
 
-# Generate tests (only if enabled, i.e. BUILD_TESTING=ON)
-include(CTest)
-if(BUILD_TESTING)
-  enable_testing()
-  add_subdirectory(tests)
-endif()
+# Generate targets for running compiler tests
+add_subdirectory(tests)
 
 # Generate a binary package with CPack
 set(CPACK_PACKAGE_NAME pawnc)
