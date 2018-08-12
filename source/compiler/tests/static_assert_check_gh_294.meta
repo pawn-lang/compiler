@@ -1,0 +1,18 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+static_assert_check_gh_294.pwn(7) : warning 240: check failed: size of "TEST" is not 123
+static_assert_check_gh_294.pwn(13) : warning 240: check failed: size of "Test" array is not 123
+static_assert_check_gh_294.pwn(18) : warning 240: check failed: 0
+static_assert_check_gh_294.pwn(19) : warning 240: check failed: test_string
+static_assert_check_gh_294.pwn(20) : warning 240: check failed: \ test \ " abc "
+static_assert_check_gh_294.pwn(21) : warning 240: check failed: this is zero
+static_assert_check_gh_294.pwn(23) : warning 240: check failed: var ^ var + 10 - 2*4 - 2
+static_assert_check_gh_294.pwn(26) : warning 240: check failed: array size must be even
+static_assert_check_gh_294.pwn(32) : error 008: must be a constant expression; assumed zero
+static_assert_check_gh_294.pwn(33) : error 001: expected token: "-string-", but found "-unknown-"
+static_assert_check_gh_294.pwn(34) : error 037: invalid string (possibly non-terminated string)
+static_assert_check_gh_294.pwn(34) : warning 215: expression has no effect
+static_assert_check_gh_294.pwn(34) : warning 215: expression has no effect
+"""
+}
