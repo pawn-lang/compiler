@@ -1391,7 +1391,7 @@ static int hier2(value *lval)
     while (paranthese--)
       needtoken(')');
     return FALSE;
-  case t__STATIC_ASSERT:    
+  case t__STATIC_ASSERT:
     do_static_check(FALSE);
     pc_sideeffect=TRUE;
     return FALSE;

@@ -5501,15 +5501,18 @@ static int doexpr(int comma,int chkeffect,int allowarray,int mark_endexpr,
  */
 SC_FUNC int constexpr(cell *val,int *tag,symbol **symptr)
 {
-  int ident,index;
+  int ident,index,already_staging;
   cell cidx;
 
-  stgset(TRUE);         /* start stage-buffering */
+  already_staging=stgget(&index,&cidx);
+  if(!already_staging)
+    stgset(TRUE);         /* start stage-buffering */
   stgget(&index,&cidx); /* mark position in code generator */
   errorset(sEXPRMARK,0);
   ident=expression(val,tag,symptr,FALSE);
   stgdel(index,cidx);   /* scratch generated code */
-  stgset(FALSE);        /* stop stage-buffering */
+  if(!already_staging)
+    stgset(FALSE);        /* stop stage-buffering */
   if (ident!=iCONSTEXPR) {
     error(8);           /* must be constant expression */
     if (val!=NULL)
