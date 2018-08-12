@@ -139,6 +139,9 @@ target_link_libraries(pawncc pawnc)
 # The Pawn disassembler
 set(PAWNDISASM_SRCS
   pawndisasm.c
+  sc.h
+  ../amx/amx.h
+  ../amx/amxdbg.h
   ../amx/amxdbg.c
 )
 add_executable(pawndisasm ${PAWNDISASM_SRCS})
@@ -160,12 +163,29 @@ if(MSVC)
     DESTINATION bin)
 endif()
 
-# Generate tests (only if enabled, i.e. BUILD_TESTING=ON)
-include(CTest)
-if(BUILD_TESTING)
-  enable_testing()
-  add_subdirectory(tests)
+# Generate targets for running compiler tests
+set(PAWNRUNS_SRCS
+  pawnruns.c
+  ../amx/amx.c
+  ../amx/amx.h
+  ../amx/amxaux.c
+  ../amx/amxaux.h
+  ../amx/amxcons.c
+  ../amx/amxcore.c
+)
+if(UNIX)
+  set(PAWNRUNS_SRCS
+    ${PAWNRUNS_SRCS}
+    ../linux/getch.c
+    ../linux/getch.h
+    ../linux/binreloc.c
+  )
 endif()
+add_executable(pawnruns ${PAWNRUNS_SRCS})
+if(UNIX)
+  target_link_libraries(pawnruns dl)
+endif()
+add_subdirectory(tests)
 
 # Generate a binary package with CPack
 set(CPACK_PACKAGE_NAME pawnc)

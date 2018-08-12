@@ -1,0 +1,8 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+unused_symbol_line_gh_252.pwn(4) : warning 203: symbol is never used: "y"
+unused_symbol_line_gh_252.pwn(8) : warning 203: symbol is never used: "z"
+unused_symbol_line_gh_252.pwn(1) : warning 203: symbol is never used: "x"
+"""
+}

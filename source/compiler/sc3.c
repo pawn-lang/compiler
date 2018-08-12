@@ -20,6 +20,7 @@
  *
  *  Version: $Id: sc3.c 3660 2006-11-05 13:05:09Z thiadmer $
  */
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>     /* for _MAX_PATH */

@@ -21,6 +21,7 @@
  *
  *  Version: $Id: sc5.c 3579 2006-06-06 13:35:29Z thiadmer $
  */
+
 #include <assert.h>
 #if defined	__WIN32__ || defined _WIN32 || defined __MSDOS__
   #include <io.h>

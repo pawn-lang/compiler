@@ -26,6 +26,7 @@
  *
  *  Version: $Id: sclist.c 3660 2006-11-05 13:05:09Z thiadmer $
  */
+
 #include <assert.h>
 #include <limits.h>
 #include <stdlib.h>
