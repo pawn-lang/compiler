@@ -1,0 +1,13 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+gh_353.pwn(6) : error 017: undefined symbol "var"
+gh_353.pwn(9) : error 017: undefined symbol "val"; did you mean "var"?
+gh_353.pwn(11) : error 017: undefined symbol "celmax"; did you mean "cellmax"?
+gh_353.pwn(14) : error 017: undefined symbol "strcaf"; did you mean "strcat"?
+gh_353.pwn(20) : error 086: unknown automaton "dialpg"; did you mean "dialog"?
+gh_353.pwn(20) : error 036: empty statement
+gh_353.pwn(23) : error 087: unknown state "DLGLOGIN" for automaton "dialog"; did you mean "DLG_LOGIN"?
+gh_353.pwn(23) : error 036: empty statement
+  """
+}
