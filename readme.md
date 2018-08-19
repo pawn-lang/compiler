@@ -111,7 +111,7 @@ Otherwise:
 - Install [CMake](https://cmake.org/). When installing make sure to check "Add
   CMake to system PATH" to make your life easier.
 
-- Generate a Visual Studio project. In Command promprt or Powershell execute the
+- Generate a Visual Studio project. In Command Prompt or Powershell execute the
   following:
 
   ```cmd
