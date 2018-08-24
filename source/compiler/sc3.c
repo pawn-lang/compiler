@@ -1321,7 +1321,7 @@ static int hier2(value *lval)
       paranthese++;
     tok=lex(&val,&st);
     if (tok!=tSYMBOL)
-      return error_suggest(20,st,NULL,estSYMBOL,iVARIABLE); /* illegal symbol name */
+      return error_suggest(20,st,NULL,estNONSYMBOL,tok);    /* illegal symbol name */
     sym=findloc(st);
     if (sym==NULL)
       sym=findglb(st,sSTATEVAR);
@@ -1344,7 +1344,7 @@ static int hier2(value *lval)
       paranthese++;
     tok=lex(&val,&st);
     if (tok!=tSYMBOL)
-      return error_suggest(20,st,NULL,estSYMBOL,iVARIABLE); /* illegal symbol name */
+      return error_suggest(20,st,NULL,estNONSYMBOL,tok);    /* illegal symbol name */
     sym=findloc(st);
     if (sym==NULL)
       sym=findglb(st,sSTATEVAR);
@@ -1397,7 +1397,7 @@ static int hier2(value *lval)
       paranthese++;
     tok=lex(&val,&st);
     if (tok!=tSYMBOL && tok!=tLABEL)
-      return error_suggest(20,st,NULL,estSYMBOL,iVARIABLE); /* illegal symbol name */
+      return error_suggest(20,st,NULL,estNONSYMBOL,tok);    /* illegal symbol name */
     if (tok==tLABEL) {
       constvalue *tagsym=find_constval(&tagname_tab,st,0);
       tag=(int)((tagsym!=NULL) ? tagsym->value : 0);

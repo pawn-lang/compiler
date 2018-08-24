@@ -498,11 +498,12 @@ typedef struct s_emit_outval {
   } value;
 } emit_outval;
 
-/* Constants for error_suggest() */
+/* constants for error_suggest() */
 #define MAX_EDIT_DIST 2 /* allow two mis-typed characters; when there are more,
                          * the names are too different, and no match is returned */
 enum { /* identifier types */
   estSYMBOL = 0,
+  estNONSYMBOL,
   estAUTOMATON,
   estSTATE
 };

@@ -199,7 +199,7 @@ static char *warnmsg[] = {
 };
 
 static char *noticemsg[] = {
-/*001*/  "did you mean \"%s\"?"
+/*001*/  "; did you mean \"%s\"?\n"
 };
 
 #define NUM_WARNINGS    (sizeof warnmsg / sizeof warnmsg[0])
@@ -239,7 +239,7 @@ static short lastfile;
    * "notice" number
    */
   notice=(unsigned long)number >> (sizeof(long)*4);
-  number&=((unsigned long)~0) >> (sizeof(long)*4);
+  number&=(~(unsigned long)0) >> (sizeof(long)*4);
   assert(number>0 && number<300);
 
   /* errflag is reset on each semicolon.
@@ -283,11 +283,9 @@ static short lastfile;
   } /* if */
 
   if (notice!=0) {
-    size_t len;
-    assert(notice>0 && notice<(1+arraysize(noticemsg)));
+    assert(notice>0 && notice<(1+arraysize(noticemsg)) && noticemsg[notice-1][0]!='\0');
     strcpy(string,msg);
-    len=strlen(string);
-    sprintf(&string[len-1],"; %s\n",noticemsg[notice-1]);
+    strcpy(&string[strlen(string)-1],noticemsg[notice-1]);
     msg=string;
   } /* if */
 
@@ -298,7 +296,7 @@ static short lastfile;
     errline=fline;
   assert(errstart<=errline);
   va_start(argptr,number);
-  if (strlen(errfname)==0) {
+  if (errfname[0]=='\0') {
     int start=(errstart==errline) ? -1 : errstart;
     if (pc_error((int)number,msg,inpfname,start,errline,argptr)) {
       if (outf!=NULL) {
@@ -321,7 +319,7 @@ static short lastfile;
   va_end(argptr);
 
   if ((number>=100 && number<200) || errnum>25){
-    if (strlen(errfname)==0) {
+    if (errfname[0]=='\0') {
       va_start(argptr,number);
       pc_error(0,"\nCompilation aborted.\n\n",NULL,0,0,argptr);
       va_end(argptr);
@@ -491,19 +489,25 @@ static int levenshtein_distance(const char *s,const char*t)
   return distance;
 }
 
+static int get_maxdist(const char *name)
+{
+  int maxdist=strlen(name)/2; /* for short names, allow only a single edit */
+  if (maxdist>MAX_EDIT_DIST)
+    maxdist=MAX_EDIT_DIST;
+  return maxdist;
+}
+
 static int find_closestsymbol_table(const char *name,const symbol *root,int symboltype,symbol **closestsym)
 {
-  int dist,closestdist=INT_MAX;
+  int dist,maxdist,closestdist=INT_MAX;
   char symname[2*sNAMEMAX+16];
   symbol *sym=root->next;
-  int ident,critdist;
+  int ident;
 
   assert(closestsym!=NULL);
   *closestsym=NULL;
   assert(name!=NULL);
-  critdist=strlen(name)/2;  /* for short names, allow only a single edit */
-  if (critdist>MAX_EDIT_DIST)
-    critdist=MAX_EDIT_DIST;
+  maxdist=get_maxdist(name);
   while (sym!=NULL) {
     funcdisplayname(symname,sym->name);
     ident=sym->ident;
@@ -513,9 +517,11 @@ static int find_closestsymbol_table(const char *name,const symbol *root,int symb
       ident=iVARIABLE;  /* when requesting variables, constants are also ok */
     if ((symboltype==ident || (symboltype==iVARIABLE && ident==iFUNCTN)) && ((ident!=iFUNCTN && ident!=iLABEL) || (sym->usage & uDEFINE)!=0)) {
       dist=levenshtein_distance(name,symname);
-      if (dist<closestdist && dist<=critdist) {
+      if (dist<closestdist && dist<=maxdist) {
         *closestsym=sym;
         closestdist=dist;
+        if (closestdist<=1)
+          break;
       } /* if */
     } /* if */
     sym=sym->next;
@@ -531,7 +537,7 @@ static symbol *find_closestsymbol(const char *name,int symboltype)
   if (sc_status==statFIRST)
     return NULL;
   assert(name!=NULL);
-  if (strlen(name)==0)
+  if (name[0]=='\0')
     return NULL;
   distloc=find_closestsymbol_table(name,&loctab,symboltype,&symloc);
   if (distloc<=1)
@@ -545,16 +551,17 @@ static constvalue *find_closestautomaton(const char *name)
 {
   constvalue *ptr=sc_automaton_tab.first;
   constvalue *closestmatch=NULL;
-  int dist,closestdist=INT_MAX;
+  int dist,maxdist,closestdist=INT_MAX;
 
   assert(name!=NULL);
+  maxdist=get_maxdist(name);
   while (ptr!=NULL) {
-    if (strlen(ptr->name)>0) {
+    if (ptr->name[0]!='\0') {
       dist=levenshtein_distance(name,ptr->name);
-      if (dist<closestdist && dist<=MAX_EDIT_DIST) {
+      if (dist<closestdist && dist<=maxdist) {
         closestmatch=ptr;
         closestdist=dist;
-        if (dist<=1)
+        if (closestdist<=1)
           break;
       } /* if */
     } /* if */
@@ -567,17 +574,49 @@ static constvalue *find_closeststate(const char *name,int fsa)
 {
   constvalue *ptr=sc_state_tab.first;
   constvalue *closestmatch=NULL;
-  int dist,closestdist=INT_MAX;
+  int dist,maxdist,closestdist=INT_MAX;
 
   assert(name!=NULL);
-  assert(closestmatch!=NULL);
+  maxdist=get_maxdist(name);
   while (ptr!=NULL) {
-    if (ptr->index==fsa && strlen(ptr->name)>0) {
+    if (ptr->index==fsa && ptr->name[0]!='\0') {
       dist=levenshtein_distance(name,ptr->name);
-      if (dist<closestdist && dist<=MAX_EDIT_DIST) {
+      if (dist<closestdist && dist<=maxdist) {
         closestmatch=ptr;
         closestdist=dist;
+        if (closestdist<=1)
+          break;
       } /* if */
+    } /* if */
+    ptr=ptr->next;
+  } /* while */
+  return closestmatch;
+}
+
+static constvalue *findclosest_automaton_for_state(const char *statename,int fsa)
+{
+  constvalue *ptr=sc_state_tab.first;
+  constvalue *closestmatch=NULL;
+  constvalue *automaton;
+  const char *fsaname;
+  int dist,maxdist,closestdist=INT_MAX;
+
+  assert(statename!=NULL);
+  maxdist=get_maxdist(statename);
+  automaton=automaton_findid(ptr->index);
+  assert(automaton!=NULL);
+  fsaname=automaton->name;
+  while (ptr!=NULL) {
+    if (fsa!=ptr->index && ptr->name[0]!='\0' && strcmp(statename,ptr->name)==0) {
+      automaton=automaton_findid(ptr->index);
+      assert(automaton!=NULL);
+      dist=levenshtein_distance(fsaname,automaton->name);
+      if (dist<closestdist && dist<=maxdist) {
+        closestmatch=automaton;
+        closestdist=dist;
+        if (closestdist<=1)
+          break;
+      } /*if */
     } /* if */
     ptr=ptr->next;
   } /* while */
@@ -586,6 +625,7 @@ static constvalue *find_closeststate(const char *name,int fsa)
 
 SC_FUNC int error_suggest(int number,const char *name,const char *name2,int type,int subtype)
 {
+  char string[sNAMEMAX*2+2]; /* for "<automaton>:<state>" */
   const char *closestname=NULL;
 
   /* don't bother finding the closest names on errors
@@ -594,8 +634,14 @@ SC_FUNC int error_suggest(int number,const char *name,const char *name2,int type
   if ((errflag || sc_status!=statWRITE) && (number<100 || number>=200))
     return 0;
 
-  if (type==estSYMBOL) {
-    symbol *closestsym=find_closestsymbol(name,subtype);
+  if (type==estSYMBOL || (type==estNONSYMBOL && tMIDDLE<subtype && subtype<=tLAST)) {
+    symbol *closestsym;
+    if (type!=estSYMBOL) {
+      extern char *sc_tokens[];
+      name=sc_tokens[subtype-tFIRST];
+      subtype=iVARIABLE;
+    } /* if */
+    closestsym=find_closestsymbol(name,subtype);
     if (closestsym!=NULL)
       closestname=closestsym->name;
   } else if (type==estAUTOMATON) {
@@ -603,20 +649,26 @@ SC_FUNC int error_suggest(int number,const char *name,const char *name2,int type
     if (closestautomaton!=NULL)
       closestname=closestautomaton->name;
   } else if (type==estSTATE) {
-    constvalue *closestautomaton=find_closeststate(name,subtype);
-    if (closestautomaton!=NULL)
-      closestname=closestautomaton->name;
+    constvalue *closeststate=find_closeststate(name,subtype);
+    if (closeststate!=NULL) {
+      closestname=closeststate->name;
+    } else {
+      constvalue *closestautomaton=findclosest_automaton_for_state(name,subtype);
+      if (closestautomaton!=NULL) {
+        sprintf(string,"%s:%s",closestautomaton->name,name);
+        closestname=string;
+      } /* if */
+    } /* if */
   } else {
     assert(0);
   } /* if */
 
-  if (closestname!=NULL) {
-    if (name2!=NULL)
-      error(makelong(number,1),name,name2,closestname);
-    else
-      error(makelong(number,1),name,closestname);
-  } else {
+  if (closestname==NULL) {
     error(number,name,name2);
+  } else if (name2!=NULL) {
+    error(makelong(number,1),name,name2,closestname);
+  } else {
+    error(makelong(number,1),name,closestname);
   } /* if */
   return 0;
 }
