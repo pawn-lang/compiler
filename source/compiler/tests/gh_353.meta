@@ -1,13 +1,18 @@
 {
   'test_type': 'output_check',
   'errors': """
-gh_353.pwn(6) : error 017: undefined symbol "var"
-gh_353.pwn(9) : error 017: undefined symbol "val"; did you mean "var"?
-gh_353.pwn(11) : error 017: undefined symbol "celmax"; did you mean "cellmax"?
-gh_353.pwn(14) : error 017: undefined symbol "strcaf"; did you mean "strcat"?
-gh_353.pwn(20) : error 086: unknown automaton "dialpg"; did you mean "dialog"?
-gh_353.pwn(20) : error 036: empty statement
-gh_353.pwn(23) : error 087: unknown state "DLGLOGIN" for automaton "dialog"; did you mean "DLG_LOGIN"?
-gh_353.pwn(23) : error 036: empty statement
+gh_353.pwn(8) : error 017: undefined symbol "abcxyz"
+gh_353.pwn(17) : error 017: undefined symbol "val"; did you mean "var"?
+gh_353.pwn(21) : error 017: undefined symbol "celmax"; did you mean "cellmax"?
+gh_353.pwn(25) : error 017: undefined symbol "strcaf"; did you mean "strcat"?
+gh_353.pwn(34) : error 019: not a label: "lb"; did you mean "lbl"?
+gh_353.pwn(41) : error 020: invalid symbol name "assert"; did you mean "asset"?
+gh_353.pwn(52) : error 080: unknown symbol, or not a constant symbol (symbol "idx"); did you mean "id"?
+gh_353.pwn(63) : error 086: unknown automaton "automaton1"; did you mean "automaton_1"?
+gh_353.pwn(63) : error 036: empty statement
+gh_353.pwn(70) : error 087: unknown state "BEING1" for automaton "automaton_2"; did you mean "BEING_1"?
+gh_353.pwn(70) : error 036: empty statement
+gh_353.pwn(73) : error 087: unknown state "STATE_1" for automaton "automaton_2"; did you mean "automaton_1:STATE_1"?
+gh_353.pwn(73) : error 036: empty statement
   """
 }
