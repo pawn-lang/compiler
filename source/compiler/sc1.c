@@ -1998,7 +1998,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
   int numdim;
   short filenum;
   symbol *sym;
-  constvalue_root *enumroot;
+  constvalue_root *enumroot=NULL;
   #if !defined NDEBUG
     cell glbdecl=0;
   #endif
@@ -2251,7 +2251,7 @@ static int declloc(int fstatic)
   int idxtag[sDIMEN_MAX];
   char name[sNAMEMAX+1];
   symbol *sym;
-  constvalue_root *enumroot;
+  constvalue_root *enumroot=NULL;
   cell val,size;
   char *str;
   value lval = {0};
@@ -2887,8 +2887,8 @@ static void decl_enum(int vclass,int fstatic)
   char *str;
   int tag,explicittag;
   cell increment,multiplier;
-  constvalue_root *enumroot;
-  symbol *enumsym;
+  constvalue_root *enumroot=NULL;
+  symbol *enumsym=NULL;
   short filenum;
 
   filenum=fcurrent;
@@ -2944,9 +2944,6 @@ static void decl_enum(int vclass,int fstatic)
     if ((enumroot=(constvalue_root*)malloc(sizeof(constvalue_root)))==NULL)
       error(103);                       /* insufficient memory (fatal error) */
     memset(enumroot,0,sizeof(constvalue_root));
-  } else {
-    enumsym=NULL;
-    enumroot=NULL;
   } /* if */
 
   needtoken('{');
@@ -4122,7 +4119,7 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
                   int fpublic,int fconst,int chkshadow,arginfo *arg)
 {
   symbol *argsym;
-  constvalue_root *enumroot;
+  constvalue_root *enumroot=NULL;
   cell size;
 
   strcpy(arg->name,name);
