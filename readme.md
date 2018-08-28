@@ -41,7 +41,12 @@ There are plenty of features and fixes that are documented, see below for links:
 
 ## How to Use
 
-Binary packages can be downloaded from [Releases][releases].
+Binary packages can be downloaded from [Releases][releases], see the below
+sections for platform-specific installation instructions.
+
+**Note:** You will _probably_ get warnings/errors/fatals when you first build
+with this compiler — you need to add the `-Z+` flag to your build configuration
+or add `#pragma compat`. See [this page][compat] for more information.
 
 You can also get the latest development binaries for Windows on
 [AppVeyor][artifacts]. This archive is built automatically on every Git commit
@@ -56,9 +61,6 @@ the new one.
 Download the ZIP archive and extract `pawnc.dll`, `pawncc.exe`,
 `pawndisasmsm.exe` to your original `pawncc` directory. If you use Pawno, this
 will be in the `pawno/` folder that's inside your server directory.
-
-You must add the `-Z+` flag to your build configuration or add `#pragma compat`
-to your script. See [this page][compat] for more information.
 
 ### openSUSE/SLES
 
