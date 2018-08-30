@@ -45,7 +45,7 @@ Binary packages can be downloaded from [Releases][releases], see the below
 sections for platform-specific installation instructions.
 
 **Note:** You will _probably_ get warnings/errors/fatals when you first build
-with this compiler — you need to add the `-Z+` flag to your build configuration
+with this compiler — you need to add the `-Z` flag to your build configuration
 or add `#pragma compat`. See [this page][compat] for more information.
 
 You can also get the latest development binaries for Windows on
