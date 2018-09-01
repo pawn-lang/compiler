@@ -20,6 +20,7 @@
  *
  *  Version: $Id: sc3.c 3660 2006-11-05 13:05:09Z thiadmer $
  */
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>     /* for _MAX_PATH */
@@ -512,6 +513,7 @@ static int plnge_rel(int *opstr,int opoff,int (*hier)(value *lval),value *lval)
       error(212);
     if (count>0) {
       relop_prefix();
+      lval2.boolresult=lval->boolresult;
       *lval=lval2;      /* copy right hand expression of the previous iteration */
     } /* if */
     opidx+=opoff;
@@ -2219,7 +2221,7 @@ static int nesting=0;
             if (arg[argidx].numdim!=1) {
               error(48);        /* array dimensions must match */
             } else {
-              if (lval.sym==NULL && (arg[argidx].usage & uCONST)==0)
+              if (lval.sym==NULL && (arg[argidx].usage & uCONST)==0 && (sym->usage & uNATIVE)==0)
                     error(239);
               if (arg[argidx].dim[0]!=0) {
                 assert(arg[argidx].dim[0]>0);

@@ -20,6 +20,7 @@
  *
  *  Version: $Id: amxaux.h 3612 2006-07-22 09:59:46Z thiadmer $
  */
+
 #ifndef AMXAUX_H_INCLUDED
 #define AMXAUX_H_INCLUDED
 

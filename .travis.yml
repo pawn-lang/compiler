@@ -14,17 +14,15 @@ addons:
       - cmake
 
 before_script:
-  - cmake source/compiler -DCMAKE_BUILD_TYPE=RelWithDebInfo
-                          -DCMAKE_C_FLAGS="-m32 -Werror -Wno-address-of-packed-member"
-                          -DCPACK_GENERATOR="TGZ;ZIP"
+  - mkdir build && cd build
+  - cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo
+             -DCMAKE_C_FLAGS="-m32 -Werror -Wno-address-of-packed-member"
+             -DCPACK_GENERATOR="TGZ;ZIP"
 
 script:
   - make
-  - make test
+  - make pawncc_tests
   - make package
-
-after_failure:
-  - cat Testing/Temporary/LastTest.log
 
 deploy:
   provider: releases
@@ -32,8 +30,8 @@ deploy:
     secure: gDAuRNlF2uVhVHyZtJrX6MwNxnkfkQzohrC/6UcKAgqt+NKs4vZyq5FzTUceiDAkB0se70ZVx08e9ibAiXP/b7D1MPkAEiRxt9J6Vu3x6Bi1kPPuK5RfjFeT3gc1SbrULAP8Nz0NdU0chUhei6/V5NGhTegwp925DJOISq7+Ibw=
   file_glob: true
   file:
-    - 'pawnc-*-linux.tar.gz'
-    - 'pawnc-*-macos.zip'
+    - 'build/pawnc-*-linux.tar.gz'
+    - 'build/pawnc-*-macos.zip'
   draft: true
   skip_cleanup: true
   on:

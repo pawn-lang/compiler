@@ -22,6 +22,7 @@
  *
  *  Version: $Id: scvars.c 3655 2006-10-23 20:17:52Z thiadmer $
  */
+
 #include <stdio.h>
 #include <stdlib.h>     /* for _MAX_PATH */
 #include "sc.h"

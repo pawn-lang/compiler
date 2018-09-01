@@ -20,6 +20,7 @@
  *
  *  Version: $Id: amxcore.c 3657 2006-10-24 20:09:50Z thiadmer $
  */
+
 #if defined _UNICODE || defined __UNICODE__ || defined UNICODE
 # if !defined UNICODE   /* for Windows */
 #   define UNICODE
@@ -178,7 +179,7 @@ static cell AMX_NATIVE_CALL setarg(AMX *amx,const cell *params)
   /* adjust the address in "value" in case of an array access */
   value+=params[2]*sizeof(cell);
   /* verify the address */
-  if (value<0 || value>=amx->hea && value<amx->stk)
+  if (value<0 || (value>=amx->hea && value<amx->stk))
     return 0;
   /* set the value indirectly */
   * (cell *)(data+(int)value) = params[3];

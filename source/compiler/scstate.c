@@ -45,6 +45,7 @@
  *
  *  Version: $Id: scstate.c 3579 2006-06-06 13:35:29Z thiadmer $
  */
+
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>

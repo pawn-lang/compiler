@@ -20,6 +20,7 @@
  *
  *  Version: $Id: amxtime.c 3649 2006-10-12 13:13:57Z thiadmer $
  */
+
 #include <time.h>
 #include <assert.h>
 #include "amx.h"

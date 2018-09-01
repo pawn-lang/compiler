@@ -27,6 +27,7 @@
  *
  *  Version: $Id: sc.h 3660 2006-11-05 13:05:09Z thiadmer $
  */
+
 #ifndef SC_H_INCLUDED
 #define SC_H_INCLUDED
 #include <limits.h>
@@ -641,7 +642,7 @@ SC_FUNC void setlinedirect(int line);
 SC_FUNC void setlineconst(int line);
 SC_FUNC void setlabel(int index);
 SC_FUNC void markexpr(optmark type,const char *name,cell offset);
-SC_FUNC void startfunc(char *fname);
+SC_FUNC void startfunc(char *fname,int generateproc);
 SC_FUNC void endfunc(void);
 SC_FUNC void alignframe(int numbytes);
 SC_FUNC void rvalue(value *lval);

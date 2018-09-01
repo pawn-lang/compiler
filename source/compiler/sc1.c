@@ -22,6 +22,7 @@
  *
  *  Version: $Id: sc1.c 3664 2006-11-08 12:09:25Z thiadmer $
  */
+
 #include <assert.h>
 #include <ctype.h>
 #include <limits.h>
@@ -1997,7 +1998,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
   int numdim;
   short filenum;
   symbol *sym;
-  constvalue_root *enumroot;
+  constvalue_root *enumroot=NULL;
   #if !defined NDEBUG
     cell glbdecl=0;
   #endif
@@ -2250,7 +2251,7 @@ static int declloc(int fstatic)
   int idxtag[sDIMEN_MAX];
   char name[sNAMEMAX+1];
   symbol *sym;
-  constvalue_root *enumroot;
+  constvalue_root *enumroot=NULL;
   cell val,size;
   char *str;
   value lval = {0};
@@ -2490,17 +2491,21 @@ static void initials(int ident,int tag,int wildcard_tag,cell *size,int dim[],int
   cell tablesize;
   int curlit=litidx;
   int err=0;
+  int i;
 
   if (!matchtoken('=')) {
     assert(ident!=iARRAY || numdim>0);
-    if (ident==iARRAY && dim[numdim-1]==0) {
-      /* declared as "myvar[];" which is senseless (note: this *does* make
-       * sense in the case of a iREFARRAY, which is a function parameter)
-       */
-      error(9);         /* array has zero length -> invalid size */
-    } /* if */
     if (ident==iARRAY) {
       assert(numdim>0 && numdim<=sDIMEN_MAX);
+      for (i=0; i<numdim; i++) {
+        if (dim[i]==0) {
+          /* declared like "myvar[];" which is senseless (note: this *does* make
+           * sense in the case of a iREFARRAY, which is a function parameter)
+           */
+          error(9); /* array has zero length -> invalid size */
+          return;
+        } /* if */
+      } /* for */
       *size=calc_arraysize(dim,numdim,0);
       if (*size==(cell)CELL_MAX) {
         error(9);       /* array is too big -> invalid size */
@@ -2885,8 +2890,8 @@ static void decl_enum(int vclass,int fstatic)
   char *str;
   int tag,explicittag;
   cell increment,multiplier;
-  constvalue_root *enumroot;
-  symbol *enumsym;
+  constvalue_root *enumroot=NULL;
+  symbol *enumsym=NULL;
   short filenum;
 
   filenum=fcurrent;
@@ -2942,9 +2947,6 @@ static void decl_enum(int vclass,int fstatic)
     if ((enumroot=(constvalue_root*)malloc(sizeof(constvalue_root)))==NULL)
       error(103);                       /* insufficient memory (fatal error) */
     memset(enumroot,0,sizeof(constvalue_root));
-  } else {
-    enumsym=NULL;
-    enumroot=NULL;
   } /* if */
 
   needtoken('{');
@@ -3417,7 +3419,7 @@ SC_FUNC void check_index_tagmismatch(char *symname,int expectedtag,int actualtag
   assert(symname!=NULL);
   if (!matchtag(expectedtag,actualtag,allowcoerce)) {
     constvalue *tagsym;
-    char expected_tagname[sNAMEMAX+3]="none (\"_\"),",actual_tagname[sNAMEMAX+2]="none (\"_\")"; /* two extra characters for quotes */  
+    char expected_tagname[sNAMEMAX+3]="none (\"_\"),",actual_tagname[sNAMEMAX+2]="none (\"_\")"; /* two extra characters for quotes */
     if(expectedtag!=0) {
       tagsym=find_tag_byval(expectedtag);
       sprintf(expected_tagname,"\"%s\",",(tagsym!=NULL) ? tagsym->name : "-unknown-");
@@ -3430,7 +3432,7 @@ SC_FUNC void check_index_tagmismatch(char *symname,int expectedtag,int actualtag
       errorset(sSETPOS,errline);
     error(229,symname,expected_tagname,actual_tagname); /* index tag mismatch */
     if(errline>0)
-      errorset(sSETPOS,-1);    
+      errorset(sSETPOS,-1);
   } /* if */
 }
 
@@ -3438,7 +3440,7 @@ SC_FUNC void check_tagmismatch(int formaltag,int actualtag,int allowcoerce,int e
 {
   if (!matchtag(formaltag,actualtag,allowcoerce)) {
     constvalue *tagsym;
-    char formal_tagname[sNAMEMAX+3]="none (\"_\"),",actual_tagname[sNAMEMAX+2]="none (\"_\")"; /* two extra characters for quotes */  
+    char formal_tagname[sNAMEMAX+3]="none (\"_\"),",actual_tagname[sNAMEMAX+2]="none (\"_\")"; /* two extra characters for quotes */
     if(formaltag!=0) {
       tagsym=find_tag_byval(formaltag);
       sprintf(formal_tagname,"\"%s\",",(tagsym!=NULL) ? tagsym->name : "-unknown-");
@@ -3451,7 +3453,7 @@ SC_FUNC void check_tagmismatch(int formaltag,int actualtag,int allowcoerce,int e
       errorset(sSETPOS,errline);
     error(213,"tag",formal_tagname,actual_tagname); /* tag mismatch */
     if(errline>0)
-      errorset(sSETPOS,-1);    
+      errorset(sSETPOS,-1);
   } /* if */
 }
 
@@ -3462,7 +3464,7 @@ SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualt
     constvalue *tagsym;
     char formal_tagnames[sLINEMAX]="",actual_tagname[sNAMEMAX+2]="none (\"_\")";
     int notag_allowed=FALSE,add_comma=FALSE;
-    for (i=0; i<numtags; i++) {      
+    for (i=0; i<numtags; i++) {
       if(formaltags[i]!=0) {
         if((i+1)==numtags && add_comma==TRUE && notag_allowed==FALSE)
           strlcat(formal_tagnames,", or ",sizeof(formal_tagnames));
@@ -3470,10 +3472,10 @@ SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualt
           strlcat(formal_tagnames,", ",sizeof(formal_tagnames));
         add_comma=TRUE;
         tagsym=find_tag_byval(formaltags[i]);
-        sprintf(formal_tagnames,"%s\"%s\"",formal_tagnames,(tagsym!=NULL) ? tagsym->name : "-unknown-"); 
+        sprintf(formal_tagnames,"%s\"%s\"",formal_tagnames,(tagsym!=NULL) ? tagsym->name : "-unknown-");
       } else {
         notag_allowed=TRUE;
-      } /* if */      
+      } /* if */
     } /* for */
     if(notag_allowed==TRUE) {
       if(add_comma==TRUE)
@@ -3484,12 +3486,12 @@ SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualt
     if(actualtag!=0) {
       tagsym=find_tag_byval(actualtag);
       sprintf(actual_tagname,"\"%s\"",(tagsym!=NULL) ? tagsym->name : "-unknown-");
-    } /* if */  
+    } /* if */
     if(errline>0)
       errorset(sSETPOS,errline);
     error(213,(numtags==1) ? "tag" : "tags",formal_tagnames,actual_tagname); /* tag mismatch */
     if(errline>0)
-      errorset(sSETPOS,-1);  
+      errorset(sSETPOS,-1);
   } /* if */
 }
 
@@ -3801,7 +3803,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
       ptr=ptr->next;
     } /* while */
   } /* if */
-  startfunc(sym->name); /* creates stack frame */
+  startfunc(sym->name,(sym->flags & flagNAKED)==0); /* creates stack frame */
   insert_dbgline(funcline);
   setline(FALSE);
   if (sc_alignnext) {
@@ -4134,7 +4136,7 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,int wil
                   int fpublic,int fconst,int chkshadow,arginfo *arg)
 {
   symbol *argsym;
-  constvalue_root *enumroot;
+  constvalue_root *enumroot=NULL;
   cell size;
 
   strcpy(arg->name,name);
@@ -4244,8 +4246,12 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,int wil
     assert(numtags>0);
     argsym=addvariable(name,offset,ident,sLOCAL,tags[0],
                        arg->dim,arg->numdim,arg->idxtag,0);
-    if (fpublic)
+    if (fpublic) {
       argsym->usage|=uREAD;     /* arguments of public functions are always "used" */
+      if(argsym->ident==iREFARRAY || argsym->ident==iREFERENCE)
+        argsym->usage|=uWRITTEN;
+    }
+
     if (fconst)
       argsym->usage|=uCONST;
   } /* if */
@@ -4924,9 +4930,20 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
         error(204,sym->name);       /* value assigned to symbol is never used */
         errorset(sSETPOS,-1);
       } else if ((sym->usage & (uWRITTEN | uPUBLIC | uCONST))==0 && sym->ident==iREFARRAY) {
-        errorset(sSETPOS,sym->lnumber);
-        error(214,sym->name);       /* make array argument "const" */
-        errorset(sSETPOS,-1);
+        int warn = 1;
+        symbol* depend = finddepend(sym);
+        while (depend != NULL) {
+          if ((depend->usage & (uWRITTEN | uPUBLIC | uCONST)) != 0) {
+            warn = 0;
+            break;
+          }
+          depend = finddepend(depend);
+        } /* while */
+        if (warn) {
+          errorset(sSETPOS, sym->lnumber);
+          error(214, sym->name);       /* make array argument "const" */
+          errorset(sSETPOS, -1);
+        } /* if */
       } /* if */
       /* also mark the variable (local or global) to the debug information */
       if ((sym->usage & (uWRITTEN | uREAD))!=0 && (sym->usage & uNATIVE)==0)
@@ -4973,6 +4990,14 @@ static void destructsymbols(symbol *root,int level)
       /* check that the '~' operator is defined for this tag */
       operator_symname(symbolname,"~",sym->tag,0,1,0);
       if ((opsym=findglb(symbolname,sGLOBAL))!=NULL) {
+        if ((opsym->usage & uMISSING)!=0 || (opsym->usage & uPROTOTYPED)==0) {
+          char symname[2*sNAMEMAX+16];  /* allow space for user defined operators */
+          funcdisplayname(symname,opsym->name);
+          if ((opsym->usage & uMISSING)!=0)
+            error(4,symname);           /* function not defined */
+          if ((opsym->usage & uPROTOTYPED)==0)
+            error(71,symname);          /* operator must be declared before use */
+        } /* if */
         /* save PRI, in case of a return statment */
         if (!savepri) {
           pushreg(sPRI);        /* right-hand operand is in PRI */

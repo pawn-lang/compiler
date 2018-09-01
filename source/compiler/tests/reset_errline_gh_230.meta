@@ -1,0 +1,9 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+reset_errline_gh_230.pwn(2) : error 017: undefined symbol \"undefined\"
+reset_errline_gh_230.pwn(2) : warning 215: expression has no effect
+reset_errline_gh_230.pwn(7) : warning 204: symbol is assigned a value that is never used: "y"
+reset_errline_gh_230.pwn(4) : warning 204: symbol is assigned a value that is never used: "x"
+"""
+}

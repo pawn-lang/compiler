@@ -1,0 +1,6 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+    gh_283.pwn(5) : warning 234: function is deprecated (symbol "f")
+  """
+}

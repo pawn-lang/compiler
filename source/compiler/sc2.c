@@ -20,6 +20,7 @@
  *
  *  Version: $Id: sc2.c 3655 2006-10-23 20:17:52Z thiadmer $
  */
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -524,12 +525,12 @@ static void stripcomment(unsigned char *line)
         while ((continuation=strchr(continuation,'\a'))!=NULL){
           /* don't give the error if the next line is also commented out.
              it is quite annoying to get an error for commenting out a define using:
-             
-             // 
+
+             //
              // #define LONG_MACRO\
              //             did span \
              //             multiple lines
-             // 
+             //
           */
           while (*continuation<=' ' && *continuation!='\0')
             continuation++;             /* skip whitespace */
