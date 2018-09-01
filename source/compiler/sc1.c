@@ -6019,57 +6019,61 @@ static void dolabel(void)
 SC_FUNC int do_static_check(int warning)
 {
   cell val;
-  int result,usermsg_present=FALSE;
-  char *usermsg, *str;
+  int noerrors=TRUE,usermsg_present=FALSE,usermsg_len=0;
+  char usermsg[sLINEMAX+1];
   const unsigned char *exprstart,*exprend;
   if (needtoken('(')) {
-    exprstart=lptr;
-    result=constexpr(&val,NULL,NULL);
-    exprend=lptr-1;
-    if (!result)
+    exprstart=lptr; /* save start of test expression for error message */
+    if (constexpr(&val,NULL,NULL)==FALSE) {
       error(8); /* must be constant expression */
+      noerrors=FALSE;
+    } /* if */
+    exprend=lptr-1; /* save end of test expression */      
     if (matchtoken(',')) {
+      usermsg_present=TRUE; /* user message has been provided */
       while (*lptr<=' ' && *lptr!='\0')
         lptr++;
       if (*lptr!='"') {
         error(1,"-string-","-unknown-"); /* expected string */
-        result=0; /* prevent 112 fatal error */
+        noerrors=FALSE; /* prevent 112 fatal error */
       } /* if */
-      lptr++; /* skip opening " character */
-      exprstart=lptr;
-      while (*lptr) {
-        if (*lptr=='\\') {
-          lptr++; /* skip the escaped character */
-        } else if (*lptr=='"') {
-          break;
-        } /* if */
-        lptr++;
-      } /* while */
-      exprend=lptr;
-      usermsg_present=TRUE;
-      if (*lptr!='"') {
-        error(37); /* invalid string (possibly non-terminated string) */
-        result=0; /* prevent 112 fatal error */
-      } /* if */
-      lptr++; /* skip closing " character */
+      do {
+        if (*lptr=='#') {
+          lptr++;
+          while (alphanum(*lptr)) {
+            usermsg[usermsg_len++]=*lptr;
+            lptr++;
+          } /* while */
+        } else {
+          lptr++; /* skip opening " character */
+          while (*lptr) {
+            if (*lptr=='"') {
+              break; /* end of string */
+            } else if (*lptr=='\\' && (*(lptr + 1)=='"' || *(lptr + 1)=='\\')) {
+              lptr++; /* skip the escape sequence slash */
+            } /* if */
+            usermsg[usermsg_len++]=*lptr;
+            lptr++;
+          } /* while */
+          if (*lptr != '"') {
+            error(37); /* invalid string (possibly non-terminated string) */
+            noerrors = FALSE; /* prevent 112 fatal error */
+          } /* if */
+          lptr++; /* skip closing " character */
+          while (*lptr <= ' ' && *lptr != '\0')
+            lptr++;
+        }
+      } while (*lptr=='"' || *lptr=='#'); /* do */
+      usermsg[usermsg_len]='\0';  
     } /* if */
-    if (val==0 && result) {
-      usermsg=malloc(exprend-exprstart+1);      
-      if (usermsg_present==TRUE) {
-        str=usermsg;
-        while (exprstart!=exprend) {
-          if (*exprstart=='\\')
-            exprstart++;
-          *str++=*exprstart++;
-        } /* while */
-        *str='\0';
-      } else {
-        strlcpy(usermsg,(const char*)exprstart,exprend-exprstart+1);
-      } /* if */      
+    if (val==0 && noerrors) {
+      if (usermsg_present==FALSE) {
+        int len=((exprend-exprstart+1)>sizeof(usermsg) ? sizeof(usermsg) : exprend-exprstart+1);
+        strlcpy(usermsg,(const char*)exprstart,len);
+      } /* if */
       error(warning==TRUE ? 240 : 110,usermsg);
-      free(usermsg);
     } /* if */
-   } /* if */
+  } /* if */
   needtoken(')');
   return val;
 }
