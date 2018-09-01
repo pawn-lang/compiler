@@ -52,31 +52,6 @@ set_tests_properties(meaningless_class_specifiers_gh_172 PROPERTIES PASS_REGULAR
 .*\\.pwn\\(1 \\-\\- 2\\) : warning 238: meaningless combination of class specifiers \\(const variable arguments\\)
 ")
 
-add_compiler_test(any_tag_feature_gh_264 ${CMAKE_CURRENT_SOURCE_DIR}/any_tag_feature_gh_264.pwn)
-set_tests_properties(any_tag_feature_gh_264 PROPERTIES PASS_REGULAR_EXPRESSION
-".*\\.pwn\\(17\\) : warning 213: tag mismatch: expected tag none (\"_\"), but found \"Tag\"
-.*\\.pwn\\(21\\) : warning 213: tag mismatch: expected tag \"Float\", but found \"Tag\"
-.*\\.pwn\\(33\\) : warning 213: tag mismatch: expected tag \"Float\", but found \"tag\"
-.*\\.pwn\\(41\\) : warning 213: tag mismatch: expected tag none (\"_\"), but found \"Tag\"
-.*\\.pwn\\(49\\) : warning 213: tag mismatch: expected tag none (\"_\"), but found \"Tag\"
-.*\\.pwn\\(57\\) : warning 213: tag mismatch: expected tag none (\"_\"), but found \"Tag\"
-.*\\.pwn\\(74\\) : warning 213: tag mismatch: expected tag none (\"_\"), but found \"Tag\"
-.*\\.pwn\\(77\\) : warning 213: tag mismatch: expected tag \"Float\", but found \"Tag\"
-.*\\.pwn\\(79\\) : warning 213: tag mismatch: expected tag \"Float\", but found none (\"_\")
-.*\\.pwn\\(80\\) : warning 213: tag mismatch: expected tag \"Float\", but found \"tag\"
-.*\\.pwn\\(85\\) : warning 213: tag mismatch: expected tag none (\"_\"), but found \"Tag\"
-.*\\.pwn\\(87\\) : warning 213: tag mismatch: expected tag \"Float\", but found \"Tag\"
-.*\\.pwn\\(92\\) : warning 213: tag mismatch: expected tag none (\"_\"), but found \"Tag\"
-.*\\.pwn\\(94\\) : warning 213: tag mismatch: expected tags \"Float\", or \"tag\"; but found \"Tag\"
-.*\\.pwn\\(101\\) : warning 213: tag mismatch: expected tag \"Tag\", but found none (\"_\")
-.*\\.pwn\\(105\\) : warning 213: tag mismatch: expected tag none (\"_\"), but found \"Tag\"
-.*\\.pwn\\(110\\) : warning 213: tag mismatch: expected tag none (\"_\"), but found \"Tag\"
-.*\\.pwn\\(113\\) : warning 213: tag mismatch: expected tag none (\"_\"), but found \"Tag\"
-.*\\.pwn\\(124\\) : error 001: expected token: \"}\", but found \",\"
-.*\\.pwn\\(128\\) : error 001: expected token: \"-tagname-\", but found \"...\"
-")
-set_tests_properties(any_tag_feature_gh_264 PROPERTIES WILL_FAIL TRUE) 
-
 # Crashers
 #
 # These tests simply check that the compiler doesn't crash.
