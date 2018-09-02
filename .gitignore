@@ -1,4 +1,3 @@
 build
 .vs
 .vscode
-source/compiler/tests/*.amx

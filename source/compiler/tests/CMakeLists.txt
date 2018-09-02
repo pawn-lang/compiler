@@ -5,6 +5,7 @@ if(PYTHONINTERP_FOUND)
     COMMAND ${PYTHON_EXECUTABLE}
       ${CMAKE_CURRENT_SOURCE_DIR}/run_tests.py
       -c $<TARGET_FILE:pawncc>
+      -d $<TARGET_FILE:pawndisasm>
       -r $<TARGET_FILE:pawnruns>
       -i ../../../include
     DEPENDS pawncc
