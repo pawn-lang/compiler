@@ -19,6 +19,7 @@ parser.add_argument('-i', '--include',
                     help='add custom include directories for compile tests')
 parser.add_argument('-r', '--runner',
                     help='path to runner executable (pawnruns)')
+parser.add_argument('tests', metavar='test_name', nargs='*')
 options = parser.parse_args(sys.argv[1:])
 
 def run_command(args, executable=None, merge_stderr=False):
@@ -57,9 +58,6 @@ def remove_asm_comments(s):
 
 def strip(s):
   return s.strip(' \t\r\n')
-
-def parse_asm_listing(dump):
-  return None
 
 class OutputCheckTest:
   def __init__(self, name, errors=None, extra_args=None):
@@ -184,6 +182,8 @@ num_tests_disabled = 0
 
 for meta_file in glob.glob('*.meta'):
   name = os.path.splitext(meta_file)[0]
+  if options.tests and name not in options.tests:
+    continue
   metadata = eval(open(meta_file).read(), None, None)
   if metadata.get('disabled'):
     num_tests_disabled += 1
@@ -213,28 +213,27 @@ sys.stdout.write(
   'DISCOVERED {} TEST{}'.format(num_tests, '' if num_tests == 1 else 'S'))
 if num_tests_disabled > 0:
   sys.stdout.write(' ({} DISABLED)'.format(num_tests_disabled))
-sys.stdout.write('\n\n')
 
-num_tests_failed = 0
+if num_tests > 0:
+  sys.stdout.write('\n\n')
 
-for test in tests:
-  sys.stdout.write('Running ' + test.name + '... ')
-  if not test.run():
-    sys.stdout.write('FAILED\n')
-    print('Test {} failed for the following reason: {}'.format(
-      test.name, test.fail_reason))
-    print('')
-    num_tests_failed += 1
+  num_tests_failed = 0
+  for test in tests:
+    sys.stdout.write('Running ' + test.name + '... ')
+    if not test.run():
+      sys.stdout.write('FAILED\n')
+      print('Test {} failed for the following reason: {}'.format(
+        test.name, test.fail_reason))
+      print('')
+      num_tests_failed += 1
+    else:
+      sys.stdout.write('PASSED\n')
+  num_tests_passed = len(tests) - num_tests_failed
+  if num_tests_failed > 0:
+    print('\n{} TEST{} PASSED, {} FAILED'.format(
+      num_tests_passed,
+      '' if num_tests_passed == 1 else 'S',
+      num_tests_failed))
+    sys.exit(1)
   else:
-    sys.stdout.write('PASSED\n')
-
-num_tests_passed = len(tests) - num_tests_failed
-
-if num_tests_failed > 0:
-  print('\n{} TEST{} PASSED, {} FAILED'.format(
-    num_tests_passed,
-    '' if num_tests_passed == 1 else 'S',
-    num_tests_failed))
-  sys.exit(1)
-else:
-  print('\nALL TESTS PASSED')
+    print('\nALL TESTS PASSED')
