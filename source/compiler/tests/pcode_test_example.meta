@@ -1,0 +1,12 @@
+{
+  'test_type': 'pcode_check',
+  'code_pattern': r"""
+[0-9a-f]+  proc
+[0-9a-f]+  push.c 00000000
+[0-9a-f]+  push.c 00000004
+[0-9a-f]+  sysreq.c 00000000
+[0-9a-f]+  stack 00000008
+[0-9a-f]+  zero.pri
+[0-9a-f]+  retn
+"""
+}

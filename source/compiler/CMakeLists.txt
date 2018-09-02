@@ -164,28 +164,31 @@ if(MSVC)
 endif()
 
 # Generate targets for running compiler tests
-set(PAWNRUNS_SRCS
-  pawnruns.c
-  ../amx/amx.c
-  ../amx/amx.h
-  ../amx/amxaux.c
-  ../amx/amxaux.h
-  ../amx/amxcons.c
-  ../amx/amxcore.c
-)
-if(UNIX)
+include(CTest)
+if(BUILD_TESTING)
   set(PAWNRUNS_SRCS
-    ${PAWNRUNS_SRCS}
-    ../linux/getch.c
-    ../linux/getch.h
-    ../linux/binreloc.c
+    pawnruns.c
+    ../amx/amx.c
+    ../amx/amx.h
+    ../amx/amxaux.c
+    ../amx/amxaux.h
+    ../amx/amxcons.c
+    ../amx/amxcore.c
   )
+  if(UNIX)
+    set(PAWNRUNS_SRCS
+      ${PAWNRUNS_SRCS}
+      ../linux/getch.c
+      ../linux/getch.h
+      ../linux/binreloc.c
+    )
+  endif()
+  add_executable(pawnruns ${PAWNRUNS_SRCS})
+  if(UNIX)
+    target_link_libraries(pawnruns dl)
+  endif()
+  add_subdirectory(tests)
 endif()
-add_executable(pawnruns ${PAWNRUNS_SRCS})
-if(UNIX)
-  target_link_libraries(pawnruns dl)
-endif()
-add_subdirectory(tests)
 
 # Generate a binary package with CPack
 set(CPACK_PACKAGE_NAME pawnc)
