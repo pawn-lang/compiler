@@ -515,7 +515,7 @@ static int find_closestsymbol_table(const char *name,const symbol *root,int symb
       ident=iARRAY;     /* reference arrays match arrays */
     else if (symboltype==iVARIABLE && (sym->ident==iCONSTEXPR || sym->ident==iREFERENCE || sym->ident==iARRAY || sym->ident==iREFARRAY))
       ident=iVARIABLE;  /* when requesting variables, constants are also ok */
-    if ((symboltype==ident || (symboltype==iVARIABLE && ident==iFUNCTN)) && ((ident!=iFUNCTN && ident!=iLABEL) || (sym->usage & uDEFINE)!=0)) {
+    if ((symboltype==ident) && ((ident!=iFUNCTN && ident!=iLABEL) || (sym->usage & uDEFINE)!=0)) {
       dist=levenshtein_distance(name,symname);
       if (dist<closestdist && dist<=maxdist) {
         *closestsym=sym;
@@ -616,7 +616,7 @@ static constvalue *findclosest_automaton_for_state(const char *statename,int fsa
         closestdist=dist;
         if (closestdist<=1)
           break;
-      } /*if */
+      } /* if */
     } /* if */
     ptr=ptr->next;
   } /* while */

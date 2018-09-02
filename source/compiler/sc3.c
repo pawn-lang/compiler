@@ -1854,7 +1854,7 @@ static int primary(value *lval)
          * implemented, issue an error
          */
         if ((sym->usage & uPROTOTYPED)==0)
-          error_suggest(17,st,NULL,estSYMBOL,iVARIABLE);  /* undefined symbol */
+          error_suggest(17,st,NULL,estSYMBOL,iFUNCTN);    /* undefined symbol */
       } else {
         if ((sym->usage & uDEFINE)==0)
           error_suggest(17,st,NULL,estSYMBOL,iVARIABLE);  /* undefined symbol */
