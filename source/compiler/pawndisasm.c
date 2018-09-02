@@ -222,7 +222,8 @@ static OPCODE opcodelist[] = {
 
 void print_opcode(FILE *ftxt,cell opcode,cell cip)
 {
-  fprintf(ftxt,"%08"PRIxC"  %s ",cip,opcodelist[(int)(opcode &0x0000ffff)].name);
+  fprintf(ftxt,"%08"PRIxC"  %s",
+          cip,opcodelist[(int)(opcode &0x0000ffff)].name);
 }
 
 void print_funcname(FILE *ftxt,cell address)
@@ -264,21 +265,21 @@ cell parm0(FILE *ftxt,const cell *params,cell opcode,cell cip)
 cell parm1(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08"PRIxC"\n",*params);
+  fprintf(ftxt," %08"PRIxC"\n",*params);
   return 2;
 }
 
 cell parm2(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08"PRIxC" %08"PRIxC"\n",params[0],params[1]);
+  fprintf(ftxt," %08"PRIxC" %08"PRIxC"\n",params[0],params[1]);
   return 3;
 }
 
 cell parm3(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08"PRIxC" %08"PRIxC" %08"PRIxC"\n",
+  fprintf(ftxt," %08"PRIxC" %08"PRIxC" %08"PRIxC"\n",
           params[0],params[1],params[2]);
   return 4;
 }
@@ -286,7 +287,7 @@ cell parm3(FILE *ftxt,const cell *params,cell opcode,cell cip)
 cell parm4(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08"PRIxC" %08"PRIxC" %08"PRIxC" %08"PRIxC"\n",
+  fprintf(ftxt," %08"PRIxC" %08"PRIxC" %08"PRIxC" %08"PRIxC"\n",
           params[0],params[1],params[2],params[3]);
   return 5;
 }
@@ -294,7 +295,7 @@ cell parm4(FILE *ftxt,const cell *params,cell opcode,cell cip)
 cell parm5(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08"PRIxC" %08"PRIxC" %08"PRIxC" %08"PRIxC" %08"PRIxC"\n",
+  fprintf(ftxt," %08"PRIxC" %08"PRIxC" %08"PRIxC" %08"PRIxC" %08"PRIxC"\n",
           params[0],params[1],params[2],params[3],params[4]);
   return 6;
 }
@@ -310,7 +311,7 @@ cell do_proc(FILE *ftxt,const cell *params,cell opcode,cell cip)
 cell do_call(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08"PRIxC,*params);
+  fprintf(ftxt," %08"PRIxC,*params);
   print_funcname(ftxt,*params);
   fputs("\n",ftxt);
   return 2;
@@ -319,7 +320,7 @@ cell do_call(FILE *ftxt,const cell *params,cell opcode,cell cip)
 cell do_jump(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08"PRIxC"\n",*params);
+  fprintf(ftxt," %08"PRIxC"\n",*params);
   return 2;
 }
 
@@ -346,7 +347,7 @@ cell do_sysreq(FILE *ftxt,const cell *params,cell opcode,cell cip)
   } /* if */
 
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08"PRIxC,*params);
+  fprintf(ftxt," %08"PRIxC,*params);
   if (namelen>0)
     fprintf(ftxt,"\t; %s",name);
   fprintf(ftxt,"\n");
@@ -356,7 +357,7 @@ cell do_sysreq(FILE *ftxt,const cell *params,cell opcode,cell cip)
 cell do_switch(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt,"%08"PRIxC"\n",*params);
+  fprintf(ftxt," %08"PRIxC"\n",*params);
   return 2;
 }
 
@@ -367,7 +368,7 @@ cell casetbl(FILE *ftxt,const cell *params,cell opcode,cell cip)
 
   print_opcode(ftxt,opcode,cip);
   num=params[0]+1;
-  fprintf(ftxt,"%08"PRIxC" %08"PRIxC"\n",params[0],params[1]);
+  fprintf(ftxt," %08"PRIxC" %08"PRIxC"\n",params[0],params[1]);
   for (idx=1; idx<num; idx++)
     fprintf(ftxt,"                  %08"PRIxC" %08"PRIxC"\n",
             params[2*idx],params[2*idx+1]);
