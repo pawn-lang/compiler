@@ -2337,8 +2337,13 @@ static int declloc(int fstatic)
       modstk(-(int)size*sizeof(cell));
       assert(curfunc!=NULL);
       assert((curfunc->usage & uNATIVE)==0);
-      if (curfunc->x.stacksize<declared+1)
-        curfunc->x.stacksize=declared+1;  /* +1 for PROC opcode */
+      if (curfunc->flags & flagNAKED) {
+        if (curfunc->x.stacksize<declared)
+          curfunc->x.stacksize=declared;
+      } else {
+        if (curfunc->x.stacksize<declared+1)
+          curfunc->x.stacksize=declared+1;  /* +1 for PROC opcode */
+      } /* if */
     } /* if */
     /* now that we have reserved memory for the variable, we can proceed
      * to initialize it */
@@ -3156,7 +3161,10 @@ SC_FUNC symbol *fetchfunc(char *name,int tag)
     /* set library ID to NULL (only for native functions) */
     sym->x.lib=NULL;
     /* set the required stack size to zero (only for non-native functions) */
-    sym->x.stacksize=1;         /* 1 for PROC opcode */
+    if (sym->flags & flagNAKED)
+      sym->x.stacksize=0;         /* zero for naked functions */
+    else
+      sym->x.stacksize=1;         /* 1 for PROC opcode */
   } /* if */
   if (pc_deprecate!=NULL) {
     assert(sym!=NULL);
