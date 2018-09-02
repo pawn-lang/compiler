@@ -2421,9 +2421,8 @@ static int nesting=0;
   /* maintain max. amount of memory used */
   {
     long totalsize;
-    totalsize=declared+decl_heap;   /* local variables & return value size */
-    if ((sym->flags & flagNAKED)==0)
-      totalsize++;                  /* +1 for PROC opcode */
+    totalsize=declared+decl_heap+1;   /* local variables & return value size,
+                                       * +1 for PROC opcode */
     if (lval_result->ident==iREFARRAY)
       totalsize++;                    /* add hidden parameter (on the stack) */
     if ((sym->usage & uNATIVE)==0)
