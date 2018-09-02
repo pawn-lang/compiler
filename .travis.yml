@@ -21,8 +21,11 @@ before_script:
 
 script:
   - make
-  - make pawncc_tests
+  - make test
   - make package
+
+after_failure:
+  - cat Testing/Temporary/LastTest.log
 
 deploy:
   provider: releases
