@@ -6,7 +6,7 @@ configuration:
 
 before_build:
   - mkdir build && cd build
-  - cmake .. -G "Visual Studio 14 2015" -DCPACK_GENERATOR=ZIP -DCMAKE_GENERATOR_TOOLSET=v100
+  - cmake ../source/compiler -G "Visual Studio 14 2015" -DCPACK_GENERATOR=ZIP -DCMAKE_GENERATOR_TOOLSET=v100
 
 build_script:
   - cmake --build . --config %CONFIGURATION%
