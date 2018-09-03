@@ -1,12 +1,33 @@
 #include <console>
+#include <file>
 #include <string>
 
-forward test_too_different();
-public test_too_different()
+forward test_nosuggest1();
+public test_nosuggest1()
 {
-	const abcd = 1;			// the compiler shouldn't suggest any name for this error
-	printf("%d\n", abcxyz);	// since "abcxyz" and "abcd" differ by more than 2 symbols
+	// The compiler shouldn't suggest any name for this error
+	// since "abcxyz" and "abcd" differ by more than 2 symbols.
+	const abcd = 1;
+	printf("%d\n", abcxyz);
 	#pragma unused abcd
+}
+
+forward test_nosuggest2();
+public test_nosuggest2()
+{
+	// There are no "()" after "length", so the compiler shouldn't suggest "flength".
+	printf("%d\n", length);
+}
+
+forward test_nosuggest3();
+public test_nosuggest3()
+{
+	// float.inc is not #included, so float() is not defined.
+	// After the 1'st pass the compiler thinks float() is an unimplemented function,
+	// so it shouldn't suggest variable "flt" in this case.
+	new Float:flt;
+	return float(0);
+	#pragma unused flt
 }
 
 forward test_e017();
