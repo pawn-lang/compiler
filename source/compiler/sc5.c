@@ -501,31 +501,42 @@ static int find_closestsymbol_table(const char *name,const symbol *root,int symb
 {
   int dist,maxdist,closestdist=INT_MAX;
   char symname[2*sNAMEMAX+16];
-  symbol *sym=root->next;
+  symbol *sym;
   int ident;
-
   assert(closestsym!=NULL);
   *closestsym=NULL;
   assert(name!=NULL);
   maxdist=get_maxdist(name);
-  while (sym!=NULL) {
-    funcdisplayname(symname,sym->name);
+  for (sym=root->next; sym!=NULL; sym=sym->next) {
     ident=sym->ident;
-    if (symboltype==iARRAY && ident==iREFARRAY)
-      ident=iARRAY;     /* reference arrays match arrays */
-    else if (symboltype==iVARIABLE && (sym->ident==iCONSTEXPR || sym->ident==iREFERENCE || sym->ident==iARRAY || sym->ident==iREFARRAY))
-      ident=iVARIABLE;  /* when requesting variables, constants are also ok */
-    if ((symboltype==ident) && ((ident!=iFUNCTN && ident!=iLABEL) || (sym->usage & uDEFINE)!=0)) {
-      dist=levenshtein_distance(name,symname);
-      if (dist<closestdist && dist<=maxdist) {
-        *closestsym=sym;
-        closestdist=dist;
-        if (closestdist<=1)
-          break;
-      } /* if */
+    if (symboltype==essNONLABEL) {
+      if (ident==iLABEL)
+        continue;
+    } else if (symboltype==essVARCONST) {
+      if (ident!=iCONSTEXPR && ident!=iVARIABLE && ident!=iREFERENCE && ident!=iARRAY && ident!=iREFARRAY)
+        continue;
+    } else if (symboltype==essARRAY) {
+      if (ident!=iARRAY && ident!=iREFARRAY)
+        continue;
+    } else if (symboltype==essCONST) {
+      if (ident!=iCONSTEXPR)
+        continue;
+    } else if (symboltype==essFUNCTN) {
+      if ((ident!=iFUNCTN && ident!=iREFFUNC) || (sym->usage & uDEFINE)==0)
+        continue;
+    } else if (symboltype==essLABEL) {
+      if (ident!=iLABEL || (sym->usage & uDEFINE)==0)
+        continue;
     } /* if */
-    sym=sym->next;
-  } /* while */
+    funcdisplayname(symname,sym->name);
+    dist=levenshtein_distance(name,symname);
+    if (dist>maxdist || dist>=closestdist)
+      continue;
+    *closestsym=sym;
+    closestdist=dist;
+    if (closestdist<=1)
+      break;
+  } /* for */
   return closestdist;
 }
 
@@ -639,7 +650,7 @@ SC_FUNC int error_suggest(int number,const char *name,const char *name2,int type
     if (type!=estSYMBOL) {
       extern char *sc_tokens[];
       name=sc_tokens[subtype-tFIRST];
-      subtype=iVARIABLE;
+      subtype=essVARCONST;
     } /* if */
     closestsym=find_closestsymbol(name,subtype);
     if (closestsym!=NULL)

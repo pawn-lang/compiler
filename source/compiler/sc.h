@@ -501,11 +501,19 @@ typedef struct s_emit_outval {
 /* constants for error_suggest() */
 #define MAX_EDIT_DIST 2 /* allow two mis-typed characters; when there are more,
                          * the names are too different, and no match is returned */
-enum { /* identifier types */
+enum {  /* identifier types */
   estSYMBOL = 0,
   estNONSYMBOL,
   estAUTOMATON,
   estSTATE
+};
+enum {  /* symbol types */
+  essNONLABEL,  /* find symbols of any type but labels */
+  essVARCONST,  /* array, single variable or named constant */
+  essARRAY,
+  essCONST,
+  essFUNCTN,
+  essLABEL
 };
 
 /* interface functions */
