@@ -1,6 +1,7 @@
 #include <console>
 #include <file>
 #include <string>
+#include "gh_353.inc"
 
 forward test_nosuggest1();
 public test_nosuggest1()
@@ -30,6 +31,25 @@ public test_nosuggest3()
 	#pragma unused flt
 }
 
+forward test_nosuggest4();
+public test_nosuggest4()
+{
+	// "abc" is a label so the compiler shouldn't suggest its name
+	// where a variable or named constant is expected.
+abc:
+	printf("%d\n", ab);
+	printf("%d\n", tagof ab);
+	#pragma unused abc
+}
+
+forward test_nosuggest5();
+public test_nosuggest5()
+{
+	// As the name suggests, variable "staticvar" is defined as static
+	// within another file, so the compiler shouldn't suggest its name here.
+	return staticval;
+}
+
 forward test_e017();
 public test_e017()
 {
@@ -43,7 +63,10 @@ public test_e017()
 
 	// error 017: undefined symbol "strcaf"; did you mean "strcat"?
 	new str[4] = "a";
-	return strcaf(str, "b");
+	strcaf(str, "b");
+
+	// error 017: undefined symbol "test_e17"; did you mean "test_e017"?
+	printf("%d\n", tagof test_e17);
 }
 
 forward test_e019();
