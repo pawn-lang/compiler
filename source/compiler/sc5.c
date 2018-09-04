@@ -508,6 +508,8 @@ static int find_closestsymbol_table(const char *name,const symbol *root,int symb
   assert(name!=NULL);
   maxdist=get_maxdist(name);
   for (sym=root->next; sym!=NULL; sym=sym->next) {
+    if (sym->fnumber!=-1 && sym->fnumber!=fcurrent)
+      continue;
     ident=sym->ident;
     if (symboltype==essNONLABEL) {
       if (ident==iLABEL)
