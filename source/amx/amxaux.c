@@ -30,13 +30,15 @@
 size_t AMXAPI aux_ProgramSize(char *filename)
 {
   FILE *fp;
+  size_t size;
   AMX_HEADER hdr;
 
   if ((fp=fopen(filename,"rb")) == NULL)
     return 0;
-  if (fread(&hdr, sizeof hdr, 1, fp) < 1)
-    return 0;
+  size = fread(&hdr, sizeof hdr, 1, fp);
   fclose(fp);
+  if (size < 1)
+    return 0;
 
   amx_Align16(&hdr.magic);
   amx_Align32((uint32_t *)&hdr.stp);
@@ -46,21 +48,24 @@ size_t AMXAPI aux_ProgramSize(char *filename)
 int AMXAPI aux_LoadProgram(AMX *amx, char *filename, void *memblock)
 {
   FILE *fp;
+  size_t size;
   AMX_HEADER hdr;
   int result, didalloc;
 
   /* open the file, read and check the header */
   if ((fp = fopen(filename, "rb")) == NULL)
     return AMX_ERR_NOTFOUND;
-  if (fread(&hdr, sizeof hdr, 1, fp) < 1)
-    return AMX_ERR_INIT;
-  amx_Align16(&hdr.magic);
-  amx_Align32((uint32_t *)&hdr.size);
-  amx_Align32((uint32_t *)&hdr.stp);
-  if (hdr.magic != AMX_MAGIC) {
+  size = fread(&hdr, sizeof hdr, 1, fp);
+  if (size < 1) {
+err_format:
     fclose(fp);
     return AMX_ERR_FORMAT;
   } /* if */
+  amx_Align16(&hdr.magic);
+  amx_Align32((uint32_t *)&hdr.size);
+  amx_Align32((uint32_t *)&hdr.stp);
+  if (hdr.magic != AMX_MAGIC)
+    goto err_format;
 
   /* allocate the memblock if it is NULL */
   didalloc = 0;
@@ -75,9 +80,10 @@ int AMXAPI aux_LoadProgram(AMX *amx, char *filename, void *memblock)
 
   /* read in the file */
   rewind(fp);
-  if (fread(memblock, 1, (size_t)hdr.size, fp) < (size_t)hdr.size)
-    return AMX_ERR_INIT;
+  size = fread(memblock, 1, (size_t)hdr.size, fp);
   fclose(fp);
+  if (size < (size_t)hdr.size)
+    return AMX_ERR_FORMAT;
 
   /* initialize the abstract machine */
   memset(amx, 0, sizeof *amx);
