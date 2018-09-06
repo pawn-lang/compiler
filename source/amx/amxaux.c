@@ -57,15 +57,16 @@ int AMXAPI aux_LoadProgram(AMX *amx, char *filename, void *memblock)
     return AMX_ERR_NOTFOUND;
   size = fread(&hdr, sizeof hdr, 1, fp);
   if (size < 1) {
-err_format:
     fclose(fp);
     return AMX_ERR_FORMAT;
   } /* if */
   amx_Align16(&hdr.magic);
   amx_Align32((uint32_t *)&hdr.size);
   amx_Align32((uint32_t *)&hdr.stp);
-  if (hdr.magic != AMX_MAGIC)
-    goto err_format;
+  if (hdr.magic != AMX_MAGIC) {
+    fclose(fp);
+    return AMX_ERR_FORMAT;
+  } /* if */
 
   /* allocate the memblock if it is NULL */
   didalloc = 0;
