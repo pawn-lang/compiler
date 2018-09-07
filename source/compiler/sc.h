@@ -308,6 +308,11 @@ typedef struct s_valuepair {
 #define opcodes(n)      ((n)*sizeof(cell))      /* opcode size */
 #define opargs(n)       ((n)*sizeof(cell))      /* size of typical argument */
 
+/* general purpose macros */
+#if !defined makelong
+  #define makelong(low,high) ((long)(low) | ((long)(high) << (sizeof(long)*4)))
+#endif
+
 /*  Tokens recognized by lex()
  *  Some of these constants are assigned as well to the variable "lastst" (see SC1.C)
  */
@@ -492,6 +497,24 @@ typedef struct s_emit_outval {
     const char *string;
   } value;
 } emit_outval;
+
+/* constants for error_suggest() */
+#define MAX_EDIT_DIST 2 /* allow two mis-typed characters; when there are more,
+                         * the names are too different, and no match is returned */
+enum {  /* identifier types */
+  estSYMBOL = 0,
+  estNONSYMBOL,
+  estAUTOMATON,
+  estSTATE
+};
+enum {  /* symbol types */
+  essNONLABEL,  /* find symbols of any type but labels */
+  essVARCONST,  /* array, single variable or named constant */
+  essARRAY,
+  essCONST,
+  essFUNCTN,
+  essLABEL
+};
 
 /* interface functions */
 #if defined __cplusplus
@@ -721,8 +744,9 @@ SC_FUNC void outval(cell val,int newline);
 SC_FUNC void outinstr(const char *name,emit_outval params[],int numparams);
 
 /* function prototypes in SC5.C */
-SC_FUNC int error(int number,...);
+SC_FUNC int error(long number,...);
 SC_FUNC void errorset(int code,int line);
+SC_FUNC int error_suggest(int error,const char *name,const char *name2,int type,int subtype);
 
 /* function prototypes in SC6.C */
 SC_FUNC int assemble(FILE *fout,FILE *fin);
