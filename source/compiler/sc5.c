@@ -489,24 +489,24 @@ static int levenshtein_distance(const char *s,const char*t)
   return distance;
 }
 
-static int get_maxdist(const char *name)
+static int get_max_dist(const char *name)
 {
-  int maxdist=strlen(name)/2; /* for short names, allow only a single edit */
-  if (maxdist>MAX_EDIT_DIST)
-    maxdist=MAX_EDIT_DIST;
-  return maxdist;
+  int max_dist=strlen(name)/2; /* for short names, allow only a single edit */
+  if (max_dist>MAX_EDIT_DIST)
+    max_dist=MAX_EDIT_DIST;
+  return max_dist;
 }
 
-static int find_closestsymbol_table(const char *name,const symbol *root,int symboltype,symbol **closestsym)
+static int find_closest_symbol_table(const char *name,const symbol *root,int symboltype,symbol **closest_sym)
 {
-  int dist,maxdist,closestdist=INT_MAX;
+  int dist,max_dist,closest_dist=INT_MAX;
   char symname[2*sNAMEMAX+16];
   symbol *sym;
   int ident;
-  assert(closestsym!=NULL);
-  *closestsym=NULL;
+  assert(closest_sym!=NULL);
+  *closest_sym =NULL;
   assert(name!=NULL);
-  maxdist=get_maxdist(name);
+  max_dist=get_max_dist(name);
   for (sym=root->next; sym!=NULL; sym=sym->next) {
     if (sym->fnumber!=-1 && sym->fnumber!=fcurrent)
       continue;
@@ -532,17 +532,17 @@ static int find_closestsymbol_table(const char *name,const symbol *root,int symb
     } /* if */
     funcdisplayname(symname,sym->name);
     dist=levenshtein_distance(name,symname);
-    if (dist>maxdist || dist>=closestdist)
+    if (dist>max_dist || dist>=closest_dist)
       continue;
-    *closestsym=sym;
-    closestdist=dist;
-    if (closestdist<=1)
+    *closest_sym =sym;
+    closest_dist=dist;
+    if (closest_dist<=1)
       break;
   } /* for */
-  return closestdist;
+  return closest_dist;
 }
 
-static symbol *find_closestsymbol(const char *name,int symboltype)
+static symbol *find_closest_symbol(const char *name,int symboltype)
 {
   symbol *symloc,*symglb;
   int distloc,distglb;
@@ -552,70 +552,70 @@ static symbol *find_closestsymbol(const char *name,int symboltype)
   assert(name!=NULL);
   if (name[0]=='\0')
     return NULL;
-  distloc=find_closestsymbol_table(name,&loctab,symboltype,&symloc);
+  distloc=find_closest_symbol_table(name,&loctab,symboltype,&symloc);
   if (distloc<=1)
     distglb=INT_MAX; /* don't bother searching in the global table */
   else
-    distglb=find_closestsymbol_table(name,&glbtab,symboltype,&symglb);
+    distglb=find_closest_symbol_table(name,&glbtab,symboltype,&symglb);
   return (distglb<distloc) ? symglb : symloc;
 }
 
-static constvalue *find_closestautomaton(const char *name)
+static constvalue *find_closest_automaton(const char *name)
 {
   constvalue *ptr=sc_automaton_tab.first;
-  constvalue *closestmatch=NULL;
-  int dist,maxdist,closestdist=INT_MAX;
+  constvalue *closest_match=NULL;
+  int dist,max_dist,closest_dist=INT_MAX;
 
   assert(name!=NULL);
-  maxdist=get_maxdist(name);
+  max_dist=get_max_dist(name);
   while (ptr!=NULL) {
     if (ptr->name[0]!='\0') {
       dist=levenshtein_distance(name,ptr->name);
-      if (dist<closestdist && dist<=maxdist) {
-        closestmatch=ptr;
-        closestdist=dist;
-        if (closestdist<=1)
+      if (dist<closest_dist && dist<=max_dist) {
+        closest_match=ptr;
+        closest_dist=dist;
+        if (closest_dist<=1)
           break;
       } /* if */
     } /* if */
     ptr=ptr->next;
   } /* while */
-  return closestmatch;
+  return closest_match;
 }
 
-static constvalue *find_closeststate(const char *name,int fsa)
+static constvalue *find_closest_state(const char *name,int fsa)
 {
   constvalue *ptr=sc_state_tab.first;
-  constvalue *closestmatch=NULL;
-  int dist,maxdist,closestdist=INT_MAX;
+  constvalue *closest_match=NULL;
+  int dist,max_dist,closest_dist=INT_MAX;
 
   assert(name!=NULL);
-  maxdist=get_maxdist(name);
+  max_dist=get_max_dist(name);
   while (ptr!=NULL) {
     if (ptr->index==fsa && ptr->name[0]!='\0') {
       dist=levenshtein_distance(name,ptr->name);
-      if (dist<closestdist && dist<=maxdist) {
-        closestmatch=ptr;
-        closestdist=dist;
-        if (closestdist<=1)
+      if (dist<closest_dist && dist<=max_dist) {
+        closest_match=ptr;
+        closest_dist=dist;
+        if (closest_dist<=1)
           break;
       } /* if */
     } /* if */
     ptr=ptr->next;
   } /* while */
-  return closestmatch;
+  return closest_match;
 }
 
-static constvalue *findclosest_automaton_for_state(const char *statename,int fsa)
+static constvalue *find_closest_automaton_for_state(const char *statename,int fsa)
 {
   constvalue *ptr=sc_state_tab.first;
-  constvalue *closestmatch=NULL;
+  constvalue *closest_match=NULL;
   constvalue *automaton;
   const char *fsaname;
-  int dist,maxdist,closestdist=INT_MAX;
+  int dist,max_dist,closest_dist=INT_MAX;
 
   assert(statename!=NULL);
-  maxdist=get_maxdist(statename);
+  max_dist=get_max_dist(statename);
   automaton=automaton_findid(ptr->index);
   assert(automaton!=NULL);
   fsaname=automaton->name;
@@ -624,22 +624,22 @@ static constvalue *findclosest_automaton_for_state(const char *statename,int fsa
       automaton=automaton_findid(ptr->index);
       assert(automaton!=NULL);
       dist=levenshtein_distance(fsaname,automaton->name);
-      if (dist<closestdist && dist<=maxdist) {
-        closestmatch=automaton;
-        closestdist=dist;
-        if (closestdist<=1)
+      if (dist<closest_dist && dist<=max_dist) {
+        closest_match=automaton;
+        closest_dist=dist;
+        if (closest_dist<=1)
           break;
       } /* if */
     } /* if */
     ptr=ptr->next;
   } /* while */
-  return closestmatch;
+  return closest_match;
 }
 
 SC_FUNC int error_suggest(int number,const char *name,const char *name2,int type,int subtype)
 {
   char string[sNAMEMAX*2+2]; /* for "<automaton>:<state>" */
-  const char *closestname=NULL;
+  const char *closest_name=NULL;
 
   /* don't bother finding the closest names on errors
    * that aren't going to be shown on the 1'st pass
@@ -648,40 +648,40 @@ SC_FUNC int error_suggest(int number,const char *name,const char *name2,int type
     return 0;
 
   if (type==estSYMBOL || (type==estNONSYMBOL && tMIDDLE<subtype && subtype<=tLAST)) {
-    symbol *closestsym;
+    symbol *closest_sym;
     if (type!=estSYMBOL) {
       extern char *sc_tokens[];
       name=sc_tokens[subtype-tFIRST];
       subtype=essVARCONST;
     } /* if */
-    closestsym=find_closestsymbol(name,subtype);
-    if (closestsym!=NULL)
-      closestname=closestsym->name;
+    closest_sym =find_closest_symbol(name,subtype);
+    if (closest_sym !=NULL)
+      closest_name= closest_sym->name;
   } else if (type==estAUTOMATON) {
-    constvalue *closestautomaton=find_closestautomaton(name);
-    if (closestautomaton!=NULL)
-      closestname=closestautomaton->name;
+    constvalue *closest_automaton=find_closest_automaton(name);
+    if (closest_automaton!=NULL)
+      closest_name=closest_automaton->name;
   } else if (type==estSTATE) {
-    constvalue *closeststate=find_closeststate(name,subtype);
-    if (closeststate!=NULL) {
-      closestname=closeststate->name;
+    constvalue *closest_state=find_closest_state(name,subtype);
+    if (closest_state !=NULL) {
+      closest_name=closest_state->name;
     } else {
-      constvalue *closestautomaton=findclosest_automaton_for_state(name,subtype);
-      if (closestautomaton!=NULL) {
-        sprintf(string,"%s:%s",closestautomaton->name,name);
-        closestname=string;
+      constvalue *closest_automaton=find_closest_automaton_for_state(name,subtype);
+      if (closest_automaton !=NULL) {
+        sprintf(string,"%s:%s", closest_automaton->name,name);
+        closest_name=string;
       } /* if */
     } /* if */
   } else {
     assert(0);
   } /* if */
 
-  if (closestname==NULL) {
+  if (closest_name==NULL) {
     error(number,name,name2);
   } else if (name2!=NULL) {
-    error(makelong(number,1),name,name2,closestname);
+    error(makelong(number,1),name,name2,closest_name);
   } else {
-    error(makelong(number,1),name,closestname);
+    error(makelong(number,1),name,closest_name);
   } /* if */
   return 0;
 }

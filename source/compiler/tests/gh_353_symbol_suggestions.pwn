@@ -1,7 +1,7 @@
 #include <console>
 #include <file>
 #include <string>
-#include "gh_353.inc"
+#include "gh_353_symbol_suggestions.inc"
 
 forward test_nosuggest1();
 public test_nosuggest1()
