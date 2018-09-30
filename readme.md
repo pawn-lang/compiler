@@ -105,9 +105,9 @@ seems to be based on an older release of Pawn.
 [build_win]: https://ci.appveyor.com/project/Southclaws/compiler/branch/master
 [build_status_win]:
   https://ci.appveyor.com/api/projects/status/k112tbr1afrkif0n?svg=true
-[team]: https://github.com/orgs/pawn-lang/teams/compiler
+[team]: https://github.com/pawn-lang/compiler/graphs/contributors
 [original_readme]:
-  https://github.com/pawn-lang/tree/master/readme_compuphase.txt
+  https://github.com/pawn-lang/compiler/tree/master/readme_compuphase.txt
 [issues]: https://github.com/pawn-lang/compiler/issues
 [bugs]: https://github.com/pawn-lang/compiler/wiki/Known-compiler-bugs
 [new]: https://github.com/pawn-lang/compiler/wiki/What's-new
