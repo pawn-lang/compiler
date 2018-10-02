@@ -27,11 +27,17 @@ main() {
 	#pragma unused arr
 	#pragma unused arr2
 
-    __static_check(1 && __static_check(var == var) || false)
+    __static_check(1 && __static_check(var == var) || false);
+    __static_check(1 && __static_check(var != var) && false);
     __static_check(1 && __static_check(var != var, "inside fail") || false, "outside fail");
     __static_check(1 && __static_check(var == var, "inside fail") && false, "outside fail");
 
-	//__static_check 10 == 55 && 0, 55;
+	__static_check 10 == 55 && 0;
+	__static_check 10 == 55 || 1;
+	__static_check 10 == 55, "10 is not 55";
+	
+	__static_check 0, "string" " concat " "test";
+	__static_check 0, #stringize "test";
 
 	__static_check(var2);
 	__static_check(var, asd");

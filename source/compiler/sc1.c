@@ -6010,71 +6010,86 @@ static void dolabel(void)
 }
 
 /* do_static_check()
- * checks compile-time assertions and triggers an error or warning
+ * checks compile-time assertions and triggers an error/warning
  *
- * Parameters:
- * FALSE for error if assertion fails
- * TRUE for warning if assertion fails
+ * The 'use_warning' parameter is set to TRUE if warnings are to be
+ * used instead of errors to notify assertion failures.
  */
-SC_FUNC int do_static_check(int warning)
+SC_FUNC int do_static_check(int use_warning)
 {
-  cell val;
-  int noerrors=TRUE,usermsg_present=FALSE,usermsg_len=0;
+  cell val=0;
+  int noerrors=TRUE,usermsg_present=FALSE,usermsg_len=0,matchparens;
   char usermsg[sLINEMAX+1];
   const unsigned char *exprstart,*exprend;
-  if (needtoken('(')) {
-    exprstart=lptr; /* save start of test expression for error message */
-    if (constexpr(&val,NULL,NULL)==FALSE) {
-      error(8); /* must be constant expression */
-      noerrors=FALSE;
-    } /* if */
-    exprend=lptr-1; /* save end of test expression */      
-    if (matchtoken(',')) {
-      usermsg_present=TRUE; /* user message has been provided */
-      while (*lptr<=' ' && *lptr!='\0')
-        lptr++;
-      if (*lptr!='"') {
-        error(1,"-string-","-unknown-"); /* expected string */
-        noerrors=FALSE; /* prevent 112 fatal error */
-      } /* if */
-      do {
-        if (*lptr=='#') {
-          lptr++;
-          while (alphanum(*lptr)) {
-            usermsg[usermsg_len++]=*lptr;
-            lptr++;
-          } /* while */
-        } else {
-          lptr++; /* skip opening " character */
-          while (*lptr) {
-            if (*lptr=='"') {
-              break; /* end of string */
-            } else if (*lptr=='\\' && (*(lptr + 1)=='"' || *(lptr + 1)=='\\')) {
-              lptr++; /* skip the escape sequence slash */
-            } /* if */
-            usermsg[usermsg_len++]=*lptr;
-            lptr++;
-          } /* while */
-          if (*lptr != '"') {
-            error(37); /* invalid string (possibly non-terminated string) */
-            noerrors = FALSE; /* prevent 112 fatal error */
-          } /* if */
-          lptr++; /* skip closing " character */
-          while (*lptr <= ' ' && *lptr != '\0')
-            lptr++;
-        }
-      } while (*lptr=='"' || *lptr=='#'); /* do */
-      usermsg[usermsg_len]='\0';  
-    } /* if */
-    if (val==0 && noerrors) {
-      if (usermsg_present==FALSE) {
-        int len=((exprend-exprstart+1)>sizeof(usermsg) ? sizeof(usermsg) : exprend-exprstart+1);
-        strlcpy(usermsg,(const char*)exprstart,len);
-      } /* if */
-      error(warning==TRUE ? 240 : 110,usermsg);
-    } /* if */
+
+  /* Save start of test expression for error message in case
+     parenthesis are not used. We save the start of expression
+     here because the lex() call made by matchtoken() might advance
+     'lptr' somewhere ahead of the test expression even if the match
+     fails.
+  */
+  while (*lptr<=' ' && *lptr!='\0')
+    lptr++;
+  exprstart=lptr;
+  matchparens=matchtoken('(');
+  if (matchparens) {
+    /* save start of test expression for error message again because
+       a parenthesis was present and we want to skip it
+    */
+    exprstart = lptr;
   } /* if */
-  needtoken(')');
+  if (constexpr(&val,NULL,NULL)==FALSE) {
+    error(8); /* must be constant expression */
+    noerrors=FALSE;
+  } /* if */
+  exprend=lptr; /* save end of test expression */      
+  /* look for optional user-defined error message */
+  if (matchtoken(',')) {
+    usermsg_present=TRUE; /* user message has been provided */
+    while (*lptr<=' ' && *lptr!='\0')
+      lptr++;
+    if (*lptr!='"' && *lptr!='#') {
+      error(1,"-string-","-unknown-"); /* expected string */
+      noerrors=FALSE; /* prevent 112 fatal error */
+    } /* if */
+    do {
+      if (*lptr=='#') {
+        lptr++;
+        while (alphanum(*lptr)) {
+          usermsg[usermsg_len++]=*lptr;
+          lptr++;
+        } /* while */
+      } else {
+        lptr++; /* skip opening " character */
+        while (*lptr) {
+          if (*lptr=='"') {
+            break; /* end of string */
+          } else if (*lptr=='\\' && (*(lptr + 1)=='"' || *(lptr + 1)=='\\')) {
+            lptr++; /* skip the escape sequence slash */
+          } /* if */
+          usermsg[usermsg_len++]=*lptr;
+          lptr++;
+        } /* while */
+        if (*lptr!='"') {
+          error(37); /* invalid string (possibly non-terminated string) */
+          noerrors=FALSE; /* prevent 112 fatal error */
+        } /* if */
+        lptr++; /* skip closing " character */
+      } /* if */
+      while (*lptr<=' ' && *lptr!='\0')
+          lptr++;
+    } while (*lptr=='"' || *lptr=='#'); /* do */
+    usermsg[usermsg_len]='\0';  
+  } /* if */
+  if (val==0 && noerrors) {
+    if (usermsg_present==FALSE) {
+      int len=((exprend-exprstart)>sizeof(usermsg) ? sizeof(usermsg) : exprend-exprstart);
+      strlcpy(usermsg,(const char*)exprstart,len);
+    } /* if */
+    error(use_warning==TRUE ? 240 : 110,usermsg);
+  } /* if */
+  if(matchparens)
+    needtoken(')');
   return val;
 }
 

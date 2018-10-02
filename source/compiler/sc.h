@@ -592,7 +592,7 @@ SC_FUNC symbol *add_builtin_string_constant(char *name,const char *val,int vclas
 SC_FUNC void exporttag(int tag);
 SC_FUNC void sc_attachdocumentation(symbol *sym);
 SC_FUNC void emit_parse_line(void);
-SC_FUNC int do_static_check(int warning);
+SC_FUNC int do_static_check(int use_warning);
 
 /* function prototypes in SC2.C */
 #define PUSHSTK_P(v)  { stkitem s_; s_.pv=(v); pushstk(s_); }
