@@ -410,7 +410,7 @@ enum {
   tNUMBER,/* integer number */
   tRATIONAL, /* rational number */
   tSYMBOL,
-  tLABEL  ,
+  tLABEL,
   tSTRING,
   /* argument types for emit/__emit */
   teANY , /* any value */

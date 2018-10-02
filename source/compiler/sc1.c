@@ -5502,13 +5502,13 @@ SC_FUNC int constexpr(cell *val,int *tag,symbol **symptr)
   cell cidx;
 
   already_staging=stgget(&index,&cidx);
-  if(!already_staging)
+  if (!already_staging)
     stgset(TRUE);         /* start stage-buffering */
   stgget(&index,&cidx); /* mark position in code generator */
   errorset(sEXPRMARK,0);
   ident=expression(val,tag,symptr,FALSE);
   stgdel(index,cidx);   /* scratch generated code */
-  if(!already_staging)
+  if (!already_staging)
     stgset(FALSE);        /* stop stage-buffering */
   if (ident!=iCONSTEXPR) {
     error(8);           /* must be constant expression */

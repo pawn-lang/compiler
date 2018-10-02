@@ -1392,12 +1392,18 @@ static int hier2(value *lval)
       needtoken(')');
     return FALSE;
   case t__STATIC_ASSERT:
-    do_static_check(FALSE);
     pc_sideeffect=TRUE;
+    clear_value(lval);
+    lval->ident=iCONSTEXPR;
+    lval->constval=do_static_check(FALSE);
+    ldconst(lval->constval,sPRI);
     return FALSE;
   case t__STATIC_CHECK:
-    do_static_check(TRUE);
     pc_sideeffect=TRUE;
+    clear_value(lval);
+    lval->ident=iCONSTEXPR;
+    lval->constval=do_static_check(TRUE);
+    ldconst(lval->constval,sPRI);
     return FALSE;
   case tTAGOF:
     paranthese=0;
