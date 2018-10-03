@@ -108,7 +108,7 @@ static void funcstub(int fnative);
 static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stock);
 static int declargs(symbol *sym,int chkshadow);
 static void doarg(char *name,int ident,int offset,int tags[],int numtags,
-                  int fpublic,int fconst,int chkshadow,arginfo *arg);
+                  int fpublic,int fconst,int written,int chkshadow,arginfo *arg);
 static void make_report(symbol *root,FILE *log,char *sourcefile);
 static void reduce_referrers(symbol *root);
 static long max_stacksize(symbol *root,int *recursion);
@@ -3680,8 +3680,8 @@ static void funcstub(int fnative)
  */
 static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stock)
 {
-  symbol *sym;
-  int argcnt,tok,tag,funcline;
+  symbol *sym,*lvar,*depend;
+  int argcnt,tok,tag,funcline,i;
   int opertok,opererror;
   char symbolname[sNAMEMAX+1];
   char *str;
@@ -3857,6 +3857,26 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     dumplits();                 /* dump literal strings */
     litidx=0;
   } /* if */
+  for (i=0; i<argcnt; i++) {
+    if (sym->dim.arglist[i].ident==iREFARRAY) {
+      lvar=findloc(sym->dim.arglist[i].name);
+      assert(lvar!=NULL);
+      if ((sym->dim.arglist[i].usage & uWRITTEN)==0) {
+        /* check if the argument was written in this definition */
+        depend=lvar;
+        while (depend!=NULL) {
+          if ((depend->usage & uWRITTEN)!=0) {
+            sym->dim.arglist[i].usage|=depend->usage & uWRITTEN;
+            break;
+          }
+          depend=finddepend(depend);
+        } /* while */
+      } /* if */
+      /* mark argument as written if it was written in another definition */
+      lvar->usage|=sym->dim.arglist[i].usage & uWRITTEN;
+    } /* if */    
+  } /* for */
+  
   testsymbols(&loctab,0,TRUE,TRUE);     /* test for unused arguments and labels */
   delete_symbols(&loctab,0,TRUE,TRUE);  /* clear local variables queue */
   assert(loctab.next==NULL);
@@ -4001,7 +4021,7 @@ static int declargs(symbol *sym,int chkshadow)
          *   base + 3*sizeof(cell)  == first argument of the function
          * So the offset of each argument is "(argcnt+3) * sizeof(cell)".
          */
-        doarg(name,ident,(argcnt+3)*sizeof(cell),tags,numtags,fpublic,fconst,chkshadow,&arg);
+        doarg(name,ident,(argcnt+3)*sizeof(cell),tags,numtags,fpublic,fconst,!!(sym->dim.arglist[argcnt].usage & uWRITTEN),chkshadow,&arg);
         if (fpublic && arg.hasdefault)
           error(59,name);       /* arguments of a public function may not have a default value */
         if ((sym->usage & uPROTOTYPED)==0) {
@@ -4116,7 +4136,7 @@ static int declargs(symbol *sym,int chkshadow)
  *  The arguments themselves are never public.
  */
 static void doarg(char *name,int ident,int offset,int tags[],int numtags,
-                  int fpublic,int fconst,int chkshadow,arginfo *arg)
+                  int fpublic,int fconst,int written,int chkshadow,arginfo *arg)
 {
   symbol *argsym;
   constvalue_root *enumroot=NULL;
@@ -4210,6 +4230,7 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
   } /* if */
   arg->ident=(char)ident;
   arg->usage=(char)(fconst ? uCONST : 0);
+  arg->usage|=(char)(written ? uWRITTEN : 0);
   arg->numtags=numtags;
   arg->tags=(int*)malloc(numtags*sizeof tags[0]);
   if (arg->tags==NULL)
