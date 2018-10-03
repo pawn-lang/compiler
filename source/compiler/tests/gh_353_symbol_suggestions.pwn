@@ -50,6 +50,15 @@ public test_nosuggest5()
 	return staticval;
 }
 
+forward test_nosuggest6();
+public test_nosuggest6()
+{
+	// The compiler shouldn't suggest global variable "test_nosuggest6_val"
+	// as it's not defined yet.
+	return test_nosuggest6_val;
+}
+static test_nosuggest6_val;
+
 forward test_e017();
 public test_e017()
 {
