@@ -263,7 +263,7 @@ SC_FUNC void setline(int chkbounds)
 
 SC_FUNC void setfiledirect(char *name)
 {
-  if (sc_status==statFIRST && sc_listing) {
+  if (sc_status==statSECOND && sc_listing) {
     assert(name!=NULL);
     pc_writeasm(outf,"\n#file \"");
     pc_writeasm(outf,name);
@@ -281,7 +281,7 @@ SC_FUNC void setfileconst(char *name)
 
 SC_FUNC void setlinedirect(int line)
 {
-  if (sc_status==statFIRST && sc_listing) {
+  if (sc_status==statSECOND && sc_listing) {
     char string[40];
     sprintf(string,"#line %d\n",line);
     pc_writeasm(outf,string);

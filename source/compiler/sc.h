@@ -280,6 +280,7 @@ enum {
 enum {
   statIDLE,     /* not compiling yet */
   statFIRST,    /* first pass */
+  statSECOND,   /* second pass */
   statWRITE,    /* writing output */
   statSKIP,     /* skipping output */
 };
