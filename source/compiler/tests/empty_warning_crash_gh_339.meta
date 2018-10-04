@@ -1,0 +1,6 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+empty_warning_crash_gh_339.pwn(1) : warning 237: user warning:
+"""
+}

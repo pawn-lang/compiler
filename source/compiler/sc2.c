@@ -1540,14 +1540,12 @@ static int command(void)
   case tpWARNING:
     while (*lptr<=' ' && *lptr!='\0')
       lptr++;
-    while (*lptr<=' ' && *lptr!='\0')
-      lptr++;
     if (!SKIPPING) {
       char *usermsg=strdupwithouta((const char *)lptr);
       if (usermsg!=NULL) {
         char *ptr=usermsg+strlen(usermsg)-1;
         /* remove trailing whitespace and newlines */
-        while (*ptr<=' ')
+        while (ptr >= usermsg && *ptr<=' ')
           *ptr--='\0';
         if (tok==tpERROR)
           error(111,usermsg); /* user error */
