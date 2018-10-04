@@ -6,6 +6,5 @@ gh_217.pwn(13) : warning 237: user warning: this is warning 2
 gh_217.pwn(15) : warning 237: user warning: this is  warning 3
 gh_217.pwn(17) : warning 237: user warning: this is  warning 4
 gh_217.pwn(28) : warning 234: function is deprecated (symbol "f") don't use  this  function please
-gh_217.pwn(33) : warning 234: function is deprecated (symbol "f") don't use  this  function please
 """
 }
