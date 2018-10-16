@@ -1,0 +1,7 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+share_arg_flags_fstates_gh_371.pwn(1) : warning 214: possibly a "const" array argument was intended: "str"
+share_arg_flags_fstates_gh_371.pwn(7) : warning 214: possibly a "const" array argument was intended: "str"
+"""
+}
