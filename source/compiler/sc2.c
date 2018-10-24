@@ -1911,7 +1911,7 @@ SC_FUNC void preprocess(void)
         lptr=pline;       /* reset "line pointer" to start of the parsing buffer */
       } /* if */
     #endif
-    if (sc_status==statFIRST && sc_listing && freading
+    if (sc_status==statSECOND && freading
         && (iscommand==CMD_NONE || iscommand==CMD_EMPTYLINE || iscommand==CMD_DIRECTIVE))
     {
       listline++;
