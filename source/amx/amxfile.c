@@ -35,6 +35,12 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "osdefs.h"
+#if (defined __linux || defined __linux__) && !defined __LINUX__
+  #define __LINUX__
+#endif
+#if defined FREEBSD && !defined __FreeBSD__
+  #define __FreeBSD__
+#endif
 #if defined __BORLANDC__
   #include <dir.h>
 #endif
