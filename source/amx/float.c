@@ -45,7 +45,7 @@ static cell AMX_NATIVE_CALL n_float(AMX *amx,const cell *params)
 {
     /*
     *   params[0] = number of bytes
-    *   params[1] = integer value to convert to a float
+    *   params[1] = long value to convert to a float
     */
     REAL fValue;
 
@@ -74,7 +74,7 @@ static cell AMX_NATIVE_CALL n_strfloat(AMX *amx,const cell *params)
     assert(params[0]/sizeof(cell)==1);
 
     /* Get the real address of the string. */
-    pString=amx_Address(amx,params[1]);
+    amx_GetAddr(amx,params[1],&pString);
 
     /* Find out how long the string is in characters. */
     amx_StrLen(pString, &nLen);
@@ -163,20 +163,20 @@ static cell AMX_NATIVE_CALL n_floatround(AMX *amx,const cell *params)
     /*
     *   params[0] = number of bytes
     *   params[1] = float operand
-    *   params[2] = Type of rounding (integer)
+    *   params[2] = Type of rounding (long)
     */
     REAL fA = amx_ctof(params[1]);
 
     (void)amx;
     switch (params[2])
     {
-        case 1:       /* round downwards */
+        case 1:       /* round downwards (truncate) */
             fA = (REAL)(floor((double)fA));
             break;
         case 2:       /* round upwards */
             fA = (REAL)(ceil((double)fA));
             break;
-        case 3:       /* round towards zero (truncate) */
+        case 3:       /* round towards zero */
             if ( fA>=0.0 )
                 fA = (REAL)(floor((double)fA));
             else
@@ -187,7 +187,7 @@ static cell AMX_NATIVE_CALL n_floatround(AMX *amx,const cell *params)
             break;
     }
 
-    return (cell)fA;
+    return (long)fA;
 }
 
 /******************************************************************/
@@ -284,7 +284,7 @@ static cell AMX_NATIVE_CALL n_floatsin(AMX *amx,const cell *params)
     */
     REAL fA = amx_ctof(params[1]);
     fA = ToRadians(fA, params[2]);
-    fA = (float)sin(fA);
+    fA = sin(fA);
     (void)amx;
     return amx_ftoc(fA);
 }
@@ -299,7 +299,7 @@ static cell AMX_NATIVE_CALL n_floatcos(AMX *amx,const cell *params)
     */
     REAL fA = amx_ctof(params[1]);
     fA = ToRadians(fA, params[2]);
-    fA = (float)cos(fA);
+    fA = cos(fA);
     (void)amx;
     return amx_ftoc(fA);
 }
@@ -314,7 +314,7 @@ static cell AMX_NATIVE_CALL n_floattan(AMX *amx,const cell *params)
     */
     REAL fA = amx_ctof(params[1]);
     fA = ToRadians(fA, params[2]);
-    fA = (float)tan(fA);
+    fA = tan(fA);
     (void)amx;
     return amx_ftoc(fA);
 }
@@ -326,22 +326,6 @@ static cell AMX_NATIVE_CALL n_floatabs(AMX *amx,const cell *params)
     fA = (fA >= 0) ? fA : -fA;
     (void)amx;
     return amx_ftoc(fA);
-}
-
-/******************************************************************/
-/* return the integer part of a real value, truncated
- * Return integer part of float, truncated (same as floatround
- * with mode 3)
- */
-static cell AMX_NATIVE_CALL n_floatint(AMX *amx,const cell *params)
-{
-    REAL fA = amx_ctof(params[1]);
-    if ( fA>=0.0 )
-        fA = (REAL)(floor((double)fA));
-    else
-        fA = (REAL)(ceil((double)fA));
-    (void)amx;
-    return (cell)fA;
 }
 
 #if defined __cplusplus
@@ -364,16 +348,15 @@ const AMX_NATIVE_INFO float_Natives[] = {
   { "floatcos",    n_floatcos   },
   { "floattan",    n_floattan   },
   { "floatabs",    n_floatabs   },
-  { "floatint",    n_floatint   },  // also add user-defined operator "="
   { NULL, NULL }        /* terminator */
 };
 
-int AMXEXPORT AMXAPI amx_FloatInit(AMX *amx)
+int AMXEXPORT amx_FloatInit(AMX *amx)
 {
   return amx_Register(amx,float_Natives,-1);
 }
 
-int AMXEXPORT AMXAPI amx_FloatCleanup(AMX *amx)
+int AMXEXPORT amx_FloatCleanup(AMX *amx)
 {
   (void)amx;
   return AMX_ERR_NONE;

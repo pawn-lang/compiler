@@ -1,20 +1,24 @@
 /*  Script Arguments support module for the Pawn Abstract Machine
  *
- *  Copyright (c) ITB CompuPhase, 2005-2016
+ *  Copyright (c) ITB CompuPhase, 2005-2006
  *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may not
- *  use this file except in compliance with the License. You may obtain a copy
- *  of the License at
+ *  This software is provided "as-is", without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- *  License for the specific language governing permissions and limitations
- *  under the License.
+ *  1.  The origin of this software must not be misrepresented; you must not
+ *      claim that you wrote the original software. If you use this software in
+ *      a product, an acknowledgment in the product documentation would be
+ *      appreciated but is not required.
+ *  2.  Altered source versions must be plainly marked as such, and must not be
+ *      misrepresented as being the original software.
+ *  3.  This notice may not be removed or altered from any source distribution.
  *
- *  Version: $Id: amxargs.c 5588 2016-10-25 11:13:28Z  $
+ *  Version: $Id: amxargs.c 3649 2006-10-12 13:13:57Z thiadmer $
  */
 
 #if defined _UNICODE || defined __UNICODE__ || defined UNICODE
@@ -32,16 +36,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "osdefs.h"
-#if defined __WIN32__ || defined __MSDOS__
+#if defined __WIN32__ || defined _WIN32 || defined WIN32 || defined __MSDOS__
   #include <malloc.h>
 #endif
-#if defined __WIN32__ || defined _Windows
+#if defined __WIN32__ || defined _WIN32 || defined WIN32 || defined _Windows
   #include <windows.h>
 #endif
-#if defined __GNUC__ || defined __clang__
-  #include <unistd.h>
-#endif
+#include "osdefs.h"
 #include "amx.h"
 
 #if defined _UNICODE
@@ -91,8 +92,8 @@ static const TCHAR *rawcmdline(void)
 {
   #if defined __WIN32__ || defined _WIN32 || defined WIN32
   #elif defined _Windows || defined __MSDOS__
-    static char cmdbuffer[128];   /* DOS & Windows 3.1 are never in Unicode mode */
-  #elif defined __LINUX__
+    static char cmdbuffer[128];
+  #elif defined LINUX
     static char cmdbuffer[1024];  /* some arbitrary maximum */
   #endif
   const TCHAR *ptr;
@@ -115,7 +116,7 @@ static const TCHAR *rawcmdline(void)
       if ((cmd == strchr(cmdbuffer, '\r')) != NULL)
         *cmd = '\0';    /* also erase \r after the last option (if any) */
       cmdline = cmdbuffer;
-    #elif defined __LINUX__
+    #elif defined LINUX
       /* Options in /proc/<pid>/cmdline are delimited with '\0' characters
        * rather than spaces.
        */
@@ -132,6 +133,7 @@ static const TCHAR *rawcmdline(void)
         fread(cmdbuffer, 1, fsize, fp);
         fclose(fp);
         cmdbuffer[fsize] = '\0';        /* terminate with double-zero */
+        // ??? convert to Unicode
         /* convert '\0' characters to spaces, for uniform parsing */
         for (ptr = cmdbuffer; *ptr != ' '; ptr = strchr(ptr, '\0') + 1)
           *ptr = ' ';
@@ -139,10 +141,7 @@ static const TCHAR *rawcmdline(void)
         skip++;
       } /* if */
     #else
-      /* no mechanism for determining the commandline, so it
-       * must be supplied with amx_ArgsSetCmdLine() instead.
-       */
-      ptr = "";
+      #error Platform not supported
     #endif
 
     /* skip leading white space */
@@ -210,7 +209,7 @@ static const TCHAR *matcharg(const TCHAR *key, int skip, int *length)
   int index, optlen, keylen;
   const TCHAR *option, *vptr;
 
-  keylen = (key != NULL) ? (int)_tcslen(key) : 0;
+  keylen = (key != NULL) ? _tcslen(key) : 0;
   index = 0;
   while ((option = tokenize(cmdline, index, length)) != NULL) {
     /* check for a colon or an equal sign (':' or '=') */
@@ -229,7 +228,7 @@ static const TCHAR *matcharg(const TCHAR *key, int skip, int *length)
         optlen++;               /* if ':' or '=' was found, skip it too */
       option += optlen;         /* point behind option */
       *length -= optlen;        /* length of the value, not of the option */
-      assert(*length >= 0);
+      assert(length >= 0);
       if (skip-- == 0)
         break;
     } /* if */
@@ -253,7 +252,11 @@ static cell AMX_NATIVE_CALL n_argindex(AMX *amx, const cell *params)
   max = (int)params[3];
   if (max <= 0)
     return 0;
-  cptr = amx_Address(amx, params[2]);
+  amx_GetAddr(amx, params[2], &cptr);
+  if (cptr == NULL) {
+    amx_RaiseError(amx, AMX_ERR_NATIVE);
+    return 0;
+  } /* if */
 
   if ((option = tokenize(cmdline, params[1], &length)) == NULL) {
     /* option not found, return an empty string */
@@ -291,7 +294,11 @@ static cell AMX_NATIVE_CALL n_argstr(AMX *amx, const cell *params)
   if (max <= 0)
     return 0;
   amx_StrParam(amx, params[2], key);
-  cptr = amx_Address(amx, params[3]);
+  amx_GetAddr(amx, params[3], &cptr);
+  if (cptr == NULL) {
+    amx_RaiseError(amx, AMX_ERR_NATIVE);
+    return 0;
+  } /* if */
 
   option = matcharg(key, (int)params[1], &length);
   if (option == NULL)
@@ -330,7 +337,11 @@ static cell AMX_NATIVE_CALL n_argvalue(AMX *amx, const cell *params)
   cell *cptr;
 
   amx_StrParam(amx, params[2], key);
-  cptr = amx_Address(amx, params[3]);
+  amx_GetAddr(amx, params[3], &cptr);
+  if (cptr == NULL) {
+    amx_RaiseError(amx, AMX_ERR_NATIVE);
+    return 0;
+  } /* if */
 
   option = matcharg(key, (int)params[1], &length);
   if (option == NULL)
@@ -367,12 +378,12 @@ const AMX_NATIVE_INFO args_Natives[] = {
   { NULL, NULL }        /* terminator */
 };
 
-int AMXEXPORT AMXAPI amx_ArgsInit(AMX *amx)
+int AMXEXPORT amx_ArgsInit(AMX *amx)
 {
   return amx_Register(amx, args_Natives, -1);
 }
 
-int AMXEXPORT AMXAPI amx_ArgsCleanup(AMX *amx)
+int AMXEXPORT amx_ArgsCleanup(AMX *amx)
 {
   (void)amx;
   return AMX_ERR_NONE;
@@ -384,7 +395,7 @@ int AMXEXPORT AMXAPI amx_ArgsCleanup(AMX *amx)
  * that is passed in to this function is NOT copied, so it may not be freed
  * after the call.
  */
-int AMXEXPORT AMXAPI amx_ArgsSetCmdLine(const TCHAR *cmd)
+int AMXEXPORT amx_ArgsSetCmdLine(const TCHAR *cmd)
 {
   cmdline = cmd;
   return AMX_ERR_NONE;
