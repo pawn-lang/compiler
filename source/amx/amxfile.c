@@ -99,7 +99,7 @@
   #define _tgetenv      getenv
   #define _tremove      remove
   #define _trename      rename
-  #if defined __APPLE__
+  #if defined __BORLANDC__ || defined __LINUX__ || defined __FreeBSD__ || defined __OpenBSD__ || defined MACOS || defined __APPLE__
     #define _tmkdir     mkdir
     #define _trmdir     rmdir
     #define _tstat      stat
