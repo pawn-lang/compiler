@@ -22,6 +22,7 @@
  *
  *  Version: $Id: amxdgram.c 3664 2006-11-08 12:09:25Z thiadmer $
  */
+
 #include <assert.h>
 #include <stdio.h>
 #if defined LINUX

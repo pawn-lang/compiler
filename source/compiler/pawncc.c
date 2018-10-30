@@ -22,6 +22,7 @@
  *
  *  Version: $Id: pawncc.c 3612 2006-07-22 09:59:46Z thiadmer $
  */
+
 #include "sc.h"
 
 int main(int argc, char *argv[])

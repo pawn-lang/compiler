@@ -16,6 +16,7 @@
  *
  *  Version: $Id: amxtime.c 5588 2016-10-25 11:13:28Z  $
  */
+
 #include <time.h>
 #include <assert.h>
 #include "amx.h"

@@ -20,6 +20,7 @@
  *
  *  Version: $Id: sc4.c 3633 2006-08-11 16:20:18Z thiadmer $
  */
+
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -75,7 +76,7 @@ SC_FUNC void writeleader(symbol *root)
    */
   assert(glb_declared==0);
   begdseg();
-  for (fsa=sc_automaton_tab.next; fsa!=NULL; fsa=fsa->next) {
+  for (fsa=sc_automaton_tab.first; fsa!=NULL; fsa=fsa->next) {
     defstorage();
     stgwrite("0\t; automaton ");
     if (strlen(fsa->name)==0)
@@ -91,7 +92,7 @@ SC_FUNC void writeleader(symbol *root)
   begcseg();
   for (sym=root->next; sym!=NULL; sym=sym->next) {
     if (sym->ident==iFUNCTN && (sym->usage & (uPUBLIC | uREAD))!=0 && sym->states!=NULL) {
-      stlist=sym->states->next;
+      stlist=sym->states->first;
       assert(stlist!=NULL);     /* there should be at least one state item */
       listid=stlist->index;
       assert(listid==-1 || listid>0);
@@ -109,7 +110,7 @@ SC_FUNC void writeleader(symbol *root)
         continue;
       } /* if */
       /* generate label numbers for all statelist ids */
-      for (stlist=sym->states->next; stlist!=NULL; stlist=stlist->next) {
+      for (stlist=sym->states->first; stlist!=NULL; stlist=stlist->next) {
         assert(strlen(stlist->name)==0);
         strcpy(stlist->name,itoh(getlabel()));
       } /* for */
@@ -126,7 +127,7 @@ SC_FUNC void writeleader(symbol *root)
        */
       statecount=0;
       strcpy(lbl_default,itoh(lbl_nostate));
-      for (stlist=sym->states->next; stlist!=NULL; stlist=stlist->next) {
+      for (stlist=sym->states->first; stlist!=NULL; stlist=stlist->next) {
         if (stlist->index==-1) {
           assert(strlen(stlist->name)<sizeof lbl_default);
           strcpy(lbl_default,stlist->name);
@@ -146,10 +147,10 @@ SC_FUNC void writeleader(symbol *root)
       /* generate the jump table */
       setlabel(lbl_table);
       ffcase(statecount,lbl_default,TRUE);
-      for (state=sc_state_tab.next; state!=NULL; state=state->next) {
+      for (state=sc_state_tab.first; state!=NULL; state=state->next) {
         if (state->index==fsa_id) {
           /* find the label for this list id */
-          for (stlist=sym->states->next; stlist!=NULL; stlist=stlist->next) {
+          for (stlist=sym->states->first; stlist!=NULL; stlist=stlist->next) {
             if (stlist->index!=-1 && state_inlist(stlist->index,(int)state->value)) {
               ffcase(state->value,stlist->name,FALSE);
               break;
@@ -343,9 +344,12 @@ SC_FUNC void markexpr(optmark type,const char *name,cell offset)
  *
  *  Global references: funcstatus  (referred to only)
  */
-SC_FUNC void startfunc(char *fname)
+SC_FUNC void startfunc(char *fname,int generateproc)
 {
-  stgwrite("\tproc");
+  if (generateproc) {
+    stgwrite("\tproc");
+    code_idx+=opcodes(1);
+  } /* if */
   if (sc_asmfile) {
     char symname[2*sNAMEMAX+16];
     funcdisplayname(symname,fname);
@@ -353,7 +357,6 @@ SC_FUNC void startfunc(char *fname)
     stgwrite(symname);
   } /* if */
   stgwrite("\n");
-  code_idx+=opcodes(1);
 }
 
 /*  endfunc
@@ -1379,19 +1382,31 @@ SC_FUNC void outval(cell val,int newline)
 }
 
 /* write an instruction with arguments */
-SC_FUNC void outinstr(const char *name,ucell args[],int numargs)
+SC_FUNC void outinstr(const char *name,emit_outval params[],int numparams)
 {
   int i;
 
   stgwrite("\t");
   stgwrite(name);
 
-  for (i=0; i<numargs; i++) {
+  for (i=0; i<numparams; i++) {
     stgwrite(" ");
-    stgwrite(itoh(args[i]));
+    switch (params[i].type)
+    {
+    case eotLABEL:
+      stgwrite("l.");
+      /* fallthrough */
+    case eotNUMBER:
+      stgwrite(itoh(params[i].value.ucell));
+      break;
+    case eotFUNCTION:
+      stgwrite(".");
+      stgwrite(params[i].value.string);
+      break;
+    }
   } /* for */
 
   stgwrite("\n");
 
-  code_idx+=opargs(numargs)+opcodes(1);
+  code_idx+=opcodes(1)+opargs(numparams);
 }

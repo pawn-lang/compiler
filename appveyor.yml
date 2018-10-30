@@ -5,7 +5,8 @@ configuration:
   - RelWithDebInfo
 
 before_build:
-  - cmake -G "Visual Studio 15 2017" source/compiler -DCPACK_GENERATOR=ZIP -DCMAKE_GENERATOR_TOOLSET=v100
+  - mkdir build && cd build
+  - cmake ../source/compiler -G "Visual Studio 14 2015" -DCPACK_GENERATOR=ZIP -DCMAKE_GENERATOR_TOOLSET=v100
 
 build_script:
   - cmake --build . --config %CONFIGURATION%
@@ -15,17 +16,17 @@ test_script:
   - ctest --build-config %CONFIGURATION%
 
 on_failure:
-  - type Testing\Temporary\LastTest.log<Paste>
+  - type Testing\Temporary\LastTest.log
 
 artifacts:
-  - path: pawnc-*-windows.zip
+  - path: build/pawnc-*-windows.zip
     name: Binary package
 
 deploy:
   description: '<Put release description here>'
   provider: GitHub
   auth_token:
-    secure: ++mk9GhXTpN/hdVjIIi/nHpu0gYpDybMJNDPB3lld8r1UyfoPbz08SVGeSS84HjR
+    secure: dEyljMC1z2hb032HYJQY+CIZIdQ382cuHU/3LJA96nbqOl5xfGYPVP/TGbJANbtz
   artifact: /pawnc-.*-windows\.zip/
   draft: true
   prerelease: true

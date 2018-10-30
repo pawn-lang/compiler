@@ -16,6 +16,7 @@
  *
  *  Version: $Id: amxargs.c 5588 2016-10-25 11:13:28Z  $
  */
+
 #if defined _UNICODE || defined __UNICODE__ || defined UNICODE
 # if !defined UNICODE   /* for Windows */
 #   define UNICODE

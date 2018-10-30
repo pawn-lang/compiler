@@ -1,6 +1,6 @@
 #pragma deprecated
-native print(const string[]);
+native f();
 
 main() {
-	print("Hello World");
+	f();
 }

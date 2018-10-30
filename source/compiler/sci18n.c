@@ -32,6 +32,7 @@
  *
  *  Version: $Id: sci18n.c 3612 2006-07-22 09:59:46Z thiadmer $
  */
+
 #include <assert.h>
 #include <stdio.h>
 #include <stddef.h>

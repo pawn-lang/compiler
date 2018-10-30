@@ -5,7 +5,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake)
 
 set(VERSION_MAJOR 3)
 set(VERSION_MINOR 10)
-set(VERSION_BUILD 6)
+set(VERSION_BUILD 9)
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD})
 set(VERSION_STR ${VERSION})
 math(EXPR VERSION_INT "${VERSION_MAJOR} << 8 | ${VERSION_MINOR}")
@@ -139,6 +139,9 @@ target_link_libraries(pawncc pawnc)
 # The Pawn disassembler
 set(PAWNDISASM_SRCS
   pawndisasm.c
+  sc.h
+  ../amx/amx.h
+  ../amx/amxdbg.h
   ../amx/amxdbg.c
 )
 add_executable(pawndisasm ${PAWNDISASM_SRCS})
@@ -160,10 +163,30 @@ if(MSVC)
     DESTINATION bin)
 endif()
 
-# Generate tests (only if enabled, i.e. BUILD_TESTING=ON)
+# Generate targets for running compiler tests
 include(CTest)
 if(BUILD_TESTING)
-  enable_testing()
+  set(PAWNRUNS_SRCS
+    pawnruns.c
+    ../amx/amx.c
+    ../amx/amx.h
+    ../amx/amxaux.c
+    ../amx/amxaux.h
+    ../amx/amxcons.c
+    ../amx/amxcore.c
+  )
+  if(UNIX)
+    set(PAWNRUNS_SRCS
+      ${PAWNRUNS_SRCS}
+      ../linux/getch.c
+      ../linux/getch.h
+      ../linux/binreloc.c
+    )
+  endif()
+  add_executable(pawnruns ${PAWNRUNS_SRCS})
+  if(UNIX)
+    target_link_libraries(pawnruns dl)
+  endif()
   add_subdirectory(tests)
 endif()
 

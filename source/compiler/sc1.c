@@ -22,6 +22,7 @@
  *
  *  Version: $Id: sc1.c 3664 2006-11-08 12:09:25Z thiadmer $
  */
+
 #include <assert.h>
 #include <ctype.h>
 #include <limits.h>
@@ -92,14 +93,14 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,
 static int declloc(int fstatic);
 static void decl_const(int table);
 static void decl_enum(int table,int fstatic);
-static cell needsub(int *tag,constvalue **enumroot);
+static cell needsub(int *tag,constvalue_root **enumroot);
 static void initials(int ident,int tag,cell *size,int dim[],int numdim,
-                     constvalue *enumroot);
+                     constvalue_root *enumroot);
 static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
-                      int startlit,int counteddim[],constvalue *lastdim,
-                      constvalue *enumroot,int *errorfound);
+                      int startlit,int counteddim[],constvalue_root *lastdim,
+                      constvalue_root *enumroot,int *errorfound);
 static cell initvector(int ident,int tag,cell size,int startlit,int fillzero,
-                       constvalue *enumroot,int *errorfound);
+                       constvalue_root *enumroot,int *errorfound);
 static cell init(int ident,int *tag,int *errorfound);
 static int getstates(const char *funcname);
 static void attachstatelist(symbol *sym, int state_id);
@@ -113,7 +114,7 @@ static void reduce_referrers(symbol *root);
 static long max_stacksize(symbol *root,int *recursion);
 static int testsymbols(symbol *root,int level,int testlabs,int testconst);
 static void destructsymbols(symbol *root,int level);
-static constvalue *find_constval_byval(constvalue *table,cell val);
+static constvalue *find_constval_byval(constvalue_root *table,cell val);
 static symbol *fetchlab(char *name);
 static void statement(int *lastindent,int allow_decl);
 static void compound(int stmt_sameline,int starttok);
@@ -137,7 +138,6 @@ static void dostate(void);
 static void addwhile(int *ptr);
 static void delwhile(void);
 static int *readwhile(void);
-static void doemit(void);
 
 typedef void (SC_FASTCALL *OPCODE_PROC)(char *name);
 typedef struct {
@@ -842,7 +842,7 @@ int pc_addtag(char *name)
 
   assert(strchr(name,':')==NULL); /* colon should already have been stripped */
   last=0;
-  ptr=tagname_tab.next;
+  ptr=tagname_tab.first;
   while (ptr!=NULL) {
     tag=(int)(ptr->value & TAGMASK);
     if (strcmp(name,ptr->name)==0)
@@ -938,8 +938,8 @@ static void initglobals(void)
   glbtab.next=NULL;      /* clear global variables/constants table */
   loctab.next=NULL;      /*   "   local      "    /    "       "   */
   hashtable_init(&symbol_cache_ht, sizeof(symbol *),(16384/3*2),NULL); /* 16384 slots */
-  tagname_tab.next=NULL; /* tagname table */
-  libname_tab.next=NULL; /* library table (#pragma library "..." syntax) */
+  tagname_tab.first=tagname_tab.last=NULL; /* tagname table */
+  libname_tab.first=libname_tab.last=NULL; /* library table (#pragma library "..." syntax) */
 
   pline[0]='\0';         /* the line read from the input file */
   lptr=NULL;             /* points to the current position in "pline" */
@@ -994,7 +994,7 @@ static int toggle_option(const char *optptr, int option)
 {
   switch (*option_value(optptr)) {
   case '\0':
-    option=!option;
+    option=TRUE;
     break;
   case '-':
     option=FALSE;
@@ -1065,7 +1065,8 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
         if (chdir(ptr)==-1)
           ; /* silently ignore chdir() errors */
         break;
-      case 'd':
+      case 'd': {
+        int debug;
         switch (*option_value(ptr)) {
         case '0':
           sc_debug=0;
@@ -1084,7 +1085,14 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
         default:
           about();
         } /* switch */
+        debug=0;
+        if ((sc_debug & (sCHKBOUNDS | sSYMBOLIC))==(sCHKBOUNDS | sSYMBOLIC))
+          debug=2;
+        else if ((sc_debug & sCHKBOUNDS)==sCHKBOUNDS)
+          debug=1;
+        add_builtin_constant("debug",debug,sGLOBAL,0);
         break;
+      } /* case */
       case 'e':
         if (ename)
           strlcpy(ename,option_value(ptr),_MAX_PATH); /* set name of error file */
@@ -1208,9 +1216,16 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
             about();
         } /* if */
         break;
-      case 'Z':
+      case 'Z': {
+        symbol *sym;
         pc_compat=toggle_option(ptr,pc_compat);
+        sym=findconst("__compat",NULL);
+        if (sym!=NULL) {
+          assert(sym!=NULL);
+          sym->addr=pc_compat;
+        } /* if */
         break;
+      } /* case */
       case '\\':                /* use \ instead for escape characters */
         sc_ctrlchar='\\';
         break;
@@ -1983,7 +1998,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
   int numdim;
   short filenum;
   symbol *sym;
-  constvalue *enumroot;
+  constvalue_root *enumroot=NULL;
   #if !defined NDEBUG
     cell glbdecl=0;
   #endif
@@ -2003,7 +2018,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
     } else {
       tag=pc_addtag(NULL);
       if (lex(&val,&str)!=tSYMBOL)      /* read in (new) token */
-        error(20,str);                  /* invalid symbol name */
+        error_suggest(20,str,NULL,estSYMBOL,essFUNCTN); /* invalid symbol name */
       assert(strlen(str)<=sNAMEMAX);
       strcpy(name,str);                 /* save symbol name */
     } /* if */
@@ -2054,11 +2069,11 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
      */
     assert(sym==NULL
            || sym->states==NULL && sc_curstates==0
-           || sym->states!=NULL && sym->next!=NULL && sym->states->next->index==sc_curstates);
+           || sym->states!=NULL && sym->next!=NULL && sym->states->first->index==sc_curstates);
     /* a state variable may only have a single id in its list (so either this
      * variable has no states, or it has a single list)
      */
-    assert(sym==NULL || sym->states==NULL || sym->states->next->next==NULL);
+    assert(sym==NULL || sym->states==NULL || sym->states->first->next==NULL);
     /* it is okay for the (global) variable to exist, as long as it belongs to
      * a different automaton
      */
@@ -2116,7 +2131,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
             continue;   /* a function or a constant */
           if ((sweep->usage & uDEFINE)==0)
             continue;   /* undefined variable, ignore */
-          if (fsa!=state_getfsa(sweep->states->next->index))
+          if (fsa!=state_getfsa(sweep->states->first->index))
             continue;   /* wrong automaton */
           /* when arrived here, this is a global variable, with states and
            * belonging to the same automaton as the variable we are declaring
@@ -2138,7 +2153,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
             continue;   /* a function or a constant */
           if ((sweep->usage & uDEFINE)==0)
             continue;   /* undefined variable, ignore */
-          if (fsa!=state_getfsa(sweep->states->next->index))
+          if (fsa!=state_getfsa(sweep->states->first->index))
             continue;   /* wrong automaton */
           /* when arrived here, this is a global variable, with states and
            * belonging to the same automaton as the variable we are declaring
@@ -2147,7 +2162,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
            * variable have a non-empty intersection, this is not a suitable
            * overlap point -> wipe the address range
            */
-          if (state_conflict_id(sc_curstates,sweep->states->next->index)) {
+          if (state_conflict_id(sc_curstates,sweep->states->first->index)) {
             sweepsize=(sweep->ident==iVARIABLE) ? 1 : array_totalsize(sweep);
             assert(sweep->addr % sizeof(cell) == 0);
             addr=sweep->addr/sizeof(cell);
@@ -2194,7 +2209,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
         attachstatelist(sym,sc_curstates);
     } else {            /* if declared but not yet defined, adjust the variable's address */
       assert(sym->states==NULL && sc_curstates==0
-             || sym->states->next!=NULL && sym->states->next->index==sc_curstates && sym->states->next->next==NULL);
+             || sym->states->first!=NULL && sym->states->first->index==sc_curstates && sym->states->first->next==NULL);
       sym->addr=address;
       sym->codeaddr=code_idx;
       sym->usage|=uDEFINE;
@@ -2236,7 +2251,7 @@ static int declloc(int fstatic)
   int idxtag[sDIMEN_MAX];
   char name[sNAMEMAX+1];
   symbol *sym;
-  constvalue *enumroot;
+  constvalue_root *enumroot=NULL;
   cell val,size;
   char *str;
   value lval = {0};
@@ -2418,7 +2433,7 @@ static cell calc_arraysize(int dim[],int numdim,int cur)
 }
 
 static void adjust_indirectiontables(int dim[],int numdim,int startlit,
-                                     constvalue *lastdim,int *skipdim)
+                                     constvalue_root *lastdim,int *skipdim)
 {
 static int base;
   int cur;
@@ -2444,7 +2459,7 @@ static int base;
       accum=0;
       for (i=0; i<size; i++) {
         /* skip the final dimension sizes for all earlier major dimensions */
-        for (d=0,ld=lastdim->next; d<*skipdim; d++,ld=ld->next) {
+        for (d=0,ld=lastdim->first; d<*skipdim; d++,ld=ld->next) {
           assert(ld!=NULL);
         } /* for */
         for (d=0; d<dim[cur]; d++) {
@@ -2470,23 +2485,27 @@ static int base;
  *  Global references: litidx (altered)
  */
 static void initials(int ident,int tag,cell *size,int dim[],int numdim,
-                     constvalue *enumroot)
+                     constvalue_root *enumroot)
 {
   int ctag;
   cell tablesize;
   int curlit=litidx;
   int err=0;
+  int i;
 
   if (!matchtoken('=')) {
     assert(ident!=iARRAY || numdim>0);
-    if (ident==iARRAY && dim[numdim-1]==0) {
-      /* declared as "myvar[];" which is senseless (note: this *does* make
-       * sense in the case of a iREFARRAY, which is a function parameter)
-       */
-      error(9);         /* array has zero length -> invalid size */
-    } /* if */
     if (ident==iARRAY) {
       assert(numdim>0 && numdim<=sDIMEN_MAX);
+      for (i=0; i<numdim; i++) {
+        if (dim[i]==0) {
+          /* declared like "myvar[];" which is senseless (note: this *does* make
+           * sense in the case of a iREFARRAY, which is a function parameter)
+           */
+          error(9); /* array has zero length -> invalid size */
+          return;
+        } /* if */
+      } /* for */
       *size=calc_arraysize(dim,numdim,0);
       if (*size==(cell)CELL_MAX) {
         error(9);       /* array is too big -> invalid size */
@@ -2516,7 +2535,7 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
       int errorfound=FALSE;
       int counteddim[sDIMEN_MAX];
       int idx;
-      constvalue lastdim={NULL,"",0,0};     /* sizes of the final dimension */
+      constvalue_root lastdim = { NULL, NULL};     /* sizes of the final dimension */
       int skipdim=0;
 
       /* check if size specified for all dimensions */
@@ -2552,7 +2571,7 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
         /* also look whether, by any chance, all "counted" final dimensions are
          * the same value; if so, we can store this
          */
-        constvalue *ld=lastdim.next;
+        constvalue *ld=lastdim.first;
         int d,match;
         for (d=0; d<dim[numdim-2]; d++) {
           assert(ld!=NULL);
@@ -2580,8 +2599,8 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
 }
 
 static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
-                      int startlit,int counteddim[],constvalue *lastdim,
-                      constvalue *enumroot,int *errorfound)
+                      int startlit,int counteddim[],constvalue_root *lastdim,
+                      constvalue_root *enumroot,int *errorfound)
 {
   cell dsize,totalsize;
   int idx,idx_ellips,vidx,do_insert;
@@ -2670,7 +2689,7 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
  *  Initialize a single dimensional array
  */
 static cell initvector(int ident,int tag,cell size,int startlit,int fillzero,
-                       constvalue *enumroot,int *errorfound)
+                       constvalue_root *enumroot,int *errorfound)
 {
   cell prev1=0,prev2=0;
   int ellips=FALSE;
@@ -2678,7 +2697,7 @@ static cell initvector(int ident,int tag,cell size,int startlit,int fillzero,
 
   assert(ident==iARRAY || ident==iREFARRAY);
   if (matchtoken('{')) {
-    constvalue *enumfield=(enumroot!=NULL) ? enumroot->next : NULL;
+    constvalue *enumfield=(enumroot!=NULL) ? enumroot->first : NULL;
     do {
       int fieldlit=litidx;
       int matchbrace,i;
@@ -2796,7 +2815,7 @@ static cell init(int ident,int *tag,int *errorfound)
  *
  *  Get required array size
  */
-static cell needsub(int *tag,constvalue **enumroot)
+static cell needsub(int *tag,constvalue_root **enumroot)
 {
   cell val;
   symbol *sym;
@@ -2868,8 +2887,8 @@ static void decl_enum(int vclass,int fstatic)
   char *str;
   int tag,explicittag;
   cell increment,multiplier;
-  constvalue *enumroot;
-  symbol *enumsym;
+  constvalue_root *enumroot=NULL;
+  symbol *enumsym=NULL;
   short filenum;
 
   filenum=fcurrent;
@@ -2922,12 +2941,9 @@ static void decl_enum(int vclass,int fstatic)
         enumsym->fnumber=filenum;
     }
     /* start a new list for the element names */
-    if ((enumroot=(constvalue*)malloc(sizeof(constvalue)))==NULL)
+    if ((enumroot=(constvalue_root*)malloc(sizeof(constvalue_root)))==NULL)
       error(103);                       /* insufficient memory (fatal error) */
-    memset(enumroot,0,sizeof(constvalue));
-  } else {
-    enumsym=NULL;
-    enumroot=NULL;
+    memset(enumroot,0,sizeof(constvalue_root));
   } /* if */
 
   needtoken('{');
@@ -3076,15 +3092,15 @@ static void attachstatelist(symbol *sym, int state_id)
     /* add the state list id */
     constvalue *stateptr;
     if (sym->states==NULL) {
-      if ((sym->states=(constvalue*)malloc(sizeof(constvalue)))==NULL)
+      if ((sym->states=(constvalue_root*)malloc(sizeof(constvalue_root)))==NULL)
         error(103);             /* insufficient memory (fatal error) */
-      memset(sym->states,0,sizeof(constvalue));
+      memset(sym->states,0,sizeof(constvalue_root));
     } /* if */
     /* see whether the id already exists (add new state only if it does not
      * yet exist
      */
     assert(sym->states!=NULL);
-    for (stateptr=sym->states->next; stateptr!=NULL && stateptr->index!=state_id; stateptr=stateptr->next)
+    for (stateptr=sym->states->first; stateptr!=NULL && stateptr->index!=state_id; stateptr=stateptr->next)
       /* nothing */;
     assert(state_id<=SHRT_MAX);
     if (stateptr==NULL)
@@ -3099,7 +3115,7 @@ static void attachstatelist(symbol *sym, int state_id)
     if (state_id==-1 && sc_status!=statFIRST) {
       /* in the second round, all states should have been accumulated */
       assert(sym->states!=NULL);
-      for (stateptr=sym->states->next; stateptr!=NULL && stateptr->index==-1; stateptr=stateptr->next)
+      for (stateptr=sym->states->first; stateptr!=NULL && stateptr->index==-1; stateptr=stateptr->next)
         /* nothing */;
       if (stateptr==NULL)
         error(85,sym->name);      /* no states are defined for this function */
@@ -3136,8 +3152,7 @@ SC_FUNC symbol *fetchfunc(char *name,int tag)
     sym=addsym(name,code_idx,iFUNCTN,sGLOBAL,tag,0);
     assert(sym!=NULL);          /* fatal error 103 must be given on error */
     /* assume no arguments */
-    sym->dim.arglist=(arginfo*)malloc(1*sizeof(arginfo));
-    sym->dim.arglist[0].ident=0;
+    sym->dim.arglist=(arginfo*)calloc(1,sizeof(arginfo));
     /* set library ID to NULL (only for native functions) */
     sym->x.lib=NULL;
     /* set the required stack size to zero (only for non-native functions) */
@@ -3396,14 +3411,36 @@ static constvalue *find_tag_byval(int tag)
   return tagsym;
 }
 
+SC_FUNC void check_index_tagmismatch(char *symname,int expectedtag,int actualtag,int allowcoerce,int errline)
+{
+  assert(symname!=NULL);
+  if (!matchtag(expectedtag,actualtag,allowcoerce)) {
+    constvalue *tagsym;
+    char expected_tagname[sNAMEMAX+3]="none (\"_\"),",actual_tagname[sNAMEMAX+2]="none (\"_\")"; /* two extra characters for quotes */
+    if(expectedtag!=0) {
+      tagsym=find_tag_byval(expectedtag);
+      sprintf(expected_tagname,"\"%s\",",(tagsym!=NULL) ? tagsym->name : "-unknown-");
+    } /* if */
+    if(actualtag!=0) {
+      tagsym=find_tag_byval(actualtag);
+      sprintf(actual_tagname,"\"%s\"",(tagsym!=NULL) ? tagsym->name : "-unknown-");
+    } /* if */
+    if(errline>0)
+      errorset(sSETPOS,errline);
+    error(229,symname,expected_tagname,actual_tagname); /* index tag mismatch */
+    if(errline>0)
+      errorset(sSETPOS,-1);
+  } /* if */
+}
+
 SC_FUNC void check_tagmismatch(int formaltag,int actualtag,int allowcoerce,int errline)
 {
   if (!matchtag(formaltag,actualtag,allowcoerce)) {
     constvalue *tagsym;
-    char formal_tagname[sNAMEMAX+3]="none (\"_\"),",actual_tagname[sNAMEMAX+2]="none (\"_\")"; /* two extra characters for quotes */  
+    char formal_tagname[sNAMEMAX+3]="none (\"_\"),",actual_tagname[sNAMEMAX+2]="none (\"_\")"; /* two extra characters for quotes */
     if(formaltag!=0) {
       tagsym=find_tag_byval(formaltag);
-      sprintf(formal_tagname,"\"%s\",", (tagsym!=NULL) ? tagsym->name : "-unknown-");
+      sprintf(formal_tagname,"\"%s\",",(tagsym!=NULL) ? tagsym->name : "-unknown-");
     } /* if */
     if(actualtag!=0) {
       tagsym=find_tag_byval(actualtag);
@@ -3413,7 +3450,7 @@ SC_FUNC void check_tagmismatch(int formaltag,int actualtag,int allowcoerce,int e
       errorset(sSETPOS,errline);
     error(213,"tag",formal_tagname,actual_tagname); /* tag mismatch */
     if(errline>0)
-      errorset(sSETPOS,-1);    
+      errorset(sSETPOS,-1);
   } /* if */
 }
 
@@ -3424,7 +3461,7 @@ SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualt
     constvalue *tagsym;
     char formal_tagnames[sLINEMAX]="",actual_tagname[sNAMEMAX+2]="none (\"_\")";
     int notag_allowed=FALSE,add_comma=FALSE;
-    for (i=0; i<numtags; i++) {      
+    for (i=0; i<numtags; i++) {
       if(formaltags[i]!=0) {
         if((i+1)==numtags && add_comma==TRUE && notag_allowed==FALSE)
           strlcat(formal_tagnames,", or ",sizeof(formal_tagnames));
@@ -3432,10 +3469,10 @@ SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualt
           strlcat(formal_tagnames,", ",sizeof(formal_tagnames));
         add_comma=TRUE;
         tagsym=find_tag_byval(formaltags[i]);
-        sprintf(formal_tagnames,"%s\"%s\"",formal_tagnames,(tagsym!=NULL) ? tagsym->name : "-unknown-"); 
+        sprintf(formal_tagnames,"%s\"%s\"",formal_tagnames,(tagsym!=NULL) ? tagsym->name : "-unknown-");
       } else {
         notag_allowed=TRUE;
-      } /* if */      
+      } /* if */
     } /* for */
     if(notag_allowed==TRUE) {
       if(add_comma==TRUE)
@@ -3446,12 +3483,12 @@ SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualt
     if(actualtag!=0) {
       tagsym=find_tag_byval(actualtag);
       sprintf(actual_tagname,"\"%s\"",(tagsym!=NULL) ? tagsym->name : "-unknown-");
-    } /* if */  
+    } /* if */
     if(errline>0)
       errorset(sSETPOS,errline);
     error(213,(numtags==1) ? "tag" : "tags",formal_tagnames,actual_tagname); /* tag mismatch */
     if(errline>0)
-      errorset(sSETPOS,-1);  
+      errorset(sSETPOS,-1);
   } /* if */
 }
 
@@ -3753,7 +3790,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     sym->usage &= ~uDEFINE;
   /* if the function has states, dump the label to the start of the function */
   if (state_id!=0) {
-    constvalue *ptr=sym->states->next;
+    constvalue *ptr=sym->states->first;
     while (ptr!=NULL) {
       assert(sc_status!=statWRITE || strlen(ptr->name)>0);
       if (ptr->index==state_id) {
@@ -3763,7 +3800,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
       ptr=ptr->next;
     } /* while */
   } /* if */
-  startfunc(sym->name); /* creates stack frame */
+  startfunc(sym->name,(sym->flags & flagNAKED)==0); /* creates stack frame */
   insert_dbgline(funcline);
   setline(FALSE);
   if (sc_alignnext) {
@@ -3793,7 +3830,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   sc_curstates=0;
   if ((rettype & uRETVALUE)!=0)
     sym->usage|=uRETVALUE;
-  if (declared!=0) {
+  if (declared!=0 && (curfunc->flags & flagNAKED)==0) {
     /* This happens only in a very special (and useless) case, where a function
      * has only a single statement in its body (no compound block) and that
      * statement declares a new variable
@@ -3801,10 +3838,11 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     modstk((int)declared*sizeof(cell)); /* remove all local variables */
     declared=0;
   } /* if */
-  if ((lastst!=tRETURN) && (lastst!=tGOTO)){
+  if ((lastst!=tRETURN) && (lastst!=tGOTO) && (sym->flags & flagNAKED)==0) {
+    destructsymbols(&loctab,0);
     ldconst(0,sPRI);
     ffret(strcmp(sym->name,uENTRYFUNC)!=0);
-    if ((sym->usage & uRETVALUE)!=0 && (sym->flags & flagNAKED)==0) {
+    if ((sym->usage & uRETVALUE)!=0) {
       char symname[2*sNAMEMAX+16];  /* allow space for user defined operators */
       funcdisplayname(symname,sym->name);
       error(209,symname);       /* function should return a value */
@@ -3917,6 +3955,8 @@ static int declargs(symbol *sym,int chkshadow)
       case '&':
         if (ident!=iVARIABLE || numtags>0)
           error(1,"-identifier-","&");
+        if (fconst)
+          error(238, "const reference"); /* meaningless combination of class specifiers */
         ident=iREFERENCE;
         break;
       case tCONST:
@@ -3991,6 +4031,8 @@ static int declargs(symbol *sym,int chkshadow)
       case tELLIPS:
         if (ident!=iVARIABLE)
           error(10);                    /* illegal function or declaration */
+        if (fconst)
+          error(238, "const variable arguments"); /* meaningless combination of class specifiers */
         if (numtags==0)
           tags[numtags++]=0;            /* default tag */
         if ((sym->usage & uPROTOTYPED)==0) {
@@ -4077,7 +4119,7 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
                   int fpublic,int fconst,int chkshadow,arginfo *arg)
 {
   symbol *argsym;
-  constvalue *enumroot;
+  constvalue_root *enumroot=NULL;
   cell size;
 
   strcpy(arg->name,name);
@@ -4162,7 +4204,7 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
       } else {
         constexpr(&arg->defvalue.val,&arg->defvalue_tag,NULL);
         assert(numtags>0);
-        check_tagmismatch(tags[0],arg->defvalue_tag,TRUE,-1);  
+        check_tagmismatch(tags[0],arg->defvalue_tag,TRUE,-1);
       } /* if */
     } /* if */
   } /* if */
@@ -4183,8 +4225,12 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
     assert(numtags>0);
     argsym=addvariable(name,offset,ident,sLOCAL,tags[0],
                        arg->dim,arg->numdim,arg->idxtag,0);
-    if (fpublic)
+    if (fpublic) {
       argsym->usage|=uREAD;     /* arguments of public functions are always "used" */
+      if(argsym->ident==iREFARRAY || argsym->ident==iREFERENCE)
+        argsym->usage|=uWRITTEN;
+    }
+
     if (fconst)
       argsym->usage|=uCONST;
   } /* if */
@@ -4338,7 +4384,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
   int i,arg;
   symbol *sym,*ref;
   constvalue *tagsym;
-  constvalue *enumroot;
+  constvalue_root *enumroot;
   char *ptr;
 
   /* adapt the installation directory */
@@ -4392,11 +4438,11 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
     } /* if */
     /* browse through all fields */
     if ((enumroot=sym->dim.enumlist)!=NULL) {
-      enumroot=enumroot->next;  /* skip root */
-      while (enumroot!=NULL) {
-        fprintf(log,"\t\t\t<member name=\"C:%s\" value=\"%"PRIdC"\">\n",funcdisplayname(symname,enumroot->name),enumroot->value);
+      constvalue *cur=enumroot->first;  /* skip root */
+      while (cur!=NULL) {
+        fprintf(log,"\t\t\t<member name=\"C:%s\" value=\"%"PRIdC"\">\n",funcdisplayname(symname,cur->name),cur->value);
         /* find the constant with this name and get the tag */
-        ref=findglb(enumroot->name,sGLOBAL);
+        ref=findglb(cur->name,sGLOBAL);
         if (ref!=NULL) {
           if (ref->x.tags.index!=0) {
             tagsym=find_tag_byval(ref->x.tags.index);
@@ -4407,7 +4453,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
             fprintf(log,"\t\t\t\t<size value=\"%ld\"/>\n",(long)ref->dim.array.length);
         } /* if */
         fprintf(log,"\t\t\t</member>\n");
-        enumroot=enumroot->next;
+        cur=cur->next;
       } /* while */
     } /* if */
     assert(sym->refer!=NULL);
@@ -4521,7 +4567,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
     if ((sym->usage & uNATIVE)==0)
       fprintf(log,"\t\t\t<stacksize value=\"%ld\"/>\n",(long)sym->x.stacksize);
     if (sym->states!=NULL) {
-      constvalue *stlist=sym->states->next;
+      constvalue *stlist=sym->states->first;
       assert(stlist!=NULL);     /* there should be at least one state item */
       while (stlist!=NULL && stlist->index==-1)
         stlist=stlist->next;
@@ -4823,7 +4869,7 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
     case iLABEL:
       if (testlabs) {
         if ((sym->usage & uDEFINE)==0) {
-          error(19,sym->name);      /* not a label: ... */
+          error_suggest(19,sym->name,NULL,estSYMBOL,essLABEL);  /* not a label: ... */
         } else if ((sym->usage & uREAD)==0) {
           errorset(sSETPOS,sym->lnumber);
           error(203,sym->name);     /* symbol isn't used: ... */
@@ -4862,12 +4908,21 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
         errorset(sSETPOS,sym->lnumber);
         error(204,sym->name);       /* value assigned to symbol is never used */
         errorset(sSETPOS,-1);
-#if 0 // ??? not sure whether it is a good idea to force people use "const"
       } else if ((sym->usage & (uWRITTEN | uPUBLIC | uCONST))==0 && sym->ident==iREFARRAY) {
-        errorset(sSETPOS,sym->lnumber);
-        error(214,sym->name);       /* make array argument "const" */
-        errorset(sSETPOS,-1);
-#endif
+        int warn = 1;
+        symbol* depend = finddepend(sym);
+        while (depend != NULL) {
+          if ((depend->usage & (uWRITTEN | uPUBLIC | uCONST)) != 0) {
+            warn = 0;
+            break;
+          }
+          depend = finddepend(depend);
+        } /* while */
+        if (warn) {
+          errorset(sSETPOS, sym->lnumber);
+          error(214, sym->name);       /* make array argument "const" */
+          errorset(sSETPOS, -1);
+        } /* if */
       } /* if */
       /* also mark the variable (local or global) to the debug information */
       if ((sym->usage & (uWRITTEN | uREAD))!=0 && (sym->usage & uNATIVE)==0)
@@ -4891,7 +4946,7 @@ static cell calc_array_datasize(symbol *sym, cell *offset)
     if (offset!=NULL)
       *offset=length*(*offset+sizeof(cell));
     if (sublength>0)
-      length*=length*sublength;
+      length*=sublength;
     else
       length=0;
   } else {
@@ -4907,13 +4962,21 @@ static void destructsymbols(symbol *root,int level)
   int savepri=FALSE;
   symbol *sym=root->next;
   while (sym!=NULL && sym->compound>=level) {
-    if (sym->ident==iVARIABLE || sym->ident==iARRAY) {
+    if ((sym->ident==iVARIABLE || sym->ident==iARRAY) && !(sym->vclass==sSTATIC && sym->fnumber==-1)) {
       char symbolname[16];
       symbol *opsym;
       cell elements;
       /* check that the '~' operator is defined for this tag */
       operator_symname(symbolname,"~",sym->tag,0,1,0);
       if ((opsym=findglb(symbolname,sGLOBAL))!=NULL) {
+        if ((opsym->usage & uMISSING)!=0 || (opsym->usage & uPROTOTYPED)==0) {
+          char symname[2*sNAMEMAX+16];  /* allow space for user defined operators */
+          funcdisplayname(symname,opsym->name);
+          if ((opsym->usage & uMISSING)!=0)
+            error(4,symname);           /* function not defined */
+          if ((opsym->usage & uPROTOTYPED)==0)
+            error(71,symname);          /* operator must be declared before use */
+        } /* if */
         /* save PRI, in case of a return statment */
         if (!savepri) {
           pushreg(sPRI);        /* right-hand operand is in PRI */
@@ -4921,6 +4984,15 @@ static void destructsymbols(symbol *root,int level)
         } /* if */
         /* if the variable is an array, get the number of elements */
         if (sym->ident==iARRAY) {
+          /* according to the PAWN Implementer Guide, the destructor
+           * should be triggered for the data of the array only; hence
+           * if the array is a part of a larger array, it must be ignored
+           * as it's parent would(or has already) trigger(ed) the destructor
+           */
+          if (sym->parent!=NULL) {
+            sym=sym->next;
+            continue;
+          } /* if */
           elements=calc_array_datasize(sym,&offset);
           /* "elements" can be zero when the variable is declared like
            *    new mytag: myvar[2][] = { {1, 2}, {3, 4} }
@@ -4953,8 +5025,8 @@ static void destructsymbols(symbol *root,int level)
     popreg(sPRI);
 }
 
-static constvalue *insert_constval(constvalue *prev,constvalue *next,const char *name,cell val,
-                                   int index)
+static constvalue *insert_constval(constvalue *prev,constvalue *next,
+                                   const char *name,cell val,int index)
 {
   constvalue *cur;
 
@@ -4968,23 +5040,29 @@ static constvalue *insert_constval(constvalue *prev,constvalue *next,const char 
   cur->value=val;
   cur->index=index;
   cur->next=next;
-  prev->next=cur;
+  if (prev!=NULL)
+    prev->next=cur;
   return cur;
 }
 
-SC_FUNC constvalue *append_constval(constvalue *table,const char *name,cell val,int index)
+SC_FUNC constvalue *append_constval(constvalue_root *table,const char *name,
+                                    cell val,int index)
 {
-  constvalue *cur,*prev;
+  constvalue *newvalue;
 
-  /* find the end of the constant table */
-  for (prev=table, cur=table->next; cur!=NULL; prev=cur, cur=cur->next)
-    /* nothing */;
-  return insert_constval(prev,NULL,name,val,index);
+  if (table->last!=NULL) {
+    newvalue=insert_constval(table->last,NULL,name,val,index);
+  } else {
+    newvalue=insert_constval(NULL,NULL,name,val,index);
+    table->first=newvalue;
+  } /* if */
+  table->last=newvalue;
+  return newvalue;
 }
 
-SC_FUNC constvalue *find_constval(constvalue *table,char *name,int index)
+SC_FUNC constvalue *find_constval(constvalue_root *table,char *name,int index)
 {
-  constvalue *ptr = table->next;
+  constvalue *ptr = table->first;
 
   while (ptr!=NULL) {
     if (strcmp(name,ptr->name)==0 && ptr->index==index)
@@ -4994,9 +5072,9 @@ SC_FUNC constvalue *find_constval(constvalue *table,char *name,int index)
   return NULL;
 }
 
-static constvalue *find_constval_byval(constvalue *table,cell val)
+static constvalue *find_constval_byval(constvalue_root *table,cell val)
 {
-  constvalue *ptr = table->next;
+  constvalue *ptr = table->first;
 
   while (ptr!=NULL) {
     if (ptr->value==val)
@@ -5007,14 +5085,19 @@ static constvalue *find_constval_byval(constvalue *table,cell val)
 }
 
 #if 0   /* never used */
-static int delete_constval(constvalue *table,char *name)
+static int delete_constval(constvalue_root *table,char *name)
 {
-  constvalue *prev = table;
-  constvalue *cur = prev->next;
+  constvalue *prev=NULL;
+  constvalue *cur=table->first;
 
   while (cur!=NULL) {
     if (strcmp(name,cur->name)==0) {
-      prev->next=cur->next;
+      if (prev!=NULL)
+        prev->next=cur->next;
+      else
+        table->first=cur->next;
+      if (table->last==cur)
+        table->last=prev;
       free(cur);
       return TRUE;
     } /* if */
@@ -5025,16 +5108,16 @@ static int delete_constval(constvalue *table,char *name)
 }
 #endif
 
-SC_FUNC void delete_consttable(constvalue *table)
+SC_FUNC void delete_consttable(constvalue_root *table)
 {
-  constvalue *cur=table->next, *next;
+  constvalue *cur=table->first, *next;
 
   while (cur!=NULL) {
     next=cur->next;
     free(cur);
     cur=next;
   } /* while */
-  memset(table,0,sizeof(constvalue));
+  memset(table,0,sizeof(constvalue_root));
 }
 
 /*  add_constant
@@ -5286,7 +5369,6 @@ static void statement(int *lastindent,int allow_decl)
     extern char *sc_tokens[];
     const unsigned char *bck_lptr=lptr-strlen(sc_tokens[tok-tFIRST]);
     if (matchtoken('{')) {
-      lexpush();
       emit_flags |= efBLOCK;
       lastst=tEMIT;
       break;
@@ -5295,7 +5377,7 @@ static void statement(int *lastindent,int allow_decl)
     lexclr(FALSE);
     tok=lex(&val,&st);
   } /* case */
-  /* drop through */
+  /* fallthrough */
   default:          /* non-empty expression */
     sc_allowproccall=optproccall;
     lexpush();      /* analyze token later */
@@ -5351,9 +5433,11 @@ static void compound(int stmt_sameline,int starttok)
     } /* if */
   } /* while */
   if (lastst!=tRETURN)
-    destructsymbols(&loctab,nestlevel);
+    if (nestlevel >= 1 || (curfunc->flags & flagNAKED)==0)
+      destructsymbols(&loctab,nestlevel);
   if (lastst!=tRETURN && lastst!=tGOTO)
-    modstk((int)(declared-save_decl)*sizeof(cell)); /* delete local variable space */
+    if (nestlevel >= 1 || (curfunc->flags & flagNAKED)==0)
+      modstk((int)(declared-save_decl)*sizeof(cell)); /* delete local variable space */
   testsymbols(&loctab,nestlevel,FALSE,TRUE);        /* look for unused block locals */
   declared=save_decl;
   delete_symbols(&loctab,nestlevel,FALSE,TRUE);     /* erase local symbols, but
@@ -5709,8 +5793,8 @@ static void doswitch(void)
   int tok,endtok;
   cell val;
   char *str;
-  constvalue caselist = { NULL, "", 0, 0};   /* case list starts empty */
-  constvalue *cse,*csp;
+  constvalue_root caselist = { NULL, NULL};   /* case list starts empty */
+  constvalue *cse,*csp,*newval;
   char labelname[sNAMEMAX+1];
 
   endtok= matchtoken('(') ? ')' : tDO;
@@ -5758,7 +5842,7 @@ static void doswitch(void)
          * that advanced abstract machines can sift the case table with a
          * binary search). Check for duplicate case values at the same time.
          */
-        for (csp=&caselist, cse=caselist.next;
+        for (csp=NULL, cse=caselist.first;
              cse!=NULL && cse->value<val;
              csp=cse, cse=cse->next)
           /* nothing */;
@@ -5771,9 +5855,10 @@ static void doswitch(void)
         #if sNAMEMAX < 8
           #error Length of identifier (sNAMEMAX) too small.
         #endif
-        assert(csp!=NULL);
-        assert(csp->next==cse);
-        insert_constval(csp,cse,itoh(lbl_case),val,0);
+        assert(csp==NULL || csp->next==cse);
+        newval=insert_constval(csp,cse,itoh(lbl_case),val,0);
+        if (csp==NULL)
+          caselist.first=newval;
         if (matchtoken(tDBLDOT)) {
           cell end;
           constexpr(&end,NULL,NULL);
@@ -5782,14 +5867,13 @@ static void doswitch(void)
           while (++val<=end) {
             casecount++;
             /* find the new insertion point */
-            for (csp=&caselist, cse=caselist.next;
+            for (csp=NULL, cse=caselist.first;
                  cse!=NULL && cse->value<val;
                  csp=cse, cse=cse->next)
               /* nothing */;
             if (cse!=NULL && cse->value==val)
               error(40,val);            /* duplicate "case" label */
-            assert(csp!=NULL);
-            assert(csp->next==cse);
+            assert(csp==NULL || csp->next==cse);
             insert_constval(csp,cse,itoh(lbl_case),val,0);
           } /* if */
         } /* if */
@@ -5827,7 +5911,7 @@ static void doswitch(void)
     /* verify that the case table is sorted (unfortunatly, duplicates can
      * occur; there really shouldn't be duplicate cases, but the compiler
      * may not crash or drop into an assertion for a user error). */
-    for (cse=caselist.next; cse!=NULL && cse->next!=NULL; cse=cse->next)
+    for (cse=caselist.first; cse!=NULL && cse->next!=NULL; cse=cse->next)
       assert(cse->value <= cse->next->value);
   #endif
   /* generate the table here, before lbl_exit (general jump target) */
@@ -5842,7 +5926,7 @@ static void doswitch(void)
   } /* if */
   ffcase(casecount,labelname,TRUE);
   /* generate the rest of the table */
-  for (cse=caselist.next; cse!=NULL; cse=cse->next)
+  for (cse=caselist.first; cse!=NULL; cse=cse->next)
     ffcase(cse->value,cse->name,FALSE);
 
   setlabel(lbl_exit);
@@ -5889,7 +5973,7 @@ static void dogoto(void)
     //     sym->compound (nesting level of the label) against nestlevel;
     //     if sym->compound < nestlevel, call the destructor operator
   } else {
-    error(20,st);       /* illegal symbol name */
+    error_suggest(20,st,NULL,estSYMBOL,essLABEL);   /* illegal symbol name */
   } /* if */
   needtoken(tTERM);
 }
@@ -5929,7 +6013,7 @@ static symbol *fetchlab(char *name)
   sym=findloc(name);            /* labels are local in scope */
   if (sym) {
     if (sym->ident!=iLABEL)
-      error(19,sym->name);      /* not a label: ... */
+      error_suggest(19,sym->name,NULL,estSYMBOL,essLABEL);  /* not a label: ... */
   } else {
     sym=addsym(name,getlabel(),iLABEL,sLOCAL,0,0);
     assert(sym!=NULL);          /* fatal error 103 must be given on error */
@@ -5953,23 +6037,26 @@ static void SC_FASTCALL emit_invalid_token(int expected_token,int found_token)
   } /* if */
 }
 
-static void SC_FASTCALL emit_param_any(ucell *p)
+static int SC_FASTCALL emit_param_any_internal(emit_outval *p,int expected_tok,
+                                               int allow_nonint,int allow_expr)
 {
   char *str;
   cell val,cidx;
   symbol *sym;
-  extern char *sc_tokens[];
-  int tok,neg,ident,index;
+  int tok,negate,ident,index;
 
-  neg=FALSE;
+  negate=FALSE;
+  p->type=eotNUMBER;
 fetchtok:
   tok=lex(&val,&str);
   switch (tok) {
   case tNUMBER:
-    *p=(neg!=FALSE) ? -val : val;
+    p->value.ucell=(ucell)(negate ? -val : val);
     break;
   case tRATIONAL:
-    *p=(neg!=FALSE) ? (val|((cell)1 << (PAWN_CELL_SIZE-1))) : val;
+    if (!allow_nonint)
+      goto invalid_token;
+    p->value.ucell=(ucell)(negate ? (val|((cell)1 << (PAWN_CELL_SIZE-1))) : val);
     break;
   case tSYMBOL:
     sym=findloc(str);
@@ -5977,67 +6064,158 @@ fetchtok:
       sym=findglb(str,sSTATEVAR);
     if (sym==NULL || (sym->ident!=iFUNCTN && sym->ident!=iREFFUNC && (sym->usage & uDEFINE)==0)) {
       error(17,str);    /* undefined symbol */
-      break;
+      return FALSE;
     } /* if */
     if (sym->ident==iLABEL) {
-      tok=tLABEL;
-      goto invalid_token;
-    } /* if */
-    if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
+      sym->usage|=uREAD;
+      if (negate)
+        goto invalid_token_neg;
+      if (!allow_nonint) {
+        tok=tLABEL;
+        goto invalid_token;
+      } /* if */
+      p->type=eotLABEL;
+      p->value.ucell=(ucell)sym->addr;
+    } else if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
+      markusage(sym,uREAD);
+      if (negate)
+        goto invalid_token_neg;
+      if (!allow_nonint) {
+        tok=(sym->usage & uNATIVE) ? teNATIVE : teFUNCTN;
+        goto invalid_token;
+      } /* if */
       if ((sym->usage & uNATIVE)!=0 && (sym->usage & uREAD)==0 && sym->addr>=0)
         sym->addr=ntv_funcid++;
-      markusage(sym,uREAD);
+      p->type=eotFUNCTION;
+      p->value.string=str;
     } else {
       markusage(sym,uREAD | uWRITTEN);
+      if (!allow_nonint && sym->ident!=iCONSTEXPR) {
+        tok=(sym->vclass==sLOCAL) ? teLOCAL : teDATA;
+        goto invalid_token;
+      } /* if */
+      p->value.ucell=(ucell)(negate ? -sym->addr : sym->addr);
     } /* if */
-    *p=(neg!=FALSE) ? -sym->addr : sym->addr;
     break;
   case '(':
+    if (!allow_expr)
+      goto invalid_token;
     if ((emit_flags & efEXPR)==0)
       stgset(TRUE);
     stgget(&index,&cidx);
     errorset(sEXPRMARK,0);
     ident=expression(&val,NULL,NULL,FALSE);
-    if (ident!=iCONSTEXPR)
-      error(8);         /* must be constant expression */
     errorset(sEXPRRELEASE,0);
     stgdel(index,cidx);
     if ((emit_flags & efEXPR)==0)
       stgset(FALSE);
     needtoken(')');
-    *p=(neg!=FALSE) ? -val : val;
+    p->value.ucell=(ucell)(negate ? -val : val);
+    if (ident!=iCONSTEXPR) {
+      error(8);         /* must be constant expression */
+      return FALSE;
+    } /* if */
+    break;
+  case ':':
+    tok=lex(&val,&str);
+    if (tok!=tSYMBOL) {
+      emit_invalid_token(tSYMBOL,tok);
+      return FALSE;
+    } /* if */
+    sym=fetchlab(str);
+    sym->usage|=uREAD;
+    p->type=eotLABEL;
+    p->value.ucell=(ucell)sym->addr;
     break;
   case '-':
-    if (neg==FALSE) {
-      neg=TRUE;
+    if (!negate) {
+      negate=TRUE;
       goto fetchtok;
     } else {
-      char ival[sNAMEMAX+2]="-";
-      strcpy(ival+1,str);
-      error(1,sc_tokens[tSYMBOL-tFIRST],ival);
-      break;
+      extern char *sc_tokens[];
+      char ival[sNAMEMAX+2];
+    invalid_token_neg:
+      sprintf(ival,"-%s",str);
+      error(1,sc_tokens[expected_tok-tFIRST],ival);
+      return FALSE;
     } /* if */
   default:
   invalid_token:
-    emit_invalid_token(teNUMERIC,tok);
+    emit_invalid_token(expected_tok,tok);
+    return FALSE;
   } /* switch */
+  return TRUE;
 }
 
-static void SC_FASTCALL emit_param_data(ucell *p)
+static void SC_FASTCALL emit_param_any(emit_outval *p)
+{
+  emit_param_any_internal(p,teANY,TRUE,TRUE);
+}
+
+static void SC_FASTCALL emit_param_integer(emit_outval *p)
+{
+  emit_param_any_internal(p,tNUMBER,FALSE,TRUE);
+}
+
+static void SC_FASTCALL emit_param_index(emit_outval *p,int isrange,const cell *valid_values,int numvalues)
+{
+  int i;
+  cell val;
+
+  assert(isrange ? (numvalues==2) : (numvalues>0));
+  if (!emit_param_any_internal(p,tNUMBER,FALSE,FALSE))
+    return;
+  val=(cell)p->value.ucell;
+  if (isrange) {
+    if (valid_values[0]<=val && val<=valid_values[1])
+      return;
+  } else {
+    for (i=0; i<numvalues; i++)
+      if (val==valid_values[i])
+        return;
+  } /* if */
+  error(50);    /* invalid range */
+}
+
+static void SC_FASTCALL emit_param_nonneg(emit_outval *p)
+{
+  if (!emit_param_any_internal(p,teNONNEG,FALSE,TRUE))
+    return;
+  if ((cell)p->value.ucell<(cell)0) {
+    extern char *sc_tokens[];
+#if PAWN_CELL_SIZE==16
+    char ival[7];
+    sprintf(ival,"%ld",(long)p->value.ucell);
+#elif PAWN_CELL_SIZE==32
+    char ival[12];
+    sprintf(ival,"%ld",(long)p->value.ucell);
+#elif PAWN_CELL_SIZE==64
+    char ival[21];
+    sprintf(ival,"%lld",(long long)p->value.ucell);
+#else
+  #error Unsupported cell size
+#endif
+    error(1,sc_tokens[teNONNEG-tFIRST],ival);
+  } /* if */
+}
+
+static void SC_FASTCALL emit_param_data(emit_outval *p)
 {
   cell val;
   char *str;
   symbol *sym;
   int tok;
 
+  p->type=eotNUMBER;
   tok=lex(&val,&str);
   switch (tok) {
   case tNUMBER:
-    *p=val;
+    p->value.ucell=(ucell)val;
     break;
   case tSYMBOL:
     sym=findloc(str);
     if (sym!=NULL) {
+      markusage(sym,uREAD | uWRITTEN);
       if (sym->ident==iLABEL) {
         tok=tLABEL;
         goto invalid_token;
@@ -6052,13 +6230,13 @@ static void SC_FASTCALL emit_param_data(ucell *p)
         error(17,str);  /* undefined symbol */
         break;
       } /* if */
+      markusage(sym,uREAD | uWRITTEN);
       if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
         tok=((sym->usage & uNATIVE)!=0) ? teNATIVE : teFUNCTN;
         goto invalid_token;
       } /* if */
     } /* if */
-    markusage(sym,uREAD | uWRITTEN);
-    *p=sym->addr;
+    p->value.ucell=(ucell)sym->addr;
     break;
   default:
   invalid_token:
@@ -6066,21 +6244,23 @@ static void SC_FASTCALL emit_param_data(ucell *p)
   } /* switch */
 }
 
-static void SC_FASTCALL emit_param_local(ucell *p)
+static void SC_FASTCALL emit_param_local(emit_outval *p)
 {
   cell val;
   char *str;
   symbol *sym;
   int tok;
 
+  p->type=eotNUMBER;
   tok=lex(&val,&str);
   switch (tok) {
   case tNUMBER:
-    *p=val;
+    p->value.ucell=(ucell)val;
     break;
   case tSYMBOL:
     sym=findloc(str);
     if (sym!=NULL) {
+      markusage(sym,uREAD | uWRITTEN);
       if (sym->ident==iLABEL) {
         tok=tLABEL;
         goto invalid_token;
@@ -6091,13 +6271,16 @@ static void SC_FASTCALL emit_param_local(ucell *p)
       } /* if */
     } else {
       sym=findglb(str,sSTATEVAR);
-      if (sym==NULL || sym->ident!=iCONSTEXPR) {
+      if (sym==NULL) {
+      undefined_sym:
         error(17,str);  /* undefined symbol */
         break;
       } /* if */
+      markusage(sym,uREAD | uWRITTEN);
+      if (sym->ident!=iCONSTEXPR)
+        goto undefined_sym;
     } /* if */
-    markusage(sym,uREAD | uWRITTEN);
-    *p=sym->addr;
+    p->value.ucell=(ucell)sym->addr;
     break;
   default:
   invalid_token:
@@ -6105,95 +6288,41 @@ static void SC_FASTCALL emit_param_local(ucell *p)
   } /* switch */
 }
 
-static void SC_FASTCALL emit_param_index(ucell *p,const cell *valid_values,int numvalues)
+static void SC_FASTCALL emit_param_label(emit_outval *p)
 {
   cell val;
   char *str;
   symbol *sym;
-  int tok,i,global;
-  int neg=FALSE;
+  int tok;
 
-  assert(numvalues>0);
-fetchtok:
+  p->type=eotNUMBER;
   tok=lex(&val,&str);
-  switch (tok) {
-  case tNUMBER:
-    if (neg!=FALSE)
-      val=-val;
-    break;
-  case tRATIONAL:
-    if (neg!=FALSE)
-      val=val|((cell)1 << (PAWN_CELL_SIZE-1));
-    break;
+  switch (tok)
+  {
+  case ':':
+    tok=lex(&val,&str);
+    if (tok!=tSYMBOL)
+      goto invalid_token;
+    /* fallthrough */
   case tSYMBOL:
-    global=FALSE;
-    sym=findloc(str);
-    if (sym==NULL) {
-      global=TRUE;
-      sym=findglb(str,sSTATEVAR);
-    } /* if */
-    if (sym==NULL) {
-      error(17,str);    /* undefined symbol */
-      return;
-    } /* if */
-    switch (sym->ident) {
-    case iCONSTEXPR:
-      break;
-    case iLABEL:
-      tok=tLABEL;
-      goto invalid_token;
-    case iFUNCTN:
-    case iREFFUNC:
-      tok=((sym->usage & uNATIVE)!=0) ? teNATIVE : teFUNCTN;
-      goto invalid_token;
-    default:
-      tok=(global==FALSE && sym->vclass!=sSTATIC) ? teLOCAL : teDATA;
-      goto invalid_token;
-    } /* switch */
-    markusage(sym,uREAD);
-    val=(neg!=FALSE) ? -sym->addr : sym->addr;
+    sym=fetchlab(str);
+    sym->usage|=uREAD;
+    p->value.ucell=(ucell)sym->addr;
     break;
-  case '-':
-    if (neg==FALSE) {
-      neg=TRUE;
-      goto fetchtok;
-    } /* if */
-    /* drop through */
   default:
   invalid_token:
-    emit_invalid_token(teNUMERIC,tok);
-    return;
-  } /* switch */
-
-  *p=val;
-  for (i=0; i<numvalues; i++)
-    if (val==valid_values[i])
-      return;
-  error(50);    /* invalid range */
-}
-
-static void SC_FASTCALL emit_param_label(ucell *p)
-{
-  cell val;
-  char *str;
-  symbol *sym;
-  int tok;
-
-  tok=lex(&val,&str);
-  if (tok!=tSYMBOL)
     emit_invalid_token(tSYMBOL,tok);
-  sym=fetchlab(str);
-  sym->usage|=uREAD;
-  *p=*(ucell *)&sym->addr;
+  }
 }
 
-static void SC_FASTCALL emit_param_function(ucell *p,int isnative)
+static void SC_FASTCALL emit_param_function(emit_outval *p,int isnative)
 {
   cell val;
   char *str;
   symbol *sym;
   int tok;
 
+  p->type=eotNUMBER;
   tok=lex(&val,&str);
   switch (tok)
   {
@@ -6203,6 +6332,7 @@ static void SC_FASTCALL emit_param_function(ucell *p,int isnative)
       error(17,str);    /* undefined symbol */
       return;
     } /* if */
+    markusage(sym,uREAD);
     if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
       if (!!(sym->usage & uNATIVE)==isnative)
         break;
@@ -6210,7 +6340,7 @@ static void SC_FASTCALL emit_param_function(ucell *p,int isnative)
     } else {
       tok=(sym->ident==iCONSTEXPR) ? teNUMERIC : teDATA;
     } /* if */
-    /* drop through */
+    /* fallthrough */
   default:
     emit_invalid_token((isnative!=FALSE) ? teNATIVE : teFUNCTN,tok);
     return;
@@ -6219,11 +6349,11 @@ static void SC_FASTCALL emit_param_function(ucell *p,int isnative)
   if (isnative!=FALSE) {
     if ((sym->usage & uREAD)==0 && sym->addr>=0)
       sym->addr=ntv_funcid++;
-    *p=sym->addr;
+    p->value.ucell=(ucell)sym->addr;
   } else {
-    *(char **)p=str;
+    p->type=eotFUNCTION;
+    p->value.string=str;
   } /* if */
-  markusage(sym,uREAD);
 }
 
 static void SC_FASTCALL emit_noop(char *name)
@@ -6238,15 +6368,40 @@ static void SC_FASTCALL emit_parm0(char *name)
 
 static void SC_FASTCALL emit_parm1_any(char *name)
 {
-  ucell p[1];
+  emit_outval p[1];
 
   emit_param_any(&p[0]);
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
+static void SC_FASTCALL emit_parm1_integer(char *name)
+{
+  emit_outval p[1];
+
+  emit_param_integer(&p[0]);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
+}
+
+static void SC_FASTCALL emit_parm1_nonneg(char *name)
+{
+  emit_outval p[1];
+
+  emit_param_nonneg(&p[0]);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
+}
+
+static void SC_FASTCALL emit_parm1_shift(char *name)
+{
+  static const cell valid_values[] = { 0,sizeof(cell)*8-1 };
+  emit_outval p[1];
+
+  emit_param_index(&p[0],TRUE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
+  outinstr(name,p,(sizeof p / sizeof p[0]));
+}
+
 static void SC_FASTCALL emit_parm1_data(char *name)
 {
-  ucell p[1];
+  emit_outval p[1];
 
   emit_param_data(&p[0]);
   outinstr(name,p,(sizeof p / sizeof p[0]));
@@ -6254,7 +6409,7 @@ static void SC_FASTCALL emit_parm1_data(char *name)
 
 static void SC_FASTCALL emit_parm1_local(char *name)
 {
-  ucell p[1];
+  emit_outval p[1];
 
   emit_param_local(&p[0]);
   outinstr(name,p,(sizeof p / sizeof p[0]));
@@ -6262,7 +6417,7 @@ static void SC_FASTCALL emit_parm1_local(char *name)
 
 static void SC_FASTCALL emit_parm1_label(char *name)
 {
-  ucell p[1];
+  emit_outval p[1];
 
   emit_param_label(&p[0]);
   outinstr(name,p,(sizeof p / sizeof p[0]));
@@ -6270,77 +6425,72 @@ static void SC_FASTCALL emit_parm1_label(char *name)
 
 static void SC_FASTCALL emit_do_casetbl(char *name)
 {
-  ucell p[2];
+  emit_outval p[2];
 
   (void)name;
-  emit_param_any(&p[0]);
+  emit_param_nonneg(&p[0]);
   emit_param_label(&p[1]);
   stgwrite("\tcasetbl\n");
-  stgwrite("\tcase ");
-  outval(p[0],FALSE);
-  stgwrite(" ");
-  outval(p[1],TRUE);
-  code_idx+=opcodes(1)+opargs(2);
+  outinstr("case",p,(sizeof p / sizeof p[0]));
 }
 
 static void SC_FASTCALL emit_do_case(char *name)
 {
-  ucell p[2];
+  emit_outval p[2];
 
   emit_param_any(&p[0]);
   emit_param_label(&p[1]);
-  stgwrite("\tcase ");
-  outval(p[0],FALSE);
-  stgwrite(" ");
-  outval(p[1],TRUE);
-  code_idx+=opargs(2);
+  outinstr("case",p,(sizeof p / sizeof p[0]));
+  code_idx-=opcodes(1);
 }
 
 static void SC_FASTCALL emit_do_lodb_strb(char *name)
 {
   static const cell valid_values[] = { 1,2,4 };
-  ucell p[1];
+  emit_outval p[1];
 
-  emit_param_index(&p[0],valid_values,(sizeof valid_values / sizeof valid_values[0]));
+  emit_param_index(&p[0],FALSE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
+  outinstr(name,p,(sizeof p / sizeof p[0]));
+}
+
+static void SC_FASTCALL emit_do_align(char *name)
+{
+  static const cell valid_values[] = { 0,sizeof(cell)-1 };
+  emit_outval p[1];
+
+  emit_param_index(&p[0],TRUE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void SC_FASTCALL emit_do_lctrl(char *name)
 {
-  static const cell valid_values[] = { 0,1,2,3,4,5,6,7,8,9 };
-  ucell p[1];
+  static const cell valid_values[] = { 0,9 };
+  emit_outval p[1];
 
-  emit_param_index(&p[0],valid_values,(sizeof valid_values / sizeof valid_values[0]));
+  emit_param_index(&p[0],TRUE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void SC_FASTCALL emit_do_sctrl(char *name)
 {
   static const cell valid_values[] = { 2,4,5,6,8,9 };
-  ucell p[1];
+  emit_outval p[1];
 
-  emit_param_index(&p[0],valid_values,(sizeof valid_values / sizeof valid_values[0]));
+  emit_param_index(&p[0],FALSE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void SC_FASTCALL emit_do_call(char *name)
 {
-  char *funcname=NULL;
+  emit_outval p[1];
 
-  emit_param_function((ucell *)&funcname,FALSE);
-  stgwrite("\t");
-  stgwrite(name);
-  if (funcname!=NULL) {
-    stgwrite(" .");
-    stgwrite(funcname);
-  } /* if */
-  stgwrite("\n");
-  code_idx+=opcodes(1)+opargs(1);
+  emit_param_function(&p[0],FALSE);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
 static void SC_FASTCALL emit_do_sysreq_c(char *name)
 {
-  ucell p[1];
+  emit_outval p[1];
 
   emit_param_function(&p[0],TRUE);
 
@@ -6359,7 +6509,7 @@ static void SC_FASTCALL emit_do_sysreq_c(char *name)
 
 static void SC_FASTCALL emit_do_sysreq_n(char *name)
 {
-  ucell p[2];
+  emit_outval p[2];
 
   emit_param_function(&p[0],TRUE);
   emit_param_any(&p[1]);
@@ -6375,14 +6525,14 @@ static void SC_FASTCALL emit_do_sysreq_n(char *name)
   } else {
     outinstr("push.c",&p[1],1);
     outinstr("sysreq.c",&p[0],1);
-    p[1]+=sizeof(cell);
+    p[1].value.ucell+=sizeof(cell);
     outinstr("stack",&p[1],1);
   } /* if */
 }
 
 static void SC_FASTCALL emit_do_const(char *name)
 {
-  ucell p[2];
+  emit_outval p[2];
 
   emit_param_data(&p[0]);
   emit_param_any(&p[1]);
@@ -6406,7 +6556,7 @@ static void SC_FASTCALL emit_do_const(char *name)
 
 static void SC_FASTCALL emit_do_const_s(char *name)
 {
-  ucell p[2];
+  emit_outval p[2];
 
   emit_param_local(&p[0]);
   emit_param_any(&p[1]);
@@ -6430,7 +6580,7 @@ static void SC_FASTCALL emit_do_const_s(char *name)
 
 static void SC_FASTCALL emit_do_load_both(char *name)
 {
-  ucell p[2];
+  emit_outval p[2];
 
   emit_param_data(&p[0]);
   emit_param_data(&p[1]);
@@ -6450,7 +6600,7 @@ static void SC_FASTCALL emit_do_load_both(char *name)
 
 static void SC_FASTCALL emit_do_load_s_both(char *name)
 {
-  ucell p[2];
+  emit_outval p[2];
 
   emit_param_local(&p[0]);
   emit_param_local(&p[1]);
@@ -6470,7 +6620,7 @@ static void SC_FASTCALL emit_do_load_s_both(char *name)
 
 static void SC_FASTCALL emit_do_pushn_c(char *name)
 {
-  ucell p[5];
+  emit_outval p[5];
   int i,numargs;
 
   assert(name[0]=='p' && name[1]=='u' && name[2]=='s'
@@ -6492,7 +6642,7 @@ static void SC_FASTCALL emit_do_pushn_c(char *name)
 
 static void SC_FASTCALL emit_do_pushn(char *name)
 {
-  ucell p[5];
+  emit_outval p[5];
   int i,numargs;
 
   assert(name[0]=='p' && name[1]=='u' && name[2]=='s'
@@ -6514,7 +6664,7 @@ static void SC_FASTCALL emit_do_pushn(char *name)
 
 static void SC_FASTCALL emit_do_pushn_s_adr(char *name)
 {
-  ucell p[5];
+  emit_outval p[5];
   int i,numargs;
 
   assert(name[0]=='p' && name[1]=='u' && name[2]=='s'
@@ -6541,16 +6691,16 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { 87, "add.c",      emit_parm1_any },
   { 14, "addr.alt",   emit_parm1_local },
   { 13, "addr.pri",   emit_parm1_local },
-  { 30, "align.alt",  emit_parm1_any },
-  { 29, "align.pri",  emit_parm1_any },
+  { 30, "align.alt",  emit_do_align },
+  { 29, "align.pri",  emit_do_align },
   { 81, "and",        emit_parm0 },
-  {121, "bounds",     emit_parm1_any },
+  {121, "bounds",     emit_parm1_integer },
   {137, "break",      emit_parm0 },
   { 49, "call",       emit_do_call },
   { 50, "call.pri",   emit_parm0 },
   {  0, "case",       emit_do_case },
   {130, "casetbl",    emit_do_casetbl },
-  {118, "cmps",       emit_parm1_any },
+  {118, "cmps",       emit_parm1_nonneg },
   {156, "const",      emit_do_const },
   { 12, "const.alt",  emit_parm1_any },
   { 11, "const.pri",  emit_parm1_any },
@@ -6563,13 +6713,13 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { 95, "eq",         emit_parm0 },
   {106, "eq.c.alt",   emit_parm1_any },
   {105, "eq.c.pri",   emit_parm1_any },
-  {119, "fill",       emit_parm1_any },
+  {119, "fill",       emit_parm1_nonneg },
   {100, "geq",        emit_parm0 },
   { 99, "grtr",       emit_parm0 },
-  {120, "halt",       emit_parm1_any },
-  { 45, "heap",       emit_parm1_any },
+  {120, "halt",       emit_parm1_nonneg },
+  { 45, "heap",       emit_parm1_integer },
   { 27, "idxaddr",    emit_parm0 },
-  { 28, "idxaddr.b",  emit_parm1_any },
+  { 28, "idxaddr.b",  emit_parm1_shift },
   {109, "inc",        emit_parm1_data },
   {108, "inc.alt",    emit_parm0 },
   {111, "inc.i",      emit_parm0 },
@@ -6583,7 +6733,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { 57, "jless",      emit_parm1_label },
   { 56, "jneq",       emit_parm1_label },
   { 54, "jnz",        emit_parm1_label },
-  { 52, "jrel",       emit_parm1_any },
+  { 52, "jrel",       emit_parm1_integer },
   { 64, "jsgeq",      emit_parm1_label },
   { 63, "jsgrtr",     emit_parm1_label },
   { 62, "jsleq",      emit_parm1_label },
@@ -6595,7 +6745,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { 98, "leq",        emit_parm0 },
   { 97, "less",       emit_parm0 },
   { 25, "lidx",       emit_parm0 },
-  { 26, "lidx.b",     emit_parm1_any },
+  { 26, "lidx.b",     emit_parm1_shift },
   {  2, "load.alt",   emit_parm1_data },
   {154, "load.both",  emit_do_load_both },
   {  9, "load.i",     emit_parm0 },
@@ -6610,7 +6760,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   {  7, "lref.s.pri", emit_parm1_local },
   { 34, "move.alt",   emit_parm0 },
   { 33, "move.pri",   emit_parm0 },
-  {117, "movs",       emit_parm1_any },
+  {117, "movs",       emit_parm1_nonneg },
   { 85, "neg",        emit_parm0 },
   { 96, "neq",        emit_parm0 },
   {134, "nop",        emit_parm0 },
@@ -6624,7 +6774,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { 37, "push.alt",   emit_parm0 },
   { 39, "push.c",     emit_parm1_any },
   { 36, "push.pri",   emit_parm0 },
-  { 38, "push.r",     emit_parm1_any },
+  { 38, "push.r",     emit_parm1_integer },
   { 41, "push.s",     emit_parm1_local },
   {139, "push2",      emit_do_pushn },
   {141, "push2.adr",  emit_do_pushn_s_adr },
@@ -6650,23 +6800,23 @@ static EMIT_OPCODE emit_opcodelist[] = {
   {104, "sgeq",       emit_parm0 },
   {103, "sgrtr",      emit_parm0 },
   { 65, "shl",        emit_parm0 },
-  { 69, "shl.c.alt",  emit_parm1_any },
-  { 68, "shl.c.pri",  emit_parm1_any },
+  { 69, "shl.c.alt",  emit_parm1_shift },
+  { 68, "shl.c.pri",  emit_parm1_shift },
   { 66, "shr",        emit_parm0 },
-  { 71, "shr.c.alt",  emit_parm1_any },
-  { 70, "shr.c.pri",  emit_parm1_any },
+  { 71, "shr.c.alt",  emit_parm1_shift },
+  { 70, "shr.c.pri",  emit_parm1_shift },
   { 94, "sign.alt",   emit_parm0 },
   { 93, "sign.pri",   emit_parm0 },
   {102, "sleq",       emit_parm0 },
   {101, "sless",      emit_parm0 },
   { 72, "smul",       emit_parm0 },
-  { 88, "smul.c",     emit_parm1_any },
+  { 88, "smul.c",     emit_parm1_integer },
   { 20, "sref.alt",   emit_parm1_data },
   { 19, "sref.pri",   emit_parm1_data },
   { 22, "sref.s.alt", emit_parm1_local },
   { 21, "sref.s.pri", emit_parm1_local },
   { 67, "sshr",       emit_parm0 },
-  { 44, "stack",      emit_parm1_any },
+  { 44, "stack",      emit_parm1_integer },
   { 16, "stor.alt",   emit_parm1_data },
   { 23, "stor.i",     emit_parm0 },
   { 15, "stor.pri",   emit_parm1_data },
@@ -6696,10 +6846,7 @@ static int emit_findopcode(const char *instr,int maxlen)
 {
   int low,high,mid,cmp;
 
-  /* look up the instruction with a binary search
-   * the assembler is case insensitive to instructions (but case sensitive
-   * to symbols)
-   */
+  /* look up the instruction with a binary search */
   low=1;                /* entry 0 is reserved (for "not found") */
   high=(sizeof emit_opcodelist / sizeof emit_opcodelist[0])-1;
   while (low<high) {
@@ -6720,12 +6867,12 @@ static int emit_findopcode(const char *instr,int maxlen)
 
 SC_FUNC void emit_parse_line(void)
 {
+  extern char *sc_tokens[];
   cell val;
   char* st;
   int tok,len,i;
   symbol *sym;
   char name[MAX_INSTR_LEN];
-  extern char *sc_tokens[];
 
   tok=tokeninfo(&val,&st);
   if (tok==tSYMBOL || (tok>tMIDDLE && tok<=tLAST)) {
@@ -6739,7 +6886,7 @@ SC_FUNC void emit_parse_line(void)
      * and copy the instruction name
      */
     lptr-=len;
-    for(i=0; i<sizeof(name) && (isalnum(*lptr) || *lptr=='.'); ++i,++lptr)
+    for (i=0; i<sizeof(name) && (isalnum(*lptr) || *lptr=='.'); ++i,++lptr)
       name[i]=(char)tolower(*lptr);
     name[i]='\0';
 
@@ -6965,7 +7112,7 @@ SC_FUNC void exporttag(int tag)
    */
   if (tag!=0 && (tag & PUBLICTAG)==0) {
     constvalue *ptr;
-    for (ptr=tagname_tab.next; ptr!=NULL && tag!=(int)(ptr->value & TAGMASK); ptr=ptr->next)
+    for (ptr=tagname_tab.first; ptr!=NULL && tag!=(int)(ptr->value & TAGMASK); ptr=ptr->next)
       /* nothing */;
     if (ptr!=NULL)
       ptr->value |= PUBLICTAG;
@@ -7045,7 +7192,7 @@ static void dostate(void)
   /* find the optional entry() function for the state */
   sym=findglb(uENTRYFUNC,sGLOBAL);
   if (sc_status==statWRITE && sym!=NULL && sym->ident==iFUNCTN && sym->states!=NULL) {
-    for (stlist=sym->states->next; stlist!=NULL; stlist=stlist->next) {
+    for (stlist=sym->states->first; stlist!=NULL; stlist=stlist->next) {
       assert(strlen(stlist->name)!=0);
       if (state_getfsa(stlist->index)==automaton->index && state_inlist(stlist->index,(int)state->value))
         break;      /* found! */
@@ -7067,7 +7214,7 @@ static void dostate(void)
       /* get the last list id attached to the function, this contains the source states */
       assert(curfunc!=NULL);
       if (curfunc->states!=NULL) {
-        stlist=curfunc->states->next;
+        stlist=curfunc->states->first;
         assert(stlist!=NULL);
         while (stlist->next!=NULL)
           stlist=stlist->next;

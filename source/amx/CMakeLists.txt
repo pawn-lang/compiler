@@ -68,6 +68,7 @@ if(WIN32)
     set_target_properties(amxDGram PROPERTIES LINK_FLAGS
       "/export:amx_DGramInit /export:amx_DGramCleanup")
   endif()
+  target_link_libraries(amxDGram ws2_32)
 endif()
 
 # amxFile

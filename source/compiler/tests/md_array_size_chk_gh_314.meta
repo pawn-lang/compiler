@@ -1,0 +1,10 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+md_array_size_chk_gh_314.pwn(1) : error 009: invalid array size (negative, zero or out of bounds)
+md_array_size_chk_gh_314.pwn(2) : error 009: invalid array size (negative, zero or out of bounds)
+md_array_size_chk_gh_314.pwn(3) : error 009: invalid array size (negative, zero or out of bounds)
+md_array_size_chk_gh_314.pwn(5) : error 009: invalid array size (negative, zero or out of bounds)
+md_array_size_chk_gh_314.pwn(30) : warning 224: indeterminate array size in "sizeof" expression (symbol "")
+"""
+}

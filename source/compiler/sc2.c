@@ -20,6 +20,7 @@
  *
  *  Version: $Id: sc2.c 3655 2006-10-23 20:17:52Z thiadmer $
  */
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -396,8 +397,11 @@ static void readline(unsigned char *line)
       *line='\0';     /* delete line */
       cont=FALSE;
     } else {
-      /* check whether to erase leading whitespace after '\\' on next line */
+      /* check whether to erase leading spaces */
       if (cont) {
+        unsigned char *ptr=line;
+        while (*ptr<=' ' && *ptr!='\0')
+          ptr++;
         if (ptr!=line)
           memmove(line,ptr,strlen((char*)ptr)+1);
       } /* if */
@@ -414,6 +418,10 @@ static void readline(unsigned char *line)
           ptr--;        /* skip trailing whitespace */
         if (*ptr=='\\') {
           cont=TRUE;
+          /* set '\a' at the position of '\\' to make it possible to check
+           * for a line continuation in a single line comment (error 49)
+           */
+          *ptr++='\a';
           *ptr='\0';    /* erase '\n' (and any trailing whitespace) */
         } /* if */
       } /* if */
@@ -441,6 +449,7 @@ static void readline(unsigned char *line)
 static void stripcomment(unsigned char *line)
 {
   char c;
+  char* continuation;
   #if !defined SC_LIGHT
     #define COMMENT_LIMIT 100
     #define COMMENT_MARGIN 40   /* length of the longest word */
@@ -512,6 +521,24 @@ static void stripcomment(unsigned char *line)
         if (icomment==2)
           *line++=' ';
       } else if (*line=='/' && *(line+1)=='/'){  /* comment to end of line */
+        continuation=(char*)line;
+        while ((continuation=strchr(continuation,'\a'))!=NULL){
+          /* don't give the error if the next line is also commented out.
+             it is quite annoying to get an error for commenting out a define using:
+
+             //
+             // #define LONG_MACRO\
+             //             did span \
+             //             multiple lines
+             //
+          */
+          while (*continuation<=' ' && *continuation!='\0')
+            continuation++;             /* skip whitespace */
+          if (*continuation!='/' || *(continuation+1)!='/') {
+            error(49);    /* invalid line continuation */
+            break;
+          }
+        }
         #if !defined SC_LIGHT
           if (*(line+2)=='/' && *(line+3)<=' ') {
             /* documentation comment */
@@ -903,6 +930,23 @@ static const unsigned char *getstring(unsigned char *dest,int max,const unsigned
   return line;
 }
 
+/*  strdupwithouta
+ *
+ *  Duplicate a string, stripping out `\a`s.
+ */
+static char* strdupwithouta(const char* sourcestring)
+{
+  char* result=strdup(sourcestring);
+  char* a=result;
+  if (result==NULL) {
+    return NULL;
+  }
+  while ((a=strchr(a,'\a'))!=NULL) {
+    *a=' ';
+  }
+  return result;
+}
+
 enum {
   CMD_NONE,
   CMD_TERM,
@@ -1115,7 +1159,7 @@ static int command(void)
           /* remove leading whitespace */
           while (*lptr<=' ' && *lptr!='\0')
             lptr++;
-          pc_deprecate=strdup((const char *)lptr);
+          pc_deprecate=strdupwithouta((const char *)lptr);
           if (pc_deprecate!=NULL) {
             char *ptr=pc_deprecate+strlen(pc_deprecate)-1;
             /* remove trailing whitespace */
@@ -1499,7 +1543,7 @@ static int command(void)
     while (*lptr<=' ' && *lptr!='\0')
       lptr++;
     if (!SKIPPING) {
-      char *usermsg=strdup((const char *)lptr);
+      char *usermsg=strdupwithouta((const char *)lptr);
       if (usermsg!=NULL) {
         char *ptr=usermsg+strlen(usermsg)-1;
         /* remove trailing whitespace and newlines */
@@ -1893,6 +1937,10 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
     while (*lptr==' ' || *lptr=='\t')     /* this is as defines with parameters may add them */
       lptr++;                             /* when you use a space after , in a match pattern */
   while (*lptr!='\0') {
+    if (*lptr=='\a') {
+      lptr++;
+      continue;
+    } /* if */
     if (!instring) {
       if (*lptr=='\"') {
         instring=1;
@@ -1963,6 +2011,10 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
   i=sizeof(ucell)-(sCHARBITS/8); /* start at most significant byte */
   val=0;
   while (*lptr!='\0') {
+    if (*lptr=='\a') {          /* ignore '\a' (which was inserted at a line concatenation) */
+      lptr++;
+      continue;
+    } /* if */
     if (!instring) {
       if (*lptr=='\"') {
         instring=1;
@@ -2028,7 +2080,7 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
 
   if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';' ||
       *lptr==':' || *lptr=='\n' || *lptr=='\r')
-    lptr=stringize;						/* backtrack to end of last string for closing " */
+    lptr=stringize;     /* backtrack to end of last string for closing " */
   return lptr;
 }
 
@@ -2097,8 +2149,8 @@ char *sc_tokens[] = {
          "#tryinclude", "#undef", "#warning",
          ";", ";", "-integer value-", "-rational value-", "-identifier-",
          "-label-", "-string-",
-         "-numeric value-", "-data offset-", "-local variable-", "-function-",
-         "-native function-"
+         "-any value-", "-numeric value-", "-data offset-", "-local variable-",
+         "-function-", "-native function-", "-nonnegative integer-"
        };
 
 SC_FUNC int lex(cell *lexvalue,char **lexsym)
@@ -2949,7 +3001,7 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
         sym->usage &= ~uDEFINE; /* clear "defined" flag */
       /* set all states as "undefined" too */
       if (sym->states!=NULL)
-        for (stateptr=sym->states->next; stateptr!=NULL; stateptr=stateptr->next)
+        for (stateptr=sym->states->first; stateptr!=NULL; stateptr=stateptr->next)
           stateptr->value=0;
       /* for user defined operators, also remove the "prototyped" flag, as
        * user-defined operators *must* be declared before use
@@ -2989,10 +3041,10 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
         && (sym->parent==NULL || sym->ident==iCONSTEXPR)    /* sub-types (hierarchical types) are skipped, except for enum fields */
         && (sym->fnumber<0 || sym->fnumber==fnumber))       /* check file number for scope */
     {
-      assert(sym->states==NULL || sym->states->next!=NULL); /* first element of the state list is the "root" */
+      assert(sym->states==NULL || sym->states->first!=NULL); /* first element of the state list is the "root" */
       if (sym->ident==iFUNCTN
           || (automaton<0 && sym->states==NULL)
-          || (automaton>=0 && sym->states!=NULL && state_getfsa(sym->states->next->index)==automaton))
+          || (automaton>=0 && sym->states!=NULL && state_getfsa(sym->states->first->index)==automaton))
       {
         if (cmptag==NULL && sym->fnumber==fnumber)
           return sym;     /* return first match */
@@ -3110,8 +3162,8 @@ SC_FUNC symbol *findglb(const char *name,int filter)
        * also verify whether there is an intersection between the symbol's
        * state list and the current state list
        */
-      assert(sym->states!=NULL && sym->states->next!=NULL);
-      if (!state_conflict_id(sc_curstates,sym->states->next->index))
+      assert(sym->states!=NULL && sym->states->first!=NULL);
+      if (!state_conflict_id(sc_curstates,sym->states->first->index))
         sym=NULL;
     } /* if */
   } /* if */

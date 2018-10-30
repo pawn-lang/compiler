@@ -16,6 +16,7 @@
  *
  *  Version: $Id: amxstring.c 5514 2016-05-20 14:26:51Z  $
  */
+
 #include <limits.h>
 #include <string.h>
 #include <assert.h>

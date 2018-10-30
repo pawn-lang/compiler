@@ -20,6 +20,7 @@
  *
  *  Version: $Id: sc3.c 3660 2006-11-05 13:05:09Z thiadmer $
  */
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>     /* for _MAX_PATH */
@@ -512,6 +513,7 @@ static int plnge_rel(int *opstr,int opoff,int (*hier)(value *lval),value *lval)
       error(212);
     if (count>0) {
       relop_prefix();
+      lval2.boolresult=lval->boolresult;
       *lval=lval2;      /* copy right hand expression of the previous iteration */
     } /* if */
     opidx+=opoff;
@@ -747,7 +749,7 @@ SC_FUNC int sc_getstateid(constvalue **automaton,constvalue **state)
       return 0;
     tokeninfo(&val,&str);        /* do not copy the name yet, must check automaton first */
     if (*automaton==NULL) {
-      error(86,name);            /* unknown automaton */
+      error_suggest(86,name,NULL,estAUTOMATON,0);   /* unknown automaton */
       return 0;
     } /* if */
     assert((*automaton)->index>0);
@@ -767,7 +769,7 @@ SC_FUNC int sc_getstateid(constvalue **automaton,constvalue **state)
     char *fsaname=(*automaton)->name;
     if (*fsaname=='\0')
       fsaname="<main>";
-    error(87,name,fsaname);   /* unknown state for automaton */
+    error_suggest(87,name,fsaname,estSTATE,fsa);    /* unknown state for automaton */
     return 0;
   } /* if */
 
@@ -1014,8 +1016,8 @@ static int hier14(value *lval1)
       return error(48); /* array dimensions must match */
     else if (ltlength<val || (exactmatch && ltlength>val) || val==0)
       return error(47); /* array sizes must match */
-    else if (lval3.ident!=iARRAYCELL && !matchtag(lval3.sym->x.tags.index,idxtag,TRUE))
-      error(229,(lval2.sym!=NULL) ? lval2.sym->name : lval3.sym->name); /* index tag mismatch */
+    else if (lval3.ident!=iARRAYCELL)
+      check_index_tagmismatch((lval2.sym!=NULL) ? lval2.sym->name : lval3.sym->name,lval3.sym->x.tags.index,idxtag,TRUE,0);
     if (level>0) {
       /* check the sizes of all sublevels too */
       symbol *sym1 = lval3.sym;
@@ -1036,8 +1038,8 @@ static int hier14(value *lval1)
          */
         if (sym1->dim.array.length!=sym2->dim.array.length)
           error(47);    /* array sizes must match */
-        else if (!matchtag(sym1->x.tags.index,sym2->x.tags.index,TRUE))
-          error(229,sym2->name);  /* index tag mismatch */
+        else
+          check_index_tagmismatch(sym2->name,sym1->x.tags.index,sym2->x.tags.index,TRUE,0);
       } /* for */
       /* get the total size in cells of the multi-dimensional array */
       val=array_totalsize(lval3.sym);
@@ -1319,7 +1321,7 @@ static int hier2(value *lval)
       paranthese++;
     tok=lex(&val,&st);
     if (tok!=tSYMBOL)
-      return error(20,st);      /* illegal symbol name */
+      return error_suggest(20,st,NULL,estNONSYMBOL,tok);    /* illegal symbol name */
     sym=findloc(st);
     if (sym==NULL)
       sym=findglb(st,sSTATEVAR);
@@ -1342,18 +1344,18 @@ static int hier2(value *lval)
       paranthese++;
     tok=lex(&val,&st);
     if (tok!=tSYMBOL)
-      return error(20,st);      /* illegal symbol name */
+      return error_suggest(20,st,NULL,estNONSYMBOL,tok);    /* illegal symbol name */
     sym=findloc(st);
     if (sym==NULL)
       sym=findglb(st,sSTATEVAR);
     if (sym==NULL)
-      return error(17,st);      /* undefined symbol */
+      return error_suggest(17,st,NULL,estSYMBOL,essVARCONST);   /* undefined symbol */
     if (sym->ident==iCONSTEXPR)
       error(39);                /* constant symbol has no size */
     else if (sym->ident==iFUNCTN || sym->ident==iREFFUNC)
       error(72);                /* "function" symbol has no size */
     else if ((sym->usage & uDEFINE)==0)
-      return error(17,st);      /* undefined symbol (symbol is in the table, but it is "used" only) */
+      return error_suggest(17,st,NULL,estSYMBOL,essVARCONST);   /* undefined symbol (symbol is in the table, but it is "used" only) */
     clear_value(lval);
     lval->ident=iCONSTEXPR;
     lval->constval=1;           /* preset */
@@ -1368,7 +1370,7 @@ static int hier2(value *lval)
           int cmptag=subsym->x.tags.index;
           tokeninfo(&val,&idxname);
           if ((idxsym=findconst(idxname,&cmptag))==NULL)
-            error(80,idxname);  /* unknown symbol, or non-constant */
+            error_suggest(80,idxname,NULL,estSYMBOL,essCONST);  /* unknown symbol, or non-constant */
           else if (cmptag>1)
             error(91,idxname);  /* ambiguous constant */
         } /* if */
@@ -1395,7 +1397,7 @@ static int hier2(value *lval)
       paranthese++;
     tok=lex(&val,&st);
     if (tok!=tSYMBOL && tok!=tLABEL)
-      return error(20,st);      /* illegal symbol name */
+      return error_suggest(20,st,NULL,estNONSYMBOL,tok);    /* illegal symbol name */
     if (tok==tLABEL) {
       constvalue *tagsym=find_constval(&tagname_tab,st,0);
       tag=(int)((tagsym!=NULL) ? tagsym->value : 0);
@@ -1404,9 +1406,9 @@ static int hier2(value *lval)
       if (sym==NULL)
         sym=findglb(st,sSTATEVAR);
       if (sym==NULL)
-        return error(17,st);      /* undefined symbol */
+        return error_suggest(17,st,NULL,estSYMBOL,essNONLABEL); /* undefined symbol */
       if ((sym->usage & uDEFINE)==0)
-        return error(17,st);      /* undefined symbol (symbol is in the table, but it is "used" only) */
+        return error_suggest(17,st,NULL,estSYMBOL,essNONLABEL); /* undefined symbol (symbol is in the table, but it is "used" only) */
       tag=sym->tag;
     } /* if */
     if (sym!=NULL && (sym->ident==iARRAY || sym->ident==iREFARRAY)) {
@@ -1420,7 +1422,7 @@ static int hier2(value *lval)
           int cmptag=subsym->x.tags.index;
           tokeninfo(&val,&idxname);
           if ((idxsym=findconst(idxname,&cmptag))==NULL)
-            error(80,idxname);  /* unknown symbol, or non-constant */
+            error_suggest(80,idxname,NULL,estSYMBOL,essCONST);  /* unknown symbol, or non-constant */
           else if (cmptag>1)
             error(91,idxname);  /* ambiguous constant */
         } /* if */
@@ -1433,10 +1435,13 @@ static int hier2(value *lval)
       else if (level==sym->dim.array.level+1 && idxsym!=NULL)
         tag=idxsym->x.tags.index;
     } /* if */
-    exporttag(tag);
+    if (tag!=0) {
+      exporttag(tag);
+      tag |= PUBLICTAG;
+    } /* if */
     clear_value(lval);
     lval->ident=iCONSTEXPR;
-    lval->constval=tag | PUBLICTAG;
+    lval->constval=tag;
     ldconst(lval->constval,sPRI);
     while (paranthese--)
       needtoken(')');
@@ -1596,7 +1601,7 @@ restart:
         needtoken(close);
         return FALSE;
       } else if (sym->ident!=iARRAY && sym->ident!=iREFARRAY){
-        error(28,sym->name);    /* cannot subscript, variable is not an array */
+        error_suggest(28,sym->name,NULL,estSYMBOL,essARRAY);/* cannot subscript, variable is not an array */
         needtoken(close);
         return FALSE;
       } else if (sym->dim.array.level>0 && close!=']') {
@@ -1849,10 +1854,10 @@ static int primary(value *lval)
          * implemented, issue an error
          */
         if ((sym->usage & uPROTOTYPED)==0)
-          error(17,st);
+          error_suggest(17,st,NULL,estSYMBOL,essFUNCTN);    /* undefined symbol */
       } else {
         if ((sym->usage & uDEFINE)==0)
-          error(17,st);
+          error_suggest(17,st,NULL,estSYMBOL,essVARCONST);  /* undefined symbol */
         lval->sym=sym;
         lval->ident=sym->ident;
         lval->tag=sym->tag;
@@ -1865,7 +1870,7 @@ static int primary(value *lval)
       } /* if */
     } else {
       if (!sc_allowproccall)
-        return error(17,st);    /* undefined symbol */
+        return error_suggest(17,st,NULL,estSYMBOL,essVARCONST); /* undefined symbol */
       /* an unknown symbol, but used in a way compatible with the "procedure
        * call" syntax. So assume that the symbol refers to a function.
        */
@@ -1981,8 +1986,8 @@ static int nesting=0;
   value lval = {0};
   arginfo *arg;
   char arglist[sMAXARGS];
-  constvalue arrayszlst = { NULL, "", 0, 0};/* array size list starts empty */
-  constvalue taglst = { NULL, "", 0, 0};    /* tag list starts empty */
+  constvalue_root arrayszlst = { NULL, NULL};/* array size list starts empty */
+  constvalue_root taglst = { NULL, NULL};    /* tag list starts empty */
   symbol *symret;
   cell lexval;
   char *lexstr;
@@ -2078,8 +2083,10 @@ static int nesting=0;
        * of the function; check it again for functions with a variable
        * argument list
        */
-      if (argpos>=sMAXARGS)
+      if (argpos>=sMAXARGS) {
         error(45);                /* too many function arguments */
+        break;
+      } /* if */
       stgmark((char)(sEXPRSTART+argpos));/* mark beginning of new expression in stage */
       if (arglist[argpos]!=ARG_UNHANDLED)
         error(58);                /* argument already set */
@@ -2209,19 +2216,23 @@ static int nesting=0;
           if (lval.sym==NULL || lval.ident==iARRAYCELL) {
             if (arg[argidx].numdim!=1) {
               error(48);        /* array dimensions must match */
-            } else if (arg[argidx].dim[0]!=0) {
-              assert(arg[argidx].dim[0]>0);
-              if (lval.ident==iARRAYCELL) {
-                error(47);        /* array sizes must match */
-              } else {
-                assert(lval.constval!=0); /* literal array must have a size */
-                /* A literal array must have exactly the same size as the
-                 * function argument; a literal string may be smaller than
-                 * the function argument.
-                 */
-                if ((lval.constval>0 && arg[argidx].dim[0]!=lval.constval)
-                    || (lval.constval<0 && arg[argidx].dim[0] < -lval.constval))
-                  error(47);      /* array sizes must match */
+            } else {
+              if (lval.sym==NULL && (arg[argidx].usage & uCONST)==0 && (sym->usage & uNATIVE)==0)
+                    error(239);
+              if (arg[argidx].dim[0]!=0) {
+                assert(arg[argidx].dim[0]>0);
+                if (lval.ident==iARRAYCELL) {
+                  error(7);        /* array sizes must match */
+                } else {
+                  assert(lval.constval!=0); /* literal array must have a size */
+                  /* A literal array must have exactly the same size as the
+                   * function argument; a literal string may be smaller than
+                   * the function argument.
+                   */
+                  if ((lval.constval>0 && arg[argidx].dim[0]!=lval.constval)
+                    || (lval.constval<0 && arg[argidx].dim[0]<-lval.constval))
+                    error(47);      /* array sizes must match */
+                } /* if */
               } /* if */
             } /* if */
             if (lval.ident!=iARRAYCELL || lval.constval > 0) {
@@ -2245,8 +2256,8 @@ static int nesting=0;
               assert(level<sDIMEN_MAX);
               if (arg[argidx].dim[level]!=0 && sym->dim.array.length!=arg[argidx].dim[level])
                 error(47);        /* array sizes must match */
-              else if (!matchtag(arg[argidx].idxtag[level],sym->x.tags.index,TRUE))
-                error(229,sym->name);   /* index tag mismatch */
+              else
+                check_index_tagmismatch(sym->name,arg[argidx].idxtag[level],sym->x.tags.index,TRUE,0);
               append_constval(&arrayszlst,arg[argidx].name,sym->dim.array.length,level);
               sym=finddepend(sym);
               assert(sym!=NULL);
@@ -2257,15 +2268,16 @@ static int nesting=0;
             assert(sym!=NULL);
             if (arg[argidx].dim[level]!=0 && sym->dim.array.length!=arg[argidx].dim[level])
               error(47);          /* array sizes must match */
-            else if (!matchtag(arg[argidx].idxtag[level],sym->x.tags.index,TRUE))
-              error(229,sym->name);   /* index tag mismatch */
+            else
+              check_index_tagmismatch(sym->name,arg[argidx].idxtag[level],sym->x.tags.index,TRUE,0);
             append_constval(&arrayszlst,arg[argidx].name,sym->dim.array.length,level);
           } /* if */
           /* address already in PRI */
           check_tagmismatch_multiple(arg[argidx].tags,arg[argidx].numtags,lval.tag,-1);
           if (lval.tag!=0)
             append_constval(&taglst,arg[argidx].name,lval.tag,0);
-          // ??? set uWRITTEN?
+          if (lval.sym!=NULL && (arg[argidx].usage & uCONST)==0)
+            markusage(lval.sym,uWRITTEN);
           argidx++;               /* argument done */
           break;
         } /* switch */
@@ -2335,6 +2347,8 @@ static int nesting=0;
         check_userop(NULL,arg[argidx].defvalue_tag,arg[argidx].tags[0],2,NULL,&dummytag);
         assert(dummytag==arg[argidx].tags[0]);
       } /* if */
+      if (arg[argidx].defvalue_tag!=0)
+        append_constval(&taglst,arg[argidx].name,arg[argidx].defvalue_tag,0);
       pushreg(sPRI);            /* store the function argument on the stack */
       markexpr(sPARM,NULL,0);   /* mark the end of a sub-expression */
       nest_stkusage++;

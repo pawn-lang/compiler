@@ -1860,7 +1860,7 @@ int AMXAPI amx_PushString(AMX *amx, cell *amx_addr, cell **phys_addr, const char
      * supports this too.
      */
 
-#define NEXT(cip)       goto **cip++
+#define NEXT(cip)       goto **(void **)cip++
 
 int AMXAPI amx_Exec(AMX *amx, cell *retval, int index)
 {
@@ -2047,14 +2047,14 @@ static const void * const amx_opcodelist[] = {
     NEXT(cip);
   op_load_i:
     /* verify address */
-    if (pri>=hea && pri<stk || (ucell)pri>=(ucell)amx->stp)
+    if ((pri>=hea && pri<stk) || (ucell)pri>=(ucell)amx->stp)
       ABORT(amx,AMX_ERR_MEMACCESS);
     pri=_R(data,pri);
     NEXT(cip);
   op_lodb_i:
     GETPARAM(offs);
     /* verify address */
-    if (pri>=hea && pri<stk || (ucell)pri>=(ucell)amx->stp)
+    if ((pri>=hea && pri<stk) || (ucell)pri>=(ucell)amx->stp)
       ABORT(amx,AMX_ERR_MEMACCESS);
     switch (offs) {
     case 1:
@@ -2120,14 +2120,14 @@ static const void * const amx_opcodelist[] = {
     NEXT(cip);
   op_stor_i:
     /* verify address */
-    if (alt>=hea && alt<stk || (ucell)alt>=(ucell)amx->stp)
+    if ((alt>=hea && alt<stk) || (ucell)alt>=(ucell)amx->stp)
       ABORT(amx,AMX_ERR_MEMACCESS);
     _W(data,alt,pri);
     NEXT(cip);
   op_strb_i:
     GETPARAM(offs);
     /* verify address */
-    if (alt>=hea && alt<stk || (ucell)alt>=(ucell)amx->stp)
+    if ((alt>=hea && alt<stk) || (ucell)alt>=(ucell)amx->stp)
       ABORT(amx,AMX_ERR_MEMACCESS);
     switch (offs) {
     case 1:
@@ -2144,7 +2144,7 @@ static const void * const amx_opcodelist[] = {
   op_lidx:
     offs=pri*sizeof(cell)+alt;  /* implicit shift value for a cell */
     /* verify address */
-    if (offs>=hea && offs<stk || (ucell)offs>=(ucell)amx->stp)
+    if ((offs>=hea && offs<stk) || (ucell)offs>=(ucell)amx->stp)
       ABORT(amx,AMX_ERR_MEMACCESS);
     pri=_R(data,offs);
     NEXT(cip);
@@ -2152,7 +2152,7 @@ static const void * const amx_opcodelist[] = {
     GETPARAM(offs);
     offs=(pri << (int)offs)+alt;
     /* verify address */
-    if (offs>=hea && offs<stk || (ucell)offs>=(ucell)amx->stp)
+    if ((offs>=hea && offs<stk) || (ucell)offs>=(ucell)amx->stp)
       ABORT(amx,AMX_ERR_MEMACCESS);
     pri=_R(data,offs);
     NEXT(cip);
@@ -2641,13 +2641,13 @@ static const void * const amx_opcodelist[] = {
     /* verify top & bottom memory addresses, for both source and destination
      * addresses
      */
-    if (pri>=hea && pri<stk || (ucell)pri>=(ucell)amx->stp)
+    if ((pri>=hea && pri<stk) || (ucell)pri>=(ucell)amx->stp)
       ABORT(amx,AMX_ERR_MEMACCESS);
-    if ((pri+offs)>hea && (pri+offs)<stk || (ucell)(pri+offs)>(ucell)amx->stp)
+    if (((pri+offs)>hea && (pri+offs)<stk) || (ucell)(pri+offs)>(ucell)amx->stp)
       ABORT(amx,AMX_ERR_MEMACCESS);
-    if (alt>=hea && alt<stk || (ucell)alt>=(ucell)amx->stp)
+    if ((alt>=hea && alt<stk) || (ucell)alt>=(ucell)amx->stp)
       ABORT(amx,AMX_ERR_MEMACCESS);
-    if ((alt+offs)>hea && (alt+offs)<stk || (ucell)(alt+offs)>(ucell)amx->stp)
+    if (((alt+offs)>hea && (alt+offs)<stk) || (ucell)(alt+offs)>(ucell)amx->stp)
       ABORT(amx,AMX_ERR_MEMACCESS);
     #if defined _R_DEFAULT
       memcpy(data+(int)alt, data+(int)pri, (int)offs);
@@ -2667,13 +2667,13 @@ static const void * const amx_opcodelist[] = {
     /* verify top & bottom memory addresses, for both source and destination
      * addresses
      */
-    if (pri>=hea && pri<stk || (ucell)pri>=(ucell)amx->stp)
+    if ((pri>=hea && pri<stk) || (ucell)pri>=(ucell)amx->stp)
       ABORT(amx,AMX_ERR_MEMACCESS);
-    if ((pri+offs)>hea && (pri+offs)<stk || (ucell)(pri+offs)>(ucell)amx->stp)
+    if (((pri+offs)>hea && (pri+offs)<stk) || (ucell)(pri+offs)>(ucell)amx->stp)
       ABORT(amx,AMX_ERR_MEMACCESS);
-    if (alt>=hea && alt<stk || (ucell)alt>=(ucell)amx->stp)
+    if ((alt>=hea && alt<stk) || (ucell)alt>=(ucell)amx->stp)
       ABORT(amx,AMX_ERR_MEMACCESS);
-    if ((alt+offs)>hea && (alt+offs)<stk || (ucell)(alt+offs)>(ucell)amx->stp)
+    if (((alt+offs)>hea && (alt+offs)<stk) || (ucell)(alt+offs)>(ucell)amx->stp)
       ABORT(amx,AMX_ERR_MEMACCESS);
     #if defined _R_DEFAULT
       pri=memcmp(data+(int)alt, data+(int)pri, (int)offs);
@@ -2688,9 +2688,9 @@ static const void * const amx_opcodelist[] = {
   op_fill:
     GETPARAM(offs);
     /* verify top & bottom memory addresses */
-    if (alt>=hea && alt<stk || (ucell)alt>=(ucell)amx->stp)
+    if ((alt>=hea && alt<stk) || (ucell)alt>=(ucell)amx->stp)
       ABORT(amx,AMX_ERR_MEMACCESS);
-    if ((alt+offs)>hea && (alt+offs)<stk || (ucell)(alt+offs)>(ucell)amx->stp)
+    if (((alt+offs)>hea && (alt+offs)<stk) || (ucell)(alt+offs)>(ucell)amx->stp)
       ABORT(amx,AMX_ERR_MEMACCESS);
     for (i=(int)alt; offs>=(int)sizeof(cell); i+=sizeof(cell), offs-=sizeof(cell))
       _W32(data,i,pri);
@@ -4242,7 +4242,7 @@ int AMXAPI amx_GetAddr(AMX *amx,cell amx_addr,cell **phys_addr)
   data=(amx->data!=NULL) ? amx->data : amx->base+(int)hdr->dat;
 
   assert(phys_addr!=NULL);
-  if (amx_addr>=amx->hea && amx_addr<amx->stk || amx_addr<0 || amx_addr>=amx->stp) {
+  if ((amx_addr>=amx->hea && amx_addr<amx->stk) || amx_addr<0 || amx_addr>=amx->stp) {
     *phys_addr=NULL;
     return AMX_ERR_MEMACCESS;
   } /* if */
@@ -4491,19 +4491,19 @@ static const long utf8_lowmark[5] = { 0x80, 0x800, 0x10000L, 0x200000L, 0x400000
     switch (followup) {
     case 4:
       if (((c=*string++) & 0xc0) != 0x80) goto error;
-      result = (result << 6) | c & 0x3f;
+      result = (result << 6) | (c & 0x3f);
     case 3:
       if (((c=*string++) & 0xc0) != 0x80) goto error;
-      result = (result << 6) | c & 0x3f;
+      result = (result << 6) | (c & 0x3f);
     case 2:
       if (((c=*string++) & 0xc0) != 0x80) goto error;
-      result = (result << 6) | c & 0x3f;
+      result = (result << 6) | (c & 0x3f);
     case 1:
       if (((c=*string++) & 0xc0) != 0x80) goto error;
-      result = (result << 6) | c & 0x3f;
+      result = (result << 6) | (c & 0x3f);
     case 0:
       if (((c=*string++) & 0xc0) != 0x80) goto error;
-      result = (result << 6) | c & 0x3f;
+      result = (result << 6) | (c & 0x3f);
     } /* switch */
     /* Do additional checks: shortest encoding & reserved positions. The
      * lowmark limits also depends on the code length; it can be read from
@@ -4511,7 +4511,7 @@ static const long utf8_lowmark[5] = { 0x80, 0x800, 0x10000L, 0x200000L, 0x400000
      */
     if (result<utf8_lowmark[followup])
       goto error;
-    if (result>=0xd800 && result<=0xdfff || result==0xfffe || result==0xffff)
+    if ((result>=0xd800 && result<=0xdfff) || result==0xfffe || result==0xffff)
       goto error;
   } /* if */
 
@@ -4546,40 +4546,40 @@ int AMXAPI amx_UTF8Put(char *string, char **endptr, int maxchars, cell value)
   } else if (value<0x800) {
     /* 110xxxxx 10xxxxxx */
     if (maxchars < 2) goto error;
-    *string++ = (char)((value>>6) & 0x1f | 0xc0);
-    *string++ = (char)(value & 0x3f | 0x80);
+    *string++ = (char)(((value>>6) & 0x1f) | 0xc0);
+    *string++ = (char)((value & 0x3f) | 0x80);
   } else if (value<0x10000) {
     /* 1110xxxx 10xxxxxx 10xxxxxx (16 bits, BMP plane) */
     if (maxchars < 3) goto error;
-    if (value>=0xd800 && value<=0xdfff || value==0xfffe || value==0xffff)
+    if ((value>=0xd800 && value<=0xdfff) || value==0xfffe || value==0xffff)
       goto error;       /* surrogate pairs and invalid characters */
-    *string++ = (char)((value>>12) & 0x0f | 0xe0);
-    *string++ = (char)((value>>6) & 0x3f | 0x80);
-    *string++ = (char)(value & 0x3f | 0x80);
+    *string++ = (char)(((value>>12) & 0x0f) | 0xe0);
+    *string++ = (char)(((value>>6) & 0x3f) | 0x80);
+    *string++ = (char)((value & 0x3f) | 0x80);
   } else if (value<0x200000) {
     /* 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx */
     if (maxchars < 4) goto error;
-    *string++ = (char)((value>>18) & 0x07 | 0xf0);
-    *string++ = (char)((value>>12) & 0x3f | 0x80);
-    *string++ = (char)((value>>6) & 0x3f | 0x80);
-    *string++ = (char)(value & 0x3f | 0x80);
+    *string++ = (char)(((value>>18) & 0x07) | 0xf0);
+    *string++ = (char)(((value>>12) & 0x3f) | 0x80);
+    *string++ = (char)(((value>>6) & 0x3f) | 0x80);
+    *string++ = (char)((value & 0x3f) | 0x80);
   } else if (value<0x4000000) {
     /* 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
     if (maxchars < 5) goto error;
-    *string++ = (char)((value>>24) & 0x03 | 0xf8);
-    *string++ = (char)((value>>18) & 0x3f | 0x80);
-    *string++ = (char)((value>>12) & 0x3f | 0x80);
-    *string++ = (char)((value>>6) & 0x3f | 0x80);
-    *string++ = (char)(value & 0x3f | 0x80);
+    *string++ = (char)(((value>>24) & 0x03) | 0xf8);
+    *string++ = (char)(((value>>18) & 0x3f) | 0x80);
+    *string++ = (char)(((value>>12) & 0x3f) | 0x80);
+    *string++ = (char)(((value>>6) & 0x3f) | 0x80);
+    *string++ = (char)((value & 0x3f) | 0x80);
   } else {
     /* 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx (31 bits) */
     if (maxchars < 6) goto error;
-    *string++ = (char)((value>>30) & 0x01 | 0xfc);
-    *string++ = (char)((value>>24) & 0x3f | 0x80);
-    *string++ = (char)((value>>18) & 0x3f | 0x80);
-    *string++ = (char)((value>>12) & 0x3f | 0x80);
-    *string++ = (char)((value>>6) & 0x3f | 0x80);
-    *string++ = (char)(value & 0x3f | 0x80);
+    *string++ = (char)(((value>>30) & 0x01) | 0xfc);
+    *string++ = (char)(((value>>24) & 0x3f) | 0x80);
+    *string++ = (char)(((value>>18) & 0x3f) | 0x80);
+    *string++ = (char)(((value>>12) & 0x3f) | 0x80);
+    *string++ = (char)(((value>>6) & 0x3f) | 0x80);
+    *string++ = (char)((value & 0x3f) | 0x80);
   } /* if */
 
   if (endptr!=NULL)

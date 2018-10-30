@@ -4,6 +4,7 @@
  *
  *  This file may be freely used. No warranties of any kind.
  */
+
 #include <stdio.h>
 #include <stdlib.h>     /* for exit() */
 #include <signal.h>

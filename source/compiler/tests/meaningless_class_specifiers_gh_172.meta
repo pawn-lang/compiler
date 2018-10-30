@@ -1,0 +1,7 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+meaningless_class_specifiers_gh_172.pwn(1) : warning 238: meaningless combination of class specifiers (const reference)
+meaningless_class_specifiers_gh_172.pwn(4) : warning 238: meaningless combination of class specifiers (const variable arguments)
+"""
+}
