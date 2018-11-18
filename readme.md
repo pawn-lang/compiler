@@ -21,7 +21,7 @@ This project exists to:
 - Fix known bugs with the original compiler
 - Provide a better development experience for the SA:MP community
 
-If you find problem, you can [open an issue][issues] and contributors can work
+If you find a problem, you can [open an issue][issues] and contributors can work
 on a fix. This isn't true with the original compiler that comes with the SA:MP
 server distribution.
 
