@@ -546,7 +546,7 @@ int pc_compile(int argc, char *argv[])
       while (pc_readsrc(fsrc,tstring,sizeof tstring)!=NULL) {
         pc_writesrc(ftmp,tstring);
       } /* while */
-      pc_writesrc(ftmp,"\n");
+      pc_writesrc(ftmp,(unsigned char*)"\n");
       pc_closesrc(fsrc);
     } /* for */
     pc_closesrc(ftmp);
