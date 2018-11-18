@@ -473,6 +473,7 @@ int pc_compile(int argc, char *argv[])
     int hdrsize=0;
   #endif
   char *ptr;
+  char *tname=NULL;
 
   /* set global variables to their initial value */
   binf=NULL;
@@ -528,7 +529,7 @@ int pc_compile(int argc, char *argv[])
   assert(get_sourcefile(0)!=NULL);  /* there must be at least one source file */
   if (get_sourcefile(1)!=NULL) {
     /* there are at least two or more source files */
-    char *tname,*sname;
+    char *sname;
     FILE *ftmp,*fsrc;
     int fidx;
     ftmp=pc_createtmpsrc(&tname);
@@ -542,15 +543,14 @@ int pc_compile(int argc, char *argv[])
       pc_writesrc(ftmp,(unsigned char*)"#file \"");
       pc_writesrc(ftmp,(unsigned char*)sname);
       pc_writesrc(ftmp,(unsigned char*)"\"\n");
-      while (!pc_eofsrc(fsrc)) {
-        pc_readsrc(fsrc,tstring,sizeof tstring);
+      while (pc_readsrc(fsrc,tstring,sizeof tstring)!=NULL) {
         pc_writesrc(ftmp,tstring);
       } /* while */
+      pc_writesrc(ftmp,"\n");
       pc_closesrc(fsrc);
     } /* for */
     pc_closesrc(ftmp);
     strcpy(inpfname,tname);
-    free(tname);
   } else {
     strcpy(inpfname,get_sourcefile(0));
   } /* if */
@@ -764,11 +764,12 @@ cleanup:
     } /* if */
   #endif
 
-  if (inpfname!=NULL) {
-    if (get_sourcefile(1)!=NULL)
-      remove(inpfname);         /* the "input file" was in fact a temporary file */
-    free(inpfname);
+  if (get_sourcefile(1)!=NULL && tname!=NULL) {
+    remove(tname);         /* the "input file" was in fact a temporary file */
+    free(tname);
   } /* if */
+  if (inpfname!=NULL)
+    free(inpfname);
   if (litq!=NULL)
     free(litq);
   stgbuffer_cleanup();
