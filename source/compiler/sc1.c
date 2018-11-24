@@ -6288,23 +6288,27 @@ static void SC_FASTCALL emit_param_local(emit_outval *p)
     } else {
       sym=findglb(str,sSTATEVAR);
       if (sym==NULL) {
-      undefined_sym:
         error(17,str);  /* undefined symbol */
         return;
       } /* if */
       markusage(sym,uREAD | uWRITTEN);
-      if (sym->ident!=iCONSTEXPR)
-        goto undefined_sym;
+      if (sym->ident!=iCONSTEXPR) {
+        if (sym->ident==iFUNCTN || sym->ident==iREFFUNC)
+          tok=((sym->usage & uNATIVE)!=0) ? teNATIVE : teFUNCTN;
+        else
+          tok=teDATA;
+        goto invalid_token;
+      } /* if */
     } /* if */
     val=sym->addr;
     break;
   default:
   invalid_token:
-    emit_invalid_token(tSYMBOL,tok);
+    emit_invalid_token(teLOCAL,tok);
     return;
   } /* switch */
   if ((val % sizeof(cell))==0)
-    p->value.ucell = (ucell)val;
+    p->value.ucell=(ucell)val;
   else
     error(11);  /* must be a multiple of cell size */
 }
