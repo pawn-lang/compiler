@@ -6330,13 +6330,29 @@ static void SC_FASTCALL emit_param_label(emit_outval *p)
       goto invalid_token;
     /* fallthrough */
   case tSYMBOL:
-    sym=fetchlab(str);
+    sym=findloc(str);
+    if (sym==NULL)
+      sym=findglb(str,sSTATEVAR);
+    if (sym!=NULL) {
+      markusage(sym,(sym->ident==iFUNCTN || sym->ident==iREFFUNC) ? uREAD : (uREAD | uWRITTEN));
+      if (sym->ident!=iLABEL) {
+        if (sym->ident==iFUNCTN || sym->ident==iREFFUNC)
+          tok=((sym->usage & uNATIVE)!=0) ? teNATIVE : teFUNCTN;
+        else if (sym->ident==iCONSTEXPR)
+          tok=teNUMERIC;
+        else
+          tok=(sym->vclass==sLOCAL) ? teLOCAL : teDATA;
+        goto invalid_token;
+      } /* if */
+    } else {
+      sym=fetchlab(str);
+    } /* if */
     sym->usage|=uREAD;
     p->value.ucell=(ucell)sym->addr;
     break;
   default:
   invalid_token:
-    emit_invalid_token(tSYMBOL,tok);
+    emit_invalid_token(tLABEL,tok);
   }
 }
 
