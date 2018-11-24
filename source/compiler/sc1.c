@@ -6238,7 +6238,7 @@ static void SC_FASTCALL emit_param_data(emit_outval *p)
         error(17,str);  /* undefined symbol */
         return;
       } /* if */
-      markusage(sym,uREAD | uWRITTEN);
+      markusage(sym,(sym->ident==iFUNCTN || sym->ident==iREFFUNC) ? uREAD : (uREAD | uWRITTEN));
       if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
         tok=((sym->usage & uNATIVE)!=0) ? teNATIVE : teFUNCTN;
         goto invalid_token;
@@ -6291,7 +6291,7 @@ static void SC_FASTCALL emit_param_local(emit_outval *p)
         error(17,str);  /* undefined symbol */
         return;
       } /* if */
-      markusage(sym,uREAD | uWRITTEN);
+      markusage(sym,(sym->ident==iFUNCTN || sym->ident==iREFFUNC) ? uREAD : (uREAD | uWRITTEN));
       if (sym->ident!=iCONSTEXPR) {
         if (sym->ident==iFUNCTN || sym->ident==iREFFUNC)
           tok=((sym->usage & uNATIVE)!=0) ? teNATIVE : teFUNCTN;
