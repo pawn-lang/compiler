@@ -6220,8 +6220,6 @@ static void SC_FASTCALL emit_param_data(emit_outval *p)
   p->type=eotNUMBER;
   tok=lex(&val,&str);
   switch (tok) {
-  case tNUMBER:
-    break;
   case tSYMBOL:
     sym=findloc(str);
     if (sym!=NULL) {
@@ -6230,8 +6228,8 @@ static void SC_FASTCALL emit_param_data(emit_outval *p)
         tok=tLABEL;
         goto invalid_token;
       } /* if */
-      if (sym->vclass!=sSTATIC && sym->ident!=iCONSTEXPR) {
-        tok=teLOCAL;
+      if (sym->vclass!=sSTATIC) {
+        tok=(sym->ident==iCONSTEXPR) ? teNUMERIC : teLOCAL;
         goto invalid_token;
       } /* if */
     } else {
@@ -6243,6 +6241,10 @@ static void SC_FASTCALL emit_param_data(emit_outval *p)
       markusage(sym,uREAD | uWRITTEN);
       if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
         tok=((sym->usage & uNATIVE)!=0) ? teNATIVE : teFUNCTN;
+        goto invalid_token;
+      } /* if */
+      if (sym->ident==iCONSTEXPR) {
+        tok=teNUMERIC;
         goto invalid_token;
       } /* if */
     } /* if */
