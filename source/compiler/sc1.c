@@ -6221,7 +6221,6 @@ static void SC_FASTCALL emit_param_data(emit_outval *p)
   tok=lex(&val,&str);
   switch (tok) {
   case tNUMBER:
-    p->value.ucell=(ucell)val;
     break;
   case tSYMBOL:
     sym=findloc(str);
@@ -6239,7 +6238,7 @@ static void SC_FASTCALL emit_param_data(emit_outval *p)
       sym=findglb(str,sSTATIC);
       if (sym==NULL) {
         error(17,str);  /* undefined symbol */
-        break;
+        return;
       } /* if */
       markusage(sym,uREAD | uWRITTEN);
       if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
@@ -6247,12 +6246,17 @@ static void SC_FASTCALL emit_param_data(emit_outval *p)
         goto invalid_token;
       } /* if */
     } /* if */
-    p->value.ucell=(ucell)sym->addr;
+    val=sym->addr;
     break;
   default:
   invalid_token:
     emit_invalid_token(teDATA,tok);
+    return;
   } /* switch */
+  if ((val % sizeof(cell))==0)
+    p->value.ucell=(ucell)val;
+  else
+    error(11);  /* must be a multiple of cell size */
 }
 
 static void SC_FASTCALL emit_param_local(emit_outval *p)
@@ -6266,7 +6270,6 @@ static void SC_FASTCALL emit_param_local(emit_outval *p)
   tok=lex(&val,&str);
   switch (tok) {
   case tNUMBER:
-    p->value.ucell=(ucell)val;
     break;
   case tSYMBOL:
     sym=findloc(str);
@@ -6285,18 +6288,23 @@ static void SC_FASTCALL emit_param_local(emit_outval *p)
       if (sym==NULL) {
       undefined_sym:
         error(17,str);  /* undefined symbol */
-        break;
+        return;
       } /* if */
       markusage(sym,uREAD | uWRITTEN);
       if (sym->ident!=iCONSTEXPR)
         goto undefined_sym;
     } /* if */
-    p->value.ucell=(ucell)sym->addr;
+    val=sym->addr;
     break;
   default:
   invalid_token:
     emit_invalid_token(tSYMBOL,tok);
+    return;
   } /* switch */
+  if ((val % sizeof(cell))==0)
+    p->value.ucell = (ucell)val;
+  else
+    error(11);  /* must be a multiple of cell size */
 }
 
 static void SC_FASTCALL emit_param_label(emit_outval *p)
