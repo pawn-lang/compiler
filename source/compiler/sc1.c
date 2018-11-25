@@ -6512,24 +6512,6 @@ static void SC_FASTCALL emit_do_align(char *name)
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
-static void SC_FASTCALL emit_do_lctrl(char *name)
-{
-  static const cell valid_values[] = { 0,9 };
-  emit_outval p[1];
-
-  emit_param_index(&p[0],TRUE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
-  outinstr(name,p,(sizeof p / sizeof p[0]));
-}
-
-static void SC_FASTCALL emit_do_sctrl(char *name)
-{
-  static const cell valid_values[] = { 2,4,5,6,8,9 };
-  emit_outval p[1];
-
-  emit_param_index(&p[0],FALSE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
-  outinstr(name,p,(sizeof p / sizeof p[0]));
-}
-
 static void SC_FASTCALL emit_do_call(char *name)
 {
   emit_outval p[1];
@@ -6791,7 +6773,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { 51, "jump",       emit_parm1_label },
   {128, "jump.pri",   emit_parm0 },
   { 53, "jzer",       emit_parm1_label },
-  { 31, "lctrl",      emit_do_lctrl },
+  { 31, "lctrl",      emit_parm1_integer },
   { 98, "leq",        emit_parm0 },
   { 97, "less",       emit_parm0 },
   { 25, "lidx",       emit_parm0 },
@@ -6844,7 +6826,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   {152, "push5.s",    emit_do_pushn_s_adr },
   { 47, "ret",        emit_parm0 },
   { 48, "retn",       emit_parm0 },
-  { 32, "sctrl",      emit_do_sctrl },
+  { 32, "sctrl",      emit_parm1_integer },
   { 73, "sdiv",       emit_parm0 },
   { 74, "sdiv.alt",   emit_parm0 },
   {104, "sgeq",       emit_parm0 },
