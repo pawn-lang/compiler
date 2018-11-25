@@ -6441,10 +6441,11 @@ static void SC_FASTCALL emit_parm1_nonneg(char *name)
 
 static void SC_FASTCALL emit_parm1_shift(char *name)
 {
-  static const cell valid_values[] = { 0,sizeof(cell)*8-1 };
   emit_outval p[1];
 
-  emit_param_index(&p[0],TRUE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
+  if (emit_param_any_internal(&p[0],tNUMBER,FALSE,TRUE))
+    if (p->value.ucell>=(sizeof(cell)*8))
+      error(50);    /* invalid range */
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
