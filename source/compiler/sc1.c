@@ -6368,18 +6368,26 @@ static void SC_FASTCALL emit_param_function(emit_outval *p,int isnative)
   switch (tok)
   {
   case tSYMBOL:
-    sym=findglb(str,sSTATEVAR);
+    sym=findloc(str);
+    if (sym==NULL)
+      sym=findglb(str,sSTATEVAR);
     if (sym==NULL) {
       error(17,str);    /* undefined symbol */
       return;
     } /* if */
-    markusage(sym,uREAD);
     if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
+      markusage(sym,uREAD);
       if (!!(sym->usage & uNATIVE)==isnative)
         break;
       tok=(isnative!=FALSE) ? teFUNCTN : teNATIVE;
     } else {
-      tok=(sym->ident==iCONSTEXPR) ? teNUMERIC : teDATA;
+      markusage(sym,uREAD | uWRITTEN);
+      if (sym->ident==iLABEL)
+        tok=tLABEL;
+      else if (sym->ident==iCONSTEXPR)
+        tok=teNUMERIC;
+      else
+        tok=(sym->vclass==sLOCAL) ? teLOCAL : teDATA;
     } /* if */
     /* fallthrough */
   default:
