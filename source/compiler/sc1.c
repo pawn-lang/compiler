@@ -6088,6 +6088,7 @@ fetchtok:
       p->type=eotLABEL;
       p->value.ucell=(ucell)sym->addr;
     } else if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
+      const int ntvref=sym->usage & uREAD;
       markusage(sym,uREAD);
       if (negate)
         goto invalid_token_neg;
@@ -6095,7 +6096,7 @@ fetchtok:
         tok=(sym->usage & uNATIVE) ? teNATIVE : teFUNCTN;
         goto invalid_token;
       } /* if */
-      if ((sym->usage & uNATIVE)!=0 && (sym->usage & uREAD)==0 && sym->addr>=0)
+      if ((sym->usage & uNATIVE)!=0 && ntvref==0 && sym->addr>=0)
         sym->addr=ntv_funcid++;
       p->type=eotFUNCTION;
       p->value.string=str;
@@ -6361,7 +6362,7 @@ static void SC_FASTCALL emit_param_function(emit_outval *p,int isnative)
   cell val;
   char *str;
   symbol *sym;
-  int tok;
+  int tok,ntvref;
 
   p->type=eotNUMBER;
   tok=lex(&val,&str);
@@ -6376,6 +6377,7 @@ static void SC_FASTCALL emit_param_function(emit_outval *p,int isnative)
       return;
     } /* if */
     if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
+      ntvref=sym->usage & uREAD;
       markusage(sym,uREAD);
       if (!!(sym->usage & uNATIVE)==isnative)
         break;
@@ -6396,7 +6398,7 @@ static void SC_FASTCALL emit_param_function(emit_outval *p,int isnative)
   } /* switch */
 
   if (isnative!=FALSE) {
-    if ((sym->usage & uREAD)==0 && sym->addr>=0)
+    if (ntvref==0 && sym->addr>=0)
       sym->addr=ntv_funcid++;
     p->value.ucell=(ucell)sym->addr;
   } else {
