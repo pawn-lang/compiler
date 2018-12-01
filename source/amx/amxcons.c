@@ -572,7 +572,8 @@ static int cons_putchar(void *dest,TCHAR ch)
 
 enum {
   SV_DECIMAL,
-  SV_HEX
+  SV_HEX,
+  SV_BIN
 };
 
 static TCHAR *reverse(TCHAR *string,int stop)
@@ -623,7 +624,7 @@ static TCHAR *amx_strval(TCHAR buffer[], long value, int format, int width)
         value /= 10;
       } while (value != 0);
     }
-	} else {
+  } else if (format == SV_HEX) {
 		/* hexadecimal */
 		unsigned long v = (unsigned long)value;	/* copy to unsigned value for shifting */
 		do {
@@ -633,7 +634,14 @@ static TCHAR *amx_strval(TCHAR buffer[], long value, int format, int width)
 			v >>= 4;
 			stop++;
 		} while (v != 0);
-	} /* if */
+	} else {
+    /* binary */
+    unsigned long v = (unsigned long)value;	/* copy to unsigned value for shifting */
+    do {
+      buffer[stop++] = (TCHAR)((v & 0x01) + __T('0'));
+      v >>= 1;
+    } while (v != 0);
+  } /* if */
 
 	/* pad to given width */
 	if (width < 0) {
@@ -763,7 +771,8 @@ static int dochar(AMX *amx,TCHAR ch,const cell* params,int paramidx,TCHAR sign,T
       f_putchar(user,filler);
     return ret;
 
-  case __T('d'): {
+  case __T('d'):
+  case __T('i'): {
     cell value;
     int length=1;
     cptr=amx_Address(amx, params[paramidx]);
@@ -873,6 +882,26 @@ static int dochar(AMX *amx,TCHAR ch,const cell* params,int paramidx,TCHAR sign,T
     f_putstr(user,buffer);
     while (width-->0)
       f_putchar(user,filler);
+    return ret;
+  } /* case */
+
+  case __T('b'): {
+    ucell value;
+    int length = 1;
+    cptr = amx_Address(amx, params[paramidx]);
+    value = *(ucell*)cptr;
+    while (value >= 0x1) {
+      length++;
+      value >>= 1;
+    } /* while */
+    width -= length;
+    if (sign != __T('-'))
+      while (width-->0)
+        f_putchar(user, filler);
+    amx_strval(buffer, (long)*cptr, SV_BIN, 0);
+    f_putstr(user, buffer);
+    while (width-->0)
+      f_putchar(user, filler);
     return ret;
   } /* case */
 
