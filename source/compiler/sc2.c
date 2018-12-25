@@ -1082,7 +1082,7 @@ static int command(void)
     } /* if */
     check_empty(lptr);
     break;
-  case tINCLUDE:                /* #include directive */
+  case tpINCLUDE:                /* #include directive */
   case tpTRYINCLUDE:
     ret=CMD_INCLUDE;
     if (!SKIPPING)

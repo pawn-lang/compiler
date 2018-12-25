@@ -396,7 +396,7 @@ enum {
   tpERROR,
   tpFILE,
   tpIF,/* #if */
-  tINCLUDE,
+  tpINCLUDE,
   tpLINE,
   tpPRAGMA,
   tpTRYINCLUDE,
