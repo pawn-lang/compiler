@@ -345,9 +345,8 @@ enum {
   tDEC,   /* -- */
   tELLIPS,  /* ... */
   tDBLDOT,  /* .. */
-  tDBLCOLON, /* :: */
 
-  tMIDDLE = tDBLCOLON, /* value of last multi-character operator */
+  tMIDDLE = tDBLDOT, /* value of last multi-character operator */
 
   /* reserved words (statements) */
   tASSERT,

@@ -2136,7 +2136,7 @@ SC_FUNC void lexinit(void)
 char *sc_tokens[] = {
          "*=", "/=", "%=", "+=", "-=", "<<=", ">>>=", ">>=", "&=", "^=", "|=",
          "||", "&&", "==", "!=", "<=", ">=", "<<", ">>>", ">>", "++", "--",
-         "...", "..", "::",
+         "...", "..",
          "assert", "*begin", "break", "case", "char", "const", "continue", "default",
          "defined", "do", "else", "emit", "__emit", "*end", "enum", "exit", "for",
          "forward", "goto", "if", "native", "new", "operator", "public", "return",
