@@ -238,7 +238,7 @@ typedef struct s_symbol {
  */
 #define uRETNONE    0x10
 
-#define flgDEPRECATED 0x01  /* symbol is deprecated (avoid use) */
+#define flagDEPRECATED 0x01  /* symbol is deprecated (avoid use) */
 #define flagNAKED     0x10  /* function is naked */
 #define flagPREDEF    0x20  /* symbol is pre-defined; successor of uPREDEF */
 
