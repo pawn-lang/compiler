@@ -920,9 +920,9 @@ SC_VDECL FILE *outf;          /* file written to */
 SC_VDECL jmp_buf errbuf;      /* target of longjmp() on a fatal error */
 
 /*  Possible entries for "emit_flags"
- *  Bits: 0     (epmBLOCK) multiline ('{}' block) syntax
- *        1     (epmEXPR) used within an expression
- *        2     (epmGLOBAL) used outside of a function
+ *  Bits: 0     (efBLOCK) multiline ('()' block) syntax
+ *        1     (efEXPR) used within an expression
+ *        2     (efGLOBAL) used outside of a function
  */
 #define efBLOCK         1
 #define efEXPR          2
