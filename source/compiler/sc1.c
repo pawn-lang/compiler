@@ -6102,7 +6102,10 @@ fetchtok:
     } else {
       markusage(sym,uREAD | uWRITTEN);
       if (!allow_nonint && sym->ident!=iCONSTEXPR) {
-        tok=(sym->vclass==sLOCAL) ? teLOCAL : teDATA;
+        if (sym->vclass==sLOCAL)
+          tok=(sym->ident==iREFERENCE) ? teREFERENCE : teLOCAL;
+        else
+          tok=teDATA;
         goto invalid_token;
       } /* if */
       p->value.ucell=(ucell)(negate ? -sym->addr : sym->addr);
@@ -6234,7 +6237,10 @@ static void SC_FASTCALL emit_param_data(emit_outval *p)
         goto invalid_token;
       } /* if */
       if (sym->vclass!=sSTATIC) {
-        tok=(sym->ident==iCONSTEXPR) ? teNUMERIC : teLOCAL;
+        if (sym->ident==iCONSTEXPR)
+          tok=teNUMERIC;
+        else
+          tok=(sym->ident==iREFERENCE) ? teREFERENCE : teLOCAL;
         goto invalid_token;
       } /* if */
     } else {
@@ -6266,7 +6272,7 @@ static void SC_FASTCALL emit_param_data(emit_outval *p)
     error(11);  /* must be a multiple of cell size */
 }
 
-static void SC_FASTCALL emit_param_local(emit_outval *p)
+static void SC_FASTCALL emit_param_local(emit_outval *p,int allow_ref)
 {
   cell val;
   char *str;
@@ -6288,6 +6294,10 @@ static void SC_FASTCALL emit_param_local(emit_outval *p)
       } /* if */
       if (sym->vclass==sSTATIC) {
         tok=teDATA;
+        goto invalid_token;
+      } /* if */
+      if (sym->ident==iREFERENCE && allow_ref==FALSE) {
+        tok=teREFERENCE;
         goto invalid_token;
       } /* if */
     } else {
@@ -6341,12 +6351,16 @@ static void SC_FASTCALL emit_param_label(emit_outval *p)
     if (sym!=NULL) {
       markusage(sym,(sym->ident==iFUNCTN || sym->ident==iREFFUNC) ? uREAD : (uREAD | uWRITTEN));
       if (sym->ident!=iLABEL) {
-        if (sym->ident==iFUNCTN || sym->ident==iREFFUNC)
+        if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
           tok=((sym->usage & uNATIVE)!=0) ? teNATIVE : teFUNCTN;
-        else if (sym->ident==iCONSTEXPR)
+        } else if (sym->ident==iCONSTEXPR) {
           tok=teNUMERIC;
-        else
-          tok=(sym->vclass==sLOCAL) ? teLOCAL : teDATA;
+        } else {
+          if (sym->vclass==sLOCAL)
+            tok=(sym->ident==iREFERENCE) ? teREFERENCE : teLOCAL;
+          else
+            tok=teDATA;
+        } /* if */
         goto invalid_token;
       } /* if */
     } else {
@@ -6388,12 +6402,16 @@ static void SC_FASTCALL emit_param_function(emit_outval *p,int isnative)
       tok=(isnative!=FALSE) ? teFUNCTN : teNATIVE;
     } else {
       markusage(sym,uREAD | uWRITTEN);
-      if (sym->ident==iLABEL)
+      if (sym->ident==iLABEL) {
         tok=tLABEL;
-      else if (sym->ident==iCONSTEXPR)
+      } else if (sym->ident==iCONSTEXPR) {
         tok=teNUMERIC;
-      else
-        tok=(sym->vclass==sLOCAL) ? teLOCAL : teDATA;
+      } else {
+        if (sym->vclass==sLOCAL)
+          tok=(sym->ident==iREFERENCE) ? teREFERENCE : teLOCAL;
+        else
+          tok=teDATA;
+      } /* if */
     } /* if */
     /* fallthrough */
   default:
@@ -6465,7 +6483,15 @@ static void SC_FASTCALL emit_parm1_local(char *name)
 {
   emit_outval p[1];
 
-  emit_param_local(&p[0]);
+  emit_param_local(&p[0],TRUE);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
+}
+
+static void SC_FASTCALL emit_parm1_local_noref(char *name)
+{
+  emit_outval p[1];
+
+  emit_param_local(&p[0],FALSE);
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
@@ -6594,7 +6620,7 @@ static void SC_FASTCALL emit_do_const_s(char *name)
 {
   emit_outval p[2];
 
-  emit_param_local(&p[0]);
+  emit_param_local(&p[0],FALSE);
   emit_param_any(&p[1]);
 
   /* if macro optimisations are enabled, output a 'const.s' instruction,
@@ -6638,8 +6664,8 @@ static void SC_FASTCALL emit_do_load_s_both(char *name)
 {
   emit_outval p[2];
 
-  emit_param_local(&p[0]);
-  emit_param_local(&p[1]);
+  emit_param_local(&p[0],TRUE);
+  emit_param_local(&p[1],TRUE);
 
   /* if macro optimisations are enabled, output a 'load.s.both' instruction,
    * otherwise generate the following sequence:
@@ -6707,7 +6733,7 @@ static void SC_FASTCALL emit_do_pushn_s_adr(char *name)
          && name[3]=='h' && '2'<=name[4] && name[4]<='5' && name[5]=='.');
   numargs=name[4]-'0';
   for (i=0; i<numargs; i++)
-    emit_param_local(&p[i]);
+    emit_param_local(&p[i],TRUE);
 
   /* if macro optimisations are enabled, output a 'push<N>.s/.adr' instruction,
    * otherwise generate a sequence of <N> 'push.s/.adr' instructions
@@ -6745,7 +6771,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { "dec.alt",    emit_parm0 },
   { "dec.i",      emit_parm0 },
   { "dec.pri",    emit_parm0 },
-  { "dec.s",      emit_parm1_local },
+  { "dec.s",      emit_parm1_local_noref },
   { "eq",         emit_parm0 },
   { "eq.c.alt",   emit_parm1_any },
   { "eq.c.pri",   emit_parm1_any },
@@ -6760,7 +6786,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { "inc.alt",    emit_parm0 },
   { "inc.i",      emit_parm0 },
   { "inc.pri",    emit_parm0 },
-  { "inc.s",      emit_parm1_local },
+  { "inc.s",      emit_parm1_local_noref },
   { "invert",     emit_parm0 },
   { "jeq",        emit_parm1_label },
   { "jgeq",       emit_parm1_label },
@@ -6856,8 +6882,8 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { "stor.alt",   emit_parm1_data },
   { "stor.i",     emit_parm0 },
   { "stor.pri",   emit_parm1_data },
-  { "stor.s.alt", emit_parm1_local },
-  { "stor.s.pri", emit_parm1_local },
+  { "stor.s.alt", emit_parm1_local_noref },
+  { "stor.s.pri", emit_parm1_local_noref },
   { "strb.i",     emit_do_lodb_strb },
   { "sub",        emit_parm0 },
   { "sub.alt",    emit_parm0 },
@@ -6875,7 +6901,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { "zero",       emit_parm1_data },
   { "zero.alt",   emit_parm0 },
   { "zero.pri",   emit_parm0 },
-  { "zero.s",     emit_parm1_local },
+  { "zero.s",     emit_parm1_local_noref },
 };
 
 static int emit_findopcode(const char *instr,int maxlen)

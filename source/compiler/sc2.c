@@ -2148,7 +2148,7 @@ char *sc_tokens[] = {
          ";", ";", "-integer value-", "-rational value-", "-identifier-",
          "-label-", "-string-",
          "-any value-", "-numeric value-", "-data offset-", "-local variable-",
-         "-function-", "-native function-", "-nonnegative integer-"
+         "-reference-", "-function-", "-native function-", "-nonnegative integer-"
        };
 
 SC_FUNC int lex(cell *lexvalue,char **lexsym)

@@ -415,13 +415,14 @@ enum {
   tLABEL,
   tSTRING,
   /* argument types for emit/__emit */
-  teANY , /* any value */
+  teANY, /* any value */
   teNUMERIC, /* integer/rational number */
-  teDATA  , /* data (variable name or address) */
+  teDATA, /* data (variable name or address) */
   teLOCAL, /* local variable (name or offset) */
+  teREFERENCE, /* function argument passed by reference */
   teFUNCTN, /* Pawn function */
   teNATIVE, /* native function */
-  teNONNEG , /* nonnegative integer */
+  teNONNEG, /* nonnegative integer */
   /* for assigment to "lastst" only (see SC1.C) */
   tEXPR,
   tENDLESS, /* endless loop */
