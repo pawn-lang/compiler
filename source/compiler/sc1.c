@@ -6103,7 +6103,7 @@ fetchtok:
       markusage(sym,uREAD | uWRITTEN);
       if (!allow_nonint && sym->ident!=iCONSTEXPR) {
         if (sym->vclass==sLOCAL)
-          tok=(sym->ident==iREFERENCE) ? teREFERENCE : teLOCAL;
+          tok=(sym->ident==iREFERENCE || sym->ident==iREFARRAY) ? teREFERENCE : teLOCAL;
         else
           tok=teDATA;
         goto invalid_token;
@@ -6240,7 +6240,7 @@ static void SC_FASTCALL emit_param_data(emit_outval *p)
         if (sym->ident==iCONSTEXPR)
           tok=teNUMERIC;
         else
-          tok=(sym->ident==iREFERENCE) ? teREFERENCE : teLOCAL;
+          tok=(sym->ident==iREFERENCE || sym->ident==iREFARRAY) ? teREFERENCE : teLOCAL;
         goto invalid_token;
       } /* if */
     } else {
@@ -6296,7 +6296,7 @@ static void SC_FASTCALL emit_param_local(emit_outval *p,int allow_ref)
         tok=teDATA;
         goto invalid_token;
       } /* if */
-      if (sym->ident==iREFERENCE && allow_ref==FALSE) {
+      if (allow_ref==FALSE && (sym->ident==iREFERENCE || sym->ident==iREFARRAY)) {
         tok=teREFERENCE;
         goto invalid_token;
       } /* if */
@@ -6357,7 +6357,7 @@ static void SC_FASTCALL emit_param_label(emit_outval *p)
           tok=teNUMERIC;
         } else {
           if (sym->vclass==sLOCAL)
-            tok=(sym->ident==iREFERENCE) ? teREFERENCE : teLOCAL;
+            tok=(sym->ident==iREFERENCE || sym->ident==iREFARRAY) ? teREFERENCE : teLOCAL;
           else
             tok=teDATA;
         } /* if */
@@ -6408,7 +6408,7 @@ static void SC_FASTCALL emit_param_function(emit_outval *p,int isnative)
         tok=teNUMERIC;
       } else {
         if (sym->vclass==sLOCAL)
-          tok=(sym->ident==iREFERENCE) ? teREFERENCE : teLOCAL;
+          tok=(sym->ident==iREFERENCE || sym->ident==iREFARRAY) ? teREFERENCE : teLOCAL;
         else
           tok=teDATA;
       } /* if */
