@@ -2133,7 +2133,7 @@ SC_FUNC void lexinit(void)
   _lexnewline=FALSE;
 }
 
-char *sc_tokens[] = {
+char *sc_tokens[tlexLAST-tFIRST+1] = {
          "*=", "/=", "%=", "+=", "-=", "<<=", ">>>=", ">>=", "&=", "^=", "|=",
          "||", "&&", "==", "!=", "<=", ">=", "<<", ">>>", ">>", "++", "--",
          "...", "..",
