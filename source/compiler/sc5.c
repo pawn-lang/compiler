@@ -509,7 +509,7 @@ static int find_closest_symbol_table(const char *name,const symbol *root,int sym
   for (sym=root->next; sym!=NULL; sym=sym->next) {
     if (sym->fnumber!=-1 && sym->fnumber!=fcurrent)
       continue;
-    if ((sym->usage & uDEFINE)==0)
+    if ((sym->usage & uDEFINE)==0 && (sym->ident!=iFUNCTN || (sym->usage & (uNATIVE | uPROTOTYPED))!=uPROTOTYPED))
       continue;
     switch (sym->ident)
     {
