@@ -508,13 +508,18 @@ enum {  /* identifier types */
   estAUTOMATON,
   estSTATE
 };
-enum {  /* symbol types */
-  essNONLABEL,  /* find symbols of any type but labels */
-  essVARCONST,  /* array, single variable or named constant */
-  essARRAY,
-  essCONST,
-  essFUNCTN,
-  essLABEL
+enum {  /* symbol type flags */
+  esfLABEL      = 1 << 0,
+  esfCONST      = 1 << 1, /* named constant */
+  esfVARIABLE   = 1 << 2, /* single variable */
+  esfARRAY      = 1 << 3, /* array */
+  esfFUNCTION   = 1 << 4, /* Pawn or native function */
+
+  /* find symbols of any type but labels */
+  esfNONLABEL   = esfCONST | esfVARIABLE | esfARRAY | esfFUNCTION,
+
+  /* find an array, a single variable, or a named constant */
+  esfVARCONST   = esfCONST | esfVARIABLE | esfARRAY
 };
 
 /* interface functions */

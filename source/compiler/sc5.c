@@ -502,7 +502,6 @@ static int find_closest_symbol_table(const char *name,const symbol *root,int sym
   int dist,max_dist,closest_dist=INT_MAX;
   char symname[2*sNAMEMAX+16];
   symbol *sym;
-  int ident;
   assert(closest_sym!=NULL);
   *closest_sym =NULL;
   assert(name!=NULL);
@@ -512,31 +511,39 @@ static int find_closest_symbol_table(const char *name,const symbol *root,int sym
       continue;
     if ((sym->usage & uDEFINE)==0)
       continue;
-    ident=sym->ident;
-    if (symboltype==essNONLABEL) {
-      if (ident==iLABEL)
+    switch (sym->ident)
+    {
+    case iLABEL:
+      if ((symboltype & esfLABEL)==0)
         continue;
-    } else if (symboltype==essVARCONST) {
-      if (ident!=iCONSTEXPR && ident!=iVARIABLE && ident!=iREFERENCE && ident!=iARRAY && ident!=iREFARRAY)
+      break;
+    case iCONSTEXPR:
+      if ((symboltype & esfCONST)==0)
         continue;
-    } else if (symboltype==essARRAY) {
-      if (ident!=iARRAY && ident!=iREFARRAY)
+      break;
+    case iVARIABLE:
+    case iREFERENCE:
+      if ((symboltype & esfVARIABLE)==0)
         continue;
-    } else if (symboltype==essCONST) {
-      if (ident!=iCONSTEXPR)
+      break;
+    case iARRAY:
+    case iREFARRAY:
+      if ((symboltype & esfARRAY)==0)
         continue;
-    } else if (symboltype==essFUNCTN) {
-      if (ident!=iFUNCTN && ident!=iREFFUNC)
+      break;
+    case iFUNCTN:
+    case iREFFUNC:
+      if ((symboltype & esfFUNCTION)==0)
         continue;
-    } else if (symboltype==essLABEL) {
-      if (ident!=iLABEL)
-        continue;
-    } /* if */
+      break;
+    default:
+      assert(0);
+    } /* switch */
     funcdisplayname(symname,sym->name);
     dist=levenshtein_distance(name,symname);
     if (dist>max_dist || dist>=closest_dist)
       continue;
-    *closest_sym =sym;
+    *closest_sym=sym;
     closest_dist=dist;
     if (closest_dist<=1)
       break;
@@ -642,6 +649,7 @@ SC_FUNC int error_suggest(int number,const char *name,const char *name2,int type
 {
   char string[sNAMEMAX*2+2]; /* for "<automaton>:<state>" */
   const char *closest_name=NULL;
+  symbol *closest_sym;
 
   /* don't bother finding the closest names on errors
    * that aren't going to be shown on the 1'st pass
@@ -649,16 +657,18 @@ SC_FUNC int error_suggest(int number,const char *name,const char *name2,int type
   if ((errflag || sc_status!=statWRITE) && (number<100 || number>=200))
     return 0;
 
-  if (type==estSYMBOL || (type==estNONSYMBOL && tMIDDLE<subtype && subtype<=tLAST)) {
-    symbol *closest_sym;
-    if (type!=estSYMBOL) {
+  if (type==estSYMBOL) {
+  find_symbol:
+    closest_sym=find_closest_symbol(name,subtype);
+    if (closest_sym!=NULL)
+      closest_name=closest_sym->name;
+  } else if (type==estNONSYMBOL) {
+    if (tMIDDLE<subtype && subtype<=tLAST) {
       extern char *sc_tokens[];
       name=sc_tokens[subtype-tFIRST];
-      subtype=essVARCONST;
+      subtype=esfVARCONST;
+      goto find_symbol;
     } /* if */
-    closest_sym =find_closest_symbol(name,subtype);
-    if (closest_sym !=NULL)
-      closest_name= closest_sym->name;
   } else if (type==estAUTOMATON) {
     constvalue *closest_automaton=find_closest_automaton(name);
     if (closest_automaton!=NULL)

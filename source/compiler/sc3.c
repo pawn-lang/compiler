@@ -1349,13 +1349,13 @@ static int hier2(value *lval)
     if (sym==NULL)
       sym=findglb(st,sSTATEVAR);
     if (sym==NULL)
-      return error_suggest(17,st,NULL,estSYMBOL,essVARCONST);   /* undefined symbol */
+      return error_suggest(17,st,NULL,estSYMBOL,esfVARCONST);   /* undefined symbol */
     if (sym->ident==iCONSTEXPR)
       error(39);                /* constant symbol has no size */
     else if (sym->ident==iFUNCTN || sym->ident==iREFFUNC)
       error(72);                /* "function" symbol has no size */
     else if ((sym->usage & uDEFINE)==0)
-      return error_suggest(17,st,NULL,estSYMBOL,essVARCONST);   /* undefined symbol (symbol is in the table, but it is "used" only) */
+      return error_suggest(17,st,NULL,estSYMBOL,esfVARCONST);   /* undefined symbol (symbol is in the table, but it is "used" only) */
     clear_value(lval);
     lval->ident=iCONSTEXPR;
     lval->constval=1;           /* preset */
@@ -1370,7 +1370,7 @@ static int hier2(value *lval)
           int cmptag=subsym->x.tags.index;
           tokeninfo(&val,&idxname);
           if ((idxsym=findconst(idxname,&cmptag))==NULL)
-            error_suggest(80,idxname,NULL,estSYMBOL,essCONST);  /* unknown symbol, or non-constant */
+            error_suggest(80,idxname,NULL,estSYMBOL,esfCONST);  /* unknown symbol, or non-constant */
           else if (cmptag>1)
             error(91,idxname);  /* ambiguous constant */
         } /* if */
@@ -1406,9 +1406,9 @@ static int hier2(value *lval)
       if (sym==NULL)
         sym=findglb(st,sSTATEVAR);
       if (sym==NULL)
-        return error_suggest(17,st,NULL,estSYMBOL,essNONLABEL); /* undefined symbol */
+        return error_suggest(17,st,NULL,estSYMBOL,esfNONLABEL); /* undefined symbol */
       if ((sym->usage & uDEFINE)==0)
-        return error_suggest(17,st,NULL,estSYMBOL,essNONLABEL); /* undefined symbol (symbol is in the table, but it is "used" only) */
+        return error_suggest(17,st,NULL,estSYMBOL,esfNONLABEL); /* undefined symbol (symbol is in the table, but it is "used" only) */
       tag=sym->tag;
     } /* if */
     if (sym!=NULL && (sym->ident==iARRAY || sym->ident==iREFARRAY)) {
@@ -1422,7 +1422,7 @@ static int hier2(value *lval)
           int cmptag=subsym->x.tags.index;
           tokeninfo(&val,&idxname);
           if ((idxsym=findconst(idxname,&cmptag))==NULL)
-            error_suggest(80,idxname,NULL,estSYMBOL,essCONST);  /* unknown symbol, or non-constant */
+            error_suggest(80,idxname,NULL,estSYMBOL,esfCONST);  /* unknown symbol, or non-constant */
           else if (cmptag>1)
             error(91,idxname);  /* ambiguous constant */
         } /* if */
@@ -1601,7 +1601,7 @@ restart:
         needtoken(close);
         return FALSE;
       } else if (sym->ident!=iARRAY && sym->ident!=iREFARRAY){
-        error_suggest(28,sym->name,NULL,estSYMBOL,essARRAY);/* cannot subscript, variable is not an array */
+        error_suggest(28,sym->name,NULL,estSYMBOL,esfARRAY);/* cannot subscript, variable is not an array */
         needtoken(close);
         return FALSE;
       } else if (sym->dim.array.level>0 && close!=']') {
@@ -1854,10 +1854,10 @@ static int primary(value *lval)
          * implemented, issue an error
          */
         if ((sym->usage & uPROTOTYPED)==0)
-          error_suggest(17,st,NULL,estSYMBOL,essFUNCTN);    /* undefined symbol */
+          error_suggest(17,st,NULL,estSYMBOL,esfFUNCTION);  /* undefined symbol */
       } else {
         if ((sym->usage & uDEFINE)==0)
-          error_suggest(17,st,NULL,estSYMBOL,essVARCONST);  /* undefined symbol */
+          error_suggest(17,st,NULL,estSYMBOL,esfVARCONST);  /* undefined symbol */
         lval->sym=sym;
         lval->ident=sym->ident;
         lval->tag=sym->tag;
@@ -1870,7 +1870,7 @@ static int primary(value *lval)
       } /* if */
     } else {
       if (!sc_allowproccall)
-        return error_suggest(17,st,NULL,estSYMBOL,essVARCONST); /* undefined symbol */
+        return error_suggest(17,st,NULL,estSYMBOL,esfVARCONST); /* undefined symbol */
       /* an unknown symbol, but used in a way compatible with the "procedure
        * call" syntax. So assume that the symbol refers to a function.
        */
