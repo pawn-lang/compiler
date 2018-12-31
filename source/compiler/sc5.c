@@ -510,6 +510,8 @@ static int find_closest_symbol_table(const char *name,const symbol *root,int sym
   for (sym=root->next; sym!=NULL; sym=sym->next) {
     if (sym->fnumber!=-1 && sym->fnumber!=fcurrent)
       continue;
+    if ((sym->usage & uDEFINE)==0)
+      continue;
     ident=sym->ident;
     if (symboltype==essNONLABEL) {
       if (ident==iLABEL)
@@ -524,10 +526,10 @@ static int find_closest_symbol_table(const char *name,const symbol *root,int sym
       if (ident!=iCONSTEXPR)
         continue;
     } else if (symboltype==essFUNCTN) {
-      if ((ident!=iFUNCTN && ident!=iREFFUNC) || (sym->usage & uDEFINE)==0)
+      if (ident!=iFUNCTN && ident!=iREFFUNC)
         continue;
     } else if (symboltype==essLABEL) {
-      if (ident!=iLABEL || (sym->usage & uDEFINE)==0)
+      if (ident!=iLABEL)
         continue;
     } /* if */
     funcdisplayname(symname,sym->name);
