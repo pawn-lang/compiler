@@ -6948,13 +6948,13 @@ SC_FUNC void emit_parse_line(void)
      * and copy the instruction name
      */
     lptr-=len;
-    for (i=0; i<sizeof(name) && (isalnum(*lptr) || *lptr=='.'); ++i,++lptr)
+    for (i=0; i<sizeof(name)-1 && (isalnum(*lptr) || *lptr=='.'); ++i,++lptr)
       name[i]=(char)tolower(*lptr);
     name[i]='\0';
 
     /* find the corresponding argument handler and call it */
-    i=emit_findopcode(name,strlen(name));
-    if (emit_opcodelist[i].name==NULL && *name!='\0')
+    i=emit_findopcode(name,i);
+    if (emit_opcodelist[i].name==NULL && name[0]!='\0')
       error(104,name); /* invalid assembler instruction */
     emit_opcodelist[i].func(name);
   } else if (tok==tLABEL) {

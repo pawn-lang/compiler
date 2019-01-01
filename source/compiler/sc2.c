@@ -1337,12 +1337,12 @@ static int command(void)
   case tpEMIT: {
     if (!SKIPPING) {
       /* write opcode to output file */
-      char name[40];
+      char name[MAX_INSTR_LEN];
       int i;
       insert_dbgline(fline);
       while (*lptr<=' ' && *lptr!='\0')
         lptr++;
-      for (i=0; i<40 && (isalpha(*lptr) || *lptr=='.'); i++,lptr++)
+      for (i=0; i<sizeof(name)-1 && (isalpha(*lptr) || *lptr=='.'); i++,lptr++)
         name[i]=(char)tolower(*lptr);
       name[i]='\0';
       stgwrite("\t");
