@@ -421,10 +421,7 @@ enum {
   teLOCAL, /* local variable (name or offset) */
   teFUNCTN, /* Pawn function */
   teNATIVE, /* native function */
-  teNONNEG, /* nonnegative integer */
-
-  tlexLAST = teNONNEG,
-
+  teNONNEG , /* nonnegative integer */
   /* for assigment to "lastst" only (see SC1.C) */
   tEXPR,
   tENDLESS, /* endless loop */
