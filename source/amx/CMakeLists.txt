@@ -76,7 +76,7 @@ set(FILE_SRCS amxfile.c amx.c)
 add_library(amxFile SHARED ${FILE_SRCS})
 set_target_properties(amxFile PROPERTIES PREFIX "")
 if(WIN32)
-  set(FILE_SRCS ${FILE_SRCS} dllmain.c amxfile.rc)
+  set(FILE_SRCS ${FILE_SRCS} dllmain.c amxFile.rc)
   if(BORLAND)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/amxfile.def
                    ${CMAKE_BINARY_DIR}/amxfile.def
@@ -88,14 +88,14 @@ if(WIN32)
 endif()
 
 # amxFixed
-set(FIXED_SRCS fixed.c amx.c)
+set(FIXED_SRCS fixed.c fixed.c amx.c)
 add_library(amxFixed SHARED ${FIXED_SRCS})
 set_target_properties(amxFixed PROPERTIES PREFIX "")
 if(WIN32)
   set(FIXED_SRCS ${FIXED_SRCS} dllmain.c amxfixed.rc)
   if(BORLAND)
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/amxfixed.def
-                   ${CMAKE_BINARY_DIR}/amxfixed.def
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/amxFixed.def
+                   ${CMAKE_BINARY_DIR}/amxFixed.def
                    COPYONLY)
   else()
     set_target_properties(amxFixed PROPERTIES LINK_FLAGS
@@ -107,7 +107,7 @@ if(UNIX)
 endif()
 
 # amxFloat
-set(FLOAT_SRCS float.c amx.c)
+set(FLOAT_SRCS amxfloat.c amx.c)
 add_library(amxFloat SHARED ${FLOAT_SRCS})
 set_target_properties(amxFloat PROPERTIES PREFIX "")
 if(WIN32)
