@@ -6078,8 +6078,10 @@ fetchtok:
     } /* if */
     if (sym->ident==iLABEL) {
       sym->usage|=uREAD;
-      if (negate)
+      if (negate) {
+        tok=tLABEL;
         goto invalid_token_neg;
+      } /* if */
       if (!allow_nonint) {
         tok=tLABEL;
         goto invalid_token;
@@ -6089,8 +6091,10 @@ fetchtok:
     } else if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
       const int ntvref=sym->usage & uREAD;
       markusage(sym,uREAD);
-      if (negate)
+      if (negate) {
+        tok=teFUNCTN;
         goto invalid_token_neg;
+      } /* if */
       if (!allow_nonint) {
         tok=(sym->usage & uNATIVE) ? teNATIVE : teFUNCTN;
         goto invalid_token;
@@ -6149,7 +6153,10 @@ fetchtok:
       extern char *sc_tokens[];
       char ival[sNAMEMAX+2];
     invalid_token_neg:
-      sprintf(ival,"-%s",str);
+      if (tok<tFIRST)
+        sprintf(ival,"-%c",tok);
+      else
+        sprintf(ival,"-(%s)",sc_tokens[tok-tFIRST]);
       error(1,sc_tokens[expected_tok-tFIRST],ival);
       return FALSE;
     } /* if */
