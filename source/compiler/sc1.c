@@ -6135,6 +6135,8 @@ fetchtok:
     } /* if */
     break;
   case ':':
+    if (negate)
+      goto invalid_token_neg;
     tok=lex(&val,&str);
     if (tok!=tSYMBOL) {
       emit_invalid_token(tSYMBOL,tok);
