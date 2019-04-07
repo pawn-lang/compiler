@@ -259,31 +259,31 @@ static short lastfile;
   } /* if */
 
   if (number<100) {
-    assert(number>0 && number<(1+arraysize(errmsg)));
+    assert(number>0 && number<(1+sizeof(errmsg)/sizeof(errmsg[0])));
     msg=errmsg[number-1];
     pre=prefix[0];
     errflag=TRUE;       /* set errflag (skip rest of erroneous expression) */
     errnum++;
   } else if (number<200) {
-    assert(number>=100 && number<(100+arraysize(fatalmsg)));
+    assert(number>=100 && number<(100+sizeof(fatalmsg)/sizeof(fatalmsg[0])));
     msg=fatalmsg[number-100];
     pre=prefix[1];
     errnum++;           /* a fatal error also counts as an error */
   } else if (errwarn) {
-    assert(number>=200 && number<(200+arraysize(warnmsg)));
+    assert(number>=200 && number<(200+sizeof(warnmsg)/sizeof(warnmsg[0])));
     msg=warnmsg[number-200];
     pre=prefix[0];
     errflag=TRUE;
     errnum++;
   } else {
-    assert(number>=200 && number<(200+arraysize(warnmsg)));
+    assert(number>=200 && number<(200+sizeof(warnmsg)/sizeof(warnmsg[0])));
     msg=warnmsg[number-200];
     pre=prefix[2];
     warnnum++;
   } /* if */
 
   if (notice!=0) {
-    assert(notice>0 && notice<(1+arraysize(noticemsg)) && noticemsg[notice-1][0]!='\0');
+    assert(notice>0 && notice<(1+sizeof(noticemsg)/sizeof(noticemsg[0])) && noticemsg[notice-1][0]!='\0');
     strcpy(string,msg);
     strcpy(&string[strlen(string)-1],noticemsg[notice-1]);
     msg=string;
@@ -675,12 +675,12 @@ SC_FUNC int error_suggest(int number,const char *name,const char *name2,int type
       closest_name=closest_automaton->name;
   } else if (type==estSTATE) {
     constvalue *closest_state=find_closest_state(name,subtype);
-    if (closest_state !=NULL) {
+    if (closest_state!=NULL) {
       closest_name=closest_state->name;
     } else {
       constvalue *closest_automaton=find_closest_automaton_for_state(name,subtype);
-      if (closest_automaton !=NULL) {
-        sprintf(string,"%s:%s", closest_automaton->name,name);
+      if (closest_automaton!=NULL) {
+        sprintf(string,"%s:%s",closest_automaton->name,name);
         closest_name=string;
       } /* if */
     } /* if */
