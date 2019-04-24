@@ -3171,7 +3171,7 @@ SC_FUNC symbol *fetchfunc(char *name,int tag)
   } /* if */
   if (pc_deprecate!=NULL) {
     assert(sym!=NULL);
-    sym->flags|=flgDEPRECATED;
+    sym->flags|=flagDEPRECATED;
     if (sc_status==statWRITE) {
       if (sym->documentation!=NULL) {
         free(sym->documentation);
@@ -3785,7 +3785,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     cidx=code_idx;
     glbdecl=glb_declared;
   } /* if */
-  if ((sym->flags & flgDEPRECATED)!=0) {
+  if ((sym->flags & flagDEPRECATED)!=0) {
     char *ptr= (sym->documentation!=NULL) ? sym->documentation : "";
     error(234,symbolname,ptr);  /* deprecated (probably a public function) */
   } /* if */
