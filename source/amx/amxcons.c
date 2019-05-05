@@ -1190,6 +1190,7 @@ static cell AMX_NATIVE_CALL n_print(AMX *amx,const cell *params)
 
   cstr=amx_Address(amx,params[1]);
   amx_printstring(amx,cstr,NULL);
+  cons_putchar(NULL, __T('\n'));
 
   /* reset the colours */
   (void)amx_setattr(oldcolours & 0xff,(oldcolours >> 8) & 0x7f,(oldcolours >> 15) & 0x01);
@@ -1212,6 +1213,7 @@ static cell AMX_NATIVE_CALL n_printf(AMX *amx,const cell *params)
   CreateConsole();
   cstr=amx_Address(amx,params[1]);
   amx_printstring(amx,cstr,&info);
+  cons_putchar(NULL, __T('\n'));
   amx_fflush();
   return 0;
 }
