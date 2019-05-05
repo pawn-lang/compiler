@@ -26,7 +26,6 @@
   #pragma optimize("g",off)
 #endif
 
-#define WIN32_LEAN_AND_MEAN
 #if defined _UNICODE || defined __UNICODE__ || defined UNICODE
 # if !defined UNICODE   /* for Windows API */
 #   define UNICODE
