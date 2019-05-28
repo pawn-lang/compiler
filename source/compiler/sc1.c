@@ -6047,6 +6047,254 @@ static void SC_FASTCALL emit_invalid_token(int expected_token,int found_token)
   } /* if */
 }
 
+static regid SC_FASTCALL emit_findreg(char *opname)
+{
+  const char *regname=strrchr(opname,'.');
+  assert(regname!=NULL);
+  regname+=1;
+  assert(strcmp(regname,"pri")==0 || strcmp(regname,"alt")==0);
+  return (strcmp(regname,"pri")==0) ? sPRI : sALT;
+}
+
+/* emit_getlval
+ *
+ * Looks for an lvalue and generates code to get cell address in PRI
+ * if the lvalue is an array element (iARRAYCELL or iARRAYCHAR).
+ */
+static int SC_FASTCALL emit_getlval(int *identptr,emit_outval *p,int *islocal, regid reg,
+                                    int allow_char, int store_pri,int store_alt,int *ispushed)
+{
+  int tok,index,ident,close;
+  cell cidx,val,length;
+  char *str;
+  symbol *sym;
+
+  assert(identptr!=NULL);
+  assert(p!=NULL);
+  assert((!store_pri && !store_alt) || ((store_pri ^ store_alt) && (reg==sALT && ispushed!=NULL)));
+
+  if (staging) {
+    assert((emit_flags & efEXPR)!=0);
+    stgget(&index,&cidx);
+  } /* if */
+
+  tok=lex(&val,&str);
+  if (tok!=tSYMBOL) {
+invalid_lvalue:
+    error(22);          /* must be lvalue */
+    return FALSE;
+  } /* if */
+
+  sym=findloc(str);
+  if (sym==NULL)
+    sym=findglb(str,sSTATEVAR);
+  if (sym==NULL || (sym->ident!=iFUNCTN && sym->ident!=iREFFUNC && (sym->usage & uDEFINE)==0)) {
+    error(17,str);      /* undefined symbol */
+    return FALSE;
+  } /* if */
+  markusage(sym,uREAD | uWRITTEN);
+
+  p->type=eotNUMBER;
+  switch (sym->ident)
+  {
+  case iVARIABLE:
+  case iREFERENCE:
+    *identptr=sym->ident;
+    *islocal=((sym->vclass & sLOCAL)!=0);
+    p->value.ucell=*(ucell *)&sym->addr;
+    break;
+  case iARRAY:
+  case iREFARRAY:
+    /* get the index */
+    if (matchtoken('[')) {
+      *identptr=iARRAYCELL;
+      close=']';
+    } else if (matchtoken('{')) {
+      *identptr=iARRAYCHAR;
+      close='}';
+    } else {
+      error(33,sym->name);      /* array must be indexed */
+      return FALSE;
+    } /* if */
+    if (store_alt || store_pri) {
+      pushreg(store_pri ? sPRI : sALT);
+      *ispushed=TRUE;
+    } /* if */
+    errorset(sEXPRMARK,0);
+    ident=expression(&val,NULL,NULL,TRUE);
+    errorset(sEXPRRELEASE,0);
+    needtoken(close);
+
+    /* check if the index isn't out of bounds */
+    length=sym->dim.array.length;
+    if (close=='}')
+      length *= (8*sizeof(cell))/sCHARBITS;
+    if (ident==iCONSTEXPR) {    /* if the index is a constant value, check it at compile time */
+      if (val<0 || (length!=0 && val>=length)) {
+        error(32,sym->name);    /* array index out of bounds */
+        return FALSE;
+      } /* if */
+    } else if (length!=0) {     /* otherwise generate code for a run-time boundary check */
+      ffbounds(length-1);
+    } /* if */
+
+    /* calculate cell address */
+    if (ident==iCONSTEXPR) {
+      if (staging)
+        stgdel(index,cidx);     /* erase generated code */
+      if (store_alt || store_pri)
+        *ispushed=FALSE;
+      p->value.ucell= *(ucell *)&sym->addr;
+      if (close==']')
+        val *= (cell)sizeof(cell);
+      else
+        val *= (cell)(sCHARBITS/8);
+      if (sym->ident==iARRAY) {
+        p->value.ucell += (ucell)val;
+        if (close==']') {
+          /* If we are accessing an array cell and its address is known at
+           * compile time, we can return it as 'iVARIABLE',
+           * so the calling function could generate more optimal code.
+           */
+          *islocal=((sym->vclass & sLOCAL)!=0);
+          *identptr=iVARIABLE;
+          break;
+        } /* if */
+        if (reg==sPRI) {
+          outinstr(((sym->vclass & sLOCAL)!=0) ? "addr.pri" : "const.pri",p,1);
+        } else {
+          if (store_alt)
+            moveto1();
+          outinstr(((sym->vclass & sLOCAL)!=0) ? "addr.alt" : "const.alt",p,1);
+        } /* if */
+      } else {  /* sym->ident==iREFARRAY */
+        if (close==']' && val==0) {
+          *identptr=iREFERENCE;
+          break;
+        } /* if */
+        if (reg==sPRI) {
+          outinstr("load.s.pri",p,1);
+          if (val==1)
+            outinstr("inc.pri",NULL,0);
+          else
+            addconst(val);
+        } else {
+          if (val==0 || val==1) {
+            if (store_alt)
+              outinstr("move.pri",NULL,0);
+            outinstr("load.s.alt",p,1);
+            if (val==1)
+              outinstr("inc.alt",NULL,0);
+          } else {
+            if (store_pri)
+              outinstr("move.alt",NULL,0);
+            outinstr("load.s.pri",p,1);
+            addconst(val);
+            if (store_pri || store_alt)
+              outinstr("xchg",NULL,0);
+            else
+              outinstr("move.alt",NULL,0);
+          } /* if */
+        } /* if */
+      } /* if */
+      if (close=='}') {
+        p->value.ucell=(ucell)(sCHARBITS/8);
+        outinstr((reg==sPRI) ? "align.pri" : "align.alt",p,1);
+      } /* if */
+    } else {    /* ident!=iCONSTEXPR */
+      if (close=='}' && sym->ident==iARRAY && (sym->vclass & sLOCAL)==0) {
+        char2addr();
+        addconst(sym->addr);
+        charalign();
+        if (reg==sALT)
+          outinstr("move.alt",NULL,0);
+        break;
+      } /* if */
+      p->value.ucell= *(ucell *)&sym->addr;
+      if (sym->ident==iARRAY)
+        outinstr(((sym->vclass & sLOCAL)!=0) ? "addr.alt" : "const.alt",p,1);
+      else      /* sym->ident==iREFARRAY */
+        outinstr("load.s.alt",p,1);
+      if (close==']') {
+        outinstr("idxaddr",NULL,0);
+      } else {
+        char2addr();
+        ob_add();
+        charalign();
+      } /* if */
+      if (reg==sALT)
+        outinstr("move.alt",NULL,0);
+    } /* if */
+    break;
+  default:
+    goto invalid_lvalue;
+  } /* switch */
+
+  if (!staging) {   /* issue an error if a pseudo-opcode is used outside of function body */
+    error(10);      /* invalid function or declaration */
+    return FALSE;
+  } /* if */
+  if ((sym->ident==iARRAY || sym->ident==iREFARRAY) && close=='}' && !allow_char) {
+    /* issue an error if array character access isn't allowed
+     * (currently it's only in 'push.u.adr')
+     */
+    error(35,1);    /* argument type mismatch (argument 1) */
+    return FALSE;
+  } /* if */
+  return TRUE;
+}
+
+/* emit_getrval
+ *
+ * Looks for an rvalue and generates code to handle expressions.
+ */
+static int SC_FASTCALL emit_getrval(int *identptr,emit_outval *p,int *islocal)
+{
+  int index,result=TRUE;
+  cell cidx;
+  cell val;
+  symbol *sym;
+
+  assert(identptr!=NULL);
+  assert(p!=NULL);
+  assert(islocal!=NULL);
+
+  if (staging) {
+    assert((emit_flags & efEXPR)!=0);
+    stgget(&index,&cidx);
+  } else {
+    error(10);          /* invalid function or declaration */
+    result=FALSE;
+  } /* if */
+
+  errorset(sEXPRMARK,0);
+  *identptr=expression(&val,NULL,&sym,TRUE);
+  p->type=eotNUMBER;
+  switch (*identptr) {
+  case iVARIABLE:
+  case iREFERENCE:
+    *islocal=((sym->vclass & sLOCAL)!=0);
+    /* fallthrough */
+  case iCONSTEXPR:
+    /* If the expression result is a constant value or a variable - erase the code
+     * for this expression so the caller would be able to generate more optimal
+     * code for it, without unnecessary register clobbering.
+     */
+    if (staging)
+      stgdel(index,cidx);
+    p->value.ucell=*(ucell *)((*identptr==iCONSTEXPR) ? &val : &sym->addr);
+    break;
+  case iARRAY:
+  case iREFARRAY:
+    error(33,(sym!=NULL) ? sym->name : "-unknown-");    /* array must be indexed */
+    result=FALSE;
+    break;
+  } /* switch */
+  errorset(sEXPRRELEASE,0);
+
+  return result;
+}
+
 static int SC_FASTCALL emit_param_any_internal(emit_outval *p,int expected_tok,
                                                int allow_nonint,int allow_expr)
 {
@@ -6780,12 +7028,224 @@ static void SC_FASTCALL emit_do_pushn_s_adr(char *name)
   } /* if */
 }
 
+static void SC_FASTCALL emit_do_load_u_pri_alt(char *name)
+{
+  emit_outval p[1];
+  regid reg;
+  int ident,islocal;
+
+  if (!emit_getrval(&ident,&p[0],&islocal))
+    return;
+  reg=emit_findreg(name);
+  switch (ident) {
+  case iCONSTEXPR:
+    if (p[0].value.ucell==(ucell)0)
+      outinstr((reg==sPRI) ? "zero.pri" : "zero.alt",NULL,0);
+    else
+      outinstr((reg==sPRI) ? "const.pri" : "const.alt",p,1);
+    break;
+  case iVARIABLE:
+    if (islocal)
+      outinstr((reg==sPRI) ? "load.s.pri" : "load.s.alt",p,1);
+    else
+      outinstr((reg==sPRI) ? "load.pri" : "load.alt",p,1);
+    break;
+  case iREFERENCE:
+    outinstr((reg==sPRI) ? "lref.s.pri" : "lref.s.alt",p,1);
+    break;
+  default:
+    if (reg==sALT)
+      outinstr("move.alt",NULL,0);
+    break;
+  } /* switch */
+}
+
+static void SC_FASTCALL emit_do_stor_u_pri_alt(char *name)
+{
+  emit_outval p[1];
+  regid reg;
+  int ident,islocal,ispushed;
+
+  reg=emit_findreg(name);
+  if (!emit_getlval(&ident,&p[0],&islocal,sALT,TRUE,(reg==sPRI),(reg==sALT),&ispushed))
+    return;
+  switch (ident) {
+  case iVARIABLE:
+    if (islocal)
+      outinstr((reg==sPRI) ? "stor.s.pri" : "stor.s.alt",p,1);
+    else
+      outinstr((reg==sPRI) ? "stor.pri" : "stor.alt",p,1);
+    break;
+  case iREFERENCE:
+    outinstr((reg==sPRI) ? "sref.s.pri" : "sref.s.alt",p,1);
+    break;
+  case iARRAYCELL:
+  case iARRAYCHAR:
+    if (ispushed)
+      popreg(sPRI);
+    if (ident==iARRAYCELL) {
+      outinstr("stor.i",NULL,0);
+    } else {
+      p->value.ucell=sCHARBITS/8;
+      outinstr("strb.i",p,1);
+    } /* if */
+    break;
+  default:
+    assert(0);
+    break;
+  } /* switch */
+}
+
+static void SC_FASTCALL emit_do_addr_u_pri_alt(char *name)
+{
+  emit_outval p[1];
+  regid reg;
+  int ident,islocal;
+
+  reg=emit_findreg(name);
+  if (!emit_getlval(&ident,&p[0],&islocal,reg,TRUE,FALSE,FALSE,NULL))
+    return;
+  switch (ident) {
+  case iVARIABLE:
+    if (islocal)
+      outinstr((reg==sPRI) ? "addr.pri" : "addr.alt",p,1);
+    else if (p[0].value.ucell==(ucell)0)
+      outinstr((reg==sPRI) ? "zero.pri" : "zero.alt",NULL,0);
+    else
+      outinstr((reg==sPRI) ? "const.pri" : "const.alt",p,1);
+    break;
+  case iREFERENCE:
+    outinstr((reg==sPRI) ? "load.s.pri" : "load.s.alt",p,1);
+    break;
+  case iARRAYCELL:
+  case iARRAYCHAR:
+    break;
+  default:
+    assert(0);
+    break;
+  } /* switch */
+}
+
+static void SC_FASTCALL emit_do_push_u(char *name)
+{
+  emit_outval p[1];
+  int ident,islocal;
+
+  if (!emit_getrval(&ident,&p[0],&islocal))
+    return;
+  switch (ident) {
+  case iCONSTEXPR:
+    outinstr("push.c",&p[0],1);
+    break;
+  case iVARIABLE:
+    outinstr(islocal ? "push.s" : "push",p,1);
+    break;
+  case iREFERENCE:
+    outinstr("lref.s.pri",&p[0],1);
+    /* fallthrough */
+  default:
+    outinstr("push.pri",NULL,0);
+    break;
+  } /* switch */
+}
+
+static void SC_FASTCALL emit_do_push_u_adr(char *name)
+{
+  emit_outval p[1];
+  int ident,islocal;
+
+  if (!emit_getlval(&ident,&p[0],&islocal,sPRI,FALSE,FALSE,FALSE,NULL))
+    return;
+  switch (ident) {
+  case iVARIABLE:
+    outinstr(islocal ? "push.adr" : "push.c",p,1);
+    break;
+  case iREFERENCE:
+    outinstr("push.s",p,1);
+    break;
+  case iARRAYCELL:
+  case iARRAYCHAR:
+    pushreg(sPRI);
+    break;
+  default:
+    assert(0);
+    break;
+  } /* switch */
+}
+
+static void SC_FASTCALL emit_do_zero_u(char *name)
+{
+  emit_outval p[1];
+  int ident,islocal;
+
+  if (!emit_getlval(&ident,&p[0],&islocal,sALT,TRUE,FALSE,FALSE,NULL))
+    return;
+  switch (ident) {
+  case iVARIABLE:
+    outinstr(islocal ? "zero.s" : "zero",p,1);
+    break;
+  case iREFERENCE:
+    outinstr("zero.pri",NULL,0);
+    outinstr("sref.s.pri",&p[0],1);
+    break;
+  case iARRAYCELL:
+    outinstr("zero.pri",NULL,0);
+    outinstr("stor.i",NULL,0);
+    break;
+  case iARRAYCHAR:
+    outinstr("zero.pri",NULL,0);
+    p[0].value.ucell=(ucell)(sCHARBITS/8);
+    outinstr("strb.i",p,1);
+    break;
+  default:
+    assert(0);
+    break;
+  } /* switch */
+}
+
+static void SC_FASTCALL emit_do_inc_dec_u(char *name)
+{
+  emit_outval p[1];
+  int ident,islocal;
+
+  assert(strcmp(name,"inc.u")==0 || strcmp(name,"dec.u")==0);
+
+  if (!emit_getlval(&ident,&p[0],&islocal,sPRI,TRUE,FALSE,FALSE,NULL))
+    return;
+  switch (ident) {
+  case iVARIABLE:
+    if (islocal)
+      outinstr((name[0]=='i') ? "inc.s" : "dec.s",p,1);
+    else
+      outinstr((name[0]=='i') ? "inc" : "dec",p,1);
+    break;
+  case iREFERENCE:
+    outinstr("load.s.pri",&p[0],1);
+    /* fallthrough */
+  case iARRAYCELL:
+    outinstr((name[0]=='i') ? "inc.i" : "dec.i",NULL,0);
+    break;
+  case iARRAYCHAR:
+    p[0].value.ucell=(ucell)(sCHARBITS/8);
+    outinstr("move.alt",NULL,0);
+    outinstr("lodb.i",p,1);
+    outinstr((name[0]=='i') ? "inc.pri" : "dec.pri",NULL,0);
+    outinstr("strb.i",p,1);
+    break;
+  default:
+    assert(0);
+    break;
+  } /* switch */
+}
+
 static EMIT_OPCODE emit_opcodelist[] = {
   { NULL,         emit_noop },
   { "add",        emit_parm0 },
   { "add.c",      emit_parm1_any },
   { "addr.alt",   emit_parm1_local },
   { "addr.pri",   emit_parm1_local },
+  { "addr.u.alt", emit_do_addr_u_pri_alt },
+  { "addr.u.pri", emit_do_addr_u_pri_alt },
   { "align.alt",  emit_do_align },
   { "align.pri",  emit_do_align },
   { "and",        emit_parm0 },
@@ -6805,6 +7265,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { "dec.i",      emit_parm0 },
   { "dec.pri",    emit_parm0 },
   { "dec.s",      emit_parm1_local_noref },
+  { "dec.u",      emit_do_inc_dec_u },
   { "eq",         emit_parm0 },
   { "eq.c.alt",   emit_parm1_any },
   { "eq.c.pri",   emit_parm1_any },
@@ -6820,6 +7281,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { "inc.i",      emit_parm0 },
   { "inc.pri",    emit_parm0 },
   { "inc.s",      emit_parm1_local_noref },
+  { "inc.u",      emit_do_inc_dec_u },
   { "invert",     emit_parm0 },
   { "jeq",        emit_parm1_label },
   { "jgeq",       emit_parm1_label },
@@ -6848,6 +7310,8 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { "load.s.alt", emit_parm1_local },
   { "load.s.both",emit_do_load_s_both },
   { "load.s.pri", emit_parm1_local },
+  { "load.u.alt", emit_do_load_u_pri_alt },
+  { "load.u.pri", emit_do_load_u_pri_alt },
   { "lodb.i",     emit_do_lodb_strb },
   { "lref.alt",   emit_parm1_data },
   { "lref.pri",   emit_parm1_data },
@@ -6871,6 +7335,8 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { "push.pri",   emit_parm0 },
   { "push.r",     emit_parm1_integer },
   { "push.s",     emit_parm1_local },
+  { "push.u",     emit_do_push_u },
+  { "push.u.adr", emit_do_push_u_adr },
   { "push2",      emit_do_pushn },
   { "push2.adr",  emit_do_pushn_s_adr },
   { "push2.c",    emit_do_pushn_c },
@@ -6917,6 +7383,8 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { "stor.pri",   emit_parm1_data },
   { "stor.s.alt", emit_parm1_local_noref },
   { "stor.s.pri", emit_parm1_local_noref },
+  { "stor.u.alt", emit_do_stor_u_pri_alt },
+  { "stor.u.pri", emit_do_stor_u_pri_alt },
   { "strb.i",     emit_do_lodb_strb },
   { "sub",        emit_parm0 },
   { "sub.alt",    emit_parm0 },
@@ -6935,6 +7403,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { "zero.alt",   emit_parm0 },
   { "zero.pri",   emit_parm0 },
   { "zero.s",     emit_parm1_local_noref },
+  { "zero.u",     emit_do_zero_u },
 };
 
 static int emit_findopcode(const char *instr,int maxlen)
