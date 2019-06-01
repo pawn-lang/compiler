@@ -4012,9 +4012,10 @@ static int declargs(symbol *sym,int chkshadow)
           error(59,name);       /* arguments of a public function may not have a default value */
         if ((sym->usage & uPROTOTYPED)==0) {
           /* redimension the argument list, add the entry */
-          sym->dim.arglist=(arginfo*)realloc(sym->dim.arglist,(argcnt+2)*sizeof(arginfo));
-          if (sym->dim.arglist==0)
+          arginfo* new_arglist=(arginfo*)realloc(sym->dim.arglist,(argcnt+2)*sizeof(arginfo));
+          if (new_arglist==NULL)
             error(103);                 /* insufficient memory */
+          sym->dim.arglist=new_arglist;
           memset(&sym->dim.arglist[argcnt+1],0,sizeof(arginfo));  /* keep the list terminated */
           sym->dim.arglist[argcnt]=arg;
         } else {
@@ -4043,9 +4044,10 @@ static int declargs(symbol *sym,int chkshadow)
           tags[numtags++]=0;            /* default tag */
         if ((sym->usage & uPROTOTYPED)==0) {
           /* redimension the argument list, add the entry iVARARGS */
-          sym->dim.arglist=(arginfo*)realloc(sym->dim.arglist,(argcnt+2)*sizeof(arginfo));
-          if (sym->dim.arglist==0)
+          arginfo* new_arglist=(arginfo*)realloc(sym->dim.arglist,(argcnt+2)*sizeof(arginfo));
+          if (new_arglist==NULL)
             error(103);                 /* insufficient memory */
+          sym->dim.arglist=new_arglist;
           memset(&sym->dim.arglist[argcnt+1],0,sizeof(arginfo));  /* keep the list terminated */
           sym->dim.arglist[argcnt].ident=iVARARGS;
           sym->dim.arglist[argcnt].hasdefault=FALSE;

@@ -1276,10 +1276,7 @@ static void grow_stgbuffer(char **buffer, int *curmax, int requiredsize)
   if (requiredsize>sSTG_MAX)
     error(102,"staging buffer");    /* staging buffer overflow (fatal error) */
   *curmax=requiredsize+sSTG_GROW;
-  if (*buffer!=NULL)
-    p=(char *)realloc(*buffer,*curmax*sizeof(char));
-  else
-    p=(char *)malloc(*curmax*sizeof(char));
+  p=(char *)realloc(*buffer,*curmax*sizeof(char));
   if (p==NULL)
     error(102,"staging buffer");    /* staging buffer overflow (fatal error) */
   *buffer=p;

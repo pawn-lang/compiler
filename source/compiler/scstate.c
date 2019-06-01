@@ -179,10 +179,12 @@ SC_FUNC void state_buildlist(int **list,int *listsize,int *count,int stateid)
     /* To avoid constantly calling malloc(), the list is grown by 4 states at
      * a time.
      */
+    int *newlist;
     *listsize+=4;
-    *list=(int*)realloc(*list,*listsize*sizeof(int));
-    if (*list==NULL)
+    newlist=(int*)realloc(*list,*listsize*sizeof(int));
+    if (newlist==NULL)
       error(103);               /* insufficient memory */
+    *list=newlist;
   } /* if */
 
   /* find the insertion point (the list has to stay sorted) */

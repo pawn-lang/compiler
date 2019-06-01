@@ -92,13 +92,9 @@ SC_FUNC void pushstk(stkitem val)
     int newsize= (stktop==0) ? 16 : 2*stktop;
     /* try to resize the stack */
     assert(newsize>stktop);
-    newstack=(stkitem*)malloc(newsize*sizeof(stkitem));
+    newstack=(stkitem*)realloc(stack,newsize*sizeof(stkitem));
     if (newstack==NULL)
       error(102,"parser stack");  /* stack overflow (recursive include?) */
-    /* swap the stacks */
-    memcpy(newstack,stack,stkidx*sizeof(stkitem));
-    if (stack!=NULL)
-      free(stack);
     stack=newstack;
     stktop=newsize;
   } /* if */
