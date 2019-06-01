@@ -148,8 +148,10 @@ static char extensions[][6] = { "", ".inc", ".p", ".pawn" };
     error(103);                 /* insufficient memory */
   strcpy(path,name);
   real_path=(char *)malloc(strlen(name)+sizeof(extensions[0]));
-  if (real_path==NULL)
+  if (real_path==NULL) {
+    free(path);
     error(103);                 /* insufficient memory */
+  } /* if */
   do {
     found=TRUE;
     ext=strchr(path,'\0');      /* save position */
@@ -172,11 +174,13 @@ static char extensions[][6] = { "", ".inc", ".p", ".pawn" };
     if (fp==NULL) {
       *ext='\0';                /* on failure, restore filename */
       found=FALSE;
-    }
+    } /* if */
     ext_idx++;
   } while (!found && ext_idx<(sizeof extensions / sizeof extensions[0]));
   if (!found) {
     *ext='\0';                  /* restore filename */
+    free(path);
+    free(real_path);
     return FALSE;
   } /* if */
   PUSHSTK_P(inpf);
