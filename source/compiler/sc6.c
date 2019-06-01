@@ -259,13 +259,15 @@ static unsigned char *encode_cell(ucell c,int *len)
     c>>=7;
   } while (index>=0);
   /* skip leading zeros */
-  while (index<ENC_MAX-1 && buffer[index]==0 && (buffer[index+1] & 0x40)==0)
+  while (index<ENC_MAX-2 && buffer[index+1]==0 && (buffer[index+2] & 0x40)==0)
     index++;
   /* skip leading -1s */
-  if (index==0 && buffer[index]==ENC_MASK && (buffer[index+1] & 0x40)!=0)
+  if (index==-1 && buffer[index+1]==ENC_MASK && (buffer[index+2] & 0x40)!=0)
     index++;
-  while (index<ENC_MAX-1 && buffer[index]==0x7f && (buffer[index+1] & 0x40)!=0)
+  while (index<ENC_MAX-2 && buffer[index+1]==0x7f && (buffer[index+2] & 0x40)!=0)
     index++;
+  assert(index<ENC_MAX-1);
+  ++index;
   *len=ENC_MAX-index;
   ptr=&buffer[index];
   while (index<ENC_MAX-1)
@@ -286,7 +288,7 @@ static void write_encoded(FILE *fbin,ucell *c,int num)
       writeerror |= !pc_writebin(fbin,bytes,len);
       bytes_out+=len;
       bytes_in+=sizeof *c;
-      assert(AMX_COMPACTMARGIN>2);
+      assert_static(AMX_COMPACTMARGIN>2);
       if (bytes_out-bytes_in>=AMX_COMPACTMARGIN-2)
         longjmp(compact_err,1);
     } else {
@@ -308,6 +310,7 @@ static void write_encoded_n(FILE *fbin,ucell c,int num)
     assert(len>0);
     bytes_in += num*sizeof c;
     bytes_out += num*len;
+    assert_static(AMX_COMPACTMARGIN>2);
     if (bytes_out-bytes_in>=AMX_COMPACTMARGIN-2)
       longjmp(compact_err,1);
     while (num-->0)
