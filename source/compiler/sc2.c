@@ -1716,8 +1716,7 @@ static int substpattern(unsigned char *line,size_t buffersize,char *pattern,char
                        * a string, or the closing paranthese of a group) */
         } /* while */
         /* store the parameter (overrule any earlier) */
-        if (args[arg]!=NULL)
-          free(args[arg]);
+        free(args[arg]);
         len=(int)(e-s);
         args[arg]=(unsigned char*)malloc(len+1);
         if (args[arg]==NULL)
@@ -1819,8 +1818,7 @@ static int substpattern(unsigned char *line,size_t buffersize,char *pattern,char
   } /* if */
 
   for (arg=0; arg<10; arg++)
-    if (args[arg]!=NULL)
-      free(args[arg]);
+    free(args[arg]);
 
   return match;
 }
@@ -2909,8 +2907,7 @@ static void free_symbol(symbol *sym)
   } /* if */
   assert(sym->refer!=NULL);
   free(sym->refer);
-  if (sym->documentation!=NULL)
-    free(sym->documentation);
+  free(sym->documentation);
   if (sym->vclass==sGLOBAL)
     symbol_cache_remove(sym);
   free(sym);

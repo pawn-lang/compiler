@@ -768,10 +768,8 @@ cleanup:
     remove(tname);         /* the "input file" was in fact a temporary file */
     free(tname);
   } /* if */
-  if (inpfname!=NULL)
-    free(inpfname);
-  if (litq!=NULL)
-    free(litq);
+  free(inpfname);
+  free(litq);
   stgbuffer_cleanup();
   clearstk();
   assert(jmpcode!=0 || loctab.next==NULL);/* on normal flow, local symbols
@@ -795,8 +793,7 @@ cleanup:
   #endif
   #if !defined SC_LIGHT
     delete_docstringtable();
-    if (sc_documentation!=NULL)
-      free(sc_documentation);
+    free(sc_documentation);
   #endif
   delete_autolisttable();
   delete_heaplisttable();
@@ -1922,8 +1919,7 @@ void sc_attachdocumentation(symbol *sym)
         assert(sym->documentation==NULL);
         sym->documentation=doc;
       } else {
-        if (sc_documentation!=NULL)
-          free(sc_documentation);
+        free(sc_documentation);
         sc_documentation=doc;
       } /* if */
     } /* if */
@@ -3087,8 +3083,7 @@ static int getstates(const char *funcname)
     /* error is already given */
     state_id=0;
   } /* if */
-  if (list!=NULL)
-    free(list);
+  free(list);
 
   return state_id;
 }
