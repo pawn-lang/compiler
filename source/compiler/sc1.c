@@ -3615,7 +3615,7 @@ static void funcstub(int fnative)
   if (sym==NULL)
     return;
   if (fnative) {
-    sym->usage=(char)(uNATIVE | uRETVALUE | uDEFINE | (sym->usage & uPROTOTYPED));
+    sym->usage=(short)(uNATIVE | uRETVALUE | uDEFINE | (sym->usage & uPROTOTYPED));
     sym->x.lib=curlibrary;
   } else if (fpublic) {
     sym->usage|=uPUBLIC;
