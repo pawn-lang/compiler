@@ -7406,7 +7406,7 @@ static EMIT_OPCODE emit_opcodelist[] = {
   { "zero.u",     emit_do_zero_u },
 };
 
-static int emit_findopcode(const char *instr,int maxlen)
+static int emit_findopcode(const char *instr)
 {
   int low,high,mid,cmp;
 
@@ -7438,6 +7438,23 @@ SC_FUNC void emit_parse_line(void)
   symbol *sym;
   char name[MAX_INSTR_LEN];
 
+  #if !defined NDEBUG
+    /* verify that the opcode list is sorted (skip entry 1; it is reserved
+     * for a non-existant opcode)
+     */
+    { /* local */
+      static int sorted=FALSE;
+      if (!sorted) {
+        assert(emit_opcodelist[1].name!=NULL);
+        for (i=2; i<(sizeof emit_opcodelist / sizeof emit_opcodelist[0]); i++) {
+          assert(emit_opcodelist[i].name!=NULL);
+          assert(stricmp(emit_opcodelist[i].name,emit_opcodelist[i-1].name)>0);
+        } /* for */
+        sorted=TRUE;
+      } /* if */
+    } /* local */
+  #endif
+
   tok=tokeninfo(&val,&st);
   if (tok==tSYMBOL || (tok>tMIDDLE && tok<=tLAST)) {
     /* get the token length */
@@ -7455,7 +7472,7 @@ SC_FUNC void emit_parse_line(void)
     name[i]='\0';
 
     /* find the corresponding argument handler and call it */
-    i=emit_findopcode(name,i);
+    i=emit_findopcode(name);
     if (emit_opcodelist[i].name==NULL && name[0]!='\0')
       error(104,name); /* invalid assembler instruction */
     emit_opcodelist[i].func(name);
