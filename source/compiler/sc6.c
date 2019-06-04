@@ -510,23 +510,6 @@ static cell SC_FASTCALL do_jump(FILE *fbin,char *params,cell opcode)
   return opcodes(1)+opargs(1);
 }
 
-static cell SC_FASTCALL do_switch(FILE *fbin,char *params,cell opcode)
-{
-  int i;
-  ucell p;
-
-  i=(int)hex2long(params,NULL);
-  assert(i>=0 && i<sc_labnum);
-
-  if (fbin!=NULL) {
-    assert(lbltab!=NULL);
-    p=lbltab[i];
-    write_encoded(fbin,(ucell*)&opcode,1);
-    write_encoded(fbin,&p,1);
-  } /* if */
-  return opcodes(1)+opargs(1);
-}
-
 #if defined __BORLANDC__ || defined __WATCOMC__
   #pragma argsused
 #endif
@@ -700,7 +683,7 @@ static OPCODE opcodelist[] = {
   { 80, "sub.alt",    sIN_CSEG, parm0 },
   {132, "swap.alt",   sIN_CSEG, parm0 },  /* version 4 */
   {131, "swap.pri",   sIN_CSEG, parm0 },  /* version 4 */
-  {129, "switch",     sIN_CSEG, do_switch }, /* version 1 */
+  {129, "switch",     sIN_CSEG, do_jump }, /* version 1 */
 /*{126, "symbol",     sIN_CSEG, do_symbol }, */
 /*{136, "symtag",     sIN_CSEG, parm1 },  -- version 7 */
   {123, "sysreq.c",   sIN_CSEG, parm1 },
