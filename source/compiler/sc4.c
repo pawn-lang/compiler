@@ -79,7 +79,7 @@ SC_FUNC void writeleader(symbol *root)
   for (fsa=sc_automaton_tab.first; fsa!=NULL; fsa=fsa->next) {
     defstorage();
     stgwrite("0\t; automaton ");
-    if (strlen(fsa->name)==0)
+    if (fsa->name[0]=='\0')
       stgwrite("(anonymous)");
     else
       stgwrite(fsa->name);
@@ -111,7 +111,7 @@ SC_FUNC void writeleader(symbol *root)
       } /* if */
       /* generate label numbers for all statelist ids */
       for (stlist=sym->states->first; stlist!=NULL; stlist=stlist->next) {
-        assert(strlen(stlist->name)==0);
+        assert(stlist->name[0]=='\0');
         strcpy(stlist->name,itoh(getlabel()));
       } /* for */
       if (strcmp(sym->name,uENTRYFUNC)==0)

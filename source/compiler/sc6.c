@@ -808,7 +808,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
   if (pc_addlibtable) {
     for (constptr=libname_tab.first; constptr!=NULL; constptr=constptr->next) {
       if (constptr->value>0) {
-        assert(strlen(constptr->name)>0);
+        assert(constptr->name[0]!='\0');
         numlibraries++;
         nametablesize+=strlen(constptr->name)+1;
       } /* if */
@@ -819,7 +819,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
   numtags=0;
   for (constptr=tagname_tab.first; constptr!=NULL; constptr=constptr->next) {
     if ((constptr->value & PUBLICTAG)!=0) {
-      assert(strlen(constptr->name)>0);
+      assert(constptr->name[0]!='\0');
       numtags++;
       nametablesize+=strlen(constptr->name)+1;
     } /* if */
@@ -945,7 +945,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
     count=0;
     for (constptr=libname_tab.first; constptr!=NULL; constptr=constptr->next) {
       if (constptr->value>0) {
-        assert(strlen(constptr->name)>0);
+        assert(constptr->name[0]!='\0');
         func.address=0;
         func.nameofs=nameofs;
         #if BYTE_ORDER==BIG_ENDIAN
@@ -989,7 +989,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
   count=0;
   for (constptr=tagname_tab.first; constptr!=NULL; constptr=constptr->next) {
     if ((constptr->value & PUBLICTAG)!=0) {
-      assert(strlen(constptr->name)>0);
+      assert(constptr->name[0]!='\0');
       func.address=constptr->value & TAGMASK;
       func.nameofs=nameofs;
       #if BYTE_ORDER==BIG_ENDIAN
@@ -1208,21 +1208,21 @@ static void append_dbginfo(FILE *fout)
 
   /* tag table */
   for (constptr=tagname_tab.first; constptr!=NULL; constptr=constptr->next) {
-    assert(strlen(constptr->name)>0);
+    assert(constptr->name[0]!='\0');
     dbghdr.tags++;
     dbghdr.size+=sizeof(AMX_DBG_TAG)+strlen(constptr->name);
   } /* for */
 
   /* automaton table */
   for (constptr=sc_automaton_tab.first; constptr!=NULL; constptr=constptr->next) {
-    assert(constptr->index==0 && strlen(constptr->name)==0 || strlen(constptr->name)>0);
+    assert(constptr->index==0 && constptr->name[0]=='\0' || constptr->name[0]!='\0');
     dbghdr.automatons++;
     dbghdr.size+=sizeof(AMX_DBG_MACHINE)+strlen(constptr->name);
   } /* for */
 
   /* state table */
   for (constptr=sc_state_tab.first; constptr!=NULL; constptr=constptr->next) {
-    assert(strlen(constptr->name)>0);
+    assert(constptr->name[0]!='\0');
     dbghdr.states++;
     dbghdr.size+=sizeof(AMX_DBG_STATE)+strlen(constptr->name);
   } /* for */
@@ -1341,7 +1341,7 @@ static void append_dbginfo(FILE *fout)
 
   /* tag table */
   for (constptr=tagname_tab.first; constptr!=NULL; constptr=constptr->next) {
-    assert(strlen(constptr->name)>0);
+    assert(constptr->name[0]!='\0');
     id1=(int16_t)(constptr->value & TAGMASK);
     #if BYTE_ORDER==BIG_ENDIAN
       align16(&id1);
@@ -1352,7 +1352,7 @@ static void append_dbginfo(FILE *fout)
 
   /* automaton table */
   for (constptr=sc_automaton_tab.first; constptr!=NULL; constptr=constptr->next) {
-    assert(constptr->index==0 && strlen(constptr->name)==0 || strlen(constptr->name)>0);
+    assert(constptr->index==0 && constptr->name[0]=='\0' || constptr->name[0]!='\0');
     id1=(int16_t)constptr->index;
     address=(ucell)constptr->value;
     #if BYTE_ORDER==BIG_ENDIAN
@@ -1366,7 +1366,7 @@ static void append_dbginfo(FILE *fout)
 
   /* state table */
   for (constptr=sc_state_tab.first; constptr!=NULL; constptr=constptr->next) {
-    assert(strlen(constptr->name)>0);
+    assert(constptr->name[0]!='\0');
     id1=(int16_t)constptr->value;
     id2=(int16_t)constptr->index;
     address=(ucell)constptr->value;
