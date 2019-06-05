@@ -1450,13 +1450,15 @@ static void setconfig(char *root)
       insert_path(path);
       /* same for the codepage root */
       #if !defined NO_CODEPAGE
-        *ptr='\0';
+        if (ptr!=NULL)
+          *ptr='\0';
         if (!cp_path(path,"codepage"))
           error(109,path);        /* codepage path */
       #endif
       /* also copy the root path (for the XML documentation) */
       #if !defined SC_LIGHT
-        *ptr='\0';
+        if (ptr!=NULL)
+          *ptr='\0';
         strcpy(sc_rootpath,path);
       #endif
     } /* if */
@@ -6962,6 +6964,7 @@ static void doreturn(void)
     ident=doexpr(TRUE,FALSE,TRUE,FALSE,&tag,&sym,TRUE);
     needtoken(tTERM);
     /* see if this function already has a sub type (an array attached) */
+    assert(curfunc!=NULL);
     sub=finddepend(curfunc);
     assert(sub==NULL || sub->ident==iREFARRAY);
     if ((rettype & uRETVALUE)!=0) {
@@ -6974,7 +6977,6 @@ static void doreturn(void)
     } /* if */
     rettype|=uRETVALUE;                 /* function returns a value */
     /* check tagname with function tagname */
-    assert(curfunc!=NULL);
     check_tagmismatch(curfunc->tag,tag,TRUE,-1);
     if (ident==iARRAY || ident==iREFARRAY) {
       int dim[sDIMEN_MAX],numdim=0;
@@ -7044,8 +7046,7 @@ static void doreturn(void)
           sub=addvariable(curfunc->name,(argcount+3)*sizeof(cell),iREFARRAY,sGLOBAL,
                           curfunc->tag,dim,numdim,idxtag,0);
           sub->parent=curfunc;
-          if (curfunc)
-            curfunc->child=sub;
+          curfunc->child=sub;
         } /* if */
         /* get the hidden parameter, copy the array (the array is on the heap;
          * it stays on the heap for the moment, and it is removed -usually- at
