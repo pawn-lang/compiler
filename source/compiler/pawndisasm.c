@@ -456,19 +456,21 @@ static void addchars(char *str,cell value,int pos)
 int main(int argc,char *argv[])
 {
   char name[FILENAME_MAX];
-  FILE *fplist;
+  FILE *fplist=NULL;
   int codesize,count;
-  cell *code,*cip;
+  cell *code=NULL,*cip;
   OPCODE_PROC func;
   const char *filename;
   long nline,nprevline;
   FILE *fpsrc;
   int i,j;
   char line[sLINEMAX];
+  int retval=1;
 
+  fpamx=NULL;
   if (argc<2 || argc>3) {
     printf("Usage: pawndisasm <input> [output]\n");
-    return 1;
+    goto ret;
   } /* if */
   if (argc==2) {
     char *ptr;
@@ -481,11 +483,11 @@ int main(int argc,char *argv[])
   } /* if */
   if ((fpamx=fopen(argv[1],"rb"))==NULL) {
     printf("Unable to open input file \"%s\"\n",argv[1]);
-    return 1;
+    goto ret;
   } /* if */
   if ((fplist=fopen(name,"wt"))==NULL) {
     printf("Unable to create output file \"%s\"\n",name);
-    return 1;
+    goto ret;
   } /* if */
 
   /* load debug info */
@@ -496,11 +498,11 @@ int main(int argc,char *argv[])
   if (fread(&amxhdr,sizeof amxhdr,1,fpamx)==0) {
     printf("Unable to read AMX header: %s\n",
            feof(fpamx) ? "End of file reached" : strerror(errno));
-    return 1;
+    goto ret;
   } /* if */
   if (amxhdr.magic!=AMX_MAGIC) {
     printf("Not a valid AMX file\n");
-    return 1;
+    goto ret;
   } /* if */
   codesize=amxhdr.hea-amxhdr.cod; /* size for both code and data */
   fprintf(fplist,";File version: %d\n",amxhdr.file_version);
@@ -517,7 +519,7 @@ int main(int argc,char *argv[])
   /* load the code block */
   if ((code=malloc(codesize))==NULL) {
     printf("Insufficient memory: need %d bytes\n",codesize);
-    return 1;
+    goto ret;
   } /* if */
 
   /* read and expand the file */
@@ -525,7 +527,7 @@ int main(int argc,char *argv[])
   if ((int32_t)fread(code,1,codesize,fpamx)<amxhdr.size-amxhdr.cod) {
     printf("Unable to read code: %s\n",
            feof(fpamx) ? "End of file reached" : strerror(errno));
-    return 1;
+    goto ret;
   } /* if */
   if ((amxhdr.flags & AMX_FLAG_COMPACT)!=0)
      expand((unsigned char *)code,amxhdr.size-amxhdr.cod,amxhdr.hea-amxhdr.cod);
@@ -596,8 +598,12 @@ int main(int argc,char *argv[])
     dbg_FreeInfo(&amxdbg);
   } /* if */
 
+  retval=0;
+ret:
   free(code);
-  fclose(fpamx);
-  fclose(fplist);
-  return 0;
+  if (fpamx!=NULL)
+    fclose(fpamx);
+  if (fplist!=NULL)
+    fclose(fplist);
+  return retval;
 }
