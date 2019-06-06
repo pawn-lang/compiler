@@ -54,170 +54,169 @@ cell do_symbol(FILE *ftxt,const cell *params,cell opcode,cell cip);
 
 
 typedef struct {
-  cell opcode;
   char *name;
   OPCODE_PROC func;
 } OPCODE;
 
 static OPCODE opcodelist[] = {
-  {  0, "???",        parm0 },
-  {  1, "load.pri",   parm1 },
-  {  2, "load.alt",   parm1 },
-  {  3, "load.s.pri", parm1 },
-  {  4, "load.s.alt", parm1 },
-  {  5, "lref.pri",   parm1 },
-  {  6, "lref.alt",   parm1 },
-  {  7, "lref.s.pri", parm1 },
-  {  8, "lref.s.alt", parm1 },
-  {  9, "load.i",     parm0 },
-  { 10, "lodb.i",     parm1 },
-  { 11, "const.pri",  parm1 },
-  { 12, "const.alt",  parm1 },
-  { 13, "addr.pri",   parm1 },
-  { 14, "addr.alt",   parm1 },
-  { 15, "stor.pri",   parm1 },
-  { 16, "stor.alt",   parm1 },
-  { 17, "stor.s.pri", parm1 },
-  { 18, "stor.s.alt", parm1 },
-  { 19, "sref.pri",   parm1 },
-  { 20, "sref.alt",   parm1 },
-  { 21, "sref.s.pri", parm1 },
-  { 22, "sref.s.alt", parm1 },
-  { 23, "stor.i",     parm0 },
-  { 24, "strb.i",     parm1 },
-  { 25, "lidx",       parm0 },
-  { 26, "lidx.b",     parm1 },
-  { 27, "idxaddr",    parm0 },
-  { 28, "idxaddr.b",  parm1 },
-  { 29, "align.pri",  parm1 },
-  { 30, "align.alt",  parm1 },
-  { 31, "lctrl",      parm1 },
-  { 32, "sctrl",      parm1 },
-  { 33, "move.pri",   parm0 },
-  { 34, "move.alt",   parm0 },
-  { 35, "xchg",       parm0 },
-  { 36, "push.pri",   parm0 },
-  { 37, "push.alt",   parm0 },
-  { 38, "push.r",     parm1 },  /* obsolete (never generated) */
-  { 39, "push.c",     parm1 },
-  { 40, "push",       parm1 },
-  { 41, "push.s",     parm1 },
-  { 42, "pop.pri",    parm0 },
-  { 43, "pop.alt",    parm0 },
-  { 44, "stack",      parm1 },
-  { 45, "heap",       parm1 },
-  { 46, "proc",       do_proc },
-  { 47, "ret",        parm0 },
-  { 48, "retn",       parm0 },
-  { 49, "call",       do_call },
-  { 50, "call.pri",   parm0 },
-  { 51, "jump",       do_jump },
-  { 52, "jrel",       parm1 },  /* same as jump, since version 10 */
-  { 53, "jzer",       do_jump },
-  { 54, "jnz",        do_jump },
-  { 55, "jeq",        do_jump },
-  { 56, "jneq",       do_jump },
-  { 57, "jless",      do_jump },
-  { 58, "jleq",       do_jump },
-  { 59, "jgrtr",      do_jump },
-  { 60, "jgeq",       do_jump },
-  { 61, "jsless",     do_jump },
-  { 62, "jsleq",      do_jump },
-  { 63, "jsgrtr",     do_jump },
-  { 64, "jsgeq",      do_jump },
-  { 65, "shl",        parm0 },
-  { 66, "shr",        parm0 },
-  { 67, "sshr",       parm0 },
-  { 68, "shl.c.pri",  parm1 },
-  { 69, "shl.c.alt",  parm1 },
-  { 70, "shr.c.pri",  parm1 },
-  { 71, "shr.c.alt",  parm1 },
-  { 72, "smul",       parm0 },
-  { 73, "sdiv",       parm0 },
-  { 74, "sdiv.alt",   parm0 },
-  { 75, "umul",       parm0 },
-  { 76, "udiv",       parm0 },
-  { 77, "udiv.alt",   parm0 },
-  { 78, "add",        parm0 },
-  { 79, "sub",        parm0 },
-  { 80, "sub.alt",    parm0 },
-  { 81, "and",        parm0 },
-  { 82, "or",         parm0 },
-  { 83, "xor",        parm0 },
-  { 84, "not",        parm0 },
-  { 85, "neg",        parm0 },
-  { 86, "invert",     parm0 },
-  { 87, "add.c",      parm1 },
-  { 88, "smul.c",     parm1 },
-  { 89, "zero.pri",   parm0 },
-  { 90, "zero.alt",   parm0 },
-  { 91, "zero",       parm1 },
-  { 92, "zero.s",     parm1 },
-  { 93, "sign.pri",   parm0 },
-  { 94, "sign.alt",   parm0 },
-  { 95, "eq",         parm0 },
-  { 96, "neq",        parm0 },
-  { 97, "less",       parm0 },
-  { 98, "leq",        parm0 },
-  { 99, "grtr",       parm0 },
-  {100, "geq",        parm0 },
-  {101, "sless",      parm0 },
-  {102, "sleq",       parm0 },
-  {103, "sgrtr",      parm0 },
-  {104, "sgeq",       parm0 },
-  {105, "eq.c.pri",   parm1 },
-  {106, "eq.c.alt",   parm1 },
-  {107, "inc.pri",    parm0 },
-  {108, "inc.alt",    parm0 },
-  {109, "inc",        parm1 },
-  {110, "inc.s",      parm1 },
-  {111, "inc.i",      parm0 },
-  {112, "dec.pri",    parm0 },
-  {113, "dec.alt",    parm0 },
-  {114, "dec",        parm1 },
-  {115, "dec.s",      parm1 },
-  {116, "dec.i",      parm0 },
-  {117, "movs",       parm1 },
-  {118, "cmps",       parm1 },
-  {119, "fill",       parm1 },
-  {120, "halt",       parm1 },
-  {121, "bounds",     parm1 },
-  {122, "sysreq.pri", parm0 },
-  {123, "sysreq.c",   do_sysreq },
-  {124, "file",       do_file },
-  {125, "line",       parm2 },
-  {126, "symbol",     do_symbol },
-  {127, "srange",     parm2 },        /* version 1 */
-  {128, "jump.pri",   parm0 },        /* version 1 */
-  {129, "switch",     do_switch },    /* version 1 */
-  {130, "casetbl",    casetbl },      /* version 1 */
-  {131, "swap.pri",   parm0 },        /* version 4 */
-  {132, "swap.alt",   parm0 },        /* version 4 */
-  {133, "push.adr",   parm1 },        /* version 4 */
-  {134, "nop",        parm0 },        /* version 6 */
-  {135, "sysreq.n",   parm2 },        /* version 9 (replaces SYSREQ.d from earlier version) */
-  {136, "symtag",     parm1 },        /* version 7 */
-  {137, "break",      parm0 },        /* version 8 */
-  {138, "push2.c",    parm2 },        /* version 9 */
-  {139, "push2",      parm2 },        /* version 9 */
-  {140, "push2.s",    parm2 },        /* version 9 */
-  {141, "push2.adr",  parm2 },        /* version 9 */
-  {142, "push3.c",    parm3 },        /* version 9 */
-  {143, "push3",      parm3 },        /* version 9 */
-  {144, "push3.s",    parm3 },        /* version 9 */
-  {145, "push3.adr",  parm3 },        /* version 9 */
-  {146, "push4.c",    parm4 },        /* version 9 */
-  {147, "push4",      parm4 },        /* version 9 */
-  {148, "push4.s",    parm4 },        /* version 9 */
-  {149, "push4.adr",  parm4 },        /* version 9 */
-  {150, "push5.c",    parm5 },        /* version 9 */
-  {151, "push5",      parm5 },        /* version 9 */
-  {152, "push5.s",    parm5 },        /* version 9 */
-  {153, "push5.adr",  parm5 },        /* version 9 */
-  {154, "load.both",  parm2 },        /* version 9 */
-  {155, "load.s.both",parm2 },        /* version 9 */
-  {156, "const",      parm2 },        /* version 9 */
-  {157, "const.s",    parm2 },        /* version 9 */
+  { /*  0*/ "???",        parm0 },
+  { /*  1*/ "load.pri",   parm1 },
+  { /*  2*/ "load.alt",   parm1 },
+  { /*  3*/ "load.s.pri", parm1 },
+  { /*  4*/ "load.s.alt", parm1 },
+  { /*  5*/ "lref.pri",   parm1 },
+  { /*  6*/ "lref.alt",   parm1 },
+  { /*  7*/ "lref.s.pri", parm1 },
+  { /*  8*/ "lref.s.alt", parm1 },
+  { /*  9*/ "load.i",     parm0 },
+  { /* 10*/ "lodb.i",     parm1 },
+  { /* 11*/ "const.pri",  parm1 },
+  { /* 12*/ "const.alt",  parm1 },
+  { /* 13*/ "addr.pri",   parm1 },
+  { /* 14*/ "addr.alt",   parm1 },
+  { /* 15*/ "stor.pri",   parm1 },
+  { /* 16*/ "stor.alt",   parm1 },
+  { /* 17*/ "stor.s.pri", parm1 },
+  { /* 18*/ "stor.s.alt", parm1 },
+  { /* 19*/ "sref.pri",   parm1 },
+  { /* 20*/ "sref.alt",   parm1 },
+  { /* 21*/ "sref.s.pri", parm1 },
+  { /* 22*/ "sref.s.alt", parm1 },
+  { /* 23*/ "stor.i",     parm0 },
+  { /* 24*/ "strb.i",     parm1 },
+  { /* 25*/ "lidx",       parm0 },
+  { /* 26*/ "lidx.b",     parm1 },
+  { /* 27*/ "idxaddr",    parm0 },
+  { /* 28*/ "idxaddr.b",  parm1 },
+  { /* 29*/ "align.pri",  parm1 },
+  { /* 30*/ "align.alt",  parm1 },
+  { /* 31*/ "lctrl",      parm1 },
+  { /* 32*/ "sctrl",      parm1 },
+  { /* 33*/ "move.pri",   parm0 },
+  { /* 34*/ "move.alt",   parm0 },
+  { /* 35*/ "xchg",       parm0 },
+  { /* 36*/ "push.pri",   parm0 },
+  { /* 37*/ "push.alt",   parm0 },
+  { /* 38*/ "push.r",     parm1 },  /* obsolete (never generated) */
+  { /* 39*/ "push.c",     parm1 },
+  { /* 40*/ "push",       parm1 },
+  { /* 41*/ "push.s",     parm1 },
+  { /* 42*/ "pop.pri",    parm0 },
+  { /* 43*/ "pop.alt",    parm0 },
+  { /* 44*/ "stack",      parm1 },
+  { /* 45*/ "heap",       parm1 },
+  { /* 46*/ "proc",       do_proc },
+  { /* 47*/ "ret",        parm0 },
+  { /* 48*/ "retn",       parm0 },
+  { /* 49*/ "call",       do_call },
+  { /* 50*/ "call.pri",   parm0 },
+  { /* 51*/ "jump",       do_jump },
+  { /* 52*/ "jrel",       parm1 },  /* same as jump, since version 10 */
+  { /* 53*/ "jzer",       do_jump },
+  { /* 54*/ "jnz",        do_jump },
+  { /* 55*/ "jeq",        do_jump },
+  { /* 56*/ "jneq",       do_jump },
+  { /* 57*/ "jless",      do_jump },
+  { /* 58*/ "jleq",       do_jump },
+  { /* 59*/ "jgrtr",      do_jump },
+  { /* 60*/ "jgeq",       do_jump },
+  { /* 61*/ "jsless",     do_jump },
+  { /* 62*/ "jsleq",      do_jump },
+  { /* 63*/ "jsgrtr",     do_jump },
+  { /* 64*/ "jsgeq",      do_jump },
+  { /* 65*/ "shl",        parm0 },
+  { /* 66*/ "shr",        parm0 },
+  { /* 67*/ "sshr",       parm0 },
+  { /* 68*/ "shl.c.pri",  parm1 },
+  { /* 69*/ "shl.c.alt",  parm1 },
+  { /* 70*/ "shr.c.pri",  parm1 },
+  { /* 71*/ "shr.c.alt",  parm1 },
+  { /* 72*/ "smul",       parm0 },
+  { /* 73*/ "sdiv",       parm0 },
+  { /* 74*/ "sdiv.alt",   parm0 },
+  { /* 75*/ "umul",       parm0 },
+  { /* 76*/ "udiv",       parm0 },
+  { /* 77*/ "udiv.alt",   parm0 },
+  { /* 78*/ "add",        parm0 },
+  { /* 79*/ "sub",        parm0 },
+  { /* 80*/ "sub.alt",    parm0 },
+  { /* 81*/ "and",        parm0 },
+  { /* 82*/ "or",         parm0 },
+  { /* 83*/ "xor",        parm0 },
+  { /* 84*/ "not",        parm0 },
+  { /* 85*/ "neg",        parm0 },
+  { /* 86*/ "invert",     parm0 },
+  { /* 87*/ "add.c",      parm1 },
+  { /* 88*/ "smul.c",     parm1 },
+  { /* 89*/ "zero.pri",   parm0 },
+  { /* 90*/ "zero.alt",   parm0 },
+  { /* 91*/ "zero",       parm1 },
+  { /* 92*/ "zero.s",     parm1 },
+  { /* 93*/ "sign.pri",   parm0 },
+  { /* 94*/ "sign.alt",   parm0 },
+  { /* 95*/ "eq",         parm0 },
+  { /* 96*/ "neq",        parm0 },
+  { /* 97*/ "less",       parm0 },
+  { /* 98*/ "leq",        parm0 },
+  { /* 99*/ "grtr",       parm0 },
+  { /*100*/ "geq",        parm0 },
+  { /*101*/ "sless",      parm0 },
+  { /*102*/ "sleq",       parm0 },
+  { /*103*/ "sgrtr",      parm0 },
+  { /*104*/ "sgeq",       parm0 },
+  { /*105*/ "eq.c.pri",   parm1 },
+  { /*106*/ "eq.c.alt",   parm1 },
+  { /*107*/ "inc.pri",    parm0 },
+  { /*108*/ "inc.alt",    parm0 },
+  { /*109*/ "inc",        parm1 },
+  { /*110*/ "inc.s",      parm1 },
+  { /*111*/ "inc.i",      parm0 },
+  { /*112*/ "dec.pri",    parm0 },
+  { /*113*/ "dec.alt",    parm0 },
+  { /*114*/ "dec",        parm1 },
+  { /*115*/ "dec.s",      parm1 },
+  { /*116*/ "dec.i",      parm0 },
+  { /*117*/ "movs",       parm1 },
+  { /*118*/ "cmps",       parm1 },
+  { /*119*/ "fill",       parm1 },
+  { /*120*/ "halt",       parm1 },
+  { /*121*/ "bounds",     parm1 },
+  { /*122*/ "sysreq.pri", parm0 },
+  { /*123*/ "sysreq.c",   do_sysreq },
+  { /*124*/ "file",       do_file },
+  { /*125*/ "line",       parm2 },
+  { /*126*/ "symbol",     do_symbol },
+  { /*127*/ "srange",     parm2 },        /* version 1 */
+  { /*128*/ "jump.pri",   parm0 },        /* version 1 */
+  { /*129*/ "switch",     do_switch },    /* version 1 */
+  { /*130*/ "casetbl",    casetbl },      /* version 1 */
+  { /*131*/ "swap.pri",   parm0 },        /* version 4 */
+  { /*132*/ "swap.alt",   parm0 },        /* version 4 */
+  { /*133*/ "push.adr",   parm1 },        /* version 4 */
+  { /*134*/ "nop",        parm0 },        /* version 6 */
+  { /*135*/ "sysreq.n",   parm2 },        /* version 9 (replaces SYSREQ.d from earlier version) */
+  { /*136*/ "symtag",     parm1 },        /* version 7 */
+  { /*137*/ "break",      parm0 },        /* version 8 */
+  { /*138*/ "push2.c",    parm2 },        /* version 9 */
+  { /*139*/ "push2",      parm2 },        /* version 9 */
+  { /*140*/ "push2.s",    parm2 },        /* version 9 */
+  { /*141*/ "push2.adr",  parm2 },        /* version 9 */
+  { /*142*/ "push3.c",    parm3 },        /* version 9 */
+  { /*143*/ "push3",      parm3 },        /* version 9 */
+  { /*144*/ "push3.s",    parm3 },        /* version 9 */
+  { /*145*/ "push3.adr",  parm3 },        /* version 9 */
+  { /*146*/ "push4.c",    parm4 },        /* version 9 */
+  { /*147*/ "push4",      parm4 },        /* version 9 */
+  { /*148*/ "push4.s",    parm4 },        /* version 9 */
+  { /*149*/ "push4.adr",  parm4 },        /* version 9 */
+  { /*150*/ "push5.c",    parm5 },        /* version 9 */
+  { /*151*/ "push5",      parm5 },        /* version 9 */
+  { /*152*/ "push5.s",    parm5 },        /* version 9 */
+  { /*153*/ "push5.adr",  parm5 },        /* version 9 */
+  { /*154*/ "load.both",  parm2 },        /* version 9 */
+  { /*155*/ "load.s.both",parm2 },        /* version 9 */
+  { /*156*/ "const",      parm2 },        /* version 9 */
+  { /*157*/ "const.s",    parm2 },        /* version 9 */
 };
 
 void print_opcode(FILE *ftxt,cell opcode,cell cip)
