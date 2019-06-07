@@ -47,8 +47,7 @@ cell do_proc(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell do_call(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell do_jump(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell do_sysreq(FILE *ftxt,const cell *params,cell opcode,cell cip);
-cell do_switch(FILE *ftxt,const cell *params,cell opcode,cell cip);
-cell casetbl(FILE *ftxt,const cell *params,cell opcode,cell cip);
+cell do_casetbl(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell do_file(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell do_symbol(FILE *ftxt,const cell *params,cell opcode,cell cip);
 
@@ -188,8 +187,8 @@ static OPCODE opcodelist[] = {
   { /*126*/ "symbol",     do_symbol },
   { /*127*/ "srange",     parm2 },        /* version 1 */
   { /*128*/ "jump.pri",   parm0 },        /* version 1 */
-  { /*129*/ "switch",     do_switch },    /* version 1 */
-  { /*130*/ "casetbl",    casetbl },      /* version 1 */
+  { /*129*/ "switch",     do_jump },      /* version 1 */
+  { /*130*/ "casetbl",    do_casetbl },   /* version 1 */
   { /*131*/ "swap.pri",   parm0 },        /* version 4 */
   { /*132*/ "swap.alt",   parm0 },        /* version 4 */
   { /*133*/ "push.adr",   parm1 },        /* version 4 */
@@ -353,14 +352,7 @@ cell do_sysreq(FILE *ftxt,const cell *params,cell opcode,cell cip)
   return 2;
 }
 
-cell do_switch(FILE *ftxt,const cell *params,cell opcode,cell cip)
-{
-  print_opcode(ftxt,opcode,cip);
-  fprintf(ftxt," %08"PRIxC"\n",*params);
-  return 2;
-}
-
-cell casetbl(FILE *ftxt,const cell *params,cell opcode,cell cip)
+cell do_casetbl(FILE *ftxt,const cell *params,cell opcode,cell cip)
 {
   cell num;
   int idx;
