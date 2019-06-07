@@ -483,15 +483,15 @@ int main(int argc,char *argv[])
   } /* if */
   codesize=amxhdr.hea-amxhdr.cod; /* size for both code and data */
   fprintf(fplist,";File version: %d\n",amxhdr.file_version);
-  fprintf(fplist,";Flags:        ");
+  fprintf(fplist,";Flags:       ");
   if ((amxhdr.flags & AMX_FLAG_COMPACT)!=0)
-    fprintf(fplist,"compact-encoding ");
+    fprintf(fplist," compact-encoding");
   if ((amxhdr.flags & AMX_FLAG_DEBUG)!=0)
-    fprintf(fplist,"debug-info ");
+    fprintf(fplist," debug-info");
   if ((amxhdr.flags & AMX_FLAG_NOCHECKS)!=0)
-    fprintf(fplist,"no-checks ");
+    fprintf(fplist," no-checks");
   if ((amxhdr.flags & AMX_FLAG_SLEEP)!=0)
-    fprintf(fplist,"sleep ");
+    fprintf(fplist," sleep");
   fprintf(fplist,"\n\n");
   /* load the code block */
   if ((code=malloc(codesize))==NULL) {
