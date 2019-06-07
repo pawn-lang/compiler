@@ -6314,7 +6314,7 @@ fetchtok:
   case tRATIONAL:
     if (!allow_nonint)
       goto invalid_token;
-    p->value.ucell=(ucell)(negate ? (val|((cell)1 << (PAWN_CELL_SIZE-1))) : val);
+    p->value.ucell=(negate ? ((ucell)val|((ucell)1 << (PAWN_CELL_SIZE-1))) : (ucell)val);
     break;
   case tSYMBOL:
     sym=findloc(str);
