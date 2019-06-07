@@ -48,8 +48,6 @@ cell do_call(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell do_jump(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell do_sysreq(FILE *ftxt,const cell *params,cell opcode,cell cip);
 cell do_casetbl(FILE *ftxt,const cell *params,cell opcode,cell cip);
-cell do_file(FILE *ftxt,const cell *params,cell opcode,cell cip);
-cell do_symbol(FILE *ftxt,const cell *params,cell opcode,cell cip);
 
 
 typedef struct {
@@ -58,7 +56,7 @@ typedef struct {
 } OPCODE;
 
 static OPCODE opcodelist[] = {
-  { /*  0*/ "???",        parm0 },
+  { /*  0*/ NULL,         NULL },
   { /*  1*/ "load.pri",   parm1 },
   { /*  2*/ "load.alt",   parm1 },
   { /*  3*/ "load.s.pri", parm1 },
@@ -182,10 +180,10 @@ static OPCODE opcodelist[] = {
   { /*121*/ "bounds",     parm1 },
   { /*122*/ "sysreq.pri", parm0 },
   { /*123*/ "sysreq.c",   do_sysreq },
-  { /*124*/ "file",       do_file },
-  { /*125*/ "line",       parm2 },
-  { /*126*/ "symbol",     do_symbol },
-  { /*127*/ "srange",     parm2 },        /* version 1 */
+  { /*124*/ NULL,         NULL }, /* file */
+  { /*125*/ NULL,         NULL }, /* line */
+  { /*126*/ NULL,         NULL }, /* symbol */
+  { /*127*/ NULL,         NULL }, /* srange, version 1 */
   { /*128*/ "jump.pri",   parm0 },        /* version 1 */
   { /*129*/ "switch",     do_jump },      /* version 1 */
   { /*130*/ "casetbl",    do_casetbl },   /* version 1 */
@@ -194,7 +192,7 @@ static OPCODE opcodelist[] = {
   { /*133*/ "push.adr",   parm1 },        /* version 4 */
   { /*134*/ "nop",        parm0 },        /* version 6 */
   { /*135*/ "sysreq.n",   parm2 },        /* version 9 (replaces SYSREQ.d from earlier version) */
-  { /*136*/ "symtag",     parm1 },        /* version 7 */
+  { /*136*/ NULL,         NULL }, /* symtag, version 7 */
   { /*137*/ "break",      parm0 },        /* version 8 */
   { /*138*/ "push2.c",    parm2 },        /* version 9 */
   { /*139*/ "push2",      parm2 },        /* version 9 */
@@ -220,8 +218,7 @@ static OPCODE opcodelist[] = {
 
 void print_opcode(FILE *ftxt,cell opcode,cell cip)
 {
-  fprintf(ftxt,"%08"PRIxC"  %s",
-          cip,opcodelist[(int)(opcode &0x0000ffff)].name);
+  fprintf(ftxt,"%08"PRIxC"  %s",cip,opcodelist[opcode].name);
 }
 
 void print_funcname(FILE *ftxt,cell address)
@@ -364,18 +361,6 @@ cell do_casetbl(FILE *ftxt,const cell *params,cell opcode,cell cip)
     fprintf(ftxt,"                  %08"PRIxC" %08"PRIxC"\n",
             params[2*idx],params[2*idx+1]);
   return 2*num+1;
-}
-
-cell do_file(FILE *ftxt,const cell *params,cell opcode,cell cip)
-{
-  assert(0);
-  return 0;
-}
-
-cell do_symbol(FILE *ftxt,const cell *params,cell opcode,cell cip)
-{
-  assert(0);
-  return 0;
 }
 
 static void expand(unsigned char *code,long codesize,long memsize)
@@ -558,8 +543,13 @@ int main(int argc,char *argv[])
         nprevline=nline;
       } /* if */
     } /* if */
-    func=opcodelist[(int)(*cip&0x0000ffff)].func;
-    cip+=func(fplist,cip+1,*cip,(cell)(cip-code)*sizeof(cell));
+    if (*(ucell *)cip>=(ucell)(sizeof opcodelist/sizeof opcodelist[0])
+        || (func=opcodelist[*cip].func)==NULL) {
+      printf("Invalid opcode %08"PRIxC" at address %08"PRIxC"\n",
+             *cip, (cell)((unsigned char *)cip-(unsigned char *)code));
+      goto ret;
+    } /* if */
+    cip+=func(fplist,cip+1,*cip,(cell)((unsigned char *)cip-(unsigned char *)code));
   } /* while */
 
   /* dump the data section too */
