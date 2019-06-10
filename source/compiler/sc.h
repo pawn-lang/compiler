@@ -52,7 +52,7 @@
   #if !defined __x86_64__ && !defined __amd64__ && (__GNUC__>=4 || __GNUC__==3 && __GNUC_MINOR__>=4)
     #define SC_FASTCALL __attribute__((fastcall))
   #else
-    #define SC_FASTCALL __attribute__((regparam(3)))
+    #define SC_FASTCALL __attribute__((regparm(3)))
   #endif
 #endif
 #if !defined SC_FASTCALL

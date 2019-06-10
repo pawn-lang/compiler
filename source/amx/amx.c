@@ -484,26 +484,28 @@ int AMXAPI amx_Callback(AMX *amx, cell index, cell *result, const cell *params)
     if ((amx->flags & AMX_FLAG_JITC)!=0)
       assert(amx->sysreq_d==0);
   #endif
-  if (amx->sysreq_d!=0) {
-    /* at the point of the call, the CIP pseudo-register points directly
-     * behind the SYSREQ instruction and its parameter(s)
-     */
-    unsigned char *code=amx->base+(int)hdr->cod+(int)amx->cip-sizeof(cell);
-    assert(amx->cip >= 4 && amx->cip < (hdr->dat - hdr->cod));
-    assert_static(sizeof(f)<=sizeof(cell)); /* function pointer must fit in a cell */
-    if (amx->flags & AMX_FLAG_SYSREQN)		/* SYSREQ.N has 2 parameters */
-      code-=sizeof(cell);
-#if defined __GNUC__ || defined __ICC || defined ASM32
-    if (*(cell*)code==index) {
-#else
-    if (*(cell*)code!=OP_SYSREQ_PRI) {
-      assert(*(cell*)(code-sizeof(cell))==OP_SYSREQ_C || *(cell*)(code-sizeof(cell))==OP_SYSREQ_N);
-      assert(*(cell*)code==index);
-#endif
-      *(cell*)(code-sizeof(cell))=amx->sysreq_d;
-      *(cell*)code=(cell)f;
+  #if PAWN_POINTER_SIZE <= PAWN_CELL_SIZE
+    if (amx->sysreq_d!=0) {
+      /* at the point of the call, the CIP pseudo-register points directly
+      * behind the SYSREQ instruction and its parameter(s)
+      */
+      unsigned char *code=amx->base+(int)hdr->cod+(int)amx->cip-sizeof(cell);
+      assert(amx->cip >= 4 && amx->cip < (hdr->dat - hdr->cod));
+      assert_static(sizeof(f)<=sizeof(cell)); /* function pointer must fit in a cell */
+      if (amx->flags & AMX_FLAG_SYSREQN)		/* SYSREQ.N has 2 parameters */
+        code-=sizeof(cell);
+    #if defined __GNUC__ || defined __ICC || defined ASM32
+      if (*(cell*)code==index) {
+    #else
+      if (*(cell*)code!=OP_SYSREQ_PRI) {
+        assert(*(cell*)(code-sizeof(cell))==OP_SYSREQ_C || *(cell*)(code-sizeof(cell))==OP_SYSREQ_N);
+        assert(*(cell*)code==index);
+    #endif
+        *(cell*)(code-sizeof(cell))=amx->sysreq_d;
+        *(cell*)code=(cell)f;
+      } /* if */
     } /* if */
-  } /* if */
+  #endif
 
   /* Note:
    *   params[0] == number of bytes for the additional parameters passed to the native function

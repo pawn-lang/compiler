@@ -178,6 +178,16 @@ extern  "C" {
   #error Unsupported cell size (PAWN_CELL_SIZE)
 #endif
 
+#if !defined PAWN_POINTER_SIZE
+  #if INTPTR_MAX==INT64_MAX
+    #define PAWN_POINTER_SIZE 64
+  #elif INTPTR_MAX==INT32_MAX
+    #define PAWN_POINTER_SIZE 32
+  #else
+    #error Unknown pointer size
+  #endif
+#endif
+
 #define UNPACKEDMAX   (((cell)1 << (sizeof(cell)-1)*8) - 1)
 #define UNLIMITED     (~1u >> 1)
 

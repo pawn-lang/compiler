@@ -44,6 +44,12 @@ if(HAVE_STRLCAT)
   add_definitions(-DHAVE_STRLCAT)
 endif()
 
+if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+  add_definitions(-DPAWN_POINTER_SIZE=32)
+elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  add_definitions(-DPAWN_POINTER_SIZE=64)
+endif()
+
 if(MSVC)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE)
   if(MSVC LESS 1900)
