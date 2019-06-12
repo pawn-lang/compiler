@@ -1083,7 +1083,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
     } /* while */
   } /* for */
   if (bytes_out-bytes_in>0)
-    error(106);         /* compression buffer overflow */
+    longjmp(compact_err,1);
 
   if (lbltab!=NULL) {
     free(lbltab);
