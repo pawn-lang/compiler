@@ -50,7 +50,7 @@ static char *errmsg[] = {
 /*008*/  "must be a constant expression; assumed zero\n",
 /*009*/  "invalid array size (negative, zero or out of bounds)\n",
 /*010*/  "invalid function or declaration\n",
-/*011*/  "invalid outside functions\n",
+/*011*/  "stack offset/data address must be a multiple of cell size\n",
 /*012*/  "invalid function call, not a valid address\n",
 /*013*/  "no entry point (no public functions)\n",
 /*014*/  "invalid statement; not in switch\n",

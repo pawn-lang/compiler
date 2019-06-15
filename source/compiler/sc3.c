@@ -1463,24 +1463,21 @@ static int hier2(value *lval)
     return FALSE;
   } /* case */
   case tEMIT:
-  case t__EMIT: {
-    cell val;
-    char* st;
-    int block_syntax=matchtoken('(');
+  case t__EMIT:
+    paranthese=matchtoken('(');
     emit_flags |= efEXPR;
     if (emit_stgbuf_idx==-1)
       emit_stgbuf_idx=stgidx;
     do {
       lex(&val,&st);
       emit_parse_line();
-    } while ((block_syntax!=0) && matchtoken(','));
-    if (block_syntax!=0)
+    } while ((paranthese!=0) && matchtoken(','));
+    if (paranthese!=0)
       needtoken(')');
     emit_flags &= ~efEXPR;
     lval->ident=iEXPRESSION;
     pc_sideeffect=TRUE;
     return FALSE;
-  } /* case */
   default:
     lexpush();
     lvalue=hier1(lval);

@@ -415,13 +415,14 @@ enum {
   tLABEL,
   tSTRING,
   /* argument types for emit/__emit */
-  teANY , /* any value */
+  teANY, /* any value */
   teNUMERIC, /* integer/rational number */
-  teDATA  , /* data (variable name or address) */
+  teDATA, /* data (variable name or address) */
   teLOCAL, /* local variable (name or offset) */
+  teREFERENCE, /* function argument passed by reference */
   teFUNCTN, /* Pawn function */
   teNATIVE, /* native function */
-  teNONNEG , /* nonnegative integer */
+  teNONNEG, /* nonnegative integer */
   /* for assigment to "lastst" only (see SC1.C) */
   tEXPR,
   tENDLESS, /* endless loop */
@@ -920,9 +921,9 @@ SC_VDECL FILE *outf;          /* file written to */
 SC_VDECL jmp_buf errbuf;      /* target of longjmp() on a fatal error */
 
 /*  Possible entries for "emit_flags"
- *  Bits: 0     (epmBLOCK) multiline ('{}' block) syntax
- *        1     (epmEXPR) used within an expression
- *        2     (epmGLOBAL) used outside of a function
+ *  Bits: 0     (efBLOCK) multiline ('()' block) syntax
+ *        1     (efEXPR) used within an expression
+ *        2     (efGLOBAL) used outside of a function
  */
 #define efBLOCK         1
 #define efEXPR          2

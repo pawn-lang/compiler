@@ -1337,12 +1337,12 @@ static int command(void)
   case tpEMIT: {
     if (!SKIPPING) {
       /* write opcode to output file */
-      char name[40];
+      char name[MAX_INSTR_LEN];
       int i;
       insert_dbgline(fline);
       while (*lptr<=' ' && *lptr!='\0')
         lptr++;
-      for (i=0; i<40 && (isalpha(*lptr) || *lptr=='.'); i++,lptr++)
+      for (i=0; i<sizeof(name)-1 && (isalpha(*lptr) || *lptr=='.'); i++,lptr++)
         name[i]=(char)tolower(*lptr);
       name[i]='\0';
       stgwrite("\t");
@@ -1405,7 +1405,7 @@ static int command(void)
               break;
             } else if (current_token==tRATIONAL) {
               /* change the first bit to make float negative value */
-              outval(val|((cell)1 << (PAWN_CELL_SIZE-1)),FALSE);
+              outval(val|(cell)((ucell)1 << (PAWN_CELL_SIZE-1)),FALSE);
               code_idx+=opargs(1);
               break;
             } else {
@@ -2148,7 +2148,7 @@ char *sc_tokens[] = {
          ";", ";", "-integer value-", "-rational value-", "-identifier-",
          "-label-", "-string-",
          "-any value-", "-numeric value-", "-data offset-", "-local variable-",
-         "-function-", "-native function-", "-nonnegative integer-"
+         "-reference-", "-function-", "-native function-", "-nonnegative integer-"
        };
 
 SC_FUNC int lex(cell *lexvalue,char **lexsym)
