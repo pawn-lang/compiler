@@ -510,7 +510,7 @@ int pc_compile(int argc, char *argv[])
     set_extension(outfname,".lst",TRUE);
   else
     set_extension(outfname,".asm",TRUE);
-  if (errfname[0]!='\0')
+  if (!strempty(errfname))
     remove(errfname);   /* delete file on startup */
   else if (verbosity>0)
     setcaption();
@@ -601,7 +601,7 @@ int pc_compile(int argc, char *argv[])
     sc_status=statFIRST;        /* resetglobals() resets it to IDLE */
     setstringconstants();
     setfileconst(inpfname);
-    if (incfname[0]!='\0') {
+    if (!strempty(incfname)) {
       if (strcmp(incfname,sDEF_PREFIX)==0) {
         plungefile(incfname,FALSE,TRUE);    /* parse "default.inc" */
       } else {
@@ -625,11 +625,11 @@ int pc_compile(int argc, char *argv[])
   #if !defined SC_LIGHT
     if (sc_makereport) {
       FILE *frep=stdout;
-      if (reportname[0]!='\0')
+      if (!strempty(reportname))
         frep=fopen(reportname,"wb");    /* avoid translation of \n to \r\n in DOS/Windows */
       if (frep!=NULL) {
         make_report(&glbtab,frep,get_sourcefile(0));
-        if (reportname[0]!='\0')
+        if (!strempty(reportname))
           fclose(frep);
       } /* if */
       if (sc_documentation!=NULL) {
@@ -690,7 +690,7 @@ int pc_compile(int argc, char *argv[])
   writeleader(&glbtab);
   setfileconst(inpfname);
   insert_dbgfile(inpfname);
-  if (incfname[0]!='\0') {
+  if (!strempty(incfname)) {
     if (strcmp(incfname,sDEF_PREFIX)==0)
       plungefile(incfname,FALSE,TRUE);  /* parse "default.inc" (again) */
     else
@@ -732,7 +732,7 @@ cleanup:
   } /* if */
 
   #if !defined SC_LIGHT
-    if (errnum==0 && errfname[0]=='\0') {
+    if (errnum==0 && strempty(errfname)) {
       int recursion;
       long stacksize=max_stacksize(&glbtab,&recursion);
       int flag_exceed=0;
@@ -798,11 +798,11 @@ cleanup:
   delete_autolisttable();
   delete_heaplisttable();
   if (errnum!=0) {
-    if (errfname[0]=='\0')
+    if (strempty(errfname))
       pc_printf("\n%d Error%s.\n",errnum,(errnum>1) ? "s" : "");
     retcode=1;
   } else if (warnnum!=0){
-    if (errfname[0]=='\0')
+    if (strempty(errfname))
       pc_printf("\n%d Warning%s.\n",warnnum,(warnnum>1) ? "s" : "");
     retcode=0;          /* use "0", so that MAKE and similar tools continue */
   } else {
@@ -1150,10 +1150,10 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
           break;
         strlcpy(rname,option_value(ptr),_MAX_PATH); /* set name of report file */
         sc_makereport=TRUE;
-        if (rname[0]!='\0') {
+        if (!strempty(rname)) {
           set_extension(rname,".xml",FALSE);
         } else if ((name=get_sourcefile(0))!=NULL) {
-          assert(rname[0]=='\0');
+          assert(strempty(rname));
           assert(strlen(name)<_MAX_PATH);
           if ((ptr=strrchr(name,DIRSEP_CHAR))!=NULL)
             ptr++;          /* strip path */
@@ -1269,7 +1269,7 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
       /* The output name is the first input name with a different extension,
        * but it is stored in a different directory
        */
-      if (oname[0]=='\0') {
+      if (strempty(oname)) {
         if ((ptr=strrchr(str,DIRSEP_CHAR))!=NULL)
           ptr++;          /* strip path */
         else
@@ -1279,7 +1279,7 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
       } /* if */
       set_extension(oname,".asm",TRUE);
 #if !defined SC_LIGHT
-      if (sc_makereport && rname[0]=='\0') {
+      if (sc_makereport && strempty(rname)) {
         if ((ptr=strrchr(str,DIRSEP_CHAR))!=NULL)
           ptr++;          /* strip path */
         else
@@ -1472,7 +1472,7 @@ static void setcaption(void)
 
 static void about(void)
 {
-  if (errfname[0]=='\0') {
+  if (strempty(errfname)) {
     setcaption();
     pc_printf("Usage:   pawncc <filename> [filename...] [options]\n\n");
     pc_printf("Options:\n");
@@ -2941,7 +2941,7 @@ static void decl_enum(int vclass,int fstatic)
     needtoken(')');
   } /* if */
 
-  if (enumname[0]!='\0') {
+  if (!strempty(enumname)) {
     /* already create the root symbol, so the fields can have it as their "parent" */
     enumsym=add_constant(enumname,0,vclass,tag);
     if (enumsym!=NULL) {
@@ -3311,7 +3311,7 @@ static int operatoradjust(int opertok,symbol *sym,char *opername,int resulttag)
     error(64);        /* cannot change predefined operators */
 
   /* change the operator name */
-  assert(opername[0]!='\0');
+  assert(!strempty(opername));
   operator_symname(tmpname,opername,tags[0],tags[1],count,resulttag);
   if ((oldsym=findglb(tmpname,sGLOBAL))!=NULL) {
     int i;
@@ -3337,7 +3337,7 @@ static int operatoradjust(int opertok,symbol *sym,char *opername,int resulttag)
 
 static int check_operatortag(int opertok,int resulttag,char *opername)
 {
-  assert(opername!=NULL && opername[0]!='\0');
+  assert(opername!=NULL && !strempty(opername));
   switch (opertok) {
   case '!':
   case '<':
@@ -3800,7 +3800,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   if (state_id!=0) {
     constvalue *ptr=sym->states->first;
     while (ptr!=NULL) {
-      assert(sc_status!=statWRITE || ptr->name[0]!='\0');
+      assert(sc_status!=statWRITE || !strempty(ptr->name));
       if (ptr->index==state_id) {
         setlabel((int)strtol(ptr->name,NULL,16));
         break;
@@ -4586,7 +4586,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
       assert(i>=0);             /* automaton 0 exists */
       stlist=automaton_findid(i);
       assert(stlist!=NULL);     /* automaton should be found */
-      fprintf(log,"\t\t\t<automaton name=\"%s\"/>\n", stlist->name[0]!='\0' ? stlist->name : "(anonymous)");
+      fprintf(log,"\t\t\t<automaton name=\"%s\"/>\n", !strempty(stlist->name) ? stlist->name : "(anonymous)");
       //??? dump state decision table
     } /* if */
     assert(sym->refer!=NULL);
@@ -4890,7 +4890,7 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
     case iFUNCTN:
       if ((sym->usage & (uDEFINE | uREAD | uNATIVE | uSTOCK | uPUBLIC))==uDEFINE) {
         funcdisplayname(symname,sym->name);
-        if (symname[0]!=0)
+        if (!strempty(symname))
           error(203,symname);       /* symbol isn't used ... (and not public/native/stock) */
       } /* if */
       if ((sym->usage & uPUBLIC)!=0 || strcmp(sym->name,uMAINFUNC)==0)
@@ -7202,7 +7202,7 @@ static void dostate(void)
   sym=findglb(uENTRYFUNC,sGLOBAL);
   if (sc_status==statWRITE && sym!=NULL && sym->ident==iFUNCTN && sym->states!=NULL) {
     for (stlist=sym->states->first; stlist!=NULL; stlist=stlist->next) {
-      assert(stlist->name[0]!='\0');
+      assert(!strempty(stlist->name));
       if (state_getfsa(stlist->index)==automaton->index && state_inlist(stlist->index,(int)state->value))
         break;      /* found! */
     } /* for */

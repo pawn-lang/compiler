@@ -469,7 +469,7 @@ static void stripcomment(unsigned char *line)
           if (icomment==2) {
             assert(commentidx<COMMENT_LIMIT+COMMENT_MARGIN);
             comment[commentidx]='\0';
-            if (comment[0]!='\0')
+            if (!strempty(comment))
               insert_docstring(comment);
           } /* if */
         #endif
@@ -576,7 +576,7 @@ static void stripcomment(unsigned char *line)
     if (icomment==2) {
       assert(commentidx<COMMENT_LIMIT+COMMENT_MARGIN);
       comment[commentidx]='\0';
-      if (comment[0]!='\0')
+      if (!strempty(comment))
         insert_docstring(comment);
     } /* if */
   #endif
@@ -1092,7 +1092,7 @@ static int command(void)
     if (!SKIPPING) {
       char pathname[_MAX_PATH];
       lptr=getstring((unsigned char*)pathname,sizeof pathname,lptr);
-      if (pathname[0]!='\0') {
+      if (!strempty(pathname)) {
         free(inpfname);
         inpfname=duplicatestring(pathname);
         if (inpfname==NULL)
@@ -1183,7 +1183,7 @@ static int command(void)
               name[i]=*lptr;
             name[i]='\0';
           } /* if */
-          if (name[0]=='\0') {
+          if (strempty(name)) {
             curlibrary=NULL;
           } else if (strcmp(name,"-")==0) {
             pc_addlibtable=FALSE;
@@ -1508,7 +1508,7 @@ static int command(void)
         delete_subst(pattern,prefixlen);
       } /* if */
       /* add the pattern/substitution pair to the list */
-      assert(pattern[0]!='\0');
+      assert(!strempty(pattern));
       insert_subst(pattern,substitution,prefixlen);
       free(pattern);
       free(substitution);

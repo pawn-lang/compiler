@@ -59,6 +59,10 @@
   #define SC_FASTCALL
 #endif
 
+#if !defined strempty
+  #define strempty(str) ((str)[0]=='\0')
+#endif
+
 /* Note: the "cell" and "ucell" types are defined in AMX.H */
 
 #define PUBLIC_CHAR '@'     /* character that defines a function "public" */
