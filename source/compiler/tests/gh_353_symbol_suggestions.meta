@@ -8,18 +8,21 @@ gh_353_symbol_suggestions.pwn(40) : error 017: undefined symbol "ab"
 gh_353_symbol_suggestions.pwn(41) : error 017: undefined symbol "ab"
 gh_353_symbol_suggestions.pwn(50) : error 017: undefined symbol "staticval"
 gh_353_symbol_suggestions.pwn(58) : error 017: undefined symbol "test_nosuggest6_val"
-gh_353_symbol_suggestions.pwn(67) : error 017: undefined symbol "val"; did you mean "var"?
-gh_353_symbol_suggestions.pwn(71) : error 017: undefined symbol "celmax"; did you mean "cellmax"?
-gh_353_symbol_suggestions.pwn(75) : error 017: undefined symbol "strcaf"; did you mean "strcat"?
-gh_353_symbol_suggestions.pwn(78) : error 017: undefined symbol "test_e17"; did you mean "test_e017"?
-gh_353_symbol_suggestions.pwn(87) : error 019: not a label: "lb"; did you mean "lbl"?
-gh_353_symbol_suggestions.pwn(94) : error 020: invalid symbol name "assert"; did you mean "asset"?
-gh_353_symbol_suggestions.pwn(105) : error 080: unknown symbol, or not a constant symbol (symbol "idx"); did you mean "id"?
-gh_353_symbol_suggestions.pwn(116) : error 086: unknown automaton "automaton1"; did you mean "automaton_1"?
-gh_353_symbol_suggestions.pwn(116) : error 036: empty statement
-gh_353_symbol_suggestions.pwn(123) : error 087: unknown state "BEING1" for automaton "automaton_2"; did you mean "BEING_1"?
-gh_353_symbol_suggestions.pwn(123) : error 036: empty statement
-gh_353_symbol_suggestions.pwn(126) : error 087: unknown state "STATE_1" for automaton "automaton_2"; did you mean "automaton_1:STATE_1"?
-gh_353_symbol_suggestions.pwn(126) : error 036: empty statement
+gh_353_symbol_suggestions.pwn(67) : error 020: invalid symbol name ""
+gh_353_symbol_suggestions.pwn(68) : error 020: invalid symbol name ""
+gh_353_symbol_suggestions.pwn(77) : error 017: undefined symbol "val"; did you mean "var"?
+gh_353_symbol_suggestions.pwn(81) : error 017: undefined symbol "celmax"; did you mean "cellmax"?
+gh_353_symbol_suggestions.pwn(85) : error 017: undefined symbol "strcaf"; did you mean "strcat"?
+gh_353_symbol_suggestions.pwn(88) : error 017: undefined symbol "DoNothin"; did you mean "DoNothing"?
+gh_353_symbol_suggestions.pwn(91) : error 017: undefined symbol "test_e17"; did you mean "test_e017"?
+gh_353_symbol_suggestions.pwn(102) : error 019: not a label: "lb"; did you mean "lbl"?
+gh_353_symbol_suggestions.pwn(109) : error 020: invalid symbol name "assert"; did you mean "asset"?
+gh_353_symbol_suggestions.pwn(120) : error 080: unknown symbol, or not a constant symbol (symbol "idx"); did you mean "id"?
+gh_353_symbol_suggestions.pwn(131) : error 086: unknown automaton "automaton1"; did you mean "automaton_1"?
+gh_353_symbol_suggestions.pwn(131) : error 036: empty statement
+gh_353_symbol_suggestions.pwn(138) : error 087: unknown state "BEING1" for automaton "automaton_2"; did you mean "BEING_1"?
+gh_353_symbol_suggestions.pwn(138) : error 036: empty statement
+gh_353_symbol_suggestions.pwn(141) : error 087: unknown state "STATE_1" for automaton "automaton_2"; did you mean "automaton_1:STATE_1"?
+gh_353_symbol_suggestions.pwn(141) : error 036: empty statement
   """
 }

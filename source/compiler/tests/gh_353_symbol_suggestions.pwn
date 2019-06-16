@@ -59,6 +59,16 @@ public test_nosuggest6()
 }
 static test_nosuggest6_val;
 
+forward test_nosuggest7();
+public test_nosuggest7()
+{
+	// The compiler shouldn't try to suggest anything when tagof is used on
+	// string/numeric literals.
+	new a = tagof 0;
+	new b = tagof "";
+	return a + b;
+}
+
 forward test_e017();
 public test_e017()
 {
@@ -74,9 +84,14 @@ public test_e017()
 	new str[4] = "a";
 	strcaf(str, "b");
 
+	// error 017: undefined symbol "DoNothin"; did you mean "DoNothing"?
+	DoNothin();
+
 	// error 017: undefined symbol "test_e17"; did you mean "test_e017"?
 	printf("%d\n", tagof test_e17);
 }
+DoNothing(){}
+#pragma unused DoNothing
 
 forward test_e019();
 public test_e019()

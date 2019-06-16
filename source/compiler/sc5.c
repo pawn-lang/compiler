@@ -259,31 +259,31 @@ static short lastfile;
   } /* if */
 
   if (number<100) {
-    assert(number>0 && number<(1+arraysize(errmsg)));
+    assert(number>0 && number<(1+sizeof(errmsg)/sizeof(errmsg[0])));
     msg=errmsg[number-1];
     pre=prefix[0];
     errflag=TRUE;       /* set errflag (skip rest of erroneous expression) */
     errnum++;
   } else if (number<200) {
-    assert(number>=100 && number<(100+arraysize(fatalmsg)));
+    assert(number>=100 && number<(100+sizeof(fatalmsg)/sizeof(fatalmsg[0])));
     msg=fatalmsg[number-100];
     pre=prefix[1];
     errnum++;           /* a fatal error also counts as an error */
   } else if (errwarn) {
-    assert(number>=200 && number<(200+arraysize(warnmsg)));
+    assert(number>=200 && number<(200+sizeof(warnmsg)/sizeof(warnmsg[0])));
     msg=warnmsg[number-200];
     pre=prefix[0];
     errflag=TRUE;
     errnum++;
   } else {
-    assert(number>=200 && number<(200+arraysize(warnmsg)));
+    assert(number>=200 && number<(200+sizeof(warnmsg)/sizeof(warnmsg[0])));
     msg=warnmsg[number-200];
     pre=prefix[2];
     warnnum++;
   } /* if */
 
   if (notice!=0) {
-    assert(notice>0 && notice<(1+arraysize(noticemsg)) && noticemsg[notice-1][0]!='\0');
+    assert(notice>0 && notice<(1+sizeof(noticemsg)/sizeof(noticemsg[0])) && noticemsg[notice-1][0]!='\0');
     strcpy(string,msg);
     strcpy(&string[strlen(string)-1],noticemsg[notice-1]);
     msg=string;
@@ -502,7 +502,6 @@ static int find_closest_symbol_table(const char *name,const symbol *root,int sym
   int dist,max_dist,closest_dist=INT_MAX;
   char symname[2*sNAMEMAX+16];
   symbol *sym;
-  int ident;
   assert(closest_sym!=NULL);
   *closest_sym =NULL;
   assert(name!=NULL);
@@ -510,33 +509,41 @@ static int find_closest_symbol_table(const char *name,const symbol *root,int sym
   for (sym=root->next; sym!=NULL; sym=sym->next) {
     if (sym->fnumber!=-1 && sym->fnumber!=fcurrent)
       continue;
-    if ((sym->usage & uDEFINE)==0)
+    if ((sym->usage & uDEFINE)==0 && (sym->ident!=iFUNCTN || (sym->usage & (uNATIVE | uPROTOTYPED))!=uPROTOTYPED))
       continue;
-    ident=sym->ident;
-    if (symboltype==essNONLABEL) {
-      if (ident==iLABEL)
+    switch (sym->ident)
+    {
+    case iLABEL:
+      if ((symboltype & esfLABEL)==0)
         continue;
-    } else if (symboltype==essVARCONST) {
-      if (ident!=iCONSTEXPR && ident!=iVARIABLE && ident!=iREFERENCE && ident!=iARRAY && ident!=iREFARRAY)
+      break;
+    case iCONSTEXPR:
+      if ((symboltype & esfCONST)==0)
         continue;
-    } else if (symboltype==essARRAY) {
-      if (ident!=iARRAY && ident!=iREFARRAY)
+      break;
+    case iVARIABLE:
+    case iREFERENCE:
+      if ((symboltype & esfVARIABLE)==0)
         continue;
-    } else if (symboltype==essCONST) {
-      if (ident!=iCONSTEXPR)
+      break;
+    case iARRAY:
+    case iREFARRAY:
+      if ((symboltype & esfARRAY)==0)
         continue;
-    } else if (symboltype==essFUNCTN) {
-      if (ident!=iFUNCTN && ident!=iREFFUNC)
+      break;
+    case iFUNCTN:
+    case iREFFUNC:
+      if ((symboltype & esfFUNCTION)==0)
         continue;
-    } else if (symboltype==essLABEL) {
-      if (ident!=iLABEL)
-        continue;
-    } /* if */
+      break;
+    default:
+      assert(0);
+    } /* switch */
     funcdisplayname(symname,sym->name);
     dist=levenshtein_distance(name,symname);
     if (dist>max_dist || dist>=closest_dist)
       continue;
-    *closest_sym =sym;
+    *closest_sym=sym;
     closest_dist=dist;
     if (closest_dist<=1)
       break;
@@ -642,6 +649,7 @@ SC_FUNC int error_suggest(int number,const char *name,const char *name2,int type
 {
   char string[sNAMEMAX*2+2]; /* for "<automaton>:<state>" */
   const char *closest_name=NULL;
+  symbol *closest_sym;
 
   /* don't bother finding the closest names on errors
    * that aren't going to be shown on the 1'st pass
@@ -649,28 +657,30 @@ SC_FUNC int error_suggest(int number,const char *name,const char *name2,int type
   if ((errflag || sc_status!=statWRITE) && (number<100 || number>=200))
     return 0;
 
-  if (type==estSYMBOL || (type==estNONSYMBOL && tMIDDLE<subtype && subtype<=tLAST)) {
-    symbol *closest_sym;
-    if (type!=estSYMBOL) {
+  if (type==estSYMBOL) {
+  find_symbol:
+    closest_sym=find_closest_symbol(name,subtype);
+    if (closest_sym!=NULL)
+      closest_name=closest_sym->name;
+  } else if (type==estNONSYMBOL) {
+    if (tMIDDLE<subtype && subtype<=tLAST) {
       extern char *sc_tokens[];
       name=sc_tokens[subtype-tFIRST];
-      subtype=essVARCONST;
+      subtype=esfVARCONST;
+      goto find_symbol;
     } /* if */
-    closest_sym =find_closest_symbol(name,subtype);
-    if (closest_sym !=NULL)
-      closest_name= closest_sym->name;
   } else if (type==estAUTOMATON) {
     constvalue *closest_automaton=find_closest_automaton(name);
     if (closest_automaton!=NULL)
       closest_name=closest_automaton->name;
   } else if (type==estSTATE) {
     constvalue *closest_state=find_closest_state(name,subtype);
-    if (closest_state !=NULL) {
+    if (closest_state!=NULL) {
       closest_name=closest_state->name;
     } else {
       constvalue *closest_automaton=find_closest_automaton_for_state(name,subtype);
-      if (closest_automaton !=NULL) {
-        sprintf(string,"%s:%s", closest_automaton->name,name);
+      if (closest_automaton!=NULL) {
+        sprintf(string,"%s:%s",closest_automaton->name,name);
         closest_name=string;
       } /* if */
     } /* if */
