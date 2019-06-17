@@ -92,13 +92,9 @@ SC_FUNC void pushstk(stkitem val)
     int newsize= (stktop==0) ? 16 : 2*stktop;
     /* try to resize the stack */
     assert(newsize>stktop);
-    newstack=(stkitem*)malloc(newsize*sizeof(stkitem));
+    newstack=(stkitem*)realloc(stack,newsize*sizeof(stkitem));
     if (newstack==NULL)
       error(102,"parser stack");  /* stack overflow (recursive include?) */
-    /* swap the stacks */
-    memcpy(newstack,stack,stkidx*sizeof(stkitem));
-    if (stack!=NULL)
-      free(stack);
     stack=newstack;
     stktop=newsize;
   } /* if */
@@ -148,8 +144,10 @@ static char extensions[][6] = { "", ".inc", ".p", ".pawn" };
     error(103);                 /* insufficient memory */
   strcpy(path,name);
   real_path=(char *)malloc(strlen(name)+sizeof(extensions[0]));
-  if (real_path==NULL)
+  if (real_path==NULL) {
+    free(path);
     error(103);                 /* insufficient memory */
+  } /* if */
   do {
     found=TRUE;
     ext=strchr(path,'\0');      /* save position */
@@ -172,11 +170,13 @@ static char extensions[][6] = { "", ".inc", ".p", ".pawn" };
     if (fp==NULL) {
       *ext='\0';                /* on failure, restore filename */
       found=FALSE;
-    }
+    } /* if */
     ext_idx++;
   } while (!found && ext_idx<(sizeof extensions / sizeof extensions[0]));
   if (!found) {
     *ext='\0';                  /* restore filename */
+    free(path);
+    free(real_path);
     return FALSE;
   } /* if */
   PUSHSTK_P(inpf);
@@ -469,7 +469,7 @@ static void stripcomment(unsigned char *line)
           if (icomment==2) {
             assert(commentidx<COMMENT_LIMIT+COMMENT_MARGIN);
             comment[commentidx]='\0';
-            if (strlen(comment)>0)
+            if (!strempty(comment))
               insert_docstring(comment);
           } /* if */
         #endif
@@ -576,7 +576,7 @@ static void stripcomment(unsigned char *line)
     if (icomment==2) {
       assert(commentidx<COMMENT_LIMIT+COMMENT_MARGIN);
       comment[commentidx]='\0';
-      if (strlen(comment)>0)
+      if (!strempty(comment))
         insert_docstring(comment);
     } /* if */
   #endif
@@ -1092,7 +1092,7 @@ static int command(void)
     if (!SKIPPING) {
       char pathname[_MAX_PATH];
       lptr=getstring((unsigned char*)pathname,sizeof pathname,lptr);
-      if (strlen(pathname)>0) {
+      if (!strempty(pathname)) {
         free(inpfname);
         inpfname=duplicatestring(pathname);
         if (inpfname==NULL)
@@ -1183,7 +1183,7 @@ static int command(void)
               name[i]=*lptr;
             name[i]='\0';
           } /* if */
-          if (strlen(name)==0) {
+          if (strempty(name)) {
             curlibrary=NULL;
           } else if (strcmp(name,"-")==0) {
             pc_addlibtable=FALSE;
@@ -1508,7 +1508,7 @@ static int command(void)
         delete_subst(pattern,prefixlen);
       } /* if */
       /* add the pattern/substitution pair to the list */
-      assert(strlen(pattern)>0);
+      assert(!strempty(pattern));
       insert_subst(pattern,substitution,prefixlen);
       free(pattern);
       free(substitution);
@@ -1712,8 +1712,7 @@ static int substpattern(unsigned char *line,size_t buffersize,char *pattern,char
                        * a string, or the closing paranthese of a group) */
         } /* while */
         /* store the parameter (overrule any earlier) */
-        if (args[arg]!=NULL)
-          free(args[arg]);
+        free(args[arg]);
         len=(int)(e-s);
         args[arg]=(unsigned char*)malloc(len+1);
         if (args[arg]==NULL)
@@ -1815,8 +1814,7 @@ static int substpattern(unsigned char *line,size_t buffersize,char *pattern,char
   } /* if */
 
   for (arg=0; arg<10; arg++)
-    if (args[arg]!=NULL)
-      free(args[arg]);
+    free(args[arg]);
 
   return match;
 }
@@ -2905,8 +2903,7 @@ static void free_symbol(symbol *sym)
   } /* if */
   assert(sym->refer!=NULL);
   free(sym->refer);
-  if (sym->documentation!=NULL)
-    free(sym->documentation);
+  free(sym->documentation);
   if (sym->vclass==sGLOBAL)
     symbol_cache_remove(sym);
   free(sym);

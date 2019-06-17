@@ -509,7 +509,7 @@ int pc_compile(int argc, char *argv[])
     set_extension(outfname,".lst",TRUE);
   else
     set_extension(outfname,".asm",TRUE);
-  if (strlen(errfname)!=0)
+  if (!strempty(errfname))
     remove(errfname);   /* delete file on startup */
   else if (verbosity>0)
     setcaption();
@@ -600,7 +600,7 @@ int pc_compile(int argc, char *argv[])
     sc_status=statFIRST;        /* resetglobals() resets it to IDLE */
     setstringconstants();
     setfileconst(inpfname);
-    if (strlen(incfname)>0) {
+    if (!strempty(incfname)) {
       if (strcmp(incfname,sDEF_PREFIX)==0) {
         plungefile(incfname,FALSE,TRUE);    /* parse "default.inc" */
       } else {
@@ -624,11 +624,11 @@ int pc_compile(int argc, char *argv[])
   #if !defined SC_LIGHT
     if (sc_makereport) {
       FILE *frep=stdout;
-      if (strlen(reportname)>0)
+      if (!strempty(reportname))
         frep=fopen(reportname,"wb");    /* avoid translation of \n to \r\n in DOS/Windows */
       if (frep!=NULL) {
         make_report(&glbtab,frep,get_sourcefile(0));
-        if (strlen(reportname)>0)
+        if (!strempty(reportname))
           fclose(frep);
       } /* if */
       if (sc_documentation!=NULL) {
@@ -689,7 +689,7 @@ int pc_compile(int argc, char *argv[])
   writeleader(&glbtab);
   setfileconst(inpfname);
   insert_dbgfile(inpfname);
-  if (strlen(incfname)>0) {
+  if (!strempty(incfname)) {
     if (strcmp(incfname,sDEF_PREFIX)==0)
       plungefile(incfname,FALSE,TRUE);  /* parse "default.inc" (again) */
     else
@@ -731,7 +731,7 @@ cleanup:
   } /* if */
 
   #if !defined SC_LIGHT
-    if (errnum==0 && strlen(errfname)==0) {
+    if (errnum==0 && strempty(errfname)) {
       int recursion;
       long stacksize=max_stacksize(&glbtab,&recursion);
       int flag_exceed=0;
@@ -767,10 +767,8 @@ cleanup:
     remove(tname);         /* the "input file" was in fact a temporary file */
     free(tname);
   } /* if */
-  if (inpfname!=NULL)
-    free(inpfname);
-  if (litq!=NULL)
-    free(litq);
+  free(inpfname);
+  free(litq);
   stgbuffer_cleanup();
   clearstk();
   assert(jmpcode!=0 || loctab.next==NULL);/* on normal flow, local symbols
@@ -794,17 +792,16 @@ cleanup:
   #endif
   #if !defined SC_LIGHT
     delete_docstringtable();
-    if (sc_documentation!=NULL)
-      free(sc_documentation);
+    free(sc_documentation);
   #endif
   delete_autolisttable();
   delete_heaplisttable();
   if (errnum!=0) {
-    if (strlen(errfname)==0)
+    if (strempty(errfname))
       pc_printf("\n%d Error%s.\n",errnum,(errnum>1) ? "s" : "");
     retcode=1;
   } else if (warnnum!=0){
-    if (strlen(errfname)==0)
+    if (strempty(errfname))
       pc_printf("\n%d Warning%s.\n",warnnum,(warnnum>1) ? "s" : "");
     retcode=0;          /* use "0", so that MAKE and similar tools continue */
   } else {
@@ -1152,10 +1149,10 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
           break;
         strlcpy(rname,option_value(ptr),_MAX_PATH); /* set name of report file */
         sc_makereport=TRUE;
-        if (strlen(rname)>0) {
+        if (!strempty(rname)) {
           set_extension(rname,".xml",FALSE);
         } else if ((name=get_sourcefile(0))!=NULL) {
-          assert(strlen(rname)==0);
+          assert(strempty(rname));
           assert(strlen(name)<_MAX_PATH);
           if ((ptr=strrchr(name,DIRSEP_CHAR))!=NULL)
             ptr++;          /* strip path */
@@ -1271,7 +1268,7 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
       /* The output name is the first input name with a different extension,
        * but it is stored in a different directory
        */
-      if (strlen(oname)==0) {
+      if (strempty(oname)) {
         if ((ptr=strrchr(str,DIRSEP_CHAR))!=NULL)
           ptr++;          /* strip path */
         else
@@ -1281,7 +1278,7 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
       } /* if */
       set_extension(oname,".asm",TRUE);
 #if !defined SC_LIGHT
-      if (sc_makereport && strlen(rname)==0) {
+      if (sc_makereport && strempty(rname)) {
         if ((ptr=strrchr(str,DIRSEP_CHAR))!=NULL)
           ptr++;          /* strip path */
         else
@@ -1452,13 +1449,15 @@ static void setconfig(char *root)
       insert_path(path);
       /* same for the codepage root */
       #if !defined NO_CODEPAGE
-        *ptr='\0';
+        if (ptr!=NULL)
+          *ptr='\0';
         if (!cp_path(path,"codepage"))
           error(109,path);        /* codepage path */
       #endif
       /* also copy the root path (for the XML documentation) */
       #if !defined SC_LIGHT
-        *ptr='\0';
+        if (ptr!=NULL)
+          *ptr='\0';
         strcpy(sc_rootpath,path);
       #endif
     } /* if */
@@ -1472,7 +1471,7 @@ static void setcaption(void)
 
 static void about(void)
 {
-  if (strlen(errfname)==0) {
+  if (strempty(errfname)) {
     setcaption();
     pc_printf("Usage:   pawncc <filename> [filename...] [options]\n\n");
     pc_printf("Options:\n");
@@ -1921,8 +1920,7 @@ void sc_attachdocumentation(symbol *sym)
         assert(sym->documentation==NULL);
         sym->documentation=doc;
       } else {
-        if (sc_documentation!=NULL)
-          free(sc_documentation);
+        free(sc_documentation);
         sc_documentation=doc;
       } /* if */
     } /* if */
@@ -2942,7 +2940,7 @@ static void decl_enum(int vclass,int fstatic)
     needtoken(')');
   } /* if */
 
-  if (strlen(enumname)>0) {
+  if (!strempty(enumname)) {
     /* already create the root symbol, so the fields can have it as their "parent" */
     enumsym=add_constant(enumname,0,vclass,tag);
     if (enumsym!=NULL) {
@@ -3086,8 +3084,7 @@ static int getstates(const char *funcname)
     /* error is already given */
     state_id=0;
   } /* if */
-  if (list!=NULL)
-    free(list);
+  free(list);
 
   return state_id;
 }
@@ -3313,7 +3310,7 @@ static int operatoradjust(int opertok,symbol *sym,char *opername,int resulttag)
     error(64);        /* cannot change predefined operators */
 
   /* change the operator name */
-  assert(strlen(opername)>0);
+  assert(!strempty(opername));
   operator_symname(tmpname,opername,tags[0],tags[1],count,resulttag);
   if ((oldsym=findglb(tmpname,sGLOBAL))!=NULL) {
     int i;
@@ -3339,7 +3336,7 @@ static int operatoradjust(int opertok,symbol *sym,char *opername,int resulttag)
 
 static int check_operatortag(int opertok,int resulttag,char *opername)
 {
-  assert(opername!=NULL && strlen(opername)>0);
+  assert(opername!=NULL && !strempty(opername));
   switch (opertok) {
   case '!':
   case '<':
@@ -3614,7 +3611,7 @@ static void funcstub(int fnative)
   if (sym==NULL)
     return;
   if (fnative) {
-    sym->usage=(char)(uNATIVE | uRETVALUE | uDEFINE | (sym->usage & uPROTOTYPED));
+    sym->usage=(short)(uNATIVE | uRETVALUE | uDEFINE | (sym->usage & uPROTOTYPED));
     sym->x.lib=curlibrary;
   } else if (fpublic) {
     sym->usage|=uPUBLIC;
@@ -3802,7 +3799,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   if (state_id!=0) {
     constvalue *ptr=sym->states->first;
     while (ptr!=NULL) {
-      assert(sc_status!=statWRITE || strlen(ptr->name)>0);
+      assert(sc_status!=statWRITE || !strempty(ptr->name));
       if (ptr->index==state_id) {
         setlabel((int)strtol(ptr->name,NULL,16));
         break;
@@ -4016,9 +4013,10 @@ static int declargs(symbol *sym,int chkshadow)
           error(59,name);       /* arguments of a public function may not have a default value */
         if ((sym->usage & uPROTOTYPED)==0) {
           /* redimension the argument list, add the entry */
-          sym->dim.arglist=(arginfo*)realloc(sym->dim.arglist,(argcnt+2)*sizeof(arginfo));
-          if (sym->dim.arglist==0)
+          arginfo* new_arglist=(arginfo*)realloc(sym->dim.arglist,(argcnt+2)*sizeof(arginfo));
+          if (new_arglist==NULL)
             error(103);                 /* insufficient memory */
+          sym->dim.arglist=new_arglist;
           memset(&sym->dim.arglist[argcnt+1],0,sizeof(arginfo));  /* keep the list terminated */
           sym->dim.arglist[argcnt]=arg;
         } else {
@@ -4047,9 +4045,10 @@ static int declargs(symbol *sym,int chkshadow)
           tags[numtags++]=0;            /* default tag */
         if ((sym->usage & uPROTOTYPED)==0) {
           /* redimension the argument list, add the entry iVARARGS */
-          sym->dim.arglist=(arginfo*)realloc(sym->dim.arglist,(argcnt+2)*sizeof(arginfo));
-          if (sym->dim.arglist==0)
+          arginfo* new_arglist=(arginfo*)realloc(sym->dim.arglist,(argcnt+2)*sizeof(arginfo));
+          if (new_arglist==NULL)
             error(103);                 /* insufficient memory */
+          sym->dim.arglist=new_arglist;
           memset(&sym->dim.arglist[argcnt+1],0,sizeof(arginfo));  /* keep the list terminated */
           sym->dim.arglist[argcnt].ident=iVARARGS;
           sym->dim.arglist[argcnt].hasdefault=FALSE;
@@ -4586,7 +4585,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
       assert(i>=0);             /* automaton 0 exists */
       stlist=automaton_findid(i);
       assert(stlist!=NULL);     /* automaton should be found */
-      fprintf(log,"\t\t\t<automaton name=\"%s\"/>\n", strlen(stlist->name)>0 ? stlist->name : "(anonymous)");
+      fprintf(log,"\t\t\t<automaton name=\"%s\"/>\n", !strempty(stlist->name) ? stlist->name : "(anonymous)");
       //??? dump state decision table
     } /* if */
     assert(sym->refer!=NULL);
@@ -4890,7 +4889,7 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
     case iFUNCTN:
       if ((sym->usage & (uDEFINE | uREAD | uNATIVE | uSTOCK | uPUBLIC))==uDEFINE) {
         funcdisplayname(symname,sym->name);
-        if (strlen(symname)>0)
+        if (!strempty(symname))
           error(203,symname);       /* symbol isn't used ... (and not public/native/stock) */
       } /* if */
       if ((sym->usage & uPUBLIC)!=0 || strcmp(sym->name,uMAINFUNC)==0)
@@ -7535,6 +7534,7 @@ static void doreturn(void)
     ident=doexpr(TRUE,FALSE,TRUE,FALSE,&tag,&sym,TRUE);
     needtoken(tTERM);
     /* see if this function already has a sub type (an array attached) */
+    assert(curfunc!=NULL);
     sub=finddepend(curfunc);
     assert(sub==NULL || sub->ident==iREFARRAY);
     if ((rettype & uRETVALUE)!=0) {
@@ -7547,7 +7547,6 @@ static void doreturn(void)
     } /* if */
     rettype|=uRETVALUE;                 /* function returns a value */
     /* check tagname with function tagname */
-    assert(curfunc!=NULL);
     check_tagmismatch(curfunc->tag,tag,TRUE,-1);
     if (ident==iARRAY || ident==iREFARRAY) {
       int dim[sDIMEN_MAX],numdim=0;
@@ -7617,8 +7616,7 @@ static void doreturn(void)
           sub=addvariable(curfunc->name,(argcount+3)*sizeof(cell),iREFARRAY,sGLOBAL,
                           curfunc->tag,dim,numdim,idxtag,0);
           sub->parent=curfunc;
-          if (curfunc)
-            curfunc->child=sub;
+          curfunc->child=sub;
         } /* if */
         /* get the hidden parameter, copy the array (the array is on the heap;
          * it stays on the heap for the moment, and it is removed -usually- at
@@ -7774,7 +7772,7 @@ static void dostate(void)
   sym=findglb(uENTRYFUNC,sGLOBAL);
   if (sc_status==statWRITE && sym!=NULL && sym->ident==iFUNCTN && sym->states!=NULL) {
     for (stlist=sym->states->first; stlist!=NULL; stlist=stlist->next) {
-      assert(strlen(stlist->name)!=0);
+      assert(!strempty(stlist->name));
       if (state_getfsa(stlist->index)==automaton->index && state_inlist(stlist->index,(int)state->value))
         break;      /* found! */
     } /* for */

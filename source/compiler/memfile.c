@@ -90,14 +90,11 @@ int memfile_write(memfile_t *mf, const void *buffer, size_t size)
 	assert(buffer != NULL);
 	if (mf->offs + size > mf->size)
 	{
-	  char *orgbase = mf->base; /* save, in case realloc() fails */
 		size_t newsize = (mf->size + size) * 2;
-		mf->base = (char *)realloc(mf->base, newsize);
-		if (!mf->base)
-		{
-		  mf->base = orgbase;     /* restore old pointer to avoid a memory leak */
+    char *newbase = (char *)realloc(mf->base, newsize);
+		if (!newbase)
 			return 0;
-		}
+		mf->base = newbase;
 		mf->size = newsize;
 	}
 	memcpy(mf->base + mf->offs, buffer, size);
