@@ -236,6 +236,7 @@ typedef struct s_symbol {
 #define uENUMFIELD  0x040
 #define uMISSING    0x080
 #define uFORWARD    0x100
+#define uNODESTRUCT 0x200 /* "no destruct(or)", not "node struct" */
 /* uRETNONE is not stored in the "usage" field of a symbol. It is
  * used during parsing a function, to detect a mix of "return;" and
  * "return value;" in a few special cases.

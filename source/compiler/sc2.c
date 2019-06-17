@@ -1273,6 +1273,33 @@ static int command(void)
             if (comma)
               lptr++;
           } while (comma);
+        } else if (strcmp(str,"nodestruct")==0) {
+          char name[sNAMEMAX+1];
+          int i,comma;
+          symbol *sym;
+          do {
+            /* get the name */
+            while (*lptr<=' ' && *lptr!='\0')
+              lptr++;
+            for (i=0; i<sizeof name && alphanum(*lptr); i++,lptr++)
+              name[i]=*lptr;
+            name[i]='\0';
+            /* get the symbol */
+            sym=findloc(name);
+            if (sym==NULL)
+              sym=findglb(name,sSTATEVAR);
+            if (sym!=NULL) {
+              sym->usage |= uNODESTRUCT;
+            } else {
+              error(17,name);     /* undefined symbol */
+            } /* if */
+            /* see if a comma follows the name */
+            while (*lptr<=' ' && *lptr!='\0')
+              lptr++;
+            comma= (*lptr==',');
+            if (comma)
+              lptr++;
+          } while (comma);
         } else if (strcmp(str,"naked")==0) {
           pc_naked=TRUE;
         } else if (strcmp(str,"warning")==0) {
