@@ -199,7 +199,8 @@ static char *warnmsg[] = {
 };
 
 static char *noticemsg[] = {
-/*001*/  "; did you mean \"%s\"?\n"
+/*001*/  "; did you mean \"%s\"?\n",
+/*002*/  "; state variable out of scope\n"
 };
 
 #define NUM_WARNINGS    (sizeof warnmsg / sizeof warnmsg[0])
@@ -660,8 +661,14 @@ SC_FUNC int error_suggest(int number,const char *name,const char *name2,int type
   if (type==estSYMBOL) {
   find_symbol:
     closest_sym=find_closest_symbol(name,subtype);
-    if (closest_sym!=NULL)
+    if (closest_sym!=NULL) {
       closest_name=closest_sym->name;
+      if ((subtype & esfVARIABLE)!=0 && closest_sym->states!=NULL && strcmp(closest_name,name)==0) {
+        assert(number==17); /* undefined symbol */
+        error(makelong(number,2),name);
+        return 0;
+      } /* if */
+    } /* if */
   } else if (type==estNONSYMBOL) {
     if (tMIDDLE<subtype && subtype<=tLAST) {
       extern char *sc_tokens[];
