@@ -129,7 +129,7 @@ SC_FUNC void writeleader(symbol *root)
       strcpy(lbl_default,itoh(lbl_nostate));
       for (stlist=sym->states->first; stlist!=NULL; stlist=stlist->next) {
         if (stlist->index==-1) {
-          assert(strlen(stlist->name)<sizeof lbl_default);
+          assert(strlen(stlist->name)<arraysize(lbl_default));
           strcpy(lbl_default,stlist->name);
         } else {
           statecount+=state_count(stlist->index);

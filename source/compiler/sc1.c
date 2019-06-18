@@ -290,7 +290,7 @@ void *pc_createtmpsrc(char **filename)
     static const char template[]="/tmp/pawnXXXXXX";
     if ((tname=malloc(sizeof(template)))!=NULL) {
       int fdtmp;
-      strncpy(tname,template,sizeof(template));
+      strncpy(tname,template,arraysize(template));
       if ((fdtmp=mkstemp(tname)) >= 0) {
         ftmp=fdopen(fdtmp,"wt");
       } else {
@@ -543,7 +543,7 @@ int pc_compile(int argc, char *argv[])
       pc_writesrc(ftmp,(unsigned char*)"#file \"");
       pc_writesrc(ftmp,(unsigned char*)sname);
       pc_writesrc(ftmp,(unsigned char*)"\"\n");
-      while (pc_readsrc(fsrc,tstring,sizeof tstring)!=NULL) {
+      while (pc_readsrc(fsrc,tstring,arraysize(tstring))!=NULL) {
         pc_writesrc(ftmp,tstring);
       } /* while */
       pc_writesrc(ftmp,(unsigned char*)"\n");
@@ -1113,7 +1113,7 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
         break;
 #endif
       case 'i':
-        strlcpy(str,option_value(ptr),sizeof str);  /* set name of include directory */
+        strlcpy(str,option_value(ptr),arraysize(str));  /* set name of include directory */
         i=strlen(str);
         if (i>0) {
           if (str[i-1]!=DIRSEP_CHAR) {
@@ -1263,7 +1263,7 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
       i=atoi(ptr+1);
       add_builtin_constant(str,i,sGLOBAL,0);
     } else if (oname) {
-      strlcpy(str,argv[arg],sizeof(str)-2); /* -2 because default extension is ".p" */
+      strlcpy(str,argv[arg],arraysize(str)-2); /* -2 because default extension is ".p" */
       set_extension(str,".p",FALSE);
       insert_sourcefile(str);
       /* The output name is the first input name with a different extension,
@@ -1408,11 +1408,11 @@ static void setconfig(char *root)
       /* see www.autopackage.org for the BinReloc module */
       br_init_lib(NULL);
       ptr=br_find_exe("/opt/Pawn/bin/pawncc");
-      strlcpy(path,ptr,sizeof path);
+      strlcpy(path,ptr,arraysize(path));
       free(ptr);
     #else
       if (root!=NULL)
-        strlcpy(path,root,sizeof path); /* path + filename (hopefully) */
+        strlcpy(path,root,arraysize(path)); /* path + filename (hopefully) */
     #endif
     #if defined __MSDOS__
       /* strip the options (appended to the path + filename) */
@@ -1593,16 +1593,16 @@ static void setconstants(void)
 static void setstringconstants()
 {
   time_t now;
-  char timebuf[sizeof("11:22:33")];
-  char datebuf[sizeof("10 Jan 2017")];
+  char timebuf[arraysize("11:22:33")];
+  char datebuf[arraysize("10 Jan 2017")];
 
   assert(sc_status!=statIDLE);
   add_builtin_string_constant("__file","",sGLOBAL);
 
   now = time(NULL);
-  strftime(timebuf,sizeof(timebuf),"%H:%M:%S",localtime(&now));
+  strftime(timebuf,arraysize(timebuf),"%H:%M:%S",localtime(&now));
   add_builtin_string_constant("__time",timebuf,sGLOBAL);
-  strftime(datebuf,sizeof(datebuf),"%d %b %Y",localtime(&now));
+  strftime(datebuf,arraysize(datebuf),"%d %b %Y",localtime(&now));
   add_builtin_string_constant("__date",datebuf,sGLOBAL);
 }
 
@@ -3049,18 +3049,18 @@ static int getstates(const char *funcname)
     if (!(islabel=matchtoken(tLABEL)) && !needtoken(tSYMBOL))
       break;
     tokeninfo(&val,&str);
-    assert(strlen(str)<sizeof fsaname);
+    assert(strlen(str)<arraysize(fsaname));
     strcpy(fsaname,str);  /* assume this is the name of the automaton */
     if (islabel || matchtoken(':')) {
       /* token is an automaton name, add the name and get a new token */
       if (!needtoken(tSYMBOL))
         break;
       tokeninfo(&val,&str);
-      assert(strlen(str)<sizeof statename);
+      assert(strlen(str)<arraysize(statename));
       strcpy(statename,str);
     } else {
       /* the token was the state name (part of an anynymous automaton) */
-      assert(strlen(fsaname)<sizeof statename);
+      assert(strlen(fsaname)<arraysize(statename));
       strcpy(statename,fsaname);
       fsaname[0]='\0';
     } /* if */
@@ -3475,9 +3475,9 @@ SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualt
     for (i=0; i<numtags; i++) {
       if(formaltags[i]!=0) {
         if((i+1)==numtags && add_comma==TRUE && notag_allowed==FALSE)
-          strlcat(formal_tagnames,", or ",sizeof(formal_tagnames));
+          strlcat(formal_tagnames,", or ",arraysize(formal_tagnames));
         else if(add_comma)
-          strlcat(formal_tagnames,", ",sizeof(formal_tagnames));
+          strlcat(formal_tagnames,", ",arraysize(formal_tagnames));
         add_comma=TRUE;
         tagsym=find_tag_byval(formaltags[i]);
         size=snprintf(formal_tagnames,
@@ -3493,10 +3493,10 @@ SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualt
     } /* for */
     if(notag_allowed==TRUE) {
       if(add_comma==TRUE)
-        strlcat(formal_tagnames,", or ",sizeof(formal_tagnames));
-      strlcat(formal_tagnames,"none (\"_\")",sizeof(formal_tagnames));
+        strlcat(formal_tagnames,", or ",arraysize(formal_tagnames));
+      strlcat(formal_tagnames,"none (\"_\")",arraysize(formal_tagnames));
     } /* if */
-    strlcat(formal_tagnames,(numtags==1) ? "," : ";",sizeof(formal_tagnames));
+    strlcat(formal_tagnames,(numtags==1) ? "," : ";",arraysize(formal_tagnames));
     if(actualtag!=0) {
       tagsym=find_tag_byval(actualtag);
       sprintf(actual_tagname,"\"%s\"",(tagsym!=NULL) ? tagsym->name : "-unknown-");
@@ -6756,7 +6756,7 @@ static void SC_FASTCALL emit_parm1_any(char *name)
   emit_outval p[1];
 
   emit_param_any(&p[0]);
-  outinstr(name,p,(sizeof p / sizeof p[0]));
+  outinstr(name,p,arraysize(p));
 }
 
 static void SC_FASTCALL emit_parm1_integer(char *name)
@@ -6764,7 +6764,7 @@ static void SC_FASTCALL emit_parm1_integer(char *name)
   emit_outval p[1];
 
   emit_param_integer(&p[0]);
-  outinstr(name,p,(sizeof p / sizeof p[0]));
+  outinstr(name,p,arraysize(p));
 }
 
 static void SC_FASTCALL emit_parm1_nonneg(char *name)
@@ -6772,7 +6772,7 @@ static void SC_FASTCALL emit_parm1_nonneg(char *name)
   emit_outval p[1];
 
   emit_param_nonneg(&p[0]);
-  outinstr(name,p,(sizeof p / sizeof p[0]));
+  outinstr(name,p,arraysize(p));
 }
 
 static void SC_FASTCALL emit_parm1_shift(char *name)
@@ -6780,7 +6780,7 @@ static void SC_FASTCALL emit_parm1_shift(char *name)
   emit_outval p[1];
 
   emit_param_shift(&p[0]);
-  outinstr(name,p,(sizeof p / sizeof p[0]));
+  outinstr(name,p,arraysize(p));
 }
 
 static void SC_FASTCALL emit_parm1_data(char *name)
@@ -6788,7 +6788,7 @@ static void SC_FASTCALL emit_parm1_data(char *name)
   emit_outval p[1];
 
   emit_param_data(&p[0]);
-  outinstr(name,p,(sizeof p / sizeof p[0]));
+  outinstr(name,p,arraysize(p));
 }
 
 static void SC_FASTCALL emit_parm1_local(char *name)
@@ -6796,7 +6796,7 @@ static void SC_FASTCALL emit_parm1_local(char *name)
   emit_outval p[1];
 
   emit_param_local(&p[0],TRUE);
-  outinstr(name,p,(sizeof p / sizeof p[0]));
+  outinstr(name,p,arraysize(p));
 }
 
 static void SC_FASTCALL emit_parm1_local_noref(char *name)
@@ -6804,7 +6804,7 @@ static void SC_FASTCALL emit_parm1_local_noref(char *name)
   emit_outval p[1];
 
   emit_param_local(&p[0],FALSE);
-  outinstr(name,p,(sizeof p / sizeof p[0]));
+  outinstr(name,p,arraysize(p));
 }
 
 static void SC_FASTCALL emit_parm1_label(char *name)
@@ -6812,7 +6812,7 @@ static void SC_FASTCALL emit_parm1_label(char *name)
   emit_outval p[1];
 
   emit_param_label(&p[0]);
-  outinstr(name,p,(sizeof p / sizeof p[0]));
+  outinstr(name,p,arraysize(p));
 }
 
 static void SC_FASTCALL emit_do_casetbl(char *name)
@@ -6823,7 +6823,7 @@ static void SC_FASTCALL emit_do_casetbl(char *name)
   emit_param_nonneg(&p[0]);
   emit_param_label(&p[1]);
   stgwrite("\tcasetbl\n");
-  outinstr("case",p,(sizeof p / sizeof p[0]));
+  outinstr("case",p,arraysize(p));
 }
 
 static void SC_FASTCALL emit_do_case(char *name)
@@ -6832,7 +6832,7 @@ static void SC_FASTCALL emit_do_case(char *name)
 
   emit_param_any(&p[0]);
   emit_param_label(&p[1]);
-  outinstr("case",p,(sizeof p / sizeof p[0]));
+  outinstr("case",p,arraysize(p));
   code_idx-=opcodes(1);
 }
 
@@ -6841,8 +6841,8 @@ static void SC_FASTCALL emit_do_lodb_strb(char *name)
   static const cell valid_values[] = { 1,2,4 };
   emit_outval p[1];
 
-  emit_param_index(&p[0],FALSE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
-  outinstr(name,p,(sizeof p / sizeof p[0]));
+  emit_param_index(&p[0],FALSE,valid_values,arraysize(valid_values));
+  outinstr(name,p,arraysize(p));
 }
 
 static void SC_FASTCALL emit_do_align(char *name)
@@ -6850,8 +6850,8 @@ static void SC_FASTCALL emit_do_align(char *name)
   static const cell valid_values[] = { 0,sizeof(cell)-1 };
   emit_outval p[1];
 
-  emit_param_index(&p[0],TRUE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
-  outinstr(name,p,(sizeof p / sizeof p[0]));
+  emit_param_index(&p[0],TRUE,valid_values,arraysize(valid_values));
+  outinstr(name,p,arraysize(p));
 }
 
 static void SC_FASTCALL emit_do_call(char *name)
@@ -6859,7 +6859,7 @@ static void SC_FASTCALL emit_do_call(char *name)
   emit_outval p[1];
 
   emit_param_function(&p[0],FALSE);
-  outinstr(name,p,(sizeof p / sizeof p[0]));
+  outinstr(name,p,arraysize(p));
 }
 
 static void SC_FASTCALL emit_do_sysreq_c(char *name)
@@ -7443,7 +7443,7 @@ static int emit_findopcode(const char *instr)
 
   /* look up the instruction with a binary search */
   low=1;                /* entry 0 is reserved (for "not found") */
-  high=(sizeof emit_opcodelist / sizeof emit_opcodelist[0])-1;
+  high=arraysize(emit_opcodelist)-1;
   while (low<high) {
     mid=(low+high)/2;
     cmp=strcmp(instr,emit_opcodelist[mid].name);
@@ -7476,7 +7476,7 @@ SC_FUNC void emit_parse_line(void)
       static int sorted=FALSE;
       if (!sorted) {
         assert(emit_opcodelist[1].name!=NULL);
-        for (i=2; i<(sizeof emit_opcodelist / sizeof emit_opcodelist[0]); i++) {
+        for (i=2; i<arraysize(emit_opcodelist); i++) {
           assert(emit_opcodelist[i].name!=NULL);
           assert(stricmp(emit_opcodelist[i].name,emit_opcodelist[i-1].name)>0);
         } /* for */
@@ -7497,7 +7497,7 @@ SC_FUNC void emit_parse_line(void)
      * and copy the instruction name
      */
     lptr-=len;
-    for (i=0; i<sizeof(name)-1 && (isalnum(*lptr) || *lptr=='.'); ++i,++lptr)
+    for (i=0; i<arraysize(name)-1 && (isalnum(*lptr) || *lptr=='.'); ++i,++lptr)
       name[i]=(char)tolower(*lptr);
     name[i]='\0';
 

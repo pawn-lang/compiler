@@ -313,7 +313,7 @@ SC_FUNC void delete_substtable(void)
 {
   int i;
   delete_stringpairtable(&substpair);
-  for (i=0; i<sizeof substindex/sizeof substindex[0]; i++)
+  for (i=0; i<arraysize(substindex); i++)
     substindex[i]=NULL;
 }
 
@@ -442,7 +442,7 @@ SC_FUNC stringlist *insert_dbgfile(const char *filename)
   if (sc_status==statWRITE && (sc_debug & sSYMBOLIC)!=0) {
     char string[_MAX_PATH+40];
     assert(filename!=NULL);
-    assert(strlen(filename)+40<sizeof string);
+    assert(strlen(filename)+40<arraysize(string));
     sprintf(string,"F:%" PRIxC " %s",code_idx,filename);
     return insert_string(&dbgstrings,string);
   } /* if */

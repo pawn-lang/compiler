@@ -232,7 +232,7 @@ void print_funcname(FILE *ftxt,cell address)
   /* first look up the address in the debug info and, if failed, find it
    * in the public function table */
   if (dbgloaded && dbg_LookupFunction(&amxdbg,address,&dbgname)==AMX_ERR_NONE) {
-    strncpy(name,dbgname,sizeof name);
+    strncpy(name,dbgname,arraysize(name));
   } else {
     numpublics=(amxhdr.natives-amxhdr.publics)/sizeof(AMX_FUNCSTUBNT);
     fseek(fpamx,amxhdr.publics,SEEK_SET);
@@ -543,7 +543,7 @@ int main(int argc,char *argv[])
         nprevline=nline;
       } /* if */
     } /* if */
-    if (*(ucell *)cip>=(ucell)(sizeof opcodelist/sizeof opcodelist[0])
+    if (*(ucell *)cip>=(ucell)arraysize(opcodelist)
         || (func=opcodelist[*cip].func)==NULL) {
       printf("Invalid opcode %08"PRIxC" at address %08"PRIxC"\n",
              *cip, (cell)((unsigned char *)cip-(unsigned char *)code));

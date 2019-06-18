@@ -172,7 +172,7 @@ static char extensions[][6] = { "", ".inc", ".p", ".pawn" };
       found=FALSE;
     } /* if */
     ext_idx++;
-  } while (!found && ext_idx<(sizeof extensions / sizeof extensions[0]));
+  } while (!found && ext_idx<arraysize(extensions));
   if (!found) {
     *ext='\0';                  /* restore filename */
     free(path);
@@ -231,7 +231,7 @@ SC_FUNC int plungefile(char *name,int try_currentpath,int try_includepaths)
         if (len+strlen(name)<_MAX_PATH) {
           char path[_MAX_PATH];
           strlcpy(path,inpfname,len+1);
-          strlcat(path,name,sizeof path);
+          strlcat(path,name,arraysize(path));
           result=plungequalifiedfile(path);
         } /* if */
       } /* if */
@@ -243,8 +243,8 @@ SC_FUNC int plungefile(char *name,int try_currentpath,int try_includepaths)
     char *ptr;
     for (i=0; !result && (ptr=get_path(i))!=NULL; i++) {
       char path[_MAX_PATH];
-      strlcpy(path,ptr,sizeof path);
-      strlcat(path,name,sizeof path);
+      strlcpy(path,ptr,arraysize(path));
+      strlcat(path,name,arraysize(path));
       result=plungequalifiedfile(path);
     } /* while */
   } /* if */
@@ -292,11 +292,11 @@ static void doinclude(int silent)
   } /* if */
 
   i=0;
-  while (*lptr!=c && *lptr!='\0' && i<sizeof name - 1)  /* find the end of the string */
+  while (*lptr!=c && *lptr!='\0' && i<arraysize(name) - 1)  /* find the end of the string */
     name[i++]=*lptr++;
   while (i>0 && name[i-1]<=' ')
     i--;                        /* strip trailing whitespace */
-  assert(i>=0 && i<sizeof name);
+  assert(i>=0 && i<arraysize(name));
   name[i]='\0';                 /* zero-terminate the string */
 
   if (*lptr!=c) {               /* verify correct string termination */
@@ -318,9 +318,9 @@ static void doinclude(int silent)
       #endif
     strcpy(symname,"_inc_");
     if ((ptr=strrchr(name,dirsep))!=NULL)
-      strlcat(symname,ptr+1,sizeof symname);
+      strlcat(symname,ptr+1,arraysize(symname));
     else
-      strlcat(symname,name,sizeof symname);
+      strlcat(symname,name,arraysize(symname));
     included=find_symbol(&glbtab,symname,fcurrent,-1,NULL)!=NULL;
   } /* if */
 
@@ -1091,7 +1091,7 @@ static int command(void)
   case tpFILE:
     if (!SKIPPING) {
       char pathname[_MAX_PATH];
-      lptr=getstring((unsigned char*)pathname,sizeof pathname,lptr);
+      lptr=getstring((unsigned char*)pathname,arraysize(pathname),lptr);
       if (!strempty(pathname)) {
         free(inpfname);
         inpfname=duplicatestring(pathname);
@@ -1132,10 +1132,10 @@ static int command(void)
           while (*lptr<=' ' && *lptr!='\0')
             lptr++;
           if (*lptr=='"') {
-            lptr=getstring((unsigned char*)name,sizeof name,lptr);
+            lptr=getstring((unsigned char*)name,arraysize(name),lptr);
           } else {
             int i;
-            for (i=0; i<sizeof name && alphanum(*lptr); i++,lptr++)
+            for (i=0; i<arraysize(name) && alphanum(*lptr); i++,lptr++)
               name[i]=*lptr;
             name[i]='\0';
           } /* if */
@@ -1176,10 +1176,10 @@ static int command(void)
           while (*lptr<=' ' && *lptr!='\0')
             lptr++;
           if (*lptr=='"') {
-            lptr=getstring((unsigned char*)name,sizeof name,lptr);
+            lptr=getstring((unsigned char*)name,arraysize(name),lptr);
           } else {
             int i;
-            for (i=0; i<sizeof name && (alphanum(*lptr) || *lptr=='-'); i++,lptr++)
+            for (i=0; i<arraysize(name) && (alphanum(*lptr) || *lptr=='-'); i++,lptr++)
               name[i]=*lptr;
             name[i]='\0';
           } /* if */
@@ -1203,7 +1203,7 @@ static int command(void)
           /* first gather all information, start with the tag name */
           while (*lptr<=' ' && *lptr!='\0')
             lptr++;
-          for (i=0; i<sizeof name && alphanum(*lptr); i++,lptr++)
+          for (i=0; i<arraysize(name) && alphanum(*lptr); i++,lptr++)
             name[i]=*lptr;
           name[i]='\0';
           /* then the precision (for fixed point arithmetic) */
@@ -1250,7 +1250,7 @@ static int command(void)
             /* get the name */
             while (*lptr<=' ' && *lptr!='\0')
               lptr++;
-            for (i=0; i<sizeof name && alphanum(*lptr); i++,lptr++)
+            for (i=0; i<arraysize(name) && alphanum(*lptr); i++,lptr++)
               name[i]=*lptr;
             name[i]='\0';
             /* get the symbol */
@@ -1281,7 +1281,7 @@ static int command(void)
             /* get the name */
             while (*lptr<=' ' && *lptr!='\0')
               lptr++;
-            for (i=0; i<sizeof name && alphanum(*lptr); i++,lptr++)
+            for (i=0; i<arraysize(name) && alphanum(*lptr); i++,lptr++)
               name[i]=*lptr;
             name[i]='\0';
             /* get the symbol */
@@ -1342,7 +1342,7 @@ static int command(void)
           /* first gather all information, start with the tag name */
           while (*lptr<=' ' && *lptr!='\0')
             lptr++;
-          for (i=0; i<sNAMEMAX && *lptr>' '; i++,lptr++)
+          for (i=0; i<arraysize(name)-1 && *lptr>' '; i++,lptr++)
             name[i]=*lptr;
           name[i]='\0';
           parsesingleoption(name);
@@ -1374,7 +1374,7 @@ static int command(void)
       insert_dbgline(fline);
       while (*lptr<=' ' && *lptr!='\0')
         lptr++;
-      for (i=0; i<sizeof(name)-1 && (isalpha(*lptr) || *lptr=='.'); i++,lptr++)
+      for (i=0; i<arraysize(name)-1 && (isalpha(*lptr) || *lptr=='.'); i++,lptr++)
         name[i]=(char)tolower(*lptr);
       name[i]='\0';
       stgwrite("\t");
