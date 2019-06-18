@@ -46,23 +46,6 @@
 #include "../amx/osdefs.h"
 #include "../amx/amx.h"
 
-#if defined _MSC_VER
-  #define SC_FASTCALL __fastcall
-#elif defined __GNUC__ && (defined __i386__ || defined __x86_64__ || defined __amd64__)
-  #if !defined __x86_64__ && !defined __amd64__ && (__GNUC__>=4 || __GNUC__==3 && __GNUC_MINOR__>=4)
-    #define SC_FASTCALL __attribute__((fastcall))
-  #else
-    #define SC_FASTCALL __attribute__((regparam(3)))
-  #endif
-#endif
-#if !defined SC_FASTCALL
-  #define SC_FASTCALL
-#endif
-
-#if !defined strempty
-  #define strempty(str) ((str)[0]=='\0')
-#endif
-
 /* Note: the "cell" and "ucell" types are defined in AMX.H */
 
 #define PUBLIC_CHAR '@'     /* character that defines a function "public" */
@@ -317,6 +300,40 @@ typedef struct s_valuepair {
 #define opargs(n)       ((n)*sizeof(cell))      /* size of typical argument */
 
 /* general purpose macros */
+#if defined _MSC_VER
+  #define SC_FASTCALL __fastcall
+#elif defined __GNUC__ && (defined __i386__ || defined __x86_64__ || defined __amd64__)
+  #if !defined __x86_64__ && !defined __amd64__ && (__GNUC__>=4 || __GNUC__==3 && __GNUC_MINOR__>=4)
+    #define SC_FASTCALL __attribute__((fastcall))
+  #else
+    #define SC_FASTCALL __attribute__((regparm(3)))
+  #endif
+#endif
+#if !defined SC_FASTCALL
+  #define SC_FASTCALL
+#endif
+#if !defined strempty
+  #define strempty(str) ((str)[0]=='\0')
+#endif
+#if !defined arraysize
+  #if defined __clang__
+    #if !__is_identifier(__builtin_types_compatible_p)
+      #define USE_GCC_ARRAYSIZE
+    #endif
+  #elif !defined __clang__ && defined __GNUC__
+    #if (__GNUC__==3 && __GNUC_MINOR__>=1) || __GNUC__>=4
+      #define USE_GCC_ARRAYSIZE
+    #endif
+  #endif
+  #if defined USE_GCC_ARRAYSIZE
+    #undef USE_GCC_ARRAYSIZE
+    #define arraysize(array) \
+      (sizeof(struct{int x[-__builtin_types_compatible_p(typeof(array),typeof(&(array)[0]))];}) | \
+      sizeof(array) / sizeof(array[0]))
+  #else
+    #define arraysize(array) (sizeof(array) / sizeof(array[0]))
+  #endif
+#endif
 #if !defined makelong
   #define makelong(low,high) ((long)(low) | ((long)(high) << (sizeof(long)*4)))
 #endif
