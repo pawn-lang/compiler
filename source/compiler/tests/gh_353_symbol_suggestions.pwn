@@ -140,3 +140,19 @@ public test_e087()
 	// error 087: unknown state "STATE_1" for automaton "automaton_2"; did you mean "automaton_1:STATE_1"?
 	state automaton_2:STATE_1;
 }
+
+new test_e017_sug2_var <automaton_3:STATE_2>;
+forward test_e017_sug2();
+public test_e017_sug2()
+{
+	printf("%d\n", test_e017_sug2_var); // error 017: undefined symbol "test_e017_sug2_var"; state variable out of scope
+}
+forward test_e017_sug2_func();
+public test_e017_sug2_func() <automaton_3:STATE_1>
+{
+	printf("%d\n", test_e017_sug2_var); // error 017: undefined symbol "test_e017_sug2_var"; state variable out of scope
+}
+public test_e017_sug2_func() <automaton_3:STATE_2>
+{
+	#pragma unused test_e017_sug2_var
+}
