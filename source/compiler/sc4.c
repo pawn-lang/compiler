@@ -381,7 +381,7 @@ SC_FUNC void alignframe(int numbytes)
     /* "numbytes" should be a power of 2 for this code to work */
     int i,count=0;
     for (i=0; i<sizeof numbytes*8; i++)
-      if (numbytes & (1 << i))
+      if ((unsigned)numbytes & (1U << i))
         count++;
     assert(count==1);
   #endif
