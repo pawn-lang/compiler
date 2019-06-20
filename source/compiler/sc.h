@@ -810,20 +810,16 @@ SC_FUNC void stgout(int index);
 SC_FUNC void stgdel(int index,cell code_index);
 SC_FUNC int stgget(int *index,cell *code_index);
 SC_FUNC void stgset(int onoff);
-SC_FUNC int phopt_init(void);
-SC_FUNC int phopt_cleanup(void);
 
 /* function prototypes in SCLIST.C */
 SC_FUNC char* duplicatestring(const char* sourcestring);
 SC_FUNC stringpair *insert_alias(char *name,char *alias);
-SC_FUNC stringpair *find_alias(char *name);
 SC_FUNC int lookup_alias(char *target,char *name);
 SC_FUNC void delete_aliastable(void);
 SC_FUNC stringlist *insert_path(char *path);
 SC_FUNC char *get_path(int index);
 SC_FUNC void delete_pathtable(void);
 SC_FUNC stringpair *insert_subst(char *pattern,char *substitution,int prefixlen);
-SC_FUNC int get_subst(int index,char **pattern,char **substitution);
 SC_FUNC stringpair *find_subst(char *name,int length);
 SC_FUNC int delete_subst(char *name,int length);
 SC_FUNC void delete_substtable(void);

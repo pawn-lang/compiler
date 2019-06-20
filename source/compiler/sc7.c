@@ -1762,7 +1762,6 @@ static void stgopt(char *start,char *end,int (*outputfunc)(char *str))
   int matches;
   char *debut=start;  /* save original start of the buffer */
 
-  assert(sequences!=NULL);
   /* do not match anything if debug-level is maximum */
   if (pc_optimize>sOPTIMIZE_NONE && sc_status==statWRITE && emit_stgbuf_idx==-1) {
     do {
