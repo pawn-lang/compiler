@@ -2341,7 +2341,7 @@ static int nesting=0;
               if (arg[argidx].dim[0]!=0) {
                 assert(arg[argidx].dim[0]>0);
                 if (lval.ident==iARRAYCELL) {
-                  error(7);        /* array sizes must match */
+                  error(47);        /* array sizes must match */
                 } else {
                   assert(lval.constval!=0); /* literal array must have a size */
                   /* A literal array must have exactly the same size as the
