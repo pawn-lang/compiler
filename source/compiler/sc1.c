@@ -2076,8 +2076,8 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
      * c) found a state variable in the automaton that we were looking for
      */
     assert(sym==NULL
-           || sym->states==NULL && sc_curstates==0
-           || sym->states!=NULL && sym->states->first!=NULL && sym->states->first->index==sc_curstates);
+           || (sym->states==NULL && sc_curstates==0)
+           || (sym->states!=NULL && sym->states->first!=NULL && sym->states->first->index==sc_curstates));
     /* a state variable may only have a single id in its list (so either this
      * variable has no states, or it has a single list)
      */
@@ -2452,7 +2452,7 @@ static int base;
   cell accum;
   cell size;
 
-  assert(startlit==-1 || startlit>=0 && startlit<=litidx);
+  assert(startlit==-1 || (startlit>=0 && startlit<=litidx));
   base=startlit;
   size=1;
   for (cur=0; cur<numdim-1; cur++) {
@@ -7117,7 +7117,7 @@ static void SC_FASTCALL emit_do_stor_u_pri_alt(char *name)
     if (ident==iARRAYCELL) {
       outinstr("stor.i",NULL,0);
     } else {
-      p->value.ucell=sCHARBITS/8;
+      p[0].value.ucell=sCHARBITS/8;
       outinstr("strb.i",p,1);
     } /* if */
     break;

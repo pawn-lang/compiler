@@ -1806,7 +1806,7 @@ static void stgopt(char *start,char *end,int (*outputfunc)(char *str))
             seq++;
           } /* if */
         } /* while */
-        assert(sequences[seq].find==NULL || *sequences[seq].find=='\0' && pc_optimize==sOPTIMIZE_NOMACRO);
+        assert(sequences[seq].find==NULL || (*sequences[seq].find=='\0' && pc_optimize==sOPTIMIZE_NOMACRO));
         start += strlen(start) + 1;       /* to next string */
       } /* while (start<end) */
     } while (matches>0);
