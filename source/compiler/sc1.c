@@ -685,8 +685,8 @@ int pc_compile(int argc, char *argv[])
     sc_status=statSECOND;
   else
     sc_status=statWRITE;          /* allow to write --this variable was reset by resetglobals() */
-  setstringconstants();
   writeleader(&glbtab);
+  setstringconstants();
   setfileconst(inpfname);
   insert_dbgfile(inpfname);
   if (!strempty(incfname)) {
