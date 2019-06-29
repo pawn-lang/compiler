@@ -2359,7 +2359,10 @@ static int declloc(int fstatic)
         int ctag = tag;         /* set to "tag" by default */
         int explicit_init=FALSE;/* is the variable explicitly initialized? */
         if (matchtoken('=')) {
+          sym->usage &= ~uDEFINE;   /* temporarily mark the variable as undefined to prevent
+                                     * possible self-assignment through its initialization expression */
           doexpr(FALSE,FALSE,FALSE,FALSE,&ctag,NULL,TRUE);
+          sym->usage |= uDEFINE;
           explicit_init=TRUE;
         } else {
           ldconst(0,sPRI);      /* uninitialized variable, set to zero */
