@@ -1591,9 +1591,10 @@ static int command(void)
     break;
   default:
     if (!SKIPPING) {
-      error(31);          /* unknown compiler directive */
-      ret=CMD_NONE;  /* process as normal line */
+      error(31);    /* unknown compiler directive */
+      ret=CMD_NONE; /* process as normal line */
     }
+    litidx=0;       /* this directive was added to the literal queue - reset it */
   } /* switch */
   return ret;
 }
