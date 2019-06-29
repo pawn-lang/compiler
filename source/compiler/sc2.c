@@ -1590,8 +1590,10 @@ static int command(void)
     } /* if */
     break;
   default:
-    error(31);          /* unknown compiler directive */
-    ret=SKIPPING ? CMD_CONDFALSE : CMD_NONE;  /* process as normal line */
+    if (!SKIPPING) {
+      error(31);          /* unknown compiler directive */
+      ret=CMD_NONE;  /* process as normal line */
+    }
   } /* switch */
   return ret;
 }
