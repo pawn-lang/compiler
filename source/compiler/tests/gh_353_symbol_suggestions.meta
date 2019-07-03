@@ -24,5 +24,7 @@ gh_353_symbol_suggestions.pwn(138) : error 087: unknown state "BEING1" for autom
 gh_353_symbol_suggestions.pwn(138) : error 036: empty statement
 gh_353_symbol_suggestions.pwn(141) : error 087: unknown state "STATE_1" for automaton "automaton_2"; did you mean "automaton_1:STATE_1"?
 gh_353_symbol_suggestions.pwn(141) : error 036: empty statement
+gh_353_symbol_suggestions.pwn(148) : error 017: undefined symbol "test_e017_sug2_var"; state variable out of scope
+gh_353_symbol_suggestions.pwn(153) : error 017: undefined symbol "test_e017_sug2_var"; state variable out of scope
   """
 }
