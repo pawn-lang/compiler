@@ -45,6 +45,7 @@ stock test__op_stor_u_pri_alt(&local_refvar, local_refarray[])
 	emit stor.u.pri global_const;
 	emit stor.u.pri global_func;
 	emit stor.u.pri global_native;
+	emit stor.u.pri global_const_var;
 	emit stor.u.pri local_const;
 	emit stor.u.pri local_array;
 	emit stor.u.pri local_refarray;
@@ -59,6 +60,7 @@ stock test__op_addr_u_pri_alt(&local_refvar, local_refarray[])
 
 	// ok
 	emit addr.u.pri global_var;
+	emit addr.u.pri global_const_var;
 	emit addr.u.pri local_var;
 	emit addr.u.pri local_static_var;
 	emit addr.u.pri local_refvar;
@@ -104,7 +106,7 @@ main()
 {
 	new t, a[2];
 	test__op_load_u_pri_alt(t, a); // 4
-	test__op_stor_u_pri_alt(t, a); // 6
+	test__op_stor_u_pri_alt(t, a); // 7
 	test__op_addr_u_pri_alt(t, a); // 6
 	test__push_u(t, a); // 4
 }
