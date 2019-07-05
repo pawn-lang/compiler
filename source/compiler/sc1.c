@@ -6063,8 +6063,9 @@ static regid SC_FASTCALL emit_findreg(char *opname)
  * Looks for an lvalue and generates code to get cell address in PRI
  * if the lvalue is an array element (iARRAYCELL or iARRAYCHAR).
  */
-static int SC_FASTCALL emit_getlval(int *identptr,emit_outval *p,int *islocal, regid reg,
-                                    int allow_char, int store_pri,int store_alt,int *ispushed)
+static int SC_FASTCALL emit_getlval(int *identptr,emit_outval *p,int *islocal,
+                                    regid reg,int allow_char,int allow_const,
+                                    int store_pri,int store_alt,int *ispushed)
 {
   int tok,index,ident,close;
   cell cidx,val,length;
@@ -6095,6 +6096,8 @@ invalid_lvalue:
     return FALSE;
   } /* if */
   markusage(sym,uREAD | uWRITTEN);
+  if (!allow_const && (sym->usage & uCONST)!=0)
+    goto invalid_lvalue;
 
   p->type=eotNUMBER;
   switch (sym->ident)
@@ -6430,7 +6433,8 @@ static void SC_FASTCALL emit_param_integer(emit_outval *p)
   emit_param_any_internal(p,tNUMBER,FALSE,TRUE);
 }
 
-static void SC_FASTCALL emit_param_index(emit_outval *p,int isrange,const cell *valid_values,int numvalues)
+static void SC_FASTCALL emit_param_index(emit_outval *p,int isrange,
+                                         const cell *valid_values,int numvalues)
 {
   int i;
   cell val;
@@ -7069,7 +7073,7 @@ static void SC_FASTCALL emit_do_stor_u_pri_alt(char *name)
   int ident,islocal,ispushed;
 
   reg=emit_findreg(name);
-  if (!emit_getlval(&ident,&p[0],&islocal,sALT,TRUE,(reg==sPRI),(reg==sALT),&ispushed))
+  if (!emit_getlval(&ident,&p[0],&islocal,sALT,TRUE,FALSE,(reg==sPRI),(reg==sALT),&ispushed))
     return;
   switch (ident) {
   case iVARIABLE:
@@ -7105,7 +7109,7 @@ static void SC_FASTCALL emit_do_addr_u_pri_alt(char *name)
   int ident,islocal;
 
   reg=emit_findreg(name);
-  if (!emit_getlval(&ident,&p[0],&islocal,reg,TRUE,FALSE,FALSE,NULL))
+  if (!emit_getlval(&ident,&p[0],&islocal,reg,TRUE,TRUE,FALSE,FALSE,NULL))
     return;
   switch (ident) {
   case iVARIABLE:
@@ -7156,7 +7160,7 @@ static void SC_FASTCALL emit_do_push_u_adr(char *name)
   emit_outval p[1];
   int ident,islocal;
 
-  if (!emit_getlval(&ident,&p[0],&islocal,sPRI,FALSE,FALSE,FALSE,NULL))
+  if (!emit_getlval(&ident,&p[0],&islocal,sPRI,FALSE,TRUE,FALSE,FALSE,NULL))
     return;
   switch (ident) {
   case iVARIABLE:
@@ -7180,7 +7184,7 @@ static void SC_FASTCALL emit_do_zero_u(char *name)
   emit_outval p[1];
   int ident,islocal;
 
-  if (!emit_getlval(&ident,&p[0],&islocal,sALT,TRUE,FALSE,FALSE,NULL))
+  if (!emit_getlval(&ident,&p[0],&islocal,sALT,TRUE,FALSE,FALSE,FALSE,NULL))
     return;
   switch (ident) {
   case iVARIABLE:
@@ -7212,7 +7216,7 @@ static void SC_FASTCALL emit_do_inc_dec_u(char *name)
 
   assert(strcmp(name,"inc.u")==0 || strcmp(name,"dec.u")==0);
 
-  if (!emit_getlval(&ident,&p[0],&islocal,sPRI,TRUE,FALSE,FALSE,NULL))
+  if (!emit_getlval(&ident,&p[0],&islocal,sPRI,TRUE,FALSE,FALSE,FALSE,NULL))
     return;
   switch (ident) {
   case iVARIABLE:
@@ -7417,7 +7421,6 @@ static int emit_findopcode(const char *instr)
   high=(sizeof emit_opcodelist / sizeof emit_opcodelist[0])-1;
   while (low<high) {
     mid=(low+high)/2;
-    assert(emit_opcodelist[mid].name!=NULL);
     cmp=strcmp(instr,emit_opcodelist[mid].name);
     if (cmp>0)
       low=mid+1;
