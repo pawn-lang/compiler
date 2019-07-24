@@ -241,7 +241,11 @@ typedef struct s_symbol {
  * used during parsing a function, to detect a mix of "return;" and
  * "return value;" in a few special cases.
  */
-#define uRETNONE    0x10
+#define uRETNONE    0x010
+/* uEXPLINIT is set when a variable/array is explicitly initialized at
+ * definition or assigned a value. This flag differs from uWRITTEN
+ * because it doesn't mean the variable/array has been used somewhere. */
+#define uEXPLINIT   0x020
 
 #define flagDEPRECATED 0x01  /* symbol is deprecated (avoid use) */
 #define flagNAKED     0x10  /* function is naked */
@@ -650,6 +654,8 @@ SC_FUNC void delete_symbol(symbol *root,symbol *sym);
 SC_FUNC void delete_symbols(symbol *root,int level,int del_labels,int delete_functions);
 SC_FUNC int refer_symbol(symbol *entry,symbol *bywhom);
 SC_FUNC void markusage(symbol *sym,int usage);
+SC_FUNC void markinitialized(symbol *sym);
+SC_FUNC void checkinitialized(symbol *sym);
 SC_FUNC void rename_symbol(symbol *sym,const char *newname);
 SC_FUNC symbol *findglb(const char *name,int filter);
 SC_FUNC symbol *findloc(const char *name);
