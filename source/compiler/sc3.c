@@ -2216,7 +2216,7 @@ static int nesting=0;
             if (arg[argidx].numdim!=1) {
               error(48);        /* array dimensions must match */
             } else {
-              if (lval.sym==NULL && (arg[argidx].usage & uCONST)==0 && (sym->usage & uNATIVE)==0)
+              if (lval.sym==NULL && (arg[argidx].usage & uCONST)==0)
                     error(239);
               if (arg[argidx].dim[0]!=0) {
                 assert(arg[argidx].dim[0]>0);
