@@ -63,11 +63,11 @@ TestFunc(arg_var, const arg_arr1d[], const arg_arr2d[][])
 	UseVariable(local_var4);
 
 	new local_var5;
-	++local_var5; // warning
+	++local_var5;
 	UseVariable(local_var5);
 
 	new local_var6;
-	local_var6++; // warning
+	local_var6++;
 	UseVariable(local_var6);
 
 	new local_arr1d1[] = "hi there!";
@@ -97,11 +97,11 @@ TestFunc(arg_var, const arg_arr1d[], const arg_arr2d[][])
 	Use1DArray(local_arr1d7);
 
 	new local_arr1d8[8];
-	++local_arr1d8[0]; // warning
+	++local_arr1d8[0];
 	Use1DArray(local_arr1d8);
 
 	new local_arr1d9[8];
-	local_arr1d9[0]++; // warning
+	local_arr1d9[0]++;
 	Use1DArray(local_arr1d9);
 
 	new local_arr2d1[2][8] = { { 0 }, ... };
@@ -135,11 +135,11 @@ TestFunc(arg_var, const arg_arr1d[], const arg_arr2d[][])
 	Use2DArray(local_arr2d8);
 
 	new local_arr2d9[2][8];
-	++local_arr2d9[0][0]; // warning
+	++local_arr2d9[0][0];
 	Use2DArray(local_arr2d9);
 
 	new local_arr2d10[2][8];
-	local_arr2d10[0][0]++; // warning
+	local_arr2d10[0][0]++;
 	Use2DArray(local_arr2d10);
 	UseVariable(global_var1);
 
@@ -148,10 +148,10 @@ TestFunc(arg_var, const arg_arr1d[], const arg_arr2d[][])
 
 	UseVariable(global_var3); // warning
 
-	++global_var4; // warning
+	++global_var4;
 	UseVariable(global_var4);
 
-	global_var5++; // warning
+	global_var5++;
 	UseVariable(global_var5);
 
 	Use1DArray(global_arr1d1);
@@ -164,10 +164,10 @@ TestFunc(arg_var, const arg_arr1d[], const arg_arr2d[][])
 
 	Use1DArray(global_arr1d4); // warning
 
-	++global_arr1d5[0]; // warning
+	++global_arr1d5[0];
 	Use1DArray(global_arr1d5);
 
-	global_arr1d6[0]++; // warning
+	global_arr1d6[0]++;
 	Use1DArray(global_arr1d6);
 
 	Use2DArray(global_arr2d1);
@@ -180,10 +180,10 @@ TestFunc(arg_var, const arg_arr1d[], const arg_arr2d[][])
 
 	Use2DArray(global_arr2d4); // warning
 
-	++global_arr2d5[0][0]; // warning
+	++global_arr2d5[0][0];
 	Use2DArray(global_arr2d5);
 
-	global_arr2d6[0][0]++; // warning
+	global_arr2d6[0][0]++;
 	Use2DArray(global_arr2d6);
 }
 

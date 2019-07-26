@@ -5730,8 +5730,13 @@ static int dofor(void)
       /* The variable in expr1 of the for loop is at a
        * 'compound statement' level of it own.
        */
+      symbol *sym;
       nestlevel++;
       declloc(FALSE); /* declare local variable */
+      for (sym=loctab.next; sym!=NULL; sym=sym->next) {
+        if (sym->compound==nestlevel)
+          markinitialized(sym);
+      } /* for */
     } else {
       doexpr(TRUE,TRUE,TRUE,TRUE,NULL,NULL,FALSE);  /* expression 1 */
       needtoken(';');

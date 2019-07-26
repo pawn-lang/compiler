@@ -1253,7 +1253,7 @@ static int hier2(value *lval)
     assert(lval->sym!=NULL);
     if ((lval->sym->usage & uCONST)!=0)
       return error(22);         /* assignment to const argument */
-    checkinitialized(lval->sym);
+    markinitialized(lval->sym);
     if (!check_userop(user_inc,lval->tag,0,1,lval,&lval->tag))
       inc(lval);                /* increase variable first */
     rvalue(lval);               /* and read the result into PRI */
@@ -1265,7 +1265,7 @@ static int hier2(value *lval)
     assert(lval->sym!=NULL);
     if ((lval->sym->usage & uCONST)!=0)
       return error(22);         /* assignment to const argument */
-    checkinitialized(lval->sym);
+    markinitialized(lval->sym);
     if (!check_userop(user_dec,lval->tag,0,1,lval,&lval->tag))
       dec(lval);                /* decrease variable first */
     rvalue(lval);               /* and read the result into PRI */
@@ -1516,7 +1516,7 @@ static int hier2(value *lval)
         assert(lval->sym!=NULL);
         if ((lval->sym->usage & uCONST)!=0)
           return error(22);     /* assignment to const argument */
-        checkinitialized(lval->sym);
+        markinitialized(lval->sym);
         /* on incrementing array cells, the address in PRI must be saved for
          * incremening the value, whereas the current value must be in PRI
          * on exit.
@@ -1539,7 +1539,7 @@ static int hier2(value *lval)
         assert(lval->sym!=NULL);
         if ((lval->sym->usage & uCONST)!=0)
           return error(22);     /* assignment to const argument */
-        checkinitialized(lval->sym);
+        markinitialized(lval->sym);
         saveresult= (lval->ident==iARRAYCELL || lval->ident==iARRAYCHAR);
         if (saveresult)
           pushreg(sPRI);        /* save address in PRI */
