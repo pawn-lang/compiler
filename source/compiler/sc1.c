@@ -6939,7 +6939,7 @@ static void emit_param_data(emit_outval *p)
         goto invalid_token;
       } /* if */
     } else {
-      sym=findglb(str,sSTATIC);
+      sym=findglb(str,sSTATEVAR);
       if (sym==NULL) {
         error(17,str);  /* undefined symbol */
         return;
