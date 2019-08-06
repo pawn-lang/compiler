@@ -1784,6 +1784,7 @@ static void parse(void)
       /* ignore zero's */
       break;
     case t__EMIT:
+      begcseg();
       emit_flags |= efGLOBAL;
       lex(&val,&str);
       emit_parse_line();
