@@ -534,7 +534,7 @@ static int find_closest_symbol_table(const char *name,const symbol *root,int sym
       break;
     case iFUNCTN:
     case iREFFUNC:
-      if ((symboltype & esfFUNCTION)==0)
+      if ((symboltype & (((sym->usage & uNATIVE)!=0) ? esfNATIVE : esfFUNCTION))==0)
         continue;
       break;
     default:

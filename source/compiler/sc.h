@@ -521,15 +521,24 @@ enum {  /* identifier types */
   estAUTOMATON,
   estSTATE
 };
-enum {  /* symbol type flags */
-  esfLABEL      = 1 << 0,
+enum {  /* search types for error_suggest() when the identifier type is "estSYMBOL" */
+/* symbol type flags */
+  esfLABEL      = 1 << 0, /* label */
   esfCONST      = 1 << 1, /* named constant */
   esfVARIABLE   = 1 << 2, /* single variable */
   esfARRAY      = 1 << 3, /* array */
-  esfFUNCTION   = 1 << 4, /* Pawn or native function */
+  esfPAWNFUNC   = 1 << 4, /* Pawn function */
+  esfNATIVE     = 1 << 5, /* native function */
+
+/* composite search types */
+  /* find symbols of any type (used only to define other search types) */
+  esfANY        = esfLABEL | esfCONST | esfVARIABLE | esfARRAY | esfPAWNFUNC | esfNATIVE,
+
+  /* any function */
+  esfFUNCTION   = esfPAWNFUNC | esfNATIVE,
 
   /* find symbols of any type but labels */
-  esfNONLABEL   = esfCONST | esfVARIABLE | esfARRAY | esfFUNCTION,
+  esfNONLABEL   = esfANY & ~esfLABEL,
 
   /* find an array, a single variable, or a named constant */
   esfVARCONST   = esfCONST | esfVARIABLE | esfARRAY
