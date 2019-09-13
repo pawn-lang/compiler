@@ -3164,12 +3164,10 @@ SC_FUNC void markusage(symbol *sym,int usage)
   if ((usage & (uREAD | uWRITTEN))!=0) {
     /* only do this for global symbols */
     if (sym->vclass==sGLOBAL) {
-      /* "curfunc" should always be valid, since statements may not occurs
-       * outside functions; in the case of syntax errors, however, the
-       * compiler may arrive through this function
-       */
       if (curfunc!=NULL)
         refer_symbol(sym,curfunc);
+      else
+        sym->usage |= uGLOBALREF;
     } /* if */
   } /* if */
 }

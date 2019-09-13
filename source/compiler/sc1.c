@@ -4248,15 +4248,13 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
   } /* if */
 }
 
-static int count_referrers(symbol *entry)
+static int has_referrers(symbol *entry)
 {
-  int i,count;
-
-  count=0;
+  int i;
   for (i=0; i<entry->numrefers; i++)
     if (entry->refer[i]!=NULL)
-      count++;
-  return count;
+      return TRUE;
+  return ((entry->usage & uGLOBALREF)!=0);
 }
 
 #if !defined SC_LIGHT
@@ -4696,7 +4694,7 @@ static void reduce_referrers(symbol *root)
       if (sym->ident==iFUNCTN
           && (sym->usage & uNATIVE)==0
           && (sym->usage & uPUBLIC)==0 && strcmp(sym->name,uMAINFUNC)!=0 && strcmp(sym->name,uENTRYFUNC)!=0
-          && count_referrers(sym)==0)
+          && !has_referrers(sym))
       {
         sym->usage&=~(uREAD | uWRITTEN);  /* erase usage bits if there is no referrer */
         /* find all symbols that are referred by this symbol */
@@ -4715,7 +4713,7 @@ static void reduce_referrers(symbol *root)
       } else if ((sym->ident==iVARIABLE || sym->ident==iARRAY)
                  && (sym->usage & uPUBLIC)==0
                  && sym->parent==NULL
-                 && count_referrers(sym)==0)
+                 && !has_referrers(sym))
       {
         sym->usage&=~(uREAD | uWRITTEN);  /* erase usage bits if there is no referrer */
       } /* if */

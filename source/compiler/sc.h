@@ -237,6 +237,8 @@ typedef struct s_symbol {
 #define uMISSING    0x080
 #define uFORWARD    0x100
 #define uNODESTRUCT 0x200 /* "no destruct(or)", not "node struct" */
+/* symbol is referenced "globally", e.g. via "__emit" or "#emit" used outside functions */
+#define uGLOBALREF  0x400
 /* uRETNONE is not stored in the "usage" field of a symbol. It is
  * used during parsing a function, to detect a mix of "return;" and
  * "return value;" in a few special cases.
