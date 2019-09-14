@@ -356,6 +356,7 @@ enum {
   tMIDDLE = tDBLDOT, /* value of last multi-character operator */
 
   /* reserved words (statements) */
+  t__ADDRESSOF,
   tASSERT,
   tBEGIN,
   tBREAK,
@@ -541,6 +542,10 @@ enum {  /* search types for error_suggest() when the identifier type is "estSYMB
 
   /* find symbols of any type but labels */
   esfNONLABEL   = esfANY & ~esfLABEL,
+
+  /* find symbols of any type except constants and native functions
+   * (for the "__addressof" operator) */
+  esfADDRESSOF  = esfANY & ~(esfCONST | esfNATIVE),
 
   /* find an array, a single variable, or a named constant */
   esfVARCONST   = esfCONST | esfVARIABLE | esfARRAY

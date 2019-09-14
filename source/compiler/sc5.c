@@ -131,7 +131,8 @@ static char *errmsg[] = {
 /*089*/  "state variables may not be initialized (symbol \"%s\")\n",
 /*090*/  "public functions may not return arrays (symbol \"%s\")\n",
 /*091*/  "ambiguous constant; tag override is required (symbol \"%s\")\n",
-/*092*/  "functions may not return arrays of unknown size (symbol \"%s\")\n"
+/*092*/  "functions may not return arrays of unknown size (symbol \"%s\")\n",
+/*093*/  "\"__addressof\" operator is invalid in preprocessor expressions\n"
 };
 
 static char *fatalmsg[] = {
