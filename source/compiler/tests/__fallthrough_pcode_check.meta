@@ -1,0 +1,22 @@
+{
+  'test_type': 'pcode_check',
+  'code_pattern': r"""
+[0-9a-f]+  switch [0-9a-f]+
+[0-9a-f]+  inc.s fffffffc
+[0-9a-f]+  jump [0-9a-f]+
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  switch [0-9a-f]+
+[0-9a-f]+  inc.s fffffffc
+[0-9a-f]+  inc.s fffffffc
+[0-9a-f]+  jump [0-9a-f]+
+[0-9a-f]+  casetbl 00000002 [0-9a-f]+
+                  00000000 [0-9a-f]+
+                  00000001 [0-9a-f]+
+[0-9a-f]+  inc.s fffffffc
+[0-9a-f]+  jump [0-9a-f]+
+[0-9a-f]+  casetbl 00000003 [0-9a-f]+
+                  00000000 [0-9a-f]+
+                  00000001 [0-9a-f]+
+                  00000002 [0-9a-f]+
+"""
+}

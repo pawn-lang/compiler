@@ -1,0 +1,8 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+__fallthrough.pwn(14) : error 093: "__fallthrough" statement must be the last statement in switch case
+__fallthrough.pwn(20) : error 094: "__fallthrough" operator is invalid in "default" cases
+__fallthrough.pwn(22) : error 014: invalid statement; not in switch
+  """
+}
