@@ -131,7 +131,9 @@ static char *errmsg[] = {
 /*089*/  "state variables may not be initialized (symbol \"%s\")\n",
 /*090*/  "public functions may not return arrays (symbol \"%s\")\n",
 /*091*/  "ambiguous constant; tag override is required (symbol \"%s\")\n",
-/*092*/  "functions may not return arrays of unknown size (symbol \"%s\")\n"
+/*092*/  "functions may not return arrays of unknown size (symbol \"%s\")\n",
+/*093*/  "\"__fallthrough\" statement must be the last statement in switch case\n",
+/*094*/  "\"__fallthrough\" operator is invalid in \"default\" cases\n"
 };
 
 static char *fatalmsg[] = {
