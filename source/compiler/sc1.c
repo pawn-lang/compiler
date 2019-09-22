@@ -3469,8 +3469,9 @@ SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualt
   if (!checktag(formaltags, numtags, actualtag)) {
     int i;
     constvalue *tagsym;
-    char formal_tagnames[sLINEMAX]="",actual_tagname[sNAMEMAX+2]="none (\"_\")";
+    char formal_tagnames[sLINEMAX+1]="",actual_tagname[sNAMEMAX+2]="none (\"_\")";
     int notag_allowed=FALSE,add_comma=FALSE;
+    size_t size;
     for (i=0; i<numtags; i++) {
       if(formaltags[i]!=0) {
         if((i+1)==numtags && add_comma==TRUE && notag_allowed==FALSE)
@@ -3479,7 +3480,13 @@ SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualt
           strlcat(formal_tagnames,", ",sizeof(formal_tagnames));
         add_comma=TRUE;
         tagsym=find_tag_byval(formaltags[i]);
-        sprintf(formal_tagnames,"%s\"%s\"",formal_tagnames,(tagsym!=NULL) ? tagsym->name : "-unknown-");
+        size=snprintf(formal_tagnames,
+                      sizeof(formal_tagnames),
+                      "%s\"%s\"",
+                      formal_tagnames,
+                      (tagsym!=NULL) ? tagsym->name : "-unknown-");
+        if (size>=sizeof(formal_tagnames))
+          break;
       } else {
         notag_allowed=TRUE;
       } /* if */
