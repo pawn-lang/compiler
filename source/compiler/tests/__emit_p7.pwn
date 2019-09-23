@@ -10,6 +10,7 @@ stock test__push_u_adr(&local_refvar, local_refarray[])
 
 	// ok
 	emit push.u.adr global_var;
+	emit push.u.adr global_const_var;
 	emit push.u.adr local_refvar;
 	emit push.u.adr local_var;
 	emit push.u.adr local_static_var;
@@ -46,6 +47,7 @@ stock test__zero_u(&local_refvar, local_refarray[])
 	emit zero.u global_const;
 	emit zero.u global_func;
 	emit zero.u global_native;
+	emit zero.u global_const_var;
 	emit zero.u local_const;
 	emit zero.u local_array;
 	emit zero.u local_refarray;
@@ -70,6 +72,7 @@ stock test__inc_dec_u(&local_refvar, local_refarray[])
 	emit inc.u global_const;
 	emit inc.u global_func;
 	emit inc.u global_native;
+	emit inc.u global_const_var;
 	emit inc.u local_const;
 	emit inc.u local_array;
 	emit inc.u local_refarray;
@@ -80,6 +83,6 @@ main()
 {
 	new t, a[2];
 	test__push_u_adr(t, a); // 8
-	test__zero_u(t, a); // 6
-	test__inc_dec_u(t, a); // 6
+	test__zero_u(t, a); // 7
+	test__inc_dec_u(t, a); // 7
 }
