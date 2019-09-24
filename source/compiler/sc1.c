@@ -57,9 +57,10 @@
 #elif defined _MSC_VER && defined _WIN32
   #include <direct.h>           /* for _chdrive() */
   #define dos_setdrive(i)       _chdrive(i)
-  #define stricmp _stricmp
-  #define chdir   _chdir
-  #define access  _access
+  #define stricmp  _stricmp
+  #define chdir    _chdir
+  #define access   _access
+  #define snprintf _snprintf
 #endif
 #if defined __BORLANDC__
   #include <dir.h>              /* for chdir() */
@@ -3485,7 +3486,7 @@ SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualt
                       "%s\"%s\"",
                       formal_tagnames,
                       (tagsym!=NULL) ? tagsym->name : "-unknown-");
-        if (size>=sizeof(formal_tagnames))
+        if(size>=sizeof(formal_tagnames))
           break;
       } else {
         notag_allowed=TRUE;
