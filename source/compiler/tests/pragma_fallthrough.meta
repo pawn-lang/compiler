@@ -1,0 +1,7 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+pragma_fallthrough.pwn(20) : error 093: "#pragma fallthrough" is invalid in "default" cases
+pragma_fallthrough.pwn(22) : error 014: invalid statement; not in switch
+  """
+}
