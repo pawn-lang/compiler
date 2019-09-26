@@ -903,6 +903,8 @@ static void resetglobals(void)
   sc_curstates=0;
   pc_memflags=0;
   pc_naked=FALSE;
+  pc_fallthrough=FALSE;
+  pc_inswitch=FALSE;
   emit_flags=0;
   emit_stgbuf_idx=-1;
 }
@@ -5830,7 +5832,7 @@ static int dofor(void)
 static void doswitch(void)
 {
   int lbl_table,lbl_exit,lbl_case;
-  int swdefault,casecount;
+  int swdefault,casecount,skippedjump,bck_inswitch;
   int tok,endtok;
   cell val;
   char *str;
@@ -5857,6 +5859,9 @@ static void doswitch(void)
   lbl_exit=getlabel();          /* get label number for jumping out of switch */
   swdefault=FALSE;
   casecount=0;
+  skippedjump=FALSE;
+  bck_inswitch=pc_inswitch;
+  pc_inswitch=TRUE;
   do {
     tok=lex(&val,&str);         /* read in (new) token */
     switch (tok) {
@@ -5923,7 +5928,13 @@ static void doswitch(void)
       sc_allowtags=(short)POPSTK_I();   /* reset */
       setlabel(lbl_case);
       statement(NULL,FALSE);
-      jumplabel(lbl_exit);
+      skippedjump=FALSE;
+      if (!pc_fallthrough) {
+        jumplabel(lbl_exit);
+      } else {
+        pc_fallthrough=FALSE;
+        skippedjump=TRUE;
+      } /* if */
       break;
     case tDEFAULT:
       if (swdefault!=FALSE)
@@ -5932,7 +5943,12 @@ static void doswitch(void)
       setlabel(lbl_case);
       needtoken(':');
       swdefault=TRUE;
+      skippedjump=FALSE;
       statement(NULL,FALSE);
+      if (pc_fallthrough) {
+        error(93);      /* "__fallthrough" operator is invalid in "default" cases */
+        pc_fallthrough=FALSE;
+      } /* if */
       /* Jump to lbl_exit, even thouh this is the last clause in the
        * switch, because the jump table is generated between the last
        * clause of the switch and the exit label.
@@ -5947,6 +5963,10 @@ static void doswitch(void)
       } /* if */
     } /* switch */
   } while (tok!=endtok);
+  pc_inswitch=bck_inswitch;
+  /* Jump over the case table if the last case ended with '__fallthrough' */
+  if (skippedjump)
+    jumplabel(lbl_exit);
 
   #if !defined NDEBUG
     /* verify that the case table is sorted (unfortunatly, duplicates can

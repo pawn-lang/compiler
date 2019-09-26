@@ -1336,6 +1336,11 @@ static int command(void)
           sym=findconst("__compat",NULL);
           assert(sym!=NULL);
           sym->addr=pc_compat;
+        } else if (strcmp(str,"fallthrough")==0) {
+          if (pc_inswitch)
+            pc_fallthrough=TRUE;
+          else
+            error(14);          /* invalid statement; not in switch */
         } else if (strcmp(str,"option")==0) {
           char name[sNAMEMAX+1];
           int i;
