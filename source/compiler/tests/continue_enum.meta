@@ -1,0 +1,11 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+continue_enum.pwn(36) : error 001: expected token: "-identifier-", but found "{"
+continue_enum.pwn(41) : error 001: expected token: "-identifier-", but found "{"
+continue_enum.pwn(45) : error 024: "break" or "continue" is out of context
+continue_enum.pwn(55) : error 024: "break" or "continue" is out of context
+continue_enum.pwn(55) : error 001: expected token: ";", but found "enum"
+continue_enum.pwn(56) : error 021: symbol already defined: "dialogid"
+  """
+}
