@@ -93,7 +93,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,
                     int stock,int fconst);
 static int declloc(int fstatic);
 static void decl_const(int table);
-static void decl_enum(int table,int fstatic);
+static void decl_enum(int table,int fstatic,int fcontinue);
 static cell needsub(int *tag,constvalue_root **enumroot);
 static void initials(int ident,int tag,cell *size,int dim[],int numdim,
                      constvalue_root *enumroot);
@@ -1707,7 +1707,7 @@ static void parse(void)
       break;
     case tSTATIC:
       if (matchtoken(tENUM)) {
-        decl_enum(sGLOBAL,TRUE);
+        decl_enum(sGLOBAL,TRUE,FALSE);
       } else {
         /* This can be a static function or a static global variable; we know
          * which of the two as soon as we have parsed up to the point where an
@@ -1724,8 +1724,17 @@ static void parse(void)
     case tCONST:
       decl_const(sGLOBAL);
       break;
+    case tCONTINUE:
+      if (matchtoken(tENUM))
+        decl_enum(sGLOBAL,FALSE,TRUE);
+      else
+        error(24);  /* "break" or "continue" is out of context */
+      break;
     case tENUM:
-      decl_enum(sGLOBAL,matchtoken(tSTATIC));
+      if (matchtoken(tSTATIC))
+        decl_enum(sGLOBAL,TRUE,FALSE);
+      else
+        decl_enum(sGLOBAL,FALSE,matchtoken(tCONTINUE));
       break;
     case tPUBLIC:
       /* This can be a public function or a public variable; see the comment
@@ -2892,7 +2901,7 @@ static void decl_const(int vclass)
 /*  decl_enum   - declare enumerated constants
  *
  */
-static void decl_enum(int vclass,int fstatic)
+static void decl_enum(int vclass,int fstatic,int fcontinue)
 {
   char enumname[sNAMEMAX+1],constname[sNAMEMAX+1];
   cell val,value,size;
@@ -2918,14 +2927,24 @@ static void decl_enum(int vclass,int fstatic)
     explicittag=FALSE;
   } /* if */
 
-  /* get optional enum name (also serves as a tag if no explicit tag was set) */
-  if (lex(&val,&str)==tSYMBOL) {        /* read in (new) token */
-    strcpy(enumname,str);               /* save enum name (last constant) */
-    if (!explicittag)
-      tag=pc_addtag(enumname);
+  if (!fcontinue) {
+    /* get optional enum name (also serves as a tag if no explicit tag was set) */
+    if (lex(&val,&str)==tSYMBOL) {      /* read in (new) token */
+      strcpy(enumname,str);             /* save enum name (last constant) */
+      if (!explicittag)
+        tag=pc_addtag(enumname);
+    } else {
+      lexpush();                        /* analyze again */
+      enumname[0]='\0';
+    } /* if */
   } else {
-    lexpush();                          /* analyze again */
-    enumname[0]='\0';
+    /* the name is mandatory if we are continuing a previous enum */
+    if (needtoken(tSYMBOL)) {
+      strcpy(enumname,str);
+    } else {
+      enumname[0]='\0';
+      fcontinue=FALSE;
+    } /* if */
   } /* if */
 
   /* get increment and multiplier */
@@ -2945,8 +2964,16 @@ static void decl_enum(int vclass,int fstatic)
   } /* if */
 
   if (!strempty(enumname)) {
-    /* already create the root symbol, so the fields can have it as their "parent" */
-    enumsym=add_constant(enumname,0,vclass,tag);
+    /* already create the root symbol (or find an existing one),
+     * so the fields can have it as their "parent" */
+    if (fcontinue) {
+      enumsym=findconst(enumname,NULL);
+      if (vclass!=sGLOBAL && enumsym->vclass==sGLOBAL) {
+        error(17,enumname);
+      } /* if */
+    } /* if */
+    if (enumsym==NULL)
+      enumsym=add_constant(enumname,0,vclass,tag);
     if (enumsym!=NULL) {
       enumsym->usage |= uENUMROOT;
       if (fstatic)
@@ -2959,8 +2986,18 @@ static void decl_enum(int vclass,int fstatic)
   } /* if */
 
   needtoken('{');
+
+  if (enumsym==NULL) {
+    /* default starting value */
+    value=0;
+  } else {
+    /* 'enumsym->addr' either contains the "next" value from the previous
+     * enum, or initialized by 0 (which is also the default starting value)
+     * if the enum root is newly created */
+    value=enumsym->addr;
+  } /* if */
+
   /* go through all constants */
-  value=0;                              /* default starting value */
   do {
     int idxtag,fieldtag;
     symbol *sym;
@@ -5323,9 +5360,10 @@ static void statement(int *lastindent,int allow_decl)
     } /* if */
     break;
   case tSTATIC:
-    if (matchtoken(tENUM))
-      decl_enum(sLOCAL,FALSE);
-    else if (allow_decl) {
+    if (matchtoken(tENUM)) {
+      /* 'static' in 'static enum' is ignored inside functions */
+      decl_enum(sLOCAL,FALSE,FALSE);
+    } else if (allow_decl) {
       declloc(TRUE);
       lastst=tNEW;
     } else {
@@ -5402,8 +5440,9 @@ static void statement(int *lastindent,int allow_decl)
     decl_const(sLOCAL);
     break;
   case tENUM:
+    /* 'static' in 'enum static' is ignored inside functions */
     matchtoken(tSTATIC);
-    decl_enum(sLOCAL,FALSE);
+    decl_enum(sLOCAL,FALSE,FALSE);
     break;
   case tEMIT:
   case t__EMIT: {
