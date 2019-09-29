@@ -1680,12 +1680,6 @@ static int getclassspec(int initialtok,int *fpublic,int *fstatic,int *fstock,int
     } /* switch */
   } while (tok && err==0);
 
-  /* extra checks */
-  if (*fstatic && *fpublic) {
-    err=42;              /* invalid combination of class specifiers */
-    *fstatic=*fpublic=FALSE;
-  } /* if */
-
   if (err)
     error(err);
   return err==0;
@@ -1729,10 +1723,8 @@ static void parse(void)
          * deciding it was a declaration of a static variable after all, we have
          * to store the symbol name and tag.
          */
-        if (getclassspec(tok,&fpublic,&fstatic,&fstock,&fconst)) {
-          assert(!fpublic);
+        if (getclassspec(tok,&fpublic,&fstatic,&fstock,&fconst))
           declfuncvar(fpublic,fstatic,fstock,fconst);
-        } /* if */
       } /* if */
       break;
     case tCONST:
@@ -1745,10 +1737,8 @@ static void parse(void)
       /* This can be a public function or a public variable; see the comment
        * above (for static functions/variables) for details.
        */
-      if (getclassspec(tok,&fpublic,&fstatic,&fstock,&fconst)) {
-        assert(!fstatic);
+      if (getclassspec(tok,&fpublic,&fstatic,&fstock,&fconst))
         declfuncvar(fpublic,fstatic,fstock,fconst);
-      } /* if */
       break;
     case tSTOCK:
       /* This can be a stock function or a stock *global*) variable; see the
@@ -2028,7 +2018,6 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
     cell glbdecl=0;
   #endif
 
-  assert(!fpublic || !fstatic);         /* may not both be set */
   insert_docstring_separator();         /* see comment in newfunc() */
   filenum=fcurrent;                     /* save file number at the start of the declaration */
   do {
