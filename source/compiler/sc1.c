@@ -2016,6 +2016,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
   cell val,size,cidx;
   ucell address;
   int glb_incr;
+  int isstpubdef;                       /* is symbol defined in another file? (for static public variables) */
   char *str;
   int dim[sDIMEN_MAX];
   int numdim;
@@ -2031,6 +2032,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
   insert_docstring_separator();         /* see comment in newfunc() */
   filenum=fcurrent;                     /* save file number at the start of the declaration */
   do {
+    isstpubdef=FALSE;
     size=1;                             /* single size (no array) */
     numdim=0;                           /* no dimensions */
     ident=iVARIABLE;
@@ -2049,7 +2051,6 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
     ispublic=fpublic;
     if (name[0]==PUBLIC_CHAR) {
       ispublic=TRUE;                    /* implicitly public variable */
-      assert(!fstatic);
     } /* if */
     while (matchtoken('[')) {
       ident=iARRAY;
@@ -2077,7 +2078,16 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
     } /* if */
     sym=findconst(name,NULL);
     if (sym==NULL) {
-      sym=findglb(name,sSTATEVAR);
+      if (ispublic) {
+        sym=findglb(name,sGLOBALALL);
+        if (sym!=NULL && sym->fnumber>=0 && sym->fnumber!=fcurrent) {
+          if ((sym->usage & (uPUBLIC | uDEFINE))!=0)
+            isstpubdef=TRUE;
+          sym=NULL;
+        } /* if */
+      } /* if */
+      if (sym==NULL)
+        sym=findglb(name,sSTATEVAR);
       /* if a global variable without states is found and this declaration has
        * states, the declaration is okay
        */
@@ -2101,7 +2111,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
     /* it is okay for the (global) variable to exist, as long as it belongs to
      * a different automaton
      */
-    if (sym!=NULL && (sym->usage & uDEFINE)!=0)
+    if (isstpubdef || (sym!=NULL && (sym->usage & uDEFINE)!=0))
       error(21,name);                   /* symbol already defined */
     /* if this variable is never used (which can be detected only in the
      * second stage), shut off code generation
@@ -3166,11 +3176,23 @@ static void attachstatelist(symbol *sym, int state_id)
  *  Finds a function in the global symbol table or creates a new entry.
  *  It does some basic processing and error checking.
  */
-SC_FUNC symbol *fetchfunc(char *name,int tag)
+SC_FUNC symbol *fetchfunc(char *name,int tag,int fpublic)
 {
-  symbol *sym;
+  symbol *sym=NULL;
+  int isstpubdef=FALSE;                   /* is symbol defined in another file? (for static public functions) */
 
-  if ((sym=findglb(name,sGLOBAL))!=0) {   /* already in symbol table? */
+  if (fpublic) {
+    /* make sure there are no static public functions
+     * with the same name defined in any other file
+     */
+    sym=findglb(name,sGLOBALALL);
+    if (sym!=NULL && sym->fnumber>=0 && sym->fnumber!=fcurrent) {
+      if ((sym->usage & (uPUBLIC | uDEFINE))!=0)
+        isstpubdef=TRUE;
+      sym=NULL;
+    } /* if */
+  } /* if */
+  if (sym!=NULL || (sym=findglb(name,sGLOBAL))!=NULL) { /* already in symbol table? */
     if (sym->ident!=iFUNCTN) {
       error(21,name);                     /* yes, but not as a function */
       return NULL;                        /* make sure the old symbol is not damaged */
@@ -3178,6 +3200,8 @@ SC_FUNC symbol *fetchfunc(char *name,int tag)
       error(21,name);                     /* yes, and it is a native */
     } /* if */
     assert(sym->vclass==sGLOBAL);
+    if (isstpubdef)
+      sym->usage |= uDEFINE;    /* force a "symbol already defined" error (issued in 'newfunc()') */
     if ((sym->usage & uPROTOTYPED)!=0 && sym->tag!=tag)
       error(25);                          /* mismatch from earlier prototype */
     if ((sym->usage & uDEFINE)==0) {
@@ -3646,7 +3670,7 @@ static void funcstub(int fnative)
   } /* if */
   needtoken('(');               /* only functions may be native/forward */
 
-  sym=fetchfunc(symbolname,tag);/* get a pointer to the function entry */
+  sym=fetchfunc(symbolname,tag,fpublic);/* get a pointer to the function entry */
   if (sym==NULL)
     return;
   if (fnative) {
@@ -3778,7 +3802,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     if (stock)
       error(42);                /* invalid combination of class specifiers */
   } /* if */
-  sym=fetchfunc(symbolname,tag);/* get a pointer to the function entry */
+  sym=fetchfunc(symbolname,tag,fpublic);/* get a pointer to the function entry */
   if (sym==NULL || (sym->usage & uNATIVE)!=0)
     return TRUE;                /* it was recognized as a function declaration, but not as a valid one */
   if (fpublic && opertok==0)

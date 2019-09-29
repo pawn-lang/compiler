@@ -3092,9 +3092,9 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
   } /* if */
 
   while (sym!=NULL) {
-    if ( (is_global || strcmp(name,sym->name)==0)           /* check name */
+    if ((is_global || strcmp(name,sym->name)==0)            /* check name */
         && (sym->parent==NULL || sym->ident==iCONSTEXPR)    /* sub-types (hierarchical types) are skipped, except for enum fields */
-        && (sym->fnumber<0 || sym->fnumber==fnumber))       /* check file number for scope */
+        && (sym->fnumber<0 || fnumber<0 || sym->fnumber==fnumber))  /* check file number for scope */
     {
       assert(sym->states==NULL || sym->states->first!=NULL); /* first element of the state list is the "root" */
       if (sym->ident==iFUNCTN
@@ -3230,7 +3230,7 @@ SC_FUNC symbol *findglb(const char *name,int filter)
   /* find a symbol with a matching automaton first */
   symbol *sym=NULL;
 
-  if (filter>sGLOBAL && sc_curstates>0) {
+  if (filter>sGLOBAL && filter<=sSTATEVAR && sc_curstates>0) {
     /* find a symbol whose state list matches the current fsa */
     sym=find_symbol(&glbtab,name,fcurrent,state_getfsa(sc_curstates),NULL);
     if (sym!=NULL && sym->ident!=iFUNCTN) {
@@ -3248,7 +3248,7 @@ SC_FUNC symbol *findglb(const char *name,int filter)
    * that has no state(s) attached to it
    */
   if (sym==NULL)
-    sym=find_symbol(&glbtab,name,fcurrent,-1,NULL);
+    sym=find_symbol(&glbtab,name,(filter==sGLOBALALL) ? -1 : fcurrent,-1,NULL);
   return sym;
 }
 

@@ -246,6 +246,7 @@ typedef struct s_symbol {
 #define sSTATIC   2     /* global life, local scope */
 
 #define sSTATEVAR  3    /* criterion to find variables (sSTATEVAR implies a global variable) */
+#define sGLOBALALL 4    /* criterion to find global symbols in all source files */
 
 typedef struct s_value {
   symbol *sym;          /* symbol in symbol table, NULL for (constant) expression */
@@ -643,7 +644,7 @@ long pc_lengthbin(void *handle); /* return the length of the file */
 
 /* function prototypes in SC1.C */
 SC_FUNC void set_extension(char *filename,char *extension,int force);
-SC_FUNC symbol *fetchfunc(char *name,int tag);
+SC_FUNC symbol *fetchfunc(char *name,int tag,int fpublic);
 SC_FUNC char *operator_symname(char *symname,char *opername,int tag1,int tag2,int numtags,int resulttag);
 SC_FUNC void check_index_tagmismatch(char *symname,int expectedtag,int actualtag,int allowcoerce,int errline);
 SC_FUNC void check_tagmismatch(int formaltag,int actualtag,int allowcoerce,int errline);
