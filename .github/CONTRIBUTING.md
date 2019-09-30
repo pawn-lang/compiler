@@ -1,8 +1,6 @@
 # Contributing to the Pawn Compiler
 
-When contributing to this repository, please first discuss the change you wish to make via issue, email, or any other method with the owners of this repository before making a change.
-
-Please note we have a code of conduct, please follow it in all your interactions with the project.
+If you are proposing a new feature or fixing a bug of significant complexity, please do not write any code and propose your planned changes via an issue first! This saves _you_ time in case changes are required or the feature is rejected and it saves the _maintainers_ time as discussing proposals is generally easier than doing code review. Thank you!
 
 ## Pull Requests
 
