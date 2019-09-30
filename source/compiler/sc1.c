@@ -2968,7 +2968,7 @@ static void decl_enum(int vclass,int fstatic)
       lexpush();
       break;
     } /* if */
-    idxtag=pc_addtag(NULL);             /* optional explicit item tag */
+    idxtag=(enumname[0]=='\0') ? tag : pc_addtag(NULL); /* optional explicit item tag */
     if (needtoken(tSYMBOL)) {           /* read in (new) token */
       tokeninfo(&val,&str);             /* get the information */
       strcpy(constname,str);            /* save symbol name */
