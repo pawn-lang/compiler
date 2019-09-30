@@ -1,0 +1,13 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+static_public_symbols.pwn(5) : error 021: symbol already defined: "@TestFunc"
+static_public_symbols.pwn(8) : error 021: symbol already defined: "@TestFunc"
+static_public_symbols.pwn(10) : error 021: symbol already defined: "@test_var"
+static_public_symbols.pwn(12) : error 021: symbol already defined: "@test_var"
+static_public_symbols.pwn(15) : error 021: symbol already defined: "TestFunc"
+static_public_symbols.pwn(18) : error 021: symbol already defined: "TestFunc"
+static_public_symbols.pwn(20) : error 021: symbol already defined: "test_var"
+static_public_symbols.pwn(22) : error 021: symbol already defined: "test_var"
+"""
+}

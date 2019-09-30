@@ -1,0 +1,7 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+old_style_declarations.pwn(8) : warning 231: state specification on forward declaration is ignored
+old_style_declarations.pwn(9) : warning 231: state specification on forward declaration is ignored
+"""
+}
