@@ -9,29 +9,29 @@ stock test__function(&local_refvar, local_refarray[])
 local_label:
 
 	// ok
-	emit call global_func;
-	emit sysreq.c global_native;
-	emit sysreq.n global_native 0;
+	__emit call global_func;
+	__emit sysreq.c global_native;
+	__emit sysreq.n global_native 0;
 
 	// should trigger an error
-	emit call global_const;
-	emit call global_var;
-	emit call local_refvar;
-	emit call local_refarray;
-	emit call local_const;
-	emit call local_var;
-	emit call local_static_var;
-	emit call local_label;
-	emit call 0;
-	emit sysreq.c global_const;
-	emit sysreq.c global_var;
-	emit sysreq.c local_refvar;
-	emit sysreq.c local_refarray;
-	emit sysreq.c local_const;
-	emit sysreq.c local_var;
-	emit sysreq.c local_static_var;
-	emit sysreq.c local_label;
-	emit sysreq.c 0;
+	__emit call global_const;
+	__emit call global_var;
+	__emit call local_refvar;
+	__emit call local_refarray;
+	__emit call local_const;
+	__emit call local_var;
+	__emit call local_static_var;
+	__emit call local_label;
+	__emit call 0;
+	__emit sysreq.c global_const;
+	__emit sysreq.c global_var;
+	__emit sysreq.c local_refvar;
+	__emit sysreq.c local_refarray;
+	__emit sysreq.c local_const;
+	__emit sysreq.c local_var;
+	__emit sysreq.c local_static_var;
+	__emit sysreq.c local_label;
+	__emit sysreq.c 0;
 }
 
 
