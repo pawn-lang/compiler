@@ -1462,7 +1462,6 @@ static int hier2(value *lval)
     } /* if */
     return FALSE;
   } /* case */
-  case tEMIT:
   case t__EMIT:
     paranthese=matchtoken('(');
     emit_flags |= efEXPR;

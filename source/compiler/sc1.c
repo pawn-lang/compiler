@@ -1693,7 +1693,6 @@ static void parse(void)
     case 0:
       /* ignore zero's */
       break;
-    case tEMIT:
     case t__EMIT:
       emit_flags |= efGLOBAL;
       lex(&val,&str);
@@ -5405,13 +5404,12 @@ static void statement(int *lastindent,int allow_decl)
     matchtoken(tSTATIC);
     decl_enum(sLOCAL,FALSE);
     break;
-  case tEMIT:
   case t__EMIT: {
     extern char *sc_tokens[];
     const unsigned char *bck_lptr=lptr-strlen(sc_tokens[tok-tFIRST]);
     if (matchtoken('{')) {
       emit_flags |= efBLOCK;
-      lastst=tEMIT;
+      lastst=t__EMIT;
       break;
     } /* if */
     lptr=bck_lptr;
