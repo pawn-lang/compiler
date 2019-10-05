@@ -374,6 +374,7 @@ enum {
   tFORWARD,
   tGOTO,
   tIF,
+  t__NAMEOF,
   tNATIVE,
   tNEW,
   tOPERATOR,

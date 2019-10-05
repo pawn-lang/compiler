@@ -1338,6 +1338,30 @@ static int hier2(value *lval)
     while (paranthese--)
       needtoken(')');
     return FALSE;
+  case t__NAMEOF:
+    paranthese = 0;
+    while (matchtoken('('))
+      paranthese++;
+    tok=lex(&val, &st);
+    ldconst((litidx +glb_declared)*sizeof(cell),sPRI);
+    if (tok!=tSYMBOL)
+      return error_suggest(20, st, NULL, estNONSYMBOL, tok);    /* illegal symbol name */
+    sym = findloc(st);
+    if (sym==NULL)
+      sym=findglb(st, sSTATEVAR);
+    if (sym==NULL)
+      return error_suggest(17, st, NULL, estSYMBOL, esfVARCONST);   /* undefined symbol */
+    else if ((sym->usage & uDEFINE)==0)
+      return error_suggest(17, st, NULL, estSYMBOL, esfVARCONST);   /* undefined symbol (symbol is in the table, but it is "used" only) */
+    clear_value(lval);
+    for (tag=0; sym->name[tag]; ++tag)
+      litadd(sym->name[tag]);
+    litadd(0);
+    lval->ident=iARRAY;
+    lval->constval=-1-tag;
+    while (paranthese--)
+      needtoken(')');
+    return FALSE;
   case tSIZEOF:
     paranthese=0;
     while (matchtoken('('))
