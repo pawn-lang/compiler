@@ -9,18 +9,18 @@ stock test__data_offset(&local_refvar, local_refarray[])
 local_label:
 
 	// ok
-	emit load.pri global_var;
-	emit load.pri local_static_var;
+	__emit load.pri global_var;
+	__emit load.pri local_static_var;
 
 	// should trigger an error
-	emit load.pri global_const;
-	emit load.pri global_func;
-	emit load.pri local_refvar;
-	emit load.pri local_refarray;
-	emit load.pri local_const;
-	emit load.pri local_var;
-	emit load.pri local_label;
-	emit load.pri 0;
+	__emit load.pri global_const;
+	__emit load.pri global_func;
+	__emit load.pri local_refvar;
+	__emit load.pri local_refarray;
+	__emit load.pri local_const;
+	__emit load.pri local_var;
+	__emit load.pri local_label;
+	__emit load.pri 0;
 }
 
 stock test__local_var(&local_refvar, local_refarray[])
@@ -31,32 +31,32 @@ stock test__local_var(&local_refvar, local_refarray[])
 local_label:
 
 	// ok
-	emit load.s.pri global_const;
-	emit load.s.pri local_refvar;
-	emit load.s.pri local_refarray;
-	emit load.s.pri local_const;
-	emit load.s.pri local_var;
-	emit load.s.pri 20;
-	emit load.s.pri -20;
-	emit stor.s.pri global_const;
-	emit stor.s.pri local_const;
-	emit stor.s.pri local_var;
-	emit stor.s.pri 20;
-	emit stor.s.pri -20;
+	__emit load.s.pri global_const;
+	__emit load.s.pri local_refvar;
+	__emit load.s.pri local_refarray;
+	__emit load.s.pri local_const;
+	__emit load.s.pri local_var;
+	__emit load.s.pri 20;
+	__emit load.s.pri -20;
+	__emit stor.s.pri global_const;
+	__emit stor.s.pri local_const;
+	__emit stor.s.pri local_var;
+	__emit stor.s.pri 20;
+	__emit stor.s.pri -20;
 
 	// should trigger an error
-	emit load.s.pri global_var;
-	emit load.s.pri global_func;
-	emit load.s.pri local_static_var;
-	emit load.s.pri local_label;
-	emit stor.s.pri local_refvar;
-	emit stor.s.pri local_refarray;
-	emit load.s.pri -global_var;
-	emit load.s.pri -global_func;
-	emit load.s.pri -local_static_var;
-	emit load.s.pri -local_label;
-	emit stor.s.pri -local_refvar;
-	emit stor.s.pri -local_refarray;
+	__emit load.s.pri global_var;
+	__emit load.s.pri global_func;
+	__emit load.s.pri local_static_var;
+	__emit load.s.pri local_label;
+	__emit stor.s.pri local_refvar;
+	__emit stor.s.pri local_refarray;
+	__emit load.s.pri -global_var;
+	__emit load.s.pri -global_func;
+	__emit load.s.pri -local_static_var;
+	__emit load.s.pri -local_label;
+	__emit stor.s.pri -local_refvar;
+	__emit stor.s.pri -local_refarray;
 }
 
 
