@@ -9,42 +9,42 @@ stock test__shift(&local_refvar, local_refarray[])
 local_label:
 
 	// ok
-	emit shl.c.pri global_const;
-	emit shl.c.pri local_const;
-	emit shl.c.pri 0;
-	emit shl.c.pri 1;
-	emit shl.c.pri 15;
-	emit shl.c.pri (cellbits / charbits);
+	__emit shl.c.pri global_const;
+	__emit shl.c.pri local_const;
+	__emit shl.c.pri 0;
+	__emit shl.c.pri 1;
+	__emit shl.c.pri 15;
+	__emit shl.c.pri (cellbits / charbits);
 #if cellbits == 16
-	emit shl.c.pri 15;
-	emit shl.c.pri 0xF;
+	__emit shl.c.pri 15;
+	__emit shl.c.pri 0xF;
 #elseif cellbits == 32
-	emit shl.c.pri 31;
-	emit shl.c.pri 0x1F;
+	__emit shl.c.pri 31;
+	__emit shl.c.pri 0x1F;
 #else // cellbits == 64
-	emit shl.c.pri 63;
-	emit shl.c.pri 0x3F;
+	__emit shl.c.pri 63;
+	__emit shl.c.pri 0x3F;
 #endif
 
 	// should trigger an error
-	emit shl.c.pri global_var;
-	emit shl.c.pri global_func;
-	emit shl.c.pri local_refvar;
-	emit shl.c.pri local_refarray;
-	emit shl.c.pri local_var;
-	emit shl.c.pri local_static_var;
-	emit shl.c.pri local_label;
-	emit shl.c.pri -1;
-	emit shl.c.pri -0x1;
+	__emit shl.c.pri global_var;
+	__emit shl.c.pri global_func;
+	__emit shl.c.pri local_refvar;
+	__emit shl.c.pri local_refarray;
+	__emit shl.c.pri local_var;
+	__emit shl.c.pri local_static_var;
+	__emit shl.c.pri local_label;
+	__emit shl.c.pri -1;
+	__emit shl.c.pri -0x1;
 #if cellbits == 16
-	emit shl.c.pri 16;
-	emit shl.c.pri 0x10;
+	__emit shl.c.pri 16;
+	__emit shl.c.pri 0x10;
 #elseif cellbits == 32
-	emit shl.c.pri 32;
-	emit shl.c.pri 0x20;
+	__emit shl.c.pri 32;
+	__emit shl.c.pri 0x20;
 #else // cellbits == 64
-	emit shl.c.pri 64;
-	emit shl.c.pri 0x40;
+	__emit shl.c.pri 64;
+	__emit shl.c.pri 0x40;
 #endif
 }
 
@@ -56,21 +56,21 @@ stock test__label(&local_refvar, local_refarray[])
 local_label:
 
 	// ok
-	emit jump local_label;
-	emit jump local_label2;
-	emit jump :local_label2;
+	__emit jump local_label;
+	__emit jump local_label2;
+	__emit jump :local_label2;
 local_label2:
 
 	// should trigger an error
-	emit jump global_const;
-	emit jump global_var;
-	emit jump global_func;
-	emit jump local_refvar;
-	emit jump local_refarray;
-	emit jump local_const;
-	emit jump local_var;
-	emit jump local_static_var;
-	emit jump 0;
+	__emit jump global_const;
+	__emit jump global_var;
+	__emit jump global_func;
+	__emit jump local_refvar;
+	__emit jump local_refarray;
+	__emit jump local_const;
+	__emit jump local_var;
+	__emit jump local_static_var;
+	__emit jump 0;
 }
 
 

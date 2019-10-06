@@ -365,7 +365,6 @@ enum {
   tDEFINED,
   tDO,
   tELSE,
-  tEMIT,
   t__EMIT,
   tEND,
   tENUM,
