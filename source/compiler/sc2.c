@@ -1232,13 +1232,14 @@ static int command(void)
           preproc_expr(&val,NULL);
           sc_needsemicolon=(int)val;
         } else if (strcmp(str,"once")==0) {
+          char* curr_char;
+          char* basefname=inpfname;
           char symname[sNAMEMAX];
           symbol *included;
           /* make it compatible for Windows paths with '\\' directory separator */
-          char* basefname=inpfname;
-          for (char* _cchar=inpfname; *_cchar!='\0'; _cchar++)
-            if (*_cchar=='/'||*_cchar=='\\')
-              basefname=_cchar+1;
+          for (curr_char=inpfname; *curr_char!='\0'; curr_char++)
+            if (*curr_char=='/'||*curr_char=='\\')
+              basefname=curr_char+1;
           /* assign '_inc_includename' string to symname */
           strcpy(symname,"_inc_");
           strlcat(symname,basefname,sizeof symname);
