@@ -1344,7 +1344,7 @@ static int command(void)
             lptr++;
           for (i=0; i<sizeof name && *lptr>' '; i++,lptr++)
             name[i]=*lptr;
-          name[i]='\0';
+          name[i-1]='\0';
           parsesingleoption(name);
         } else {
           error(207);           /* unknown #pragma */
