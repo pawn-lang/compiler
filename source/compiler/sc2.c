@@ -1342,14 +1342,9 @@ static int command(void)
           /* first gather all information, start with the tag name */
           while (*lptr<=' ' && *lptr!='\0')
             lptr++;
-          for (i=0; i<sizeof name && *lptr>' '; i++,lptr++)
+          for (i=0; i<sNAMEMAX && *lptr>' '; i++,lptr++)
             name[i]=*lptr;
-          /* check if 'i' is 32 or not to prevent OOB */
-          if (i==sNAMEMAX+1) {
-            name[i-1]='\0';
-          } else {
-            name[i]='\0';
-          }
+          name[i]='\0';
           parsesingleoption(name);
         } else {
           error(207);           /* unknown #pragma */
