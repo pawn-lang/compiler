@@ -1344,7 +1344,12 @@ static int command(void)
             lptr++;
           for (i=0; i<sizeof name && *lptr>' '; i++,lptr++)
             name[i]=*lptr;
-          name[i-1]='\0';
+          /* check if 'i' is 32 or not to prevent OOB */
+          if (i==sNAMEMAX+1) {
+            name[i-1]='\0';
+          } else {
+            name[i]='\0';
+          }
           parsesingleoption(name);
         } else {
           error(207);           /* unknown #pragma */
