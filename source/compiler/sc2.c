@@ -1232,30 +1232,36 @@ static int command(void)
           preproc_expr(&val,NULL);
           sc_needsemicolon=(int)val;
         } else if (strcmp(str,"once")==0) {
-          char* curr_char;
-          char* basefname=inpfname;
-          char symname[sNAMEMAX];
-          symbol *included;
-          /* make it compatible for Windows paths with '\\' directory separator */
-          for (curr_char=inpfname; *curr_char!='\0'; curr_char++)
-            if (*curr_char=='/'||*curr_char=='\\')
-              basefname=curr_char+1;
-          /* assign '_inc_includename' string to symname */
-          strcpy(symname,"_inc_");
-          strlcat(symname,basefname,sizeof symname);
-          /* check if '_inc_includename' is already in global symbols table or not */
-          included=find_symbol(&glbtab,symname,fcurrent,-1,NULL);
-          if (included==NULL)
-            /* couldn't find '_inc_includename' in symbols table */
-            add_constant(symname,1,sGLOBAL,0); // add symname ('_inc_includename') to global symbols table
-          else {
-            /* found '_inc_includename' symbol in global symbols table  */
-            if (!SKIPPING) {
-              assert(inpf!=NULL);
-              if (inpf!=inpf_org)
-                pc_closesrc(inpf); // close input file (like #endinput)
-              inpf=NULL;
-            } /* if */
+          /* check if compiler is not running with `-Z` arg */
+          if(!pc_compat) {
+            char symname[sNAMEMAX];
+            char *ptr;
+            symbol *included;
+            /* remove unnecessary directory names from include file absolute path */
+            char dirsep=
+              #if DIRSEP_CHAR!='\\'
+                '\\';
+              #else
+                DIRSEP_CHAR;
+              #endif
+            strcpy(symname,"_inc_");
+            if ((ptr=strrchr(inpfname,dirsep))!=NULL)
+              strlcat(symname,ptr+1,sizeof symname);
+            else
+              strlcat(symname,inpfname,sizeof symname);
+            included=find_symbol(&glbtab,symname,fcurrent,-1,NULL);
+            if (included==NULL)
+              /* couldn't find '_inc_includename' in symbols table */
+              add_constant(symname,1,sGLOBAL,0); // add symname ('_inc_includename') to global symbols table
+            else {
+              /* found '_inc_includename' symbol in global symbols table  */
+              if (!SKIPPING) {
+                assert(inpf!=NULL);
+                if (inpf!=inpf_org)
+                  pc_closesrc(inpf); // close input file (like #endinput)
+                inpf=NULL;
+              } /* if */
+            }
           }
         } else if (strcmp(str,"tabsize")==0) {
           cell val;
