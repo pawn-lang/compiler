@@ -2077,7 +2077,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
      */
     assert(sym==NULL
            || sym->states==NULL && sc_curstates==0
-           || sym->states!=NULL && sym->next!=NULL && sym->states->first->index==sc_curstates);
+           || sym->states!=NULL && sym->states->first!=NULL && sym->states->first->index==sc_curstates);
     /* a state variable may only have a single id in its list (so either this
      * variable has no states, or it has a single list)
      */
@@ -2967,7 +2967,7 @@ static void decl_enum(int vclass,int fstatic)
       lexpush();
       break;
     } /* if */
-    idxtag=pc_addtag(NULL);             /* optional explicit item tag */
+    idxtag=(enumname[0]=='\0') ? tag : pc_addtag(NULL); /* optional explicit item tag */
     if (needtoken(tSYMBOL)) {           /* read in (new) token */
       tokeninfo(&val,&str);             /* get the information */
       strcpy(constname,str);            /* save symbol name */
@@ -4276,15 +4276,13 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
   } /* if */
 }
 
-static int count_referrers(symbol *entry)
+static int has_referrers(symbol *entry)
 {
-  int i,count;
-
-  count=0;
+  int i;
   for (i=0; i<entry->numrefers; i++)
     if (entry->refer[i]!=NULL)
-      count++;
-  return count;
+      return TRUE;
+  return ((entry->usage & uGLOBALREF)!=0);
 }
 
 #if !defined SC_LIGHT
@@ -4724,7 +4722,7 @@ static void reduce_referrers(symbol *root)
       if (sym->ident==iFUNCTN
           && (sym->usage & uNATIVE)==0
           && (sym->usage & uPUBLIC)==0 && strcmp(sym->name,uMAINFUNC)!=0 && strcmp(sym->name,uENTRYFUNC)!=0
-          && count_referrers(sym)==0)
+          && !has_referrers(sym))
       {
         sym->usage&=~(uREAD | uWRITTEN);  /* erase usage bits if there is no referrer */
         /* find all symbols that are referred by this symbol */
@@ -4743,7 +4741,7 @@ static void reduce_referrers(symbol *root)
       } else if ((sym->ident==iVARIABLE || sym->ident==iARRAY)
                  && (sym->usage & uPUBLIC)==0
                  && sym->parent==NULL
-                 && count_referrers(sym)==0)
+                 && !has_referrers(sym))
       {
         sym->usage&=~(uREAD | uWRITTEN);  /* erase usage bits if there is no referrer */
       } /* if */

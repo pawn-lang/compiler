@@ -1,0 +1,7 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+anonymous_enum_tags.pwn(4) : error 001: expected token: "-identifier-", but found "-label-"
+anonymous_enum_tags.pwn(11) : error 001: expected token: "-identifier-", but found "-label-"
+  """
+}

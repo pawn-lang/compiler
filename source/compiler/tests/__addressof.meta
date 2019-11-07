@@ -1,0 +1,9 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+__addressof.pwn(3) : error 017: undefined symbol "Func1"
+__addressof.pwn(16) : error 093: "__addressof" operator is invalid in preprocessor expressions
+__addressof.pwn(21) : error 001: expected token: "-variable, array, array cell, label or function-", but found "-numeric value-"
+__addressof.pwn(24) : error 001: expected token: "-variable, array, array cell, label or function-", but found "-native function-"
+  """
+}

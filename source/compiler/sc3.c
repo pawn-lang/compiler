@@ -1315,6 +1315,103 @@ static int hier2(value *lval)
     lvalue=hier2(lval);
     lval->tag=tag;
     return lvalue;
+  case t__ADDRESSOF: {
+    extern char *sc_tokens[];
+    static const char allowed_sym_types[]="-variable, array, array cell, label or function-";
+    paranthese=0;
+    while (matchtoken('('))
+      paranthese++;
+    tok=lex(&val,&st);
+    if (tok!=tSYMBOL)
+      return error_suggest(20,st,NULL,estNONSYMBOL,tok);    /* invalid symbol name */
+    sym=findloc(st);
+    if (sym==NULL)
+      sym=findglb(st,sSTATEVAR);
+    if (sym==NULL) {
+      return error_suggest(17,st,NULL,estSYMBOL,esfADDRESSOF);  /* undefined symbol */
+    } else if ((sym->usage & uDEFINE)==0) {
+      /* the symbol is defined after the point of its use,
+         so the compiler can't know its address yet
+       */
+      return error(17,st);      /* undefined symbol (don't suggest other symbols) */
+    } /* if */
+    /* Mark the symbol as read, so the compiler won't throw it away
+     * if it's only indirectly used from "__addressof" */
+    markusage(sym,uREAD);
+    clear_value(lval);
+    lval->ident=iCONSTEXPR;
+    switch (sym->ident) {
+    case iVARIABLE:
+    case iREFERENCE:
+    case iARRAY:
+    case iREFARRAY:
+      if (sym->vclass==sLOCAL) {
+        lval->ident=iEXPRESSION;
+        address(sym,sPRI);
+        break;
+      } /* if */
+      /* fallthrough */
+    case iFUNCTN:
+    case iLABEL:
+      lval->constval=sym->addr;
+      if (sym->ident==iFUNCTN) {
+        if ((sym->usage & uNATIVE)!=0)
+          error(1,allowed_sym_types,sc_tokens[teNATIVE-tFIRST]);
+        break;
+      } else if (sym->ident==iARRAY || sym->ident==iREFARRAY) {
+        cell arrayidx=0,numoffsets=0,offsmul=1;
+        int level;
+        symbol *subsym=sym;
+        for (level=0; matchtoken('['); level++) {
+          if (subsym!=NULL) {
+            if (level==subsym->dim.array.level && matchtoken(tSYMBOL)) {
+              char *idxname;
+              int cmptag=subsym->x.tags.index;
+              tokeninfo(&val,&idxname);
+              if (findconst(idxname,&cmptag)==NULL)
+                error_suggest(80,idxname,NULL,estSYMBOL,esfCONST);  /* unknown symbol, or non-constant */
+              else if (cmptag>1)
+                error(91,idxname);                                  /* ambiguous constant */
+            } else {
+              int index,ident;
+              cell cidx;
+              stgget(&index,&cidx);     /* mark position in code generator */
+              ident=expression(&val,&tag,NULL,TRUE);
+              stgdel(index,cidx);       /* scratch generated code */
+              if (ident!=iCONSTEXPR)
+                error(8);               /* must be constant expression */
+            } /* if */
+            numoffsets+=offsmul;
+            offsmul*=subsym->dim.array.length;
+            arrayidx=(arrayidx*subsym->dim.array.length)+val;
+            subsym=finddepend(subsym);
+          }
+          needtoken(']');
+        } /* for */
+        if (level>sym->dim.array.level+1)
+          error(28,sym->name);    /* invalid subscript */
+        while (subsym!=NULL) {
+          numoffsets+=offsmul;
+          offsmul*=subsym->dim.array.length;
+          arrayidx*=arrayidx*subsym->dim.array.length;
+          subsym=finddepend(subsym);
+        } /* if */
+        lval->constval+=(numoffsets-1+arrayidx)*(cell)sizeof(cell);
+        ldconst(lval->constval,sPRI);
+      } /* if */
+      break;
+    case iCONSTEXPR:
+      error(1,allowed_sym_types,sc_tokens[teNUMERIC-tFIRST]);
+      break;
+    default:
+      assert(0);
+    } /* switch */
+    while (paranthese--)
+      needtoken(')');
+    if (strchr((char*)pline,PREPROC_TERM)!=NULL)
+      return error(93); /* "__addressof" operator is invalid in preprocessor directives */
+    return FALSE;
+  } /* case */
   case tDEFINED:
     paranthese=0;
     while (matchtoken('('))
