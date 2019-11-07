@@ -2170,9 +2170,9 @@ char *sc_tokens[] = {
          "*=", "/=", "%=", "+=", "-=", "<<=", ">>>=", ">>=", "&=", "^=", "|=",
          "||", "&&", "==", "!=", "<=", ">=", "<<", ">>>", ">>", "++", "--",
          "...", "..",
-         "assert", "*begin", "break", "case", "char", "const", "continue", "default",
-         "defined", "do", "else", "__emit", "*end", "enum", "exit", "for", "forward",
-         "goto", "if", "native", "new", "operator", "public", "return", "sizeof",
+         "__addressof", "assert", "*begin", "break", "case", "char", "const", "continue",
+         "default", "defined", "do", "else", "__emit", "*end", "enum", "exit", "for",
+         "forward", "goto", "if", "native", "new", "operator", "public", "return", "sizeof",
          "sleep", "state", "static", "stock", "switch", "tagof", "*then", "while",
          "#assert", "#define", "#else", "#elseif", "#emit", "#endif", "#endinput",
          "#endscript", "#error", "#file", "#if", "#include", "#line", "#pragma",
@@ -3163,12 +3163,10 @@ SC_FUNC void markusage(symbol *sym,int usage)
   if ((usage & (uREAD | uWRITTEN))!=0) {
     /* only do this for global symbols */
     if (sym->vclass==sGLOBAL) {
-      /* "curfunc" should always be valid, since statements may not occurs
-       * outside functions; in the case of syntax errors, however, the
-       * compiler may arrive through this function
-       */
       if (curfunc!=NULL)
         refer_symbol(sym,curfunc);
+      else
+        sym->usage |= uGLOBALREF;
     } /* if */
   } /* if */
 }

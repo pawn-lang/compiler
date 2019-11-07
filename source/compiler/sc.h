@@ -237,6 +237,8 @@ typedef struct s_symbol {
 #define uMISSING    0x080
 #define uFORWARD    0x100
 #define uNODESTRUCT 0x200 /* "no destruct(or)", not "node struct" */
+/* symbol is referenced "globally", e.g. via "__emit" or "#emit" used outside functions */
+#define uGLOBALREF  0x400
 /* uRETNONE is not stored in the "usage" field of a symbol. It is
  * used during parsing a function, to detect a mix of "return;" and
  * "return value;" in a few special cases.
@@ -354,6 +356,7 @@ enum {
   tMIDDLE = tDBLDOT, /* value of last multi-character operator */
 
   /* reserved words (statements) */
+  t__ADDRESSOF,
   tASSERT,
   tBEGIN,
   tBREAK,
@@ -520,15 +523,28 @@ enum {  /* identifier types */
   estAUTOMATON,
   estSTATE
 };
-enum {  /* symbol type flags */
-  esfLABEL      = 1 << 0,
+enum {  /* search types for error_suggest() when the identifier type is "estSYMBOL" */
+/* symbol type flags */
+  esfLABEL      = 1 << 0, /* label */
   esfCONST      = 1 << 1, /* named constant */
   esfVARIABLE   = 1 << 2, /* single variable */
   esfARRAY      = 1 << 3, /* array */
-  esfFUNCTION   = 1 << 4, /* Pawn or native function */
+  esfPAWNFUNC   = 1 << 4, /* Pawn function */
+  esfNATIVE     = 1 << 5, /* native function */
+
+/* composite search types */
+  /* find symbols of any type (used only to define other search types) */
+  esfANY        = esfLABEL | esfCONST | esfVARIABLE | esfARRAY | esfPAWNFUNC | esfNATIVE,
+
+  /* any function */
+  esfFUNCTION   = esfPAWNFUNC | esfNATIVE,
 
   /* find symbols of any type but labels */
-  esfNONLABEL   = esfCONST | esfVARIABLE | esfARRAY | esfFUNCTION,
+  esfNONLABEL   = esfANY & ~esfLABEL,
+
+  /* find symbols of any type except constants and native functions
+   * (for the "__addressof" operator) */
+  esfADDRESSOF  = esfANY & ~(esfCONST | esfNATIVE),
 
   /* find an array, a single variable, or a named constant */
   esfVARCONST   = esfCONST | esfVARIABLE | esfARRAY
