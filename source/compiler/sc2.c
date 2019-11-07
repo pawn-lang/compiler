@@ -1342,7 +1342,7 @@ static int command(void)
           /* first gather all information, start with the tag name */
           while (*lptr<=' ' && *lptr!='\0')
             lptr++;
-          for (i=0; i<sizeof name && *lptr>' '; i++,lptr++)
+          for (i=0; i<sNAMEMAX && *lptr>' '; i++,lptr++)
             name[i]=*lptr;
           name[i]='\0';
           parsesingleoption(name);
@@ -2171,10 +2171,9 @@ char *sc_tokens[] = {
          "||", "&&", "==", "!=", "<=", ">=", "<<", ">>>", ">>", "++", "--",
          "...", "..",
          "__addressof", "assert", "*begin", "break", "case", "char", "const", "continue",
-         "default", "defined", "do", "else", "emit", "__emit", "*end", "enum", "exit",
-         "for", "forward", "goto", "if", "native", "new", "operator", "public",
-         "return", "sizeof", "sleep", "state", "static", "stock", "switch", "tagof",
-         "*then", "while",
+         "default", "defined", "do", "else", "__emit", "*end", "enum", "exit", "for",
+         "forward", "goto", "if", "native", "new", "operator", "public", "return", "sizeof",
+         "sleep", "state", "static", "stock", "switch", "tagof", "*then", "while",
          "#assert", "#define", "#else", "#elseif", "#emit", "#endif", "#endinput",
          "#endscript", "#error", "#file", "#if", "#include", "#line", "#pragma",
          "#tryinclude", "#undef", "#warning",

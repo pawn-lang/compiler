@@ -57,9 +57,10 @@
 #elif defined _MSC_VER && defined _WIN32
   #include <direct.h>           /* for _chdrive() */
   #define dos_setdrive(i)       _chdrive(i)
-  #define stricmp _stricmp
-  #define chdir   _chdir
-  #define access  _access
+  #define stricmp  _stricmp
+  #define chdir    _chdir
+  #define access   _access
+  #define snprintf _snprintf
 #endif
 #if defined __BORLANDC__
   #include <dir.h>              /* for chdir() */
@@ -108,7 +109,7 @@ static void funcstub(int fnative);
 static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stock);
 static int declargs(symbol *sym,int chkshadow);
 static void doarg(char *name,int ident,int offset,int tags[],int numtags,
-                  int fpublic,int fconst,int chkshadow,arginfo *arg);
+                  int fpublic,int fconst,int written,int chkshadow,arginfo *arg);
 static void make_report(symbol *root,FILE *log,char *sourcefile);
 static void reduce_referrers(symbol *root);
 static long max_stacksize(symbol *root,int *recursion);
@@ -1692,7 +1693,6 @@ static void parse(void)
     case 0:
       /* ignore zero's */
       break;
-    case tEMIT:
     case t__EMIT:
       emit_flags |= efGLOBAL;
       lex(&val,&str);
@@ -3469,8 +3469,9 @@ SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualt
   if (!checktag(formaltags, numtags, actualtag)) {
     int i;
     constvalue *tagsym;
-    char formal_tagnames[sLINEMAX]="",actual_tagname[sNAMEMAX+2]="none (\"_\")";
+    char formal_tagnames[sLINEMAX+1]="",actual_tagname[sNAMEMAX+2]="none (\"_\")";
     int notag_allowed=FALSE,add_comma=FALSE;
+    size_t size;
     for (i=0; i<numtags; i++) {
       if(formaltags[i]!=0) {
         if((i+1)==numtags && add_comma==TRUE && notag_allowed==FALSE)
@@ -3479,7 +3480,13 @@ SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualt
           strlcat(formal_tagnames,", ",sizeof(formal_tagnames));
         add_comma=TRUE;
         tagsym=find_tag_byval(formaltags[i]);
-        sprintf(formal_tagnames,"%s\"%s\"",formal_tagnames,(tagsym!=NULL) ? tagsym->name : "-unknown-");
+        size=snprintf(formal_tagnames,
+                      sizeof(formal_tagnames),
+                      "%s\"%s\"",
+                      formal_tagnames,
+                      (tagsym!=NULL) ? tagsym->name : "-unknown-");
+        if(size>=sizeof(formal_tagnames))
+          break;
       } else {
         notag_allowed=TRUE;
       } /* if */
@@ -3690,8 +3697,8 @@ static void funcstub(int fnative)
  */
 static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stock)
 {
-  symbol *sym;
-  int argcnt,tok,tag,funcline;
+  symbol *sym,*lvar,*depend;
+  int argcnt,tok,tag,funcline,i;
   int opertok,opererror;
   char symbolname[sNAMEMAX+1];
   char *str;
@@ -3867,6 +3874,26 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     dumplits();                 /* dump literal strings */
     litidx=0;
   } /* if */
+  for (i=0; i<argcnt; i++) {
+    if (sym->dim.arglist[i].ident==iREFARRAY) {
+      lvar=findloc(sym->dim.arglist[i].name);
+      assert(lvar!=NULL);
+      if ((sym->dim.arglist[i].usage & uWRITTEN)==0) {
+        /* check if the argument was written in this definition */
+        depend=lvar;
+        while (depend!=NULL) {
+          if ((depend->usage & uWRITTEN)!=0) {
+            sym->dim.arglist[i].usage|=depend->usage & uWRITTEN;
+            break;
+          }
+          depend=finddepend(depend);
+        } /* while */
+      } /* if */
+      /* mark argument as written if it was written in another definition */
+      lvar->usage|=sym->dim.arglist[i].usage & uWRITTEN;
+    } /* if */    
+  } /* for */
+  
   testsymbols(&loctab,0,TRUE,TRUE);     /* test for unused arguments and labels */
   delete_symbols(&loctab,0,TRUE,TRUE);  /* clear local variables queue */
   assert(loctab.next==NULL);
@@ -4011,7 +4038,7 @@ static int declargs(symbol *sym,int chkshadow)
          *   base + 3*sizeof(cell)  == first argument of the function
          * So the offset of each argument is "(argcnt+3) * sizeof(cell)".
          */
-        doarg(name,ident,(argcnt+3)*sizeof(cell),tags,numtags,fpublic,fconst,chkshadow,&arg);
+        doarg(name,ident,(argcnt+3)*sizeof(cell),tags,numtags,fpublic,fconst,!!(sym->dim.arglist[argcnt].usage & uWRITTEN),chkshadow,&arg);
         if (fpublic && arg.hasdefault)
           error(59,name);       /* arguments of a public function may not have a default value */
         if ((sym->usage & uPROTOTYPED)==0) {
@@ -4128,7 +4155,7 @@ static int declargs(symbol *sym,int chkshadow)
  *  The arguments themselves are never public.
  */
 static void doarg(char *name,int ident,int offset,int tags[],int numtags,
-                  int fpublic,int fconst,int chkshadow,arginfo *arg)
+                  int fpublic,int fconst,int written,int chkshadow,arginfo *arg)
 {
   symbol *argsym;
   constvalue_root *enumroot=NULL;
@@ -4222,6 +4249,7 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
   } /* if */
   arg->ident=(char)ident;
   arg->usage=(char)(fconst ? uCONST : 0);
+  arg->usage|=(char)(written ? uWRITTEN : 0);
   arg->numtags=numtags;
   arg->tags=(int*)malloc(numtags*sizeof tags[0]);
   if (arg->tags==NULL)
@@ -5374,13 +5402,12 @@ static void statement(int *lastindent,int allow_decl)
     matchtoken(tSTATIC);
     decl_enum(sLOCAL,FALSE);
     break;
-  case tEMIT:
   case t__EMIT: {
     extern char *sc_tokens[];
     const unsigned char *bck_lptr=lptr-strlen(sc_tokens[tok-tFIRST]);
     if (matchtoken('{')) {
       emit_flags |= efBLOCK;
-      lastst=tEMIT;
+      lastst=t__EMIT;
       break;
     } /* if */
     lptr=bck_lptr;
@@ -6061,8 +6088,9 @@ static regid SC_FASTCALL emit_findreg(char *opname)
  * Looks for an lvalue and generates code to get cell address in PRI
  * if the lvalue is an array element (iARRAYCELL or iARRAYCHAR).
  */
-static int SC_FASTCALL emit_getlval(int *identptr,emit_outval *p,int *islocal, regid reg,
-                                    int allow_char, int store_pri,int store_alt,int *ispushed)
+static int SC_FASTCALL emit_getlval(int *identptr,emit_outval *p,int *islocal,
+                                    regid reg,int allow_char,int allow_const,
+                                    int store_pri,int store_alt,int *ispushed)
 {
   int tok,index,ident,close;
   cell cidx,val,length;
@@ -6093,6 +6121,8 @@ invalid_lvalue:
     return FALSE;
   } /* if */
   markusage(sym,uREAD | uWRITTEN);
+  if (!allow_const && (sym->usage & uCONST)!=0)
+    goto invalid_lvalue;
 
   p->type=eotNUMBER;
   switch (sym->ident)
@@ -6428,7 +6458,8 @@ static void SC_FASTCALL emit_param_integer(emit_outval *p)
   emit_param_any_internal(p,tNUMBER,FALSE,TRUE);
 }
 
-static void SC_FASTCALL emit_param_index(emit_outval *p,int isrange,const cell *valid_values,int numvalues)
+static void SC_FASTCALL emit_param_index(emit_outval *p,int isrange,
+                                         const cell *valid_values,int numvalues)
 {
   int i;
   cell val;
@@ -7067,7 +7098,7 @@ static void SC_FASTCALL emit_do_stor_u_pri_alt(char *name)
   int ident,islocal,ispushed;
 
   reg=emit_findreg(name);
-  if (!emit_getlval(&ident,&p[0],&islocal,sALT,TRUE,(reg==sPRI),(reg==sALT),&ispushed))
+  if (!emit_getlval(&ident,&p[0],&islocal,sALT,TRUE,FALSE,(reg==sPRI),(reg==sALT),&ispushed))
     return;
   switch (ident) {
   case iVARIABLE:
@@ -7103,7 +7134,7 @@ static void SC_FASTCALL emit_do_addr_u_pri_alt(char *name)
   int ident,islocal;
 
   reg=emit_findreg(name);
-  if (!emit_getlval(&ident,&p[0],&islocal,reg,TRUE,FALSE,FALSE,NULL))
+  if (!emit_getlval(&ident,&p[0],&islocal,reg,TRUE,TRUE,FALSE,FALSE,NULL))
     return;
   switch (ident) {
   case iVARIABLE:
@@ -7154,7 +7185,7 @@ static void SC_FASTCALL emit_do_push_u_adr(char *name)
   emit_outval p[1];
   int ident,islocal;
 
-  if (!emit_getlval(&ident,&p[0],&islocal,sPRI,FALSE,FALSE,FALSE,NULL))
+  if (!emit_getlval(&ident,&p[0],&islocal,sPRI,FALSE,TRUE,FALSE,FALSE,NULL))
     return;
   switch (ident) {
   case iVARIABLE:
@@ -7178,7 +7209,7 @@ static void SC_FASTCALL emit_do_zero_u(char *name)
   emit_outval p[1];
   int ident,islocal;
 
-  if (!emit_getlval(&ident,&p[0],&islocal,sALT,TRUE,FALSE,FALSE,NULL))
+  if (!emit_getlval(&ident,&p[0],&islocal,sALT,TRUE,FALSE,FALSE,FALSE,NULL))
     return;
   switch (ident) {
   case iVARIABLE:
@@ -7210,7 +7241,7 @@ static void SC_FASTCALL emit_do_inc_dec_u(char *name)
 
   assert(strcmp(name,"inc.u")==0 || strcmp(name,"dec.u")==0);
 
-  if (!emit_getlval(&ident,&p[0],&islocal,sPRI,TRUE,FALSE,FALSE,NULL))
+  if (!emit_getlval(&ident,&p[0],&islocal,sPRI,TRUE,FALSE,FALSE,FALSE,NULL))
     return;
   switch (ident) {
   case iVARIABLE:
@@ -7415,7 +7446,6 @@ static int emit_findopcode(const char *instr)
   high=(sizeof emit_opcodelist / sizeof emit_opcodelist[0])-1;
   while (low<high) {
     mid=(low+high)/2;
-    assert(emit_opcodelist[mid].name!=NULL);
     cmp=strcmp(instr,emit_opcodelist[mid].name);
     if (cmp>0)
       low=mid+1;

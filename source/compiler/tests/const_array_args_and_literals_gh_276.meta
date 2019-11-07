@@ -7,5 +7,6 @@ const_array_args_and_literals_gh_276.pwn(30) : warning 214: possibly a "const" a
 const_array_args_and_literals_gh_276.pwn(39) : warning 239: literal array/string passed to a non-const parameter
 const_array_args_and_literals_gh_276.pwn(40) : warning 239: literal array/string passed to a non-const parameter
 const_array_args_and_literals_gh_276.pwn(41) : warning 239: literal array/string passed to a non-const parameter
+const_array_args_and_literals_gh_276.pwn(60) : warning 239: literal array/string passed to a non-const parameter
 """
 }

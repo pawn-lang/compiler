@@ -542,6 +542,8 @@ static int find_closest_symbol_table(const char *name,const symbol *root,int sym
       assert(0);
     } /* switch */
     funcdisplayname(symname,sym->name);
+    if (symname[0] == '\0')
+      continue;
     dist=levenshtein_distance(name,symname);
     if (dist>max_dist || dist>=closest_dist)
       continue;

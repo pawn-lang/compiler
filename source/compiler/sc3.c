@@ -1559,7 +1559,6 @@ static int hier2(value *lval)
     } /* if */
     return FALSE;
   } /* case */
-  case tEMIT:
   case t__EMIT:
     paranthese=matchtoken('(');
     emit_flags |= efEXPR;
@@ -2313,7 +2312,7 @@ static int nesting=0;
             if (arg[argidx].numdim!=1) {
               error(48);        /* array dimensions must match */
             } else {
-              if (lval.sym==NULL && (arg[argidx].usage & uCONST)==0 && (sym->usage & uNATIVE)==0)
+              if (lval.sym==NULL && (arg[argidx].usage & uCONST)==0)
                     error(239);
               if (arg[argidx].dim[0]!=0) {
                 assert(arg[argidx].dim[0]>0);
