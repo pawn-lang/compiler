@@ -96,7 +96,7 @@ static void decl_const(int table);
 static void decl_enum(int table,int fstatic);
 static cell needsub(int *tag,constvalue_root **enumroot);
 static void initials(int ident,int tag,cell *size,int dim[],int numdim,
-                     constvalue_root *enumroot);
+                     constvalue_root *enumroot,int *explicit_init);
 static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
                       int startlit,int counteddim[],constvalue_root *lastdim,
                       constvalue_root *enumroot,int *errorfound);
@@ -2004,6 +2004,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
   char *str;
   int dim[sDIMEN_MAX];
   int numdim;
+  int explicit_init;
   short filenum;
   symbol *sym;
   constvalue_root *enumroot=NULL;
@@ -2108,7 +2109,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
       litidx=0;         /* global initial data is dumped, so restart at zero */
     } /* if */
     assert(litidx==0);  /* literal queue should be empty (again) */
-    initials(ident,tag,&size,dim,numdim,enumroot);/* stores values in the literal queue */
+    initials(ident,tag,&size,dim,numdim,enumroot,&explicit_init);/* stores values in the literal queue */
     assert(size>=litidx);
     if (numdim==1)
       dim[0]=(int)size;
@@ -2232,6 +2233,8 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
       sym->usage|=uSTOCK;
     if (fstatic)
       sym->fnumber=filenum;
+    if (explicit_init)
+      markinitialized(sym,TRUE);
     sc_attachdocumentation(sym);/* attach any documenation to the variable */
     if (sc_status==statSKIP) {
       sc_status=statWRITE;
@@ -2268,6 +2271,7 @@ static int declloc(int fstatic)
   int numdim;
   int fconst;
   int staging_start;
+  int explicit_init;    /* is the variable explicitly initialized? */
 
   fconst=matchtoken(tCONST);
   do {
@@ -2318,7 +2322,7 @@ static int declloc(int fstatic)
         sc_alignnext=FALSE;
       } /* if */
       cur_lit=litidx;           /* save current index in the literal table */
-      initials(ident,tag,&size,dim,numdim,enumroot);
+      initials(ident,tag,&size,dim,numdim,enumroot,&explicit_init);
       if (size==0)
         return ident;           /* error message already given */
       if (numdim==1)
@@ -2357,7 +2361,7 @@ static int declloc(int fstatic)
       if (ident==iVARIABLE) {
         /* simple variable, also supports initialization */
         int ctag = tag;         /* set to "tag" by default */
-        int explicit_init=FALSE;/* is the variable explicitly initialized? */
+        explicit_init=FALSE;
         if (matchtoken('=')) {
           sym->usage &= ~uDEFINE;   /* temporarily mark the variable as undefined to prevent
                                      * possible self-assignment through its initialization expression */
@@ -2416,6 +2420,8 @@ static int declloc(int fstatic)
         } /* if */
       } /* if */
     } /* if */
+    if (explicit_init)
+      markinitialized(sym,TRUE);
   } while (matchtoken(',')); /* enddo */   /* more? */
   needtoken(tTERM);    /* if not comma, must be semicolumn */
   return ident;
@@ -2496,7 +2502,7 @@ static int base;
  *  Global references: litidx (altered)
  */
 static void initials(int ident,int tag,cell *size,int dim[],int numdim,
-                     constvalue_root *enumroot)
+                     constvalue_root *enumroot,int *explicit_init)
 {
   int ctag;
   cell tablesize;
@@ -2504,6 +2510,8 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
   int err=0;
   int i;
 
+  if (explicit_init!=NULL)
+    *explicit_init=FALSE;
   if (!matchtoken('=')) {
     assert(ident!=iARRAY || numdim>0);
     if (ident==iARRAY) {
@@ -2534,6 +2542,8 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
     return;
   } /* if */
 
+  if (explicit_init!=NULL)
+    *explicit_init=TRUE;
   if (ident==iVARIABLE) {
     assert(*size==1);
     init(ident,&ctag,NULL);
@@ -4189,7 +4199,7 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
       lexpush();                /* initials() needs the "=" token again */
       assert(litidx==0);        /* at the start of a function, this is reset */
       assert(numtags>0);
-      initials(ident,tags[0],&size,arg->dim,arg->numdim,enumroot);
+      initials(ident,tags[0],&size,arg->dim,arg->numdim,enumroot,NULL);
       assert(size>=litidx);
       /* allocate memory to hold the initial values */
       arg->defvalue.array.data=(cell *)malloc(litidx*sizeof(cell));
@@ -5063,6 +5073,11 @@ static void destructsymbols(symbol *root,int level)
         if ((opsym->usage & uNATIVE)!=0 && opsym->x.lib!=NULL)
           opsym->x.lib->value += 1; /* increment "usage count" of the library */
       } /* if */
+      /* check that the assigned value was used, but don't show the warning
+       * if the variable is completely unused (we already have warning 203 for that) */
+      if ((sym->usage & (uASSIGNED | uREAD | uWRITTEN))==(uASSIGNED | uREAD | uWRITTEN)
+          && sym->vclass!=sSTATIC)
+        error(204,sym->name);   /* symbol is assigned a value that is never used */
     } /* if */
     sym=sym->next;
   } /* while */
@@ -5654,7 +5669,9 @@ static int doif(void)
   ifindent=stmtindent;          /* save the indent of the "if" instruction */
   flab1=getlabel();             /* get label number for false branch */
   test(flab1,TEST_THEN,FALSE);  /* get expression, branch to flab1 if false */
+  clearassignments(&loctab);
   statement(NULL,FALSE);        /* if true, do a statement */
+  clearassignments(&loctab);
   if (!matchtoken(tELSE)) {     /* if...else ? */
     setlabel(flab1);            /* no, simple if..., print false label */
   } else {
@@ -5693,7 +5710,9 @@ static int dowhile(void)
    */
   setline(TRUE);
   endlessloop=test(wq[wqEXIT],TEST_DO,FALSE);/* branch to wq[wqEXIT] if false */
+  clearassignments(&loctab);
   statement(NULL,FALSE);        /* if so, do a statement */
+  clearassignments(&loctab);
   jumplabel(wq[wqLOOP]);        /* and loop to "while" start */
   setlabel(wq[wqEXIT]);         /* exit label */
   delwhile();                   /* delete queue entry */
@@ -5716,7 +5735,9 @@ static int dodo(void)
   addwhile(wq);           /* see "dowhile" for more info */
   top=getlabel();         /* make a label first */
   setlabel(top);          /* loop label */
+  clearassignments(&loctab);
   statement(NULL,FALSE);
+  clearassignments(&loctab);
   needtoken(tWHILE);
   setlabel(wq[wqLOOP]);   /* "continue" always jumps to WQLOOP. */
   setline(TRUE);
@@ -5796,7 +5817,9 @@ static int dofor(void)
   stgmark(sENDREORDER);             /* mark end of reversed evaluation */
   stgout(index);
   stgset(FALSE);                    /* stop staging */
+  clearassignments(&loctab);
   statement(NULL,FALSE);
+  clearassignments(&loctab);
   jumplabel(wq[wqLOOP]);
   setlabel(wq[wqEXIT]);
   delwhile();
@@ -5863,6 +5886,7 @@ static void doswitch(void)
   swdefault=FALSE;
   casecount=0;
   do {
+    clearassignments(&loctab);
     tok=lex(&val,&str);         /* read in (new) token */
     switch (tok) {
     case tCASE:
@@ -5954,6 +5978,7 @@ static void doswitch(void)
       } /* if */
     } /* switch */
   } while (tok!=endtok);
+  clearassignments(&loctab);
 
   #if !defined NDEBUG
     /* verify that the case table is sorted (unfortunatly, duplicates can

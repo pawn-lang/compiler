@@ -1011,6 +1011,7 @@ static int command(void)
     iflevel++;
     if (SKIPPING)
       break;                    /* break out of switch */
+    clearassignments(&loctab);
     skiplevel=iflevel;
     preproc_expr(&val,NULL);    /* get value (or 0 on error) */
     ifstack[iflevel-1]=(char)(val ? PARSEMODE : SKIPMODE);
@@ -1050,6 +1051,7 @@ static int command(void)
           } /* if */
         } else {
           /* previous conditions were all FALSE */
+          clearassignments(&loctab);
           if (tok==tpELSEIF) {
             /* if we were already skipping this section, allow expressions with
              * undefined symbols; otherwise check the expression to catch errors
@@ -1076,6 +1078,7 @@ static int command(void)
       error(26);        /* no matching "#if" */
       errorset(sRESET,0);
     } else {
+      clearassignments(&loctab);
       iflevel--;
       if (iflevel<skiplevel)
         skiplevel=iflevel;
@@ -1261,8 +1264,10 @@ static int command(void)
               /* mark as read if the pragma wasn't `unwritten` */
               sym->usage |= read;
               if (sym->ident==iVARIABLE || sym->ident==iREFERENCE
-                  || sym->ident==iARRAY || sym->ident==iREFARRAY)
+                  || sym->ident==iARRAY || sym->ident==iREFARRAY) {
                 sym->usage |= write;
+                sym->usage &= ~uASSIGNED;
+              } /* if */
             } else {
               error(17,name);     /* undefined symbol */
             } /* if */
@@ -3178,6 +3183,8 @@ SC_FUNC void markusage(symbol *sym,int usage)
   sym->usage |= (char)usage;
   if ((usage & uWRITTEN)!=0)
     sym->lnumber=fline;
+  if ((usage & uREAD)!=0 && (sym->ident==iVARIABLE || sym->ident==iREFERENCE))
+    sym->usage &= ~uASSIGNED;
   /* check if (global) reference must be added to the symbol */
   if ((usage & (uREAD | uWRITTEN))!=0) {
     /* only do this for global symbols */
@@ -3188,6 +3195,27 @@ SC_FUNC void markusage(symbol *sym,int usage)
         sym->usage |= uGLOBALREF;
     } /* if */
   } /* if */
+}
+
+SC_FUNC void markinitialized(symbol *sym,int assignment)
+{
+  assert(sym!=NULL);
+  if (sym->ident!=iVARIABLE && sym->ident!=iARRAY)
+    return;
+  if (sc_status==statFIRST && (sym->vclass==sLOCAL || sym->vclass==sSTATIC))
+    return;
+  if (assignment && sym->ident==iVARIABLE)
+    sym->usage |= uASSIGNED;
+}
+
+SC_FUNC void clearassignments(symbol *root)
+{
+  /* clear the unused assignment flag for all variables in the table */
+  symbol *sym=root->next;
+  while (sym!=NULL) {
+    sym->usage &= ~uASSIGNED;
+    sym=sym->next;
+  } /* while */
 }
 
 
