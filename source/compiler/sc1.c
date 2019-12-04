@@ -121,7 +121,7 @@ static void statement(int *lastindent,int allow_decl);
 static void compound(int stmt_sameline,int starttok);
 static int test(int label,int parens,int invert);
 static int doexpr(int comma,int chkeffect,int allowarray,int mark_endexpr,
-                  int *tag,symbol **symptr,int chkfuncresult);
+                  int *tag,symbol **symptr,int chkfuncresult,cell *val);
 static void doassert(void);
 static void doexit(void);
 static int doif(void);
@@ -2272,6 +2272,7 @@ static int declloc(int fstatic)
   int fconst;
   int staging_start;
   int explicit_init;    /* is the variable explicitly initialized? */
+  int suppress_w240=FALSE;
 
   fconst=matchtoken(tCONST);
   do {
@@ -2363,11 +2364,14 @@ static int declloc(int fstatic)
         int ctag = tag;         /* set to "tag" by default */
         explicit_init=FALSE;
         if (matchtoken('=')) {
+          int initexpr_ident;
+          cell val;
           sym->usage &= ~uDEFINE;   /* temporarily mark the variable as undefined to prevent
                                      * possible self-assignment through its initialization expression */
-          doexpr(FALSE,FALSE,FALSE,FALSE,&ctag,NULL,TRUE);
+          initexpr_ident=doexpr(FALSE,FALSE,FALSE,FALSE,&ctag,NULL,TRUE,&val);
           sym->usage |= uDEFINE;
           explicit_init=TRUE;
+          suppress_w240=(initexpr_ident==iCONSTEXPR && val==0);
         } else {
           ldconst(0,sPRI);      /* uninitialized variable, set to zero */
         } /* if */
@@ -2421,7 +2425,7 @@ static int declloc(int fstatic)
       } /* if */
     } /* if */
     if (explicit_init)
-      markinitialized(sym,TRUE);
+      markinitialized(sym,!suppress_w240);
   } while (matchtoken(',')); /* enddo */   /* more? */
   needtoken(tTERM);    /* if not comma, must be semicolumn */
   return ident;
@@ -5441,7 +5445,7 @@ static void statement(int *lastindent,int allow_decl)
   default:          /* non-empty expression */
     sc_allowproccall=optproccall;
     lexpush();      /* analyze token later */
-    doexpr(TRUE,TRUE,TRUE,TRUE,NULL,NULL,FALSE);
+    doexpr(TRUE,TRUE,TRUE,TRUE,NULL,NULL,FALSE,NULL);
     needtoken(tTERM);
     lastst=tEXPR;
     sc_allowproccall=FALSE;
@@ -5511,11 +5515,10 @@ static void compound(int stmt_sameline,int starttok)
  *  Global references: stgidx   (referred to only)
  */
 static int doexpr(int comma,int chkeffect,int allowarray,int mark_endexpr,
-                  int *tag,symbol **symptr,int chkfuncresult)
+                  int *tag,symbol **symptr,int chkfuncresult,cell *val)
 {
   int index,ident;
   int localstaging=FALSE;
-  cell val;
 
   if (!staging) {
     stgset(TRUE);               /* start stage-buffering */
@@ -5529,7 +5532,7 @@ static int doexpr(int comma,int chkeffect,int allowarray,int mark_endexpr,
     if (index!=stgidx)
       markexpr(sEXPR,NULL,0);
     pc_sideeffect=FALSE;
-    ident=expression(&val,tag,symptr,chkfuncresult);
+    ident=expression(val,tag,symptr,chkfuncresult);
     if (!allowarray && (ident==iARRAY || ident==iREFARRAY))
       error(33,"-unknown-");    /* array must be indexed */
     if (chkeffect && !pc_sideeffect)
@@ -5776,7 +5779,7 @@ static int dofor(void)
       nestlevel++;
       declloc(FALSE); /* declare local variable */
     } else {
-      doexpr(TRUE,TRUE,TRUE,TRUE,NULL,NULL,FALSE);  /* expression 1 */
+      doexpr(TRUE,TRUE,TRUE,TRUE,NULL,NULL,FALSE,NULL); /* expression 1 */
       needtoken(';');
     } /* if */
   } /* if */
@@ -5811,7 +5814,7 @@ static int dofor(void)
   } /* if */
   stgmark((char)(sEXPRSTART+1));    /* mark start of 3th expression in stage */
   if (!matchtoken(endtok)) {
-    doexpr(TRUE,TRUE,TRUE,TRUE,NULL,NULL,FALSE);    /* expression 3 */
+    doexpr(TRUE,TRUE,TRUE,TRUE,NULL,NULL,FALSE,NULL);   /* expression 3 */
     needtoken(endtok);
   } /* if */
   stgmark(sENDREORDER);             /* mark end of reversed evaluation */
@@ -5867,7 +5870,7 @@ static void doswitch(void)
   char labelname[sNAMEMAX+1];
 
   endtok= matchtoken('(') ? ')' : tDO;
-  doexpr(TRUE,FALSE,FALSE,FALSE,&swtag,NULL,TRUE);/* evaluate switch expression */
+  doexpr(TRUE,FALSE,FALSE,FALSE,&swtag,NULL,TRUE,NULL);/* evaluate switch expression */
   needtoken(endtok);
   /* generate the code for the switch statement, the label is the address
    * of the case table (to be generated later).
@@ -7598,7 +7601,7 @@ static void doreturn(void)
     /* "return <value>" */
     if ((rettype & uRETNONE)!=0)
       error(78);                        /* mix "return;" and "return value;" */
-    ident=doexpr(TRUE,FALSE,TRUE,FALSE,&tag,&sym,TRUE);
+    ident=doexpr(TRUE,FALSE,TRUE,FALSE,&tag,&sym,TRUE,NULL);
     needtoken(tTERM);
     /* see if this function already has a sub type (an array attached) */
     assert(curfunc!=NULL);
@@ -7770,7 +7773,7 @@ static void doexit(void)
   int tag=0;
 
   if (matchtoken(tTERM)==0){
-    doexpr(TRUE,FALSE,FALSE,FALSE,&tag,NULL,TRUE);
+    doexpr(TRUE,FALSE,FALSE,FALSE,&tag,NULL,TRUE,NULL);
     needtoken(tTERM);
   } else {
     ldconst(0,sPRI);
@@ -7786,7 +7789,7 @@ static void dosleep(void)
   int tag=0;
 
   if (matchtoken(tTERM)==0){
-    doexpr(TRUE,FALSE,FALSE,FALSE,&tag,NULL,TRUE);
+    doexpr(TRUE,FALSE,FALSE,FALSE,&tag,NULL,TRUE,NULL);
     needtoken(tTERM);
   } else {
     ldconst(0,sPRI);
