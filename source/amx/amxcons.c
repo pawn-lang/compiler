@@ -803,7 +803,7 @@ static int dochar(AMX *amx,TCHAR ch,const cell* params,int paramidx,TCHAR sign,T
   case __T('r'): /* if floating point is enabled, %r == %f */
     /* build a format string */
     if (digits==INT_MAX)
-      digits=5;
+      digits=6;
     else if (digits>25)
       digits=25;
     _tcscpy(formatstring,__T("%"));
