@@ -5437,7 +5437,7 @@ static void destructsymbols(symbol *root,int level)
     popreg(sPRI);
 }
 
-static constvalue *insert_constval(constvalue *prev,constvalue *next,
+SC_FUNC constvalue *insert_constval(constvalue *prev,constvalue *next,
                                    const char *name,cell val,int index)
 {
   constvalue *cur;

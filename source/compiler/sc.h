@@ -705,6 +705,7 @@ SC_FUNC void check_tagmismatch(int formaltag,int actualtag,int allowcoerce,int e
 SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualtag,int errline);
 SC_FUNC char *funcdisplayname(char *dest,char *funcname);
 SC_FUNC int constexpr(cell *val,int *tag,symbol **symptr);
+SC_FUNC constvalue *insert_constval(constvalue *prev,constvalue *next,const char *name,cell val,int index);
 SC_FUNC constvalue *append_constval(constvalue_root *table,const char *name,cell val,int index);
 SC_FUNC constvalue *find_constval(constvalue_root *table,char *name,int index);
 SC_FUNC void delete_consttable(constvalue_root *table);
