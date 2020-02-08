@@ -1,0 +1,23 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+__emit_p3.pwn(17) : error 001: expected token: "-function-", but found "-numeric value-"
+__emit_p3.pwn(18) : error 001: expected token: "-function-", but found "-data offset-"
+__emit_p3.pwn(19) : error 001: expected token: "-function-", but found "-reference-"
+__emit_p3.pwn(20) : error 001: expected token: "-function-", but found "-reference-"
+__emit_p3.pwn(21) : error 001: expected token: "-function-", but found "-numeric value-"
+__emit_p3.pwn(22) : error 001: expected token: "-function-", but found "-local variable-"
+__emit_p3.pwn(23) : error 001: expected token: "-function-", but found "-data offset-"
+__emit_p3.pwn(24) : error 001: expected token: "-function-", but found "-label-"
+__emit_p3.pwn(25) : error 001: expected token: "-function-", but found "-integer value-"
+__emit_p3.pwn(26) : error 001: expected token: "-native function-", but found "-numeric value-"
+__emit_p3.pwn(27) : error 001: expected token: "-native function-", but found "-data offset-"
+__emit_p3.pwn(28) : error 001: expected token: "-native function-", but found "-reference-"
+__emit_p3.pwn(29) : error 001: expected token: "-native function-", but found "-reference-"
+__emit_p3.pwn(30) : error 001: expected token: "-native function-", but found "-numeric value-"
+__emit_p3.pwn(31) : error 001: expected token: "-native function-", but found "-local variable-"
+__emit_p3.pwn(32) : error 001: expected token: "-native function-", but found "-data offset-"
+__emit_p3.pwn(33) : error 001: expected token: "-native function-", but found "-label-"
+__emit_p3.pwn(34) : error 001: expected token: "-native function-", but found "-integer value-"
+  """
+}

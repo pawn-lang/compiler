@@ -79,7 +79,7 @@ SC_FUNC void writeleader(symbol *root)
   for (fsa=sc_automaton_tab.first; fsa!=NULL; fsa=fsa->next) {
     defstorage();
     stgwrite("0\t; automaton ");
-    if (strlen(fsa->name)==0)
+    if (strempty(fsa->name))
       stgwrite("(anonymous)");
     else
       stgwrite(fsa->name);
@@ -111,7 +111,7 @@ SC_FUNC void writeleader(symbol *root)
       } /* if */
       /* generate label numbers for all statelist ids */
       for (stlist=sym->states->first; stlist!=NULL; stlist=stlist->next) {
-        assert(strlen(stlist->name)==0);
+        assert(strempty(stlist->name));
         strcpy(stlist->name,itoh(getlabel()));
       } /* for */
       if (strcmp(sym->name,uENTRYFUNC)==0)
@@ -263,7 +263,7 @@ SC_FUNC void setline(int chkbounds)
 
 SC_FUNC void setfiledirect(char *name)
 {
-  if (sc_status==statFIRST && sc_listing) {
+  if (sc_status==statSECOND && sc_listing) {
     assert(name!=NULL);
     pc_writeasm(outf,"\n#file \"");
     pc_writeasm(outf,name);
@@ -281,7 +281,7 @@ SC_FUNC void setfileconst(char *name)
 
 SC_FUNC void setlinedirect(int line)
 {
-  if (sc_status==statFIRST && sc_listing) {
+  if (sc_status==statSECOND && sc_listing) {
     char string[40];
     sprintf(string,"#line %d\n",line);
     pc_writeasm(outf,string);

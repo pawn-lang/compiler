@@ -1,0 +1,4 @@
+{
+  'test_type': 'output_check',
+  'extra_args': ['gh_206_multiple_inputs_2.pwn']
+}

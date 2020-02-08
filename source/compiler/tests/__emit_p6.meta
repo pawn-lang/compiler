@@ -1,0 +1,26 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+__emit_p6.pwn(23) : error 076: syntax error in the expression, or invalid function call
+__emit_p6.pwn(24) : error 076: syntax error in the expression, or invalid function call
+__emit_p6.pwn(25) : error 033: array must be indexed (variable "local_array")
+__emit_p6.pwn(26) : error 033: array must be indexed (variable "local_refarray")
+__emit_p6.pwn(45) : error 022: must be lvalue (non-constant)
+__emit_p6.pwn(46) : error 022: must be lvalue (non-constant)
+__emit_p6.pwn(47) : error 022: must be lvalue (non-constant)
+__emit_p6.pwn(48) : error 022: must be lvalue (non-constant)
+__emit_p6.pwn(49) : error 022: must be lvalue (non-constant)
+__emit_p6.pwn(50) : error 033: array must be indexed (variable "local_array")
+__emit_p6.pwn(51) : error 033: array must be indexed (variable "local_refarray")
+__emit_p6.pwn(71) : error 022: must be lvalue (non-constant)
+__emit_p6.pwn(72) : error 022: must be lvalue (non-constant)
+__emit_p6.pwn(73) : error 022: must be lvalue (non-constant)
+__emit_p6.pwn(74) : error 022: must be lvalue (non-constant)
+__emit_p6.pwn(75) : error 033: array must be indexed (variable "local_array")
+__emit_p6.pwn(76) : error 033: array must be indexed (variable "local_refarray")
+__emit_p6.pwn(98) : error 076: syntax error in the expression, or invalid function call
+__emit_p6.pwn(99) : error 076: syntax error in the expression, or invalid function call
+__emit_p6.pwn(100) : error 033: array must be indexed (variable "local_array")
+__emit_p6.pwn(101) : error 033: array must be indexed (variable "local_refarray")
+"""
+}

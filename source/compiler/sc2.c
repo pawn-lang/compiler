@@ -92,13 +92,9 @@ SC_FUNC void pushstk(stkitem val)
     int newsize= (stktop==0) ? 16 : 2*stktop;
     /* try to resize the stack */
     assert(newsize>stktop);
-    newstack=(stkitem*)malloc(newsize*sizeof(stkitem));
+    newstack=(stkitem*)realloc(stack,newsize*sizeof(stkitem));
     if (newstack==NULL)
       error(102,"parser stack");  /* stack overflow (recursive include?) */
-    /* swap the stacks */
-    memcpy(newstack,stack,stkidx*sizeof(stkitem));
-    if (stack!=NULL)
-      free(stack);
     stack=newstack;
     stktop=newsize;
   } /* if */
@@ -148,8 +144,10 @@ static char extensions[][6] = { "", ".inc", ".p", ".pawn" };
     error(103);                 /* insufficient memory */
   strcpy(path,name);
   real_path=(char *)malloc(strlen(name)+sizeof(extensions[0]));
-  if (real_path==NULL)
+  if (real_path==NULL) {
+    free(path);
     error(103);                 /* insufficient memory */
+  } /* if */
   do {
     found=TRUE;
     ext=strchr(path,'\0');      /* save position */
@@ -172,11 +170,13 @@ static char extensions[][6] = { "", ".inc", ".p", ".pawn" };
     if (fp==NULL) {
       *ext='\0';                /* on failure, restore filename */
       found=FALSE;
-    }
+    } /* if */
     ext_idx++;
   } while (!found && ext_idx<(sizeof extensions / sizeof extensions[0]));
   if (!found) {
     *ext='\0';                  /* restore filename */
+    free(path);
+    free(real_path);
     return FALSE;
   } /* if */
   PUSHSTK_P(inpf);
@@ -469,7 +469,7 @@ static void stripcomment(unsigned char *line)
           if (icomment==2) {
             assert(commentidx<COMMENT_LIMIT+COMMENT_MARGIN);
             comment[commentidx]='\0';
-            if (strlen(comment)>0)
+            if (!strempty(comment))
               insert_docstring(comment);
           } /* if */
         #endif
@@ -576,7 +576,7 @@ static void stripcomment(unsigned char *line)
     if (icomment==2) {
       assert(commentidx<COMMENT_LIMIT+COMMENT_MARGIN);
       comment[commentidx]='\0';
-      if (strlen(comment)>0)
+      if (!strempty(comment))
         insert_docstring(comment);
     } /* if */
   #endif
@@ -1082,7 +1082,7 @@ static int command(void)
     } /* if */
     check_empty(lptr);
     break;
-  case tINCLUDE:                /* #include directive */
+  case tpINCLUDE:                /* #include directive */
   case tpTRYINCLUDE:
     ret=CMD_INCLUDE;
     if (!SKIPPING)
@@ -1092,7 +1092,7 @@ static int command(void)
     if (!SKIPPING) {
       char pathname[_MAX_PATH];
       lptr=getstring((unsigned char*)pathname,sizeof pathname,lptr);
-      if (strlen(pathname)>0) {
+      if (!strempty(pathname)) {
         free(inpfname);
         inpfname=duplicatestring(pathname);
         if (inpfname==NULL)
@@ -1183,7 +1183,7 @@ static int command(void)
               name[i]=*lptr;
             name[i]='\0';
           } /* if */
-          if (strlen(name)==0) {
+          if (strempty(name)) {
             curlibrary=NULL;
           } else if (strcmp(name,"-")==0) {
             pc_addlibtable=FALSE;
@@ -1238,7 +1238,42 @@ static int command(void)
             sc_tabsize=(int)val;
         } else if (strcmp(str,"align")==0) {
           sc_alignnext=TRUE;
-        } else if (strcmp(str,"unused")==0) {
+        } else if (strcmp(str,"unused")==0 || strcmp(str,"unread")==0 || strcmp(str,"unwritten")==0) {
+          char name[sNAMEMAX+1];
+          int i,comma;
+          /* mark as read if the pragma wasn't `unwritten` */
+          int read = str[2] == 'w' ? 0 : uREAD;
+          /* mark as written if the pragma wasn't `unread` */
+          int write = str[2] == 'r' ? 0 : uWRITTEN;
+          symbol *sym;
+          do {
+            /* get the name */
+            while (*lptr<=' ' && *lptr!='\0')
+              lptr++;
+            for (i=0; i<sizeof name && alphanum(*lptr); i++,lptr++)
+              name[i]=*lptr;
+            name[i]='\0';
+            /* get the symbol */
+            sym=findloc(name);
+            if (sym==NULL)
+              sym=findglb(name,sSTATEVAR);
+            if (sym!=NULL) {
+              /* mark as read if the pragma wasn't `unwritten` */
+              sym->usage |= read;
+              if (sym->ident==iVARIABLE || sym->ident==iREFERENCE
+                  || sym->ident==iARRAY || sym->ident==iREFARRAY)
+                sym->usage |= write;
+            } else {
+              error(17,name);     /* undefined symbol */
+            } /* if */
+            /* see if a comma follows the name */
+            while (*lptr<=' ' && *lptr!='\0')
+              lptr++;
+            comma= (*lptr==',');
+            if (comma)
+              lptr++;
+          } while (comma);
+        } else if (strcmp(str,"nodestruct")==0) {
           char name[sNAMEMAX+1];
           int i,comma;
           symbol *sym;
@@ -1254,10 +1289,7 @@ static int command(void)
             if (sym==NULL)
               sym=findglb(name,sSTATEVAR);
             if (sym!=NULL) {
-              sym->usage |= uREAD;
-              if (sym->ident==iVARIABLE || sym->ident==iREFERENCE
-                  || sym->ident==iARRAY || sym->ident==iREFARRAY)
-                sym->usage |= uWRITTEN;
+              sym->usage |= uNODESTRUCT;
             } else {
               error(17,name);     /* undefined symbol */
             } /* if */
@@ -1310,7 +1342,7 @@ static int command(void)
           /* first gather all information, start with the tag name */
           while (*lptr<=' ' && *lptr!='\0')
             lptr++;
-          for (i=0; i<sizeof name && *lptr>' '; i++,lptr++)
+          for (i=0; i<sNAMEMAX && *lptr>' '; i++,lptr++)
             name[i]=*lptr;
           name[i]='\0';
           parsesingleoption(name);
@@ -1337,12 +1369,12 @@ static int command(void)
   case tpEMIT: {
     if (!SKIPPING) {
       /* write opcode to output file */
-      char name[40];
+      char name[MAX_INSTR_LEN];
       int i;
       insert_dbgline(fline);
       while (*lptr<=' ' && *lptr!='\0')
         lptr++;
-      for (i=0; i<40 && (isalpha(*lptr) || *lptr=='.'); i++,lptr++)
+      for (i=0; i<sizeof(name)-1 && (isalpha(*lptr) || *lptr=='.'); i++,lptr++)
         name[i]=(char)tolower(*lptr);
       name[i]='\0';
       stgwrite("\t");
@@ -1405,7 +1437,7 @@ static int command(void)
               break;
             } else if (current_token==tRATIONAL) {
               /* change the first bit to make float negative value */
-              outval(val|((cell)1 << (PAWN_CELL_SIZE-1)),FALSE);
+              outval(val|(cell)((ucell)1 << (PAWN_CELL_SIZE-1)),FALSE);
               code_idx+=opargs(1);
               break;
             } else {
@@ -1508,7 +1540,7 @@ static int command(void)
         delete_subst(pattern,prefixlen);
       } /* if */
       /* add the pattern/substitution pair to the list */
-      assert(strlen(pattern)>0);
+      assert(!strempty(pattern));
       insert_subst(pattern,substitution,prefixlen);
       free(pattern);
       free(substitution);
@@ -1540,14 +1572,12 @@ static int command(void)
   case tpWARNING:
     while (*lptr<=' ' && *lptr!='\0')
       lptr++;
-    while (*lptr<=' ' && *lptr!='\0')
-      lptr++;
     if (!SKIPPING) {
       char *usermsg=strdupwithouta((const char *)lptr);
       if (usermsg!=NULL) {
         char *ptr=usermsg+strlen(usermsg)-1;
         /* remove trailing whitespace and newlines */
-        while (*ptr<=' ')
+        while (ptr >= usermsg && *ptr<=' ')
           *ptr--='\0';
         if (tok==tpERROR)
           error(111,usermsg); /* user error */
@@ -1560,8 +1590,11 @@ static int command(void)
     } /* if */
     break;
   default:
-    error(31);          /* unknown compiler directive */
-    ret=SKIPPING ? CMD_CONDFALSE : CMD_NONE;  /* process as normal line */
+    if (!SKIPPING) {
+      error(31);    /* unknown compiler directive */
+      ret=CMD_NONE; /* process as normal line */
+    }
+    litidx=0;       /* this directive was added to the literal queue - reset it */
   } /* switch */
   return ret;
 }
@@ -1714,8 +1747,7 @@ static int substpattern(unsigned char *line,size_t buffersize,char *pattern,char
                        * a string, or the closing paranthese of a group) */
         } /* while */
         /* store the parameter (overrule any earlier) */
-        if (args[arg]!=NULL)
-          free(args[arg]);
+        free(args[arg]);
         len=(int)(e-s);
         args[arg]=(unsigned char*)malloc(len+1);
         if (args[arg]==NULL)
@@ -1817,8 +1849,7 @@ static int substpattern(unsigned char *line,size_t buffersize,char *pattern,char
   } /* if */
 
   for (arg=0; arg<10; arg++)
-    if (args[arg]!=NULL)
-      free(args[arg]);
+    free(args[arg]);
 
   return match;
 }
@@ -1913,7 +1944,7 @@ SC_FUNC void preprocess(void)
         lptr=pline;       /* reset "line pointer" to start of the parsing buffer */
       } /* if */
     #endif
-    if (sc_status==statFIRST && sc_listing && freading
+    if (sc_status==statSECOND && freading
         && (iscommand==CMD_NONE || iscommand==CMD_EMPTYLINE || iscommand==CMD_DIRECTIVE))
     {
       listline++;
@@ -2138,19 +2169,18 @@ SC_FUNC void lexinit(void)
 char *sc_tokens[] = {
          "*=", "/=", "%=", "+=", "-=", "<<=", ">>>=", ">>=", "&=", "^=", "|=",
          "||", "&&", "==", "!=", "<=", ">=", "<<", ">>>", ">>", "++", "--",
-         "...", "..", "::",
-         "assert", "*begin", "break", "case", "char", "const", "continue", "default",
-         "defined", "do", "else", "emit", "__emit", "*end", "enum", "exit", "for",
-         "forward", "goto", "if", "native", "new", "operator", "public", "return",
-         "sizeof", "sleep", "state", "static", "stock", "switch", "tagof", "*then",
-         "while",
+         "...", "..",
+         "__addressof", "assert", "*begin", "break", "case", "char", "const", "continue",
+         "default", "defined", "do", "else", "__emit", "*end", "enum", "exit", "for",
+         "forward", "goto", "if", "native", "new", "operator", "public", "return", "sizeof",
+         "sleep", "state", "static", "stock", "switch", "tagof", "*then", "while",
          "#assert", "#define", "#else", "#elseif", "#emit", "#endif", "#endinput",
          "#endscript", "#error", "#file", "#if", "#include", "#line", "#pragma",
          "#tryinclude", "#undef", "#warning",
          ";", ";", "-integer value-", "-rational value-", "-identifier-",
          "-label-", "-string-",
          "-any value-", "-numeric value-", "-data offset-", "-local variable-",
-         "-function-", "-native function-", "-nonnegative integer-"
+         "-reference-", "-function-", "-native function-", "-nonnegative integer-"
        };
 
 SC_FUNC int lex(cell *lexvalue,char **lexsym)
@@ -2907,8 +2937,7 @@ static void free_symbol(symbol *sym)
   } /* if */
   assert(sym->refer!=NULL);
   free(sym->refer);
-  if (sym->documentation!=NULL)
-    free(sym->documentation);
+  free(sym->documentation);
   if (sym->vclass==sGLOBAL)
     symbol_cache_remove(sym);
   free(sym);
@@ -3134,12 +3163,10 @@ SC_FUNC void markusage(symbol *sym,int usage)
   if ((usage & (uREAD | uWRITTEN))!=0) {
     /* only do this for global symbols */
     if (sym->vclass==sGLOBAL) {
-      /* "curfunc" should always be valid, since statements may not occurs
-       * outside functions; in the case of syntax errors, however, the
-       * compiler may arrive through this function
-       */
       if (curfunc!=NULL)
         refer_symbol(sym,curfunc);
+      else
+        sym->usage |= uGLOBALREF;
     } /* if */
   } /* if */
 }

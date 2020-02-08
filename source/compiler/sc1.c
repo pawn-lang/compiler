@@ -57,9 +57,10 @@
 #elif defined _MSC_VER && defined _WIN32
   #include <direct.h>           /* for _chdrive() */
   #define dos_setdrive(i)       _chdrive(i)
-  #define stricmp _stricmp
-  #define chdir   _chdir
-  #define access  _access
+  #define stricmp  _stricmp
+  #define chdir    _chdir
+  #define access   _access
+  #define snprintf _snprintf
 #endif
 #if defined __BORLANDC__
   #include <dir.h>              /* for chdir() */
@@ -108,7 +109,7 @@ static void funcstub(int fnative);
 static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stock);
 static int declargs(symbol *sym,int chkshadow);
 static void doarg(char *name,int ident,int offset,int tags[],int numtags,
-                  int fpublic,int fconst,int chkshadow,arginfo *arg);
+                  int fpublic,int fconst,int written,int chkshadow,arginfo *arg);
 static void make_report(symbol *root,FILE *log,char *sourcefile);
 static void reduce_referrers(symbol *root);
 static long max_stacksize(symbol *root,int *recursion);
@@ -141,7 +142,6 @@ static int *readwhile(void);
 
 typedef void (SC_FASTCALL *OPCODE_PROC)(char *name);
 typedef struct {
-  cell opcode;
   char *name;
   OPCODE_PROC func;
 } EMIT_OPCODE;
@@ -473,6 +473,7 @@ int pc_compile(int argc, char *argv[])
     int hdrsize=0;
   #endif
   char *ptr;
+  char *tname=NULL;
 
   /* set global variables to their initial value */
   binf=NULL;
@@ -509,7 +510,7 @@ int pc_compile(int argc, char *argv[])
     set_extension(outfname,".lst",TRUE);
   else
     set_extension(outfname,".asm",TRUE);
-  if (strlen(errfname)!=0)
+  if (!strempty(errfname))
     remove(errfname);   /* delete file on startup */
   else if (verbosity>0)
     setcaption();
@@ -528,7 +529,7 @@ int pc_compile(int argc, char *argv[])
   assert(get_sourcefile(0)!=NULL);  /* there must be at least one source file */
   if (get_sourcefile(1)!=NULL) {
     /* there are at least two or more source files */
-    char *tname,*sname;
+    char *sname;
     FILE *ftmp,*fsrc;
     int fidx;
     ftmp=pc_createtmpsrc(&tname);
@@ -542,15 +543,14 @@ int pc_compile(int argc, char *argv[])
       pc_writesrc(ftmp,(unsigned char*)"#file \"");
       pc_writesrc(ftmp,(unsigned char*)sname);
       pc_writesrc(ftmp,(unsigned char*)"\"\n");
-      while (!pc_eofsrc(fsrc)) {
-        pc_readsrc(fsrc,tstring,sizeof tstring);
+      while (pc_readsrc(fsrc,tstring,sizeof tstring)!=NULL) {
         pc_writesrc(ftmp,tstring);
       } /* while */
+      pc_writesrc(ftmp,(unsigned char*)"\n");
       pc_closesrc(fsrc);
     } /* for */
     pc_closesrc(ftmp);
     strcpy(inpfname,tname);
-    free(tname);
   } else {
     strcpy(inpfname,get_sourcefile(0));
   } /* if */
@@ -575,20 +575,6 @@ int pc_compile(int argc, char *argv[])
       fline++;                  /* keep line number up to date */
   skipinput=fline;
   sc_status=statFIRST;
-  /* write starting options (from the command line or the configuration file) */
-  if (sc_listing) {
-    char string[150];
-    sprintf(string,"#pragma ctrlchar 0x%02x\n"
-                   "#pragma pack %s\n"
-                   "#pragma semicolon %s\n"
-                   "#pragma tabsize %d\n",
-            sc_ctrlchar,
-            sc_packstr ? "true" : "false",
-            sc_needsemicolon ? "true" : "false",
-            sc_tabsize);
-    pc_writeasm(outf,string);
-  } /* if */
-  setfiledirect(inpfname);
   /* do the first pass through the file (or possibly two or more "first passes") */
   sc_parsenum=0;
   inpfmark=pc_getpossrc(inpf_org);
@@ -615,7 +601,7 @@ int pc_compile(int argc, char *argv[])
     sc_status=statFIRST;        /* resetglobals() resets it to IDLE */
     setstringconstants();
     setfileconst(inpfname);
-    if (strlen(incfname)>0) {
+    if (!strempty(incfname)) {
       if (strcmp(incfname,sDEF_PREFIX)==0) {
         plungefile(incfname,FALSE,TRUE);    /* parse "default.inc" */
       } else {
@@ -629,18 +615,21 @@ int pc_compile(int argc, char *argv[])
   } while (sc_reparse);
 
   /* second (or third) pass */
-  sc_status=statWRITE;                  /* set, to enable warnings */
+  if (sc_listing)
+    sc_status=statSECOND;
+  else
+    sc_status=statWRITE;                  /* set, to enable warnings */
   state_conflict(&glbtab);
 
   /* write a report, if requested */
   #if !defined SC_LIGHT
     if (sc_makereport) {
       FILE *frep=stdout;
-      if (strlen(reportname)>0)
+      if (!strempty(reportname))
         frep=fopen(reportname,"wb");    /* avoid translation of \n to \r\n in DOS/Windows */
       if (frep!=NULL) {
         make_report(&glbtab,frep,get_sourcefile(0));
-        if (strlen(reportname)>0)
+        if (!strempty(reportname))
           fclose(frep);
       } /* if */
       if (sc_documentation!=NULL) {
@@ -649,8 +638,28 @@ int pc_compile(int argc, char *argv[])
       } /* if */
     } /* if */
   #endif
-  if (sc_listing)
-    goto cleanup;
+
+  sc_ctrlchar=sc_ctrlchar_org;
+  sc_packstr=lcl_packstr;
+  sc_needsemicolon=lcl_needsemicolon;
+  sc_tabsize=lcl_tabsize;
+
+  /*if (sc_listing)
+    goto cleanup;*/
+  /* write starting options (from the command line or the configuration file) */
+  if (sc_listing) {
+    char string[150];
+    sprintf(string,"#pragma ctrlchar 0x%02x\n"
+                   "#pragma pack %s\n"
+                   "#pragma semicolon %s\n"
+                   "#pragma tabsize %d\n",
+            sc_ctrlchar,
+            sc_packstr ? "true" : "false",
+            sc_needsemicolon ? "true" : "false",
+            sc_tabsize);
+    pc_writeasm(outf,string);
+  } /* if */
+  setfiledirect(inpfname);
 
   /* ??? for re-parsing the listing file instead of the original source
    * file (and doing preprocessing twice):
@@ -666,10 +675,6 @@ int pc_compile(int argc, char *argv[])
     delete_substtable();
   #endif
   resetglobals();
-  sc_ctrlchar=sc_ctrlchar_org;
-  sc_packstr=lcl_packstr;
-  sc_needsemicolon=lcl_needsemicolon;
-  sc_tabsize=lcl_tabsize;
   errorset(sRESET,0);
   /* reset the source file */
   inpf=inpf_org;
@@ -677,12 +682,15 @@ int pc_compile(int argc, char *argv[])
   pc_resetsrc(inpf,inpfmark);   /* reset file position */
   fline=skipinput;              /* reset line number */
   lexinit();                    /* clear internal flags of lex() */
-  sc_status=statWRITE;          /* allow to write --this variable was reset by resetglobals() */
-  setstringconstants();
+  if (sc_listing)
+    sc_status=statSECOND;
+  else
+    sc_status=statWRITE;          /* allow to write --this variable was reset by resetglobals() */
   writeleader(&glbtab);
+  setstringconstants();
   setfileconst(inpfname);
   insert_dbgfile(inpfname);
-  if (strlen(incfname)>0) {
+  if (!strempty(incfname)) {
     if (strcmp(incfname,sDEF_PREFIX)==0)
       plungefile(incfname,FALSE,TRUE);  /* parse "default.inc" (again) */
     else
@@ -690,6 +698,8 @@ int pc_compile(int argc, char *argv[])
   } /* if */
   preprocess();                         /* fetch first line */
   parse();                              /* process all input */
+  if (sc_listing)
+    goto cleanup;
   /* inpf is already closed when readline() attempts to pop of a file */
   writetrailer();                       /* write remaining stuff */
 
@@ -722,7 +732,7 @@ cleanup:
   } /* if */
 
   #if !defined SC_LIGHT
-    if (errnum==0 && strlen(errfname)==0) {
+    if (errnum==0 && strempty(errfname)) {
       int recursion;
       long stacksize=max_stacksize(&glbtab,&recursion);
       int flag_exceed=0;
@@ -754,13 +764,12 @@ cleanup:
     } /* if */
   #endif
 
-  if (inpfname!=NULL) {
-    if (get_sourcefile(1)!=NULL)
-      remove(inpfname);         /* the "input file" was in fact a temporary file */
-    free(inpfname);
+  if (get_sourcefile(1)!=NULL && tname!=NULL) {
+    remove(tname);         /* the "input file" was in fact a temporary file */
+    free(tname);
   } /* if */
-  if (litq!=NULL)
-    free(litq);
+  free(inpfname);
+  free(litq);
   stgbuffer_cleanup();
   clearstk();
   assert(jmpcode!=0 || loctab.next==NULL);/* on normal flow, local symbols
@@ -784,17 +793,16 @@ cleanup:
   #endif
   #if !defined SC_LIGHT
     delete_docstringtable();
-    if (sc_documentation!=NULL)
-      free(sc_documentation);
+    free(sc_documentation);
   #endif
   delete_autolisttable();
   delete_heaplisttable();
   if (errnum!=0) {
-    if (strlen(errfname)==0)
+    if (strempty(errfname))
       pc_printf("\n%d Error%s.\n",errnum,(errnum>1) ? "s" : "");
     retcode=1;
   } else if (warnnum!=0){
-    if (strlen(errfname)==0)
+    if (strempty(errfname))
       pc_printf("\n%d Warning%s.\n",warnnum,(warnnum>1) ? "s" : "");
     retcode=0;          /* use "0", so that MAKE and similar tools continue */
   } else {
@@ -1142,10 +1150,10 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
           break;
         strlcpy(rname,option_value(ptr),_MAX_PATH); /* set name of report file */
         sc_makereport=TRUE;
-        if (strlen(rname)>0) {
+        if (!strempty(rname)) {
           set_extension(rname,".xml",FALSE);
         } else if ((name=get_sourcefile(0))!=NULL) {
-          assert(strlen(rname)==0);
+          assert(strempty(rname));
           assert(strlen(name)<_MAX_PATH);
           if ((ptr=strrchr(name,DIRSEP_CHAR))!=NULL)
             ptr++;          /* strip path */
@@ -1261,7 +1269,7 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
       /* The output name is the first input name with a different extension,
        * but it is stored in a different directory
        */
-      if (strlen(oname)==0) {
+      if (strempty(oname)) {
         if ((ptr=strrchr(str,DIRSEP_CHAR))!=NULL)
           ptr++;          /* strip path */
         else
@@ -1271,7 +1279,7 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
       } /* if */
       set_extension(oname,".asm",TRUE);
 #if !defined SC_LIGHT
-      if (sc_makereport && strlen(rname)==0) {
+      if (sc_makereport && strempty(rname)) {
         if ((ptr=strrchr(str,DIRSEP_CHAR))!=NULL)
           ptr++;          /* strip path */
         else
@@ -1442,13 +1450,15 @@ static void setconfig(char *root)
       insert_path(path);
       /* same for the codepage root */
       #if !defined NO_CODEPAGE
-        *ptr='\0';
+        if (ptr!=NULL)
+          *ptr='\0';
         if (!cp_path(path,"codepage"))
           error(109,path);        /* codepage path */
       #endif
       /* also copy the root path (for the XML documentation) */
       #if !defined SC_LIGHT
-        *ptr='\0';
+        if (ptr!=NULL)
+          *ptr='\0';
         strcpy(sc_rootpath,path);
       #endif
     } /* if */
@@ -1462,7 +1472,7 @@ static void setcaption(void)
 
 static void about(void)
 {
-  if (strlen(errfname)==0) {
+  if (strempty(errfname)) {
     setcaption();
     pc_printf("Usage:   pawncc <filename> [filename...] [options]\n\n");
     pc_printf("Options:\n");
@@ -1683,7 +1693,6 @@ static void parse(void)
     case 0:
       /* ignore zero's */
       break;
-    case tEMIT:
     case t__EMIT:
       emit_flags |= efGLOBAL;
       lex(&val,&str);
@@ -1911,8 +1920,7 @@ void sc_attachdocumentation(symbol *sym)
         assert(sym->documentation==NULL);
         sym->documentation=doc;
       } else {
-        if (sc_documentation!=NULL)
-          free(sc_documentation);
+        free(sc_documentation);
         sc_documentation=doc;
       } /* if */
     } /* if */
@@ -2018,7 +2026,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
     } else {
       tag=pc_addtag(NULL);
       if (lex(&val,&str)!=tSYMBOL)      /* read in (new) token */
-        error_suggest(20,str,NULL,estSYMBOL,essFUNCTN); /* invalid symbol name */
+        error_suggest(20,str,NULL,estSYMBOL,esfFUNCTION);   /* invalid symbol name */
       assert(strlen(str)<=sNAMEMAX);
       strcpy(name,str);                 /* save symbol name */
     } /* if */
@@ -2069,7 +2077,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
      */
     assert(sym==NULL
            || sym->states==NULL && sc_curstates==0
-           || sym->states!=NULL && sym->next!=NULL && sym->states->first->index==sc_curstates);
+           || sym->states!=NULL && sym->states->first!=NULL && sym->states->first->index==sc_curstates);
     /* a state variable may only have a single id in its list (so either this
      * variable has no states, or it has a single list)
      */
@@ -2351,7 +2359,10 @@ static int declloc(int fstatic)
         int ctag = tag;         /* set to "tag" by default */
         int explicit_init=FALSE;/* is the variable explicitly initialized? */
         if (matchtoken('=')) {
+          sym->usage &= ~uDEFINE;   /* temporarily mark the variable as undefined to prevent
+                                     * possible self-assignment through its initialization expression */
           doexpr(FALSE,FALSE,FALSE,FALSE,&ctag,NULL,TRUE);
+          sym->usage |= uDEFINE;
           explicit_init=TRUE;
         } else {
           ldconst(0,sPRI);      /* uninitialized variable, set to zero */
@@ -2932,7 +2943,7 @@ static void decl_enum(int vclass,int fstatic)
     needtoken(')');
   } /* if */
 
-  if (strlen(enumname)>0) {
+  if (!strempty(enumname)) {
     /* already create the root symbol, so the fields can have it as their "parent" */
     enumsym=add_constant(enumname,0,vclass,tag);
     if (enumsym!=NULL) {
@@ -2956,7 +2967,7 @@ static void decl_enum(int vclass,int fstatic)
       lexpush();
       break;
     } /* if */
-    idxtag=pc_addtag(NULL);             /* optional explicit item tag */
+    idxtag=(enumname[0]=='\0') ? tag : pc_addtag(NULL); /* optional explicit item tag */
     if (needtoken(tSYMBOL)) {           /* read in (new) token */
       tokeninfo(&val,&str);             /* get the information */
       strcpy(constname,str);            /* save symbol name */
@@ -3076,8 +3087,7 @@ static int getstates(const char *funcname)
     /* error is already given */
     state_id=0;
   } /* if */
-  if (list!=NULL)
-    free(list);
+  free(list);
 
   return state_id;
 }
@@ -3160,7 +3170,7 @@ SC_FUNC symbol *fetchfunc(char *name,int tag)
   } /* if */
   if (pc_deprecate!=NULL) {
     assert(sym!=NULL);
-    sym->flags|=flgDEPRECATED;
+    sym->flags|=flagDEPRECATED;
     if (sc_status==statWRITE) {
       if (sym->documentation!=NULL) {
         free(sym->documentation);
@@ -3303,7 +3313,7 @@ static int operatoradjust(int opertok,symbol *sym,char *opername,int resulttag)
     error(64);        /* cannot change predefined operators */
 
   /* change the operator name */
-  assert(strlen(opername)>0);
+  assert(!strempty(opername));
   operator_symname(tmpname,opername,tags[0],tags[1],count,resulttag);
   if ((oldsym=findglb(tmpname,sGLOBAL))!=NULL) {
     int i;
@@ -3329,7 +3339,7 @@ static int operatoradjust(int opertok,symbol *sym,char *opername,int resulttag)
 
 static int check_operatortag(int opertok,int resulttag,char *opername)
 {
-  assert(opername!=NULL && strlen(opername)>0);
+  assert(opername!=NULL && !strempty(opername));
   switch (opertok) {
   case '!':
   case '<':
@@ -3459,8 +3469,9 @@ SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualt
   if (!checktag(formaltags, numtags, actualtag)) {
     int i;
     constvalue *tagsym;
-    char formal_tagnames[sLINEMAX]="",actual_tagname[sNAMEMAX+2]="none (\"_\")";
+    char formal_tagnames[sLINEMAX+1]="",actual_tagname[sNAMEMAX+2]="none (\"_\")";
     int notag_allowed=FALSE,add_comma=FALSE;
+    size_t size;
     for (i=0; i<numtags; i++) {
       if(formaltags[i]!=0) {
         if((i+1)==numtags && add_comma==TRUE && notag_allowed==FALSE)
@@ -3469,7 +3480,13 @@ SC_FUNC void check_tagmismatch_multiple(int formaltags[],int numtags,int actualt
           strlcat(formal_tagnames,", ",sizeof(formal_tagnames));
         add_comma=TRUE;
         tagsym=find_tag_byval(formaltags[i]);
-        sprintf(formal_tagnames,"%s\"%s\"",formal_tagnames,(tagsym!=NULL) ? tagsym->name : "-unknown-");
+        size=snprintf(formal_tagnames,
+                      sizeof(formal_tagnames),
+                      "%s\"%s\"",
+                      formal_tagnames,
+                      (tagsym!=NULL) ? tagsym->name : "-unknown-");
+        if(size>=sizeof(formal_tagnames))
+          break;
       } else {
         notag_allowed=TRUE;
       } /* if */
@@ -3604,7 +3621,7 @@ static void funcstub(int fnative)
   if (sym==NULL)
     return;
   if (fnative) {
-    sym->usage=(char)(uNATIVE | uRETVALUE | uDEFINE | (sym->usage & uPROTOTYPED));
+    sym->usage=(short)(uNATIVE | uRETVALUE | uDEFINE | (sym->usage & uPROTOTYPED));
     sym->x.lib=curlibrary;
   } else if (fpublic) {
     sym->usage|=uPUBLIC;
@@ -3680,8 +3697,8 @@ static void funcstub(int fnative)
  */
 static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stock)
 {
-  symbol *sym;
-  int argcnt,tok,tag,funcline;
+  symbol *sym,*lvar,*depend;
+  int argcnt,tok,tag,funcline,i;
   int opertok,opererror;
   char symbolname[sNAMEMAX+1];
   char *str;
@@ -3774,7 +3791,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     cidx=code_idx;
     glbdecl=glb_declared;
   } /* if */
-  if ((sym->flags & flgDEPRECATED)!=0) {
+  if ((sym->flags & flagDEPRECATED)!=0) {
     char *ptr= (sym->documentation!=NULL) ? sym->documentation : "";
     error(234,symbolname,ptr);  /* deprecated (probably a public function) */
   } /* if */
@@ -3792,7 +3809,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   if (state_id!=0) {
     constvalue *ptr=sym->states->first;
     while (ptr!=NULL) {
-      assert(sc_status!=statWRITE || strlen(ptr->name)>0);
+      assert(sc_status!=statWRITE || !strempty(ptr->name));
       if (ptr->index==state_id) {
         setlabel((int)strtol(ptr->name,NULL,16));
         break;
@@ -3857,6 +3874,26 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     dumplits();                 /* dump literal strings */
     litidx=0;
   } /* if */
+  for (i=0; i<argcnt; i++) {
+    if (sym->dim.arglist[i].ident==iREFARRAY) {
+      lvar=findloc(sym->dim.arglist[i].name);
+      assert(lvar!=NULL);
+      if ((sym->dim.arglist[i].usage & uWRITTEN)==0) {
+        /* check if the argument was written in this definition */
+        depend=lvar;
+        while (depend!=NULL) {
+          if ((depend->usage & uWRITTEN)!=0) {
+            sym->dim.arglist[i].usage|=depend->usage & uWRITTEN;
+            break;
+          }
+          depend=finddepend(depend);
+        } /* while */
+      } /* if */
+      /* mark argument as written if it was written in another definition */
+      lvar->usage|=sym->dim.arglist[i].usage & uWRITTEN;
+    } /* if */    
+  } /* for */
+  
   testsymbols(&loctab,0,TRUE,TRUE);     /* test for unused arguments and labels */
   delete_symbols(&loctab,0,TRUE,TRUE);  /* clear local variables queue */
   assert(loctab.next==NULL);
@@ -4001,14 +4038,15 @@ static int declargs(symbol *sym,int chkshadow)
          *   base + 3*sizeof(cell)  == first argument of the function
          * So the offset of each argument is "(argcnt+3) * sizeof(cell)".
          */
-        doarg(name,ident,(argcnt+3)*sizeof(cell),tags,numtags,fpublic,fconst,chkshadow,&arg);
+        doarg(name,ident,(argcnt+3)*sizeof(cell),tags,numtags,fpublic,fconst,!!(sym->dim.arglist[argcnt].usage & uWRITTEN),chkshadow,&arg);
         if (fpublic && arg.hasdefault)
           error(59,name);       /* arguments of a public function may not have a default value */
         if ((sym->usage & uPROTOTYPED)==0) {
           /* redimension the argument list, add the entry */
-          sym->dim.arglist=(arginfo*)realloc(sym->dim.arglist,(argcnt+2)*sizeof(arginfo));
-          if (sym->dim.arglist==0)
+          arginfo* new_arglist=(arginfo*)realloc(sym->dim.arglist,(argcnt+2)*sizeof(arginfo));
+          if (new_arglist==NULL)
             error(103);                 /* insufficient memory */
+          sym->dim.arglist=new_arglist;
           memset(&sym->dim.arglist[argcnt+1],0,sizeof(arginfo));  /* keep the list terminated */
           sym->dim.arglist[argcnt]=arg;
         } else {
@@ -4037,9 +4075,10 @@ static int declargs(symbol *sym,int chkshadow)
           tags[numtags++]=0;            /* default tag */
         if ((sym->usage & uPROTOTYPED)==0) {
           /* redimension the argument list, add the entry iVARARGS */
-          sym->dim.arglist=(arginfo*)realloc(sym->dim.arglist,(argcnt+2)*sizeof(arginfo));
-          if (sym->dim.arglist==0)
+          arginfo* new_arglist=(arginfo*)realloc(sym->dim.arglist,(argcnt+2)*sizeof(arginfo));
+          if (new_arglist==NULL)
             error(103);                 /* insufficient memory */
+          sym->dim.arglist=new_arglist;
           memset(&sym->dim.arglist[argcnt+1],0,sizeof(arginfo));  /* keep the list terminated */
           sym->dim.arglist[argcnt].ident=iVARARGS;
           sym->dim.arglist[argcnt].hasdefault=FALSE;
@@ -4116,7 +4155,7 @@ static int declargs(symbol *sym,int chkshadow)
  *  The arguments themselves are never public.
  */
 static void doarg(char *name,int ident,int offset,int tags[],int numtags,
-                  int fpublic,int fconst,int chkshadow,arginfo *arg)
+                  int fpublic,int fconst,int written,int chkshadow,arginfo *arg)
 {
   symbol *argsym;
   constvalue_root *enumroot=NULL;
@@ -4210,6 +4249,7 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
   } /* if */
   arg->ident=(char)ident;
   arg->usage=(char)(fconst ? uCONST : 0);
+  arg->usage|=(char)(written ? uWRITTEN : 0);
   arg->numtags=numtags;
   arg->tags=(int*)malloc(numtags*sizeof tags[0]);
   if (arg->tags==NULL)
@@ -4236,15 +4276,13 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
   } /* if */
 }
 
-static int count_referrers(symbol *entry)
+static int has_referrers(symbol *entry)
 {
-  int i,count;
-
-  count=0;
+  int i;
   for (i=0; i<entry->numrefers; i++)
     if (entry->refer[i]!=NULL)
-      count++;
-  return count;
+      return TRUE;
+  return ((entry->usage & uGLOBALREF)!=0);
 }
 
 #if !defined SC_LIGHT
@@ -4576,7 +4614,7 @@ static void make_report(symbol *root,FILE *log,char *sourcefile)
       assert(i>=0);             /* automaton 0 exists */
       stlist=automaton_findid(i);
       assert(stlist!=NULL);     /* automaton should be found */
-      fprintf(log,"\t\t\t<automaton name=\"%s\"/>\n", strlen(stlist->name)>0 ? stlist->name : "(anonymous)");
+      fprintf(log,"\t\t\t<automaton name=\"%s\"/>\n", !strempty(stlist->name) ? stlist->name : "(anonymous)");
       //??? dump state decision table
     } /* if */
     assert(sym->refer!=NULL);
@@ -4684,7 +4722,7 @@ static void reduce_referrers(symbol *root)
       if (sym->ident==iFUNCTN
           && (sym->usage & uNATIVE)==0
           && (sym->usage & uPUBLIC)==0 && strcmp(sym->name,uMAINFUNC)!=0 && strcmp(sym->name,uENTRYFUNC)!=0
-          && count_referrers(sym)==0)
+          && !has_referrers(sym))
       {
         sym->usage&=~(uREAD | uWRITTEN);  /* erase usage bits if there is no referrer */
         /* find all symbols that are referred by this symbol */
@@ -4703,7 +4741,7 @@ static void reduce_referrers(symbol *root)
       } else if ((sym->ident==iVARIABLE || sym->ident==iARRAY)
                  && (sym->usage & uPUBLIC)==0
                  && sym->parent==NULL
-                 && count_referrers(sym)==0)
+                 && !has_referrers(sym))
       {
         sym->usage&=~(uREAD | uWRITTEN);  /* erase usage bits if there is no referrer */
       } /* if */
@@ -4869,7 +4907,7 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
     case iLABEL:
       if (testlabs) {
         if ((sym->usage & uDEFINE)==0) {
-          error_suggest(19,sym->name,NULL,estSYMBOL,essLABEL);  /* not a label: ... */
+          error_suggest(19,sym->name,NULL,estSYMBOL,esfLABEL);  /* not a label: ... */
         } else if ((sym->usage & uREAD)==0) {
           errorset(sSETPOS,sym->lnumber);
           error(203,sym->name);     /* symbol isn't used: ... */
@@ -4880,7 +4918,7 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
     case iFUNCTN:
       if ((sym->usage & (uDEFINE | uREAD | uNATIVE | uSTOCK | uPUBLIC))==uDEFINE) {
         funcdisplayname(symname,sym->name);
-        if (strlen(symname)>0)
+        if (!strempty(symname))
           error(203,symname);       /* symbol isn't used ... (and not public/native/stock) */
       } /* if */
       if ((sym->usage & uPUBLIC)!=0 || strcmp(sym->name,uMAINFUNC)==0)
@@ -4962,7 +5000,7 @@ static void destructsymbols(symbol *root,int level)
   int savepri=FALSE;
   symbol *sym=root->next;
   while (sym!=NULL && sym->compound>=level) {
-    if ((sym->ident==iVARIABLE || sym->ident==iARRAY) && !(sym->vclass==sSTATIC && sym->fnumber==-1)) {
+    if ((sym->ident==iVARIABLE || sym->ident==iARRAY) && !(sym->vclass==sSTATIC && sym->fnumber==-1) && !(sym->usage&uNODESTRUCT)) {
       char symbolname[16];
       symbol *opsym;
       cell elements;
@@ -5364,13 +5402,12 @@ static void statement(int *lastindent,int allow_decl)
     matchtoken(tSTATIC);
     decl_enum(sLOCAL,FALSE);
     break;
-  case tEMIT:
   case t__EMIT: {
     extern char *sc_tokens[];
     const unsigned char *bck_lptr=lptr-strlen(sc_tokens[tok-tFIRST]);
     if (matchtoken('{')) {
       emit_flags |= efBLOCK;
-      lastst=tEMIT;
+      lastst=t__EMIT;
       break;
     } /* if */
     lptr=bck_lptr;
@@ -5973,7 +6010,7 @@ static void dogoto(void)
     //     sym->compound (nesting level of the label) against nestlevel;
     //     if sym->compound < nestlevel, call the destructor operator
   } else {
-    error_suggest(20,st,NULL,estSYMBOL,essLABEL);   /* illegal symbol name */
+    error_suggest(20,st,NULL,estSYMBOL,esfLABEL);   /* illegal symbol name */
   } /* if */
   needtoken(tTERM);
 }
@@ -6013,7 +6050,7 @@ static symbol *fetchlab(char *name)
   sym=findloc(name);            /* labels are local in scope */
   if (sym) {
     if (sym->ident!=iLABEL)
-      error_suggest(19,sym->name,NULL,estSYMBOL,essLABEL);  /* not a label: ... */
+      error_suggest(19,sym->name,NULL,estSYMBOL,esfLABEL);  /* not a label: ... */
   } else {
     sym=addsym(name,getlabel(),iLABEL,sLOCAL,0,0);
     assert(sym!=NULL);          /* fatal error 103 must be given on error */
@@ -6025,8 +6062,8 @@ static symbol *fetchlab(char *name)
 
 static void SC_FASTCALL emit_invalid_token(int expected_token,int found_token)
 {
-  char s[2];
   extern char *sc_tokens[];
+  char s[2];
 
   assert(expected_token>=tFIRST);
   if (found_token<tFIRST) {
@@ -6035,6 +6072,257 @@ static void SC_FASTCALL emit_invalid_token(int expected_token,int found_token)
   } else {
     error(1,sc_tokens[expected_token-tFIRST],sc_tokens[found_token-tFIRST]);
   } /* if */
+}
+
+static regid SC_FASTCALL emit_findreg(char *opname)
+{
+  const char *regname=strrchr(opname,'.');
+  assert(regname!=NULL);
+  regname+=1;
+  assert(strcmp(regname,"pri")==0 || strcmp(regname,"alt")==0);
+  return (strcmp(regname,"pri")==0) ? sPRI : sALT;
+}
+
+/* emit_getlval
+ *
+ * Looks for an lvalue and generates code to get cell address in PRI
+ * if the lvalue is an array element (iARRAYCELL or iARRAYCHAR).
+ */
+static int SC_FASTCALL emit_getlval(int *identptr,emit_outval *p,int *islocal,
+                                    regid reg,int allow_char,int allow_const,
+                                    int store_pri,int store_alt,int *ispushed)
+{
+  int tok,index,ident,close;
+  cell cidx,val,length;
+  char *str;
+  symbol *sym;
+
+  assert(identptr!=NULL);
+  assert(p!=NULL);
+  assert((!store_pri && !store_alt) || ((store_pri ^ store_alt) && (reg==sALT && ispushed!=NULL)));
+
+  if (staging) {
+    assert((emit_flags & efEXPR)!=0);
+    stgget(&index,&cidx);
+  } /* if */
+
+  tok=lex(&val,&str);
+  if (tok!=tSYMBOL) {
+invalid_lvalue:
+    error(22);          /* must be lvalue */
+    return FALSE;
+  } /* if */
+
+  sym=findloc(str);
+  if (sym==NULL)
+    sym=findglb(str,sSTATEVAR);
+  if (sym==NULL || (sym->ident!=iFUNCTN && sym->ident!=iREFFUNC && (sym->usage & uDEFINE)==0)) {
+    error(17,str);      /* undefined symbol */
+    return FALSE;
+  } /* if */
+  markusage(sym,uREAD | uWRITTEN);
+  if (!allow_const && (sym->usage & uCONST)!=0)
+    goto invalid_lvalue;
+
+  p->type=eotNUMBER;
+  switch (sym->ident)
+  {
+  case iVARIABLE:
+  case iREFERENCE:
+    *identptr=sym->ident;
+    *islocal=((sym->vclass & sLOCAL)!=0);
+    p->value.ucell=*(ucell *)&sym->addr;
+    break;
+  case iARRAY:
+  case iREFARRAY:
+    /* get the index */
+    if (matchtoken('[')) {
+      *identptr=iARRAYCELL;
+      close=']';
+    } else if (matchtoken('{')) {
+      *identptr=iARRAYCHAR;
+      close='}';
+    } else {
+      error(33,sym->name);      /* array must be indexed */
+      return FALSE;
+    } /* if */
+    if (store_alt || store_pri) {
+      pushreg(store_pri ? sPRI : sALT);
+      *ispushed=TRUE;
+    } /* if */
+    errorset(sEXPRMARK,0);
+    ident=expression(&val,NULL,NULL,TRUE);
+    errorset(sEXPRRELEASE,0);
+    needtoken(close);
+
+    /* check if the index isn't out of bounds */
+    length=sym->dim.array.length;
+    if (close=='}')
+      length *= (8*sizeof(cell))/sCHARBITS;
+    if (ident==iCONSTEXPR) {    /* if the index is a constant value, check it at compile time */
+      if (val<0 || (length!=0 && val>=length)) {
+        error(32,sym->name);    /* array index out of bounds */
+        return FALSE;
+      } /* if */
+    } else if (length!=0) {     /* otherwise generate code for a run-time boundary check */
+      ffbounds(length-1);
+    } /* if */
+
+    /* calculate cell address */
+    if (ident==iCONSTEXPR) {
+      if (staging)
+        stgdel(index,cidx);     /* erase generated code */
+      if (store_alt || store_pri)
+        *ispushed=FALSE;
+      p->value.ucell= *(ucell *)&sym->addr;
+      if (close==']')
+        val *= (cell)sizeof(cell);
+      else
+        val *= (cell)(sCHARBITS/8);
+      if (sym->ident==iARRAY) {
+        p->value.ucell += (ucell)val;
+        if (close==']') {
+          /* If we are accessing an array cell and its address is known at
+           * compile time, we can return it as 'iVARIABLE',
+           * so the calling function could generate more optimal code.
+           */
+          *islocal=((sym->vclass & sLOCAL)!=0);
+          *identptr=iVARIABLE;
+          break;
+        } /* if */
+        if (reg==sPRI) {
+          outinstr(((sym->vclass & sLOCAL)!=0) ? "addr.pri" : "const.pri",p,1);
+        } else {
+          if (store_alt)
+            moveto1();
+          outinstr(((sym->vclass & sLOCAL)!=0) ? "addr.alt" : "const.alt",p,1);
+        } /* if */
+      } else {  /* sym->ident==iREFARRAY */
+        if (close==']' && val==0) {
+          *identptr=iREFERENCE;
+          break;
+        } /* if */
+        if (reg==sPRI) {
+          outinstr("load.s.pri",p,1);
+          if (val==1)
+            outinstr("inc.pri",NULL,0);
+          else
+            addconst(val);
+        } else {
+          if (val==0 || val==1) {
+            if (store_alt)
+              outinstr("move.pri",NULL,0);
+            outinstr("load.s.alt",p,1);
+            if (val==1)
+              outinstr("inc.alt",NULL,0);
+          } else {
+            if (store_pri)
+              outinstr("move.alt",NULL,0);
+            outinstr("load.s.pri",p,1);
+            addconst(val);
+            if (store_pri || store_alt)
+              outinstr("xchg",NULL,0);
+            else
+              outinstr("move.alt",NULL,0);
+          } /* if */
+        } /* if */
+      } /* if */
+      if (close=='}') {
+        p->value.ucell=(ucell)(sCHARBITS/8);
+        outinstr((reg==sPRI) ? "align.pri" : "align.alt",p,1);
+      } /* if */
+    } else {    /* ident!=iCONSTEXPR */
+      if (close=='}' && sym->ident==iARRAY && (sym->vclass & sLOCAL)==0) {
+        char2addr();
+        addconst(sym->addr);
+        charalign();
+        if (reg==sALT)
+          outinstr("move.alt",NULL,0);
+        break;
+      } /* if */
+      p->value.ucell= *(ucell *)&sym->addr;
+      if (sym->ident==iARRAY)
+        outinstr(((sym->vclass & sLOCAL)!=0) ? "addr.alt" : "const.alt",p,1);
+      else      /* sym->ident==iREFARRAY */
+        outinstr("load.s.alt",p,1);
+      if (close==']') {
+        outinstr("idxaddr",NULL,0);
+      } else {
+        char2addr();
+        ob_add();
+        charalign();
+      } /* if */
+      if (reg==sALT)
+        outinstr("move.alt",NULL,0);
+    } /* if */
+    break;
+  default:
+    goto invalid_lvalue;
+  } /* switch */
+
+  if (!staging) {   /* issue an error if a pseudo-opcode is used outside of function body */
+    error(10);      /* invalid function or declaration */
+    return FALSE;
+  } /* if */
+  if ((sym->ident==iARRAY || sym->ident==iREFARRAY) && close=='}' && !allow_char) {
+    /* issue an error if array character access isn't allowed
+     * (currently it's only in 'push.u.adr')
+     */
+    error(35,1);    /* argument type mismatch (argument 1) */
+    return FALSE;
+  } /* if */
+  return TRUE;
+}
+
+/* emit_getrval
+ *
+ * Looks for an rvalue and generates code to handle expressions.
+ */
+static int SC_FASTCALL emit_getrval(int *identptr,emit_outval *p,int *islocal)
+{
+  int index,result=TRUE;
+  cell cidx;
+  cell val;
+  symbol *sym;
+
+  assert(identptr!=NULL);
+  assert(p!=NULL);
+  assert(islocal!=NULL);
+
+  if (staging) {
+    assert((emit_flags & efEXPR)!=0);
+    stgget(&index,&cidx);
+  } else {
+    error(10);          /* invalid function or declaration */
+    result=FALSE;
+  } /* if */
+
+  errorset(sEXPRMARK,0);
+  *identptr=expression(&val,NULL,&sym,TRUE);
+  p->type=eotNUMBER;
+  switch (*identptr) {
+  case iVARIABLE:
+  case iREFERENCE:
+    *islocal=((sym->vclass & sLOCAL)!=0);
+    /* fallthrough */
+  case iCONSTEXPR:
+    /* If the expression result is a constant value or a variable - erase the code
+     * for this expression so the caller would be able to generate more optimal
+     * code for it, without unnecessary register clobbering.
+     */
+    if (staging)
+      stgdel(index,cidx);
+    p->value.ucell=*(ucell *)((*identptr==iCONSTEXPR) ? &val : &sym->addr);
+    break;
+  case iARRAY:
+  case iREFARRAY:
+    error(33,(sym!=NULL) ? sym->name : "-unknown-");    /* array must be indexed */
+    result=FALSE;
+    break;
+  } /* switch */
+  errorset(sEXPRRELEASE,0);
+
+  return result;
 }
 
 static int SC_FASTCALL emit_param_any_internal(emit_outval *p,int expected_tok,
@@ -6056,7 +6344,7 @@ fetchtok:
   case tRATIONAL:
     if (!allow_nonint)
       goto invalid_token;
-    p->value.ucell=(ucell)(negate ? (val|((cell)1 << (PAWN_CELL_SIZE-1))) : val);
+    p->value.ucell=(negate ? ((ucell)val|((ucell)1 << (PAWN_CELL_SIZE-1))) : (ucell)val);
     break;
   case tSYMBOL:
     sym=findloc(str);
@@ -6068,8 +6356,10 @@ fetchtok:
     } /* if */
     if (sym->ident==iLABEL) {
       sym->usage|=uREAD;
-      if (negate)
+      if (negate) {
+        tok=tLABEL;
         goto invalid_token_neg;
+      } /* if */
       if (!allow_nonint) {
         tok=tLABEL;
         goto invalid_token;
@@ -6077,21 +6367,27 @@ fetchtok:
       p->type=eotLABEL;
       p->value.ucell=(ucell)sym->addr;
     } else if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
+      const int ntvref=sym->usage & uREAD;
       markusage(sym,uREAD);
-      if (negate)
+      if (negate) {
+        tok=teFUNCTN;
         goto invalid_token_neg;
+      } /* if */
       if (!allow_nonint) {
         tok=(sym->usage & uNATIVE) ? teNATIVE : teFUNCTN;
         goto invalid_token;
       } /* if */
-      if ((sym->usage & uNATIVE)!=0 && (sym->usage & uREAD)==0 && sym->addr>=0)
+      if ((sym->usage & uNATIVE)!=0 && ntvref==0 && sym->addr>=0)
         sym->addr=ntv_funcid++;
       p->type=eotFUNCTION;
       p->value.string=str;
     } else {
       markusage(sym,uREAD | uWRITTEN);
       if (!allow_nonint && sym->ident!=iCONSTEXPR) {
-        tok=(sym->vclass==sLOCAL) ? teLOCAL : teDATA;
+        if (sym->vclass==sLOCAL)
+          tok=(sym->ident==iREFERENCE || sym->ident==iREFARRAY) ? teREFERENCE : teLOCAL;
+        else
+          tok=teDATA;
         goto invalid_token;
       } /* if */
       p->value.ucell=(ucell)(negate ? -sym->addr : sym->addr);
@@ -6117,6 +6413,8 @@ fetchtok:
     } /* if */
     break;
   case ':':
+    if (negate)
+      goto invalid_token_neg;
     tok=lex(&val,&str);
     if (tok!=tSYMBOL) {
       emit_invalid_token(tSYMBOL,tok);
@@ -6135,7 +6433,10 @@ fetchtok:
       extern char *sc_tokens[];
       char ival[sNAMEMAX+2];
     invalid_token_neg:
-      sprintf(ival,"-%s",str);
+      if (tok<tFIRST)
+        sprintf(ival,"-%c",tok);
+      else
+        sprintf(ival,"-(%s)",sc_tokens[tok-tFIRST]);
       error(1,sc_tokens[expected_tok-tFIRST],ival);
       return FALSE;
     } /* if */
@@ -6157,7 +6458,8 @@ static void SC_FASTCALL emit_param_integer(emit_outval *p)
   emit_param_any_internal(p,tNUMBER,FALSE,TRUE);
 }
 
-static void SC_FASTCALL emit_param_index(emit_outval *p,int isrange,const cell *valid_values,int numvalues)
+static void SC_FASTCALL emit_param_index(emit_outval *p,int isrange,
+                                         const cell *valid_values,int numvalues)
 {
   int i;
   cell val;
@@ -6185,18 +6487,23 @@ static void SC_FASTCALL emit_param_nonneg(emit_outval *p)
     extern char *sc_tokens[];
 #if PAWN_CELL_SIZE==16
     char ival[7];
-    sprintf(ival,"%ld",(long)p->value.ucell);
 #elif PAWN_CELL_SIZE==32
     char ival[12];
-    sprintf(ival,"%ld",(long)p->value.ucell);
 #elif PAWN_CELL_SIZE==64
     char ival[21];
-    sprintf(ival,"%lld",(long long)p->value.ucell);
 #else
   #error Unsupported cell size
 #endif
+    sprintf(ival,"%"PRIdC,(cell)p->value.ucell);
     error(1,sc_tokens[teNONNEG-tFIRST],ival);
   } /* if */
+}
+
+static void SC_FASTCALL emit_param_shift(emit_outval *p)
+{
+  if (emit_param_any_internal(p,tNUMBER,FALSE,TRUE))
+    if (p->value.ucell>=(sizeof(cell)*8))
+      error(50);    /* invalid range */
 }
 
 static void SC_FASTCALL emit_param_data(emit_outval *p)
@@ -6209,9 +6516,6 @@ static void SC_FASTCALL emit_param_data(emit_outval *p)
   p->type=eotNUMBER;
   tok=lex(&val,&str);
   switch (tok) {
-  case tNUMBER:
-    p->value.ucell=(ucell)val;
-    break;
   case tSYMBOL:
     sym=findloc(str);
     if (sym!=NULL) {
@@ -6220,42 +6524,55 @@ static void SC_FASTCALL emit_param_data(emit_outval *p)
         tok=tLABEL;
         goto invalid_token;
       } /* if */
-      if (sym->vclass!=sSTATIC && sym->ident!=iCONSTEXPR) {
-        tok=teLOCAL;
+      if (sym->vclass!=sSTATIC) {
+        if (sym->ident==iCONSTEXPR)
+          tok=teNUMERIC;
+        else
+          tok=(sym->ident==iREFERENCE || sym->ident==iREFARRAY) ? teREFERENCE : teLOCAL;
         goto invalid_token;
       } /* if */
     } else {
       sym=findglb(str,sSTATIC);
       if (sym==NULL) {
         error(17,str);  /* undefined symbol */
-        break;
+        return;
       } /* if */
-      markusage(sym,uREAD | uWRITTEN);
+      markusage(sym,(sym->ident==iFUNCTN || sym->ident==iREFFUNC) ? uREAD : (uREAD | uWRITTEN));
       if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
         tok=((sym->usage & uNATIVE)!=0) ? teNATIVE : teFUNCTN;
         goto invalid_token;
       } /* if */
+      if (sym->ident==iCONSTEXPR) {
+        tok=teNUMERIC;
+        goto invalid_token;
+      } /* if */
     } /* if */
-    p->value.ucell=(ucell)sym->addr;
+    val=sym->addr;
     break;
   default:
   invalid_token:
     emit_invalid_token(teDATA,tok);
+    return;
   } /* switch */
+  if ((val % sizeof(cell))==0)
+    p->value.ucell=(ucell)val;
+  else
+    error(11);  /* must be a multiple of cell size */
 }
 
-static void SC_FASTCALL emit_param_local(emit_outval *p)
+static void SC_FASTCALL emit_param_local(emit_outval *p,int allow_ref)
 {
   cell val;
   char *str;
   symbol *sym;
-  int tok;
+  int tok,negate;
 
+  negate=FALSE;
   p->type=eotNUMBER;
+fetchtok:
   tok=lex(&val,&str);
   switch (tok) {
   case tNUMBER:
-    p->value.ucell=(ucell)val;
     break;
   case tSYMBOL:
     sym=findloc(str);
@@ -6269,23 +6586,58 @@ static void SC_FASTCALL emit_param_local(emit_outval *p)
         tok=teDATA;
         goto invalid_token;
       } /* if */
+      if (allow_ref==FALSE && (sym->ident==iREFERENCE || sym->ident==iREFARRAY)) {
+        tok=teREFERENCE;
+        goto invalid_token;
+      } /* if */
+      if (negate && sym->ident!=iCONSTEXPR) {
+        tok=(sym->ident==iREFERENCE || sym->ident==iREFARRAY) ? teREFERENCE : teLOCAL;
+        goto invalid_token_neg;
+      } /* if */
     } else {
       sym=findglb(str,sSTATEVAR);
       if (sym==NULL) {
-      undefined_sym:
         error(17,str);  /* undefined symbol */
-        break;
+        return;
       } /* if */
-      markusage(sym,uREAD | uWRITTEN);
-      if (sym->ident!=iCONSTEXPR)
-        goto undefined_sym;
+      markusage(sym,(sym->ident==iFUNCTN || sym->ident==iREFFUNC) ? uREAD : (uREAD | uWRITTEN));
+      if (sym->ident!=iCONSTEXPR) {
+        if (sym->ident==iFUNCTN || sym->ident==iREFFUNC)
+          tok=((sym->usage & uNATIVE)!=0) ? teNATIVE : teFUNCTN;
+        else
+          tok=teDATA;
+        goto invalid_token;
+      } /* if */
     } /* if */
-    p->value.ucell=(ucell)sym->addr;
+    val=sym->addr;
     break;
+  case '-':
+    if (!negate) {
+      negate=TRUE;
+      goto fetchtok;
+    } else {
+      extern char *sc_tokens[];
+      char ival[sNAMEMAX+2];
+    invalid_token_neg:
+      if (tok<tFIRST)
+        sprintf(ival,"-%c",tok);
+      else
+        sprintf(ival,"-(%s)",sc_tokens[tok-tFIRST]);
+      error(1,sc_tokens[teLOCAL-tFIRST],ival);
+      return;
+    }
   default:
   invalid_token:
-    emit_invalid_token(tSYMBOL,tok);
+    if (negate)
+      goto invalid_token_neg;
+    emit_invalid_token(teLOCAL,tok);
+    return;
   } /* switch */
+  if ((val % sizeof(cell))!=0) {
+    error(11);  /* must be a multiple of cell size */
+    return;
+  }
+  p->value.ucell=(ucell)(negate ? -val : val);
 }
 
 static void SC_FASTCALL emit_param_label(emit_outval *p)
@@ -6305,13 +6657,33 @@ static void SC_FASTCALL emit_param_label(emit_outval *p)
       goto invalid_token;
     /* fallthrough */
   case tSYMBOL:
-    sym=fetchlab(str);
+    sym=findloc(str);
+    if (sym==NULL)
+      sym=findglb(str,sSTATEVAR);
+    if (sym!=NULL) {
+      markusage(sym,(sym->ident==iFUNCTN || sym->ident==iREFFUNC) ? uREAD : (uREAD | uWRITTEN));
+      if (sym->ident!=iLABEL) {
+        if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
+          tok=((sym->usage & uNATIVE)!=0) ? teNATIVE : teFUNCTN;
+        } else if (sym->ident==iCONSTEXPR) {
+          tok=teNUMERIC;
+        } else {
+          if (sym->vclass==sLOCAL)
+            tok=(sym->ident==iREFERENCE || sym->ident==iREFARRAY) ? teREFERENCE : teLOCAL;
+          else
+            tok=teDATA;
+        } /* if */
+        goto invalid_token;
+      } /* if */
+    } else {
+      sym=fetchlab(str);
+    } /* if */
     sym->usage|=uREAD;
     p->value.ucell=(ucell)sym->addr;
     break;
   default:
   invalid_token:
-    emit_invalid_token(tSYMBOL,tok);
+    emit_invalid_token(tLABEL,tok);
   }
 }
 
@@ -6320,25 +6692,38 @@ static void SC_FASTCALL emit_param_function(emit_outval *p,int isnative)
   cell val;
   char *str;
   symbol *sym;
-  int tok;
+  int tok,ntvref;
 
   p->type=eotNUMBER;
   tok=lex(&val,&str);
   switch (tok)
   {
   case tSYMBOL:
-    sym=findglb(str,sSTATEVAR);
+    sym=findloc(str);
+    if (sym==NULL)
+      sym=findglb(str,sSTATEVAR);
     if (sym==NULL) {
       error(17,str);    /* undefined symbol */
       return;
     } /* if */
-    markusage(sym,uREAD);
     if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
+      ntvref=sym->usage & uREAD;
+      markusage(sym,uREAD);
       if (!!(sym->usage & uNATIVE)==isnative)
         break;
       tok=(isnative!=FALSE) ? teFUNCTN : teNATIVE;
     } else {
-      tok=(sym->ident==iCONSTEXPR) ? teNUMERIC : teDATA;
+      markusage(sym,uREAD | uWRITTEN);
+      if (sym->ident==iLABEL) {
+        tok=tLABEL;
+      } else if (sym->ident==iCONSTEXPR) {
+        tok=teNUMERIC;
+      } else {
+        if (sym->vclass==sLOCAL)
+          tok=(sym->ident==iREFERENCE || sym->ident==iREFARRAY) ? teREFERENCE : teLOCAL;
+        else
+          tok=teDATA;
+      } /* if */
     } /* if */
     /* fallthrough */
   default:
@@ -6347,7 +6732,7 @@ static void SC_FASTCALL emit_param_function(emit_outval *p,int isnative)
   } /* switch */
 
   if (isnative!=FALSE) {
-    if ((sym->usage & uREAD)==0 && sym->addr>=0)
+    if (ntvref==0 && sym->addr>=0)
       sym->addr=ntv_funcid++;
     p->value.ucell=(ucell)sym->addr;
   } else {
@@ -6392,10 +6777,9 @@ static void SC_FASTCALL emit_parm1_nonneg(char *name)
 
 static void SC_FASTCALL emit_parm1_shift(char *name)
 {
-  static const cell valid_values[] = { 0,sizeof(cell)*8-1 };
   emit_outval p[1];
 
-  emit_param_index(&p[0],TRUE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
+  emit_param_shift(&p[0]);
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
@@ -6411,7 +6795,15 @@ static void SC_FASTCALL emit_parm1_local(char *name)
 {
   emit_outval p[1];
 
-  emit_param_local(&p[0]);
+  emit_param_local(&p[0],TRUE);
+  outinstr(name,p,(sizeof p / sizeof p[0]));
+}
+
+static void SC_FASTCALL emit_parm1_local_noref(char *name)
+{
+  emit_outval p[1];
+
+  emit_param_local(&p[0],FALSE);
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
@@ -6459,24 +6851,6 @@ static void SC_FASTCALL emit_do_align(char *name)
   emit_outval p[1];
 
   emit_param_index(&p[0],TRUE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
-  outinstr(name,p,(sizeof p / sizeof p[0]));
-}
-
-static void SC_FASTCALL emit_do_lctrl(char *name)
-{
-  static const cell valid_values[] = { 0,9 };
-  emit_outval p[1];
-
-  emit_param_index(&p[0],TRUE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
-  outinstr(name,p,(sizeof p / sizeof p[0]));
-}
-
-static void SC_FASTCALL emit_do_sctrl(char *name)
-{
-  static const cell valid_values[] = { 2,4,5,6,8,9 };
-  emit_outval p[1];
-
-  emit_param_index(&p[0],FALSE,valid_values,(sizeof valid_values / sizeof valid_values[0]));
   outinstr(name,p,(sizeof p / sizeof p[0]));
 }
 
@@ -6558,7 +6932,7 @@ static void SC_FASTCALL emit_do_const_s(char *name)
 {
   emit_outval p[2];
 
-  emit_param_local(&p[0]);
+  emit_param_local(&p[0],FALSE);
   emit_param_any(&p[1]);
 
   /* if macro optimisations are enabled, output a 'const.s' instruction,
@@ -6602,8 +6976,8 @@ static void SC_FASTCALL emit_do_load_s_both(char *name)
 {
   emit_outval p[2];
 
-  emit_param_local(&p[0]);
-  emit_param_local(&p[1]);
+  emit_param_local(&p[0],TRUE);
+  emit_param_local(&p[1],TRUE);
 
   /* if macro optimisations are enabled, output a 'load.s.both' instruction,
    * otherwise generate the following sequence:
@@ -6671,7 +7045,7 @@ static void SC_FASTCALL emit_do_pushn_s_adr(char *name)
          && name[3]=='h' && '2'<=name[4] && name[4]<='5' && name[5]=='.');
   numargs=name[4]-'0';
   for (i=0; i<numargs; i++)
-    emit_param_local(&p[i]);
+    emit_param_local(&p[i],TRUE);
 
   /* if macro optimisations are enabled, output a 'push<N>.s/.adr' instruction,
    * otherwise generate a sequence of <N> 'push.s/.adr' instructions
@@ -6685,164 +7059,385 @@ static void SC_FASTCALL emit_do_pushn_s_adr(char *name)
   } /* if */
 }
 
+static void SC_FASTCALL emit_do_load_u_pri_alt(char *name)
+{
+  emit_outval p[1];
+  regid reg;
+  int ident,islocal;
+
+  if (!emit_getrval(&ident,&p[0],&islocal))
+    return;
+  reg=emit_findreg(name);
+  switch (ident) {
+  case iCONSTEXPR:
+    if (p[0].value.ucell==(ucell)0)
+      outinstr((reg==sPRI) ? "zero.pri" : "zero.alt",NULL,0);
+    else
+      outinstr((reg==sPRI) ? "const.pri" : "const.alt",p,1);
+    break;
+  case iVARIABLE:
+    if (islocal)
+      outinstr((reg==sPRI) ? "load.s.pri" : "load.s.alt",p,1);
+    else
+      outinstr((reg==sPRI) ? "load.pri" : "load.alt",p,1);
+    break;
+  case iREFERENCE:
+    outinstr((reg==sPRI) ? "lref.s.pri" : "lref.s.alt",p,1);
+    break;
+  default:
+    if (reg==sALT)
+      outinstr("move.alt",NULL,0);
+    break;
+  } /* switch */
+}
+
+static void SC_FASTCALL emit_do_stor_u_pri_alt(char *name)
+{
+  emit_outval p[1];
+  regid reg;
+  int ident,islocal,ispushed;
+
+  reg=emit_findreg(name);
+  if (!emit_getlval(&ident,&p[0],&islocal,sALT,TRUE,FALSE,(reg==sPRI),(reg==sALT),&ispushed))
+    return;
+  switch (ident) {
+  case iVARIABLE:
+    if (islocal)
+      outinstr((reg==sPRI) ? "stor.s.pri" : "stor.s.alt",p,1);
+    else
+      outinstr((reg==sPRI) ? "stor.pri" : "stor.alt",p,1);
+    break;
+  case iREFERENCE:
+    outinstr((reg==sPRI) ? "sref.s.pri" : "sref.s.alt",p,1);
+    break;
+  case iARRAYCELL:
+  case iARRAYCHAR:
+    if (ispushed)
+      popreg(sPRI);
+    if (ident==iARRAYCELL) {
+      outinstr("stor.i",NULL,0);
+    } else {
+      p->value.ucell=sCHARBITS/8;
+      outinstr("strb.i",p,1);
+    } /* if */
+    break;
+  default:
+    assert(0);
+    break;
+  } /* switch */
+}
+
+static void SC_FASTCALL emit_do_addr_u_pri_alt(char *name)
+{
+  emit_outval p[1];
+  regid reg;
+  int ident,islocal;
+
+  reg=emit_findreg(name);
+  if (!emit_getlval(&ident,&p[0],&islocal,reg,TRUE,TRUE,FALSE,FALSE,NULL))
+    return;
+  switch (ident) {
+  case iVARIABLE:
+    if (islocal)
+      outinstr((reg==sPRI) ? "addr.pri" : "addr.alt",p,1);
+    else if (p[0].value.ucell==(ucell)0)
+      outinstr((reg==sPRI) ? "zero.pri" : "zero.alt",NULL,0);
+    else
+      outinstr((reg==sPRI) ? "const.pri" : "const.alt",p,1);
+    break;
+  case iREFERENCE:
+    outinstr((reg==sPRI) ? "load.s.pri" : "load.s.alt",p,1);
+    break;
+  case iARRAYCELL:
+  case iARRAYCHAR:
+    break;
+  default:
+    assert(0);
+    break;
+  } /* switch */
+}
+
+static void SC_FASTCALL emit_do_push_u(char *name)
+{
+  emit_outval p[1];
+  int ident,islocal;
+
+  if (!emit_getrval(&ident,&p[0],&islocal))
+    return;
+  switch (ident) {
+  case iCONSTEXPR:
+    outinstr("push.c",&p[0],1);
+    break;
+  case iVARIABLE:
+    outinstr(islocal ? "push.s" : "push",p,1);
+    break;
+  case iREFERENCE:
+    outinstr("lref.s.pri",&p[0],1);
+    /* fallthrough */
+  default:
+    outinstr("push.pri",NULL,0);
+    break;
+  } /* switch */
+}
+
+static void SC_FASTCALL emit_do_push_u_adr(char *name)
+{
+  emit_outval p[1];
+  int ident,islocal;
+
+  if (!emit_getlval(&ident,&p[0],&islocal,sPRI,FALSE,TRUE,FALSE,FALSE,NULL))
+    return;
+  switch (ident) {
+  case iVARIABLE:
+    outinstr(islocal ? "push.adr" : "push.c",p,1);
+    break;
+  case iREFERENCE:
+    outinstr("push.s",p,1);
+    break;
+  case iARRAYCELL:
+  case iARRAYCHAR:
+    pushreg(sPRI);
+    break;
+  default:
+    assert(0);
+    break;
+  } /* switch */
+}
+
+static void SC_FASTCALL emit_do_zero_u(char *name)
+{
+  emit_outval p[1];
+  int ident,islocal;
+
+  if (!emit_getlval(&ident,&p[0],&islocal,sALT,TRUE,FALSE,FALSE,FALSE,NULL))
+    return;
+  switch (ident) {
+  case iVARIABLE:
+    outinstr(islocal ? "zero.s" : "zero",p,1);
+    break;
+  case iREFERENCE:
+    outinstr("zero.pri",NULL,0);
+    outinstr("sref.s.pri",&p[0],1);
+    break;
+  case iARRAYCELL:
+    outinstr("zero.pri",NULL,0);
+    outinstr("stor.i",NULL,0);
+    break;
+  case iARRAYCHAR:
+    outinstr("zero.pri",NULL,0);
+    p[0].value.ucell=(ucell)(sCHARBITS/8);
+    outinstr("strb.i",p,1);
+    break;
+  default:
+    assert(0);
+    break;
+  } /* switch */
+}
+
+static void SC_FASTCALL emit_do_inc_dec_u(char *name)
+{
+  emit_outval p[1];
+  int ident,islocal;
+
+  assert(strcmp(name,"inc.u")==0 || strcmp(name,"dec.u")==0);
+
+  if (!emit_getlval(&ident,&p[0],&islocal,sPRI,TRUE,FALSE,FALSE,FALSE,NULL))
+    return;
+  switch (ident) {
+  case iVARIABLE:
+    if (islocal)
+      outinstr((name[0]=='i') ? "inc.s" : "dec.s",p,1);
+    else
+      outinstr((name[0]=='i') ? "inc" : "dec",p,1);
+    break;
+  case iREFERENCE:
+    outinstr("load.s.pri",&p[0],1);
+    /* fallthrough */
+  case iARRAYCELL:
+    outinstr((name[0]=='i') ? "inc.i" : "dec.i",NULL,0);
+    break;
+  case iARRAYCHAR:
+    p[0].value.ucell=(ucell)(sCHARBITS/8);
+    outinstr("move.alt",NULL,0);
+    outinstr("lodb.i",p,1);
+    outinstr((name[0]=='i') ? "inc.pri" : "dec.pri",NULL,0);
+    outinstr("strb.i",p,1);
+    break;
+  default:
+    assert(0);
+    break;
+  } /* switch */
+}
+
 static EMIT_OPCODE emit_opcodelist[] = {
-  {  0, NULL,         emit_noop },
-  { 78, "add",        emit_parm0 },
-  { 87, "add.c",      emit_parm1_any },
-  { 14, "addr.alt",   emit_parm1_local },
-  { 13, "addr.pri",   emit_parm1_local },
-  { 30, "align.alt",  emit_do_align },
-  { 29, "align.pri",  emit_do_align },
-  { 81, "and",        emit_parm0 },
-  {121, "bounds",     emit_parm1_integer },
-  {137, "break",      emit_parm0 },
-  { 49, "call",       emit_do_call },
-  { 50, "call.pri",   emit_parm0 },
-  {  0, "case",       emit_do_case },
-  {130, "casetbl",    emit_do_casetbl },
-  {118, "cmps",       emit_parm1_nonneg },
-  {156, "const",      emit_do_const },
-  { 12, "const.alt",  emit_parm1_any },
-  { 11, "const.pri",  emit_parm1_any },
-  {157, "const.s",    emit_do_const_s },
-  {114, "dec",        emit_parm1_data },
-  {113, "dec.alt",    emit_parm0 },
-  {116, "dec.i",      emit_parm0 },
-  {112, "dec.pri",    emit_parm0 },
-  {115, "dec.s",      emit_parm1_local },
-  { 95, "eq",         emit_parm0 },
-  {106, "eq.c.alt",   emit_parm1_any },
-  {105, "eq.c.pri",   emit_parm1_any },
-  {119, "fill",       emit_parm1_nonneg },
-  {100, "geq",        emit_parm0 },
-  { 99, "grtr",       emit_parm0 },
-  {120, "halt",       emit_parm1_nonneg },
-  { 45, "heap",       emit_parm1_integer },
-  { 27, "idxaddr",    emit_parm0 },
-  { 28, "idxaddr.b",  emit_parm1_shift },
-  {109, "inc",        emit_parm1_data },
-  {108, "inc.alt",    emit_parm0 },
-  {111, "inc.i",      emit_parm0 },
-  {107, "inc.pri",    emit_parm0 },
-  {110, "inc.s",      emit_parm1_local },
-  { 86, "invert",     emit_parm0 },
-  { 55, "jeq",        emit_parm1_label },
-  { 60, "jgeq",       emit_parm1_label },
-  { 59, "jgrtr",      emit_parm1_label },
-  { 58, "jleq",       emit_parm1_label },
-  { 57, "jless",      emit_parm1_label },
-  { 56, "jneq",       emit_parm1_label },
-  { 54, "jnz",        emit_parm1_label },
-  { 52, "jrel",       emit_parm1_integer },
-  { 64, "jsgeq",      emit_parm1_label },
-  { 63, "jsgrtr",     emit_parm1_label },
-  { 62, "jsleq",      emit_parm1_label },
-  { 61, "jsless",     emit_parm1_label },
-  { 51, "jump",       emit_parm1_label },
-  {128, "jump.pri",   emit_parm0 },
-  { 53, "jzer",       emit_parm1_label },
-  { 31, "lctrl",      emit_do_lctrl },
-  { 98, "leq",        emit_parm0 },
-  { 97, "less",       emit_parm0 },
-  { 25, "lidx",       emit_parm0 },
-  { 26, "lidx.b",     emit_parm1_shift },
-  {  2, "load.alt",   emit_parm1_data },
-  {154, "load.both",  emit_do_load_both },
-  {  9, "load.i",     emit_parm0 },
-  {  1, "load.pri",   emit_parm1_data },
-  {  4, "load.s.alt", emit_parm1_local },
-  {155, "load.s.both",emit_do_load_s_both },
-  {  3, "load.s.pri", emit_parm1_local },
-  { 10, "lodb.i",     emit_do_lodb_strb },
-  {  6, "lref.alt",   emit_parm1_data },
-  {  5, "lref.pri",   emit_parm1_data },
-  {  8, "lref.s.alt", emit_parm1_local },
-  {  7, "lref.s.pri", emit_parm1_local },
-  { 34, "move.alt",   emit_parm0 },
-  { 33, "move.pri",   emit_parm0 },
-  {117, "movs",       emit_parm1_nonneg },
-  { 85, "neg",        emit_parm0 },
-  { 96, "neq",        emit_parm0 },
-  {134, "nop",        emit_parm0 },
-  { 84, "not",        emit_parm0 },
-  { 82, "or",         emit_parm0 },
-  { 43, "pop.alt",    emit_parm0 },
-  { 42, "pop.pri",    emit_parm0 },
-  { 46, "proc",       emit_parm0 },
-  { 40, "push",       emit_parm1_data },
-  {133, "push.adr",   emit_parm1_local },
-  { 37, "push.alt",   emit_parm0 },
-  { 39, "push.c",     emit_parm1_any },
-  { 36, "push.pri",   emit_parm0 },
-  { 38, "push.r",     emit_parm1_integer },
-  { 41, "push.s",     emit_parm1_local },
-  {139, "push2",      emit_do_pushn },
-  {141, "push2.adr",  emit_do_pushn_s_adr },
-  {138, "push2.c",    emit_do_pushn_c },
-  {140, "push2.s",    emit_do_pushn_s_adr },
-  {143, "push3",      emit_do_pushn },
-  {145, "push3.adr",  emit_do_pushn_s_adr },
-  {142, "push3.c",    emit_do_pushn_c },
-  {144, "push3.s",    emit_do_pushn_s_adr },
-  {147, "push4",      emit_do_pushn },
-  {149, "push4.adr",  emit_do_pushn_s_adr },
-  {146, "push4.c",    emit_do_pushn_c },
-  {148, "push4.s",    emit_do_pushn_s_adr },
-  {151, "push5",      emit_do_pushn },
-  {153, "push5.adr",  emit_do_pushn_s_adr },
-  {150, "push5.c",    emit_do_pushn_c },
-  {152, "push5.s",    emit_do_pushn_s_adr },
-  { 47, "ret",        emit_parm0 },
-  { 48, "retn",       emit_parm0 },
-  { 32, "sctrl",      emit_do_sctrl },
-  { 73, "sdiv",       emit_parm0 },
-  { 74, "sdiv.alt",   emit_parm0 },
-  {104, "sgeq",       emit_parm0 },
-  {103, "sgrtr",      emit_parm0 },
-  { 65, "shl",        emit_parm0 },
-  { 69, "shl.c.alt",  emit_parm1_shift },
-  { 68, "shl.c.pri",  emit_parm1_shift },
-  { 66, "shr",        emit_parm0 },
-  { 71, "shr.c.alt",  emit_parm1_shift },
-  { 70, "shr.c.pri",  emit_parm1_shift },
-  { 94, "sign.alt",   emit_parm0 },
-  { 93, "sign.pri",   emit_parm0 },
-  {102, "sleq",       emit_parm0 },
-  {101, "sless",      emit_parm0 },
-  { 72, "smul",       emit_parm0 },
-  { 88, "smul.c",     emit_parm1_integer },
-  { 20, "sref.alt",   emit_parm1_data },
-  { 19, "sref.pri",   emit_parm1_data },
-  { 22, "sref.s.alt", emit_parm1_local },
-  { 21, "sref.s.pri", emit_parm1_local },
-  { 67, "sshr",       emit_parm0 },
-  { 44, "stack",      emit_parm1_integer },
-  { 16, "stor.alt",   emit_parm1_data },
-  { 23, "stor.i",     emit_parm0 },
-  { 15, "stor.pri",   emit_parm1_data },
-  { 18, "stor.s.alt", emit_parm1_local },
-  { 17, "stor.s.pri", emit_parm1_local },
-  { 24, "strb.i",     emit_do_lodb_strb },
-  { 79, "sub",        emit_parm0 },
-  { 80, "sub.alt",    emit_parm0 },
-  {132, "swap.alt",   emit_parm0 },
-  {131, "swap.pri",   emit_parm0 },
-  {129, "switch",     emit_parm1_label },
-  {123, "sysreq.c",   emit_do_sysreq_c },
-  {135, "sysreq.n",   emit_do_sysreq_n },
-  {122, "sysreq.pri", emit_parm0 },
-  { 76, "udiv",       emit_parm0 },
-  { 77, "udiv.alt",   emit_parm0 },
-  { 75, "umul",       emit_parm0 },
-  { 35, "xchg",       emit_parm0 },
-  { 83, "xor",        emit_parm0 },
-  { 91, "zero",       emit_parm1_data },
-  { 90, "zero.alt",   emit_parm0 },
-  { 89, "zero.pri",   emit_parm0 },
-  { 92, "zero.s",     emit_parm1_local },
+  { NULL,         emit_noop },
+  { "add",        emit_parm0 },
+  { "add.c",      emit_parm1_any },
+  { "addr.alt",   emit_parm1_local },
+  { "addr.pri",   emit_parm1_local },
+  { "addr.u.alt", emit_do_addr_u_pri_alt },
+  { "addr.u.pri", emit_do_addr_u_pri_alt },
+  { "align.alt",  emit_do_align },
+  { "align.pri",  emit_do_align },
+  { "and",        emit_parm0 },
+  { "bounds",     emit_parm1_integer },
+  { "break",      emit_parm0 },
+  { "call",       emit_do_call },
+  { "call.pri",   emit_parm0 },
+  { "case",       emit_do_case },
+  { "casetbl",    emit_do_casetbl },
+  { "cmps",       emit_parm1_nonneg },
+  { "const",      emit_do_const },
+  { "const.alt",  emit_parm1_any },
+  { "const.pri",  emit_parm1_any },
+  { "const.s",    emit_do_const_s },
+  { "dec",        emit_parm1_data },
+  { "dec.alt",    emit_parm0 },
+  { "dec.i",      emit_parm0 },
+  { "dec.pri",    emit_parm0 },
+  { "dec.s",      emit_parm1_local_noref },
+  { "dec.u",      emit_do_inc_dec_u },
+  { "eq",         emit_parm0 },
+  { "eq.c.alt",   emit_parm1_any },
+  { "eq.c.pri",   emit_parm1_any },
+  { "fill",       emit_parm1_nonneg },
+  { "geq",        emit_parm0 },
+  { "grtr",       emit_parm0 },
+  { "halt",       emit_parm1_nonneg },
+  { "heap",       emit_parm1_integer },
+  { "idxaddr",    emit_parm0 },
+  { "idxaddr.b",  emit_parm1_shift },
+  { "inc",        emit_parm1_data },
+  { "inc.alt",    emit_parm0 },
+  { "inc.i",      emit_parm0 },
+  { "inc.pri",    emit_parm0 },
+  { "inc.s",      emit_parm1_local_noref },
+  { "inc.u",      emit_do_inc_dec_u },
+  { "invert",     emit_parm0 },
+  { "jeq",        emit_parm1_label },
+  { "jgeq",       emit_parm1_label },
+  { "jgrtr",      emit_parm1_label },
+  { "jleq",       emit_parm1_label },
+  { "jless",      emit_parm1_label },
+  { "jneq",       emit_parm1_label },
+  { "jnz",        emit_parm1_label },
+  { "jrel",       emit_parm1_integer },
+  { "jsgeq",      emit_parm1_label },
+  { "jsgrtr",     emit_parm1_label },
+  { "jsleq",      emit_parm1_label },
+  { "jsless",     emit_parm1_label },
+  { "jump",       emit_parm1_label },
+  { "jump.pri",   emit_parm0 },
+  { "jzer",       emit_parm1_label },
+  { "lctrl",      emit_parm1_integer },
+  { "leq",        emit_parm0 },
+  { "less",       emit_parm0 },
+  { "lidx",       emit_parm0 },
+  { "lidx.b",     emit_parm1_shift },
+  { "load.alt",   emit_parm1_data },
+  { "load.both",  emit_do_load_both },
+  { "load.i",     emit_parm0 },
+  { "load.pri",   emit_parm1_data },
+  { "load.s.alt", emit_parm1_local },
+  { "load.s.both",emit_do_load_s_both },
+  { "load.s.pri", emit_parm1_local },
+  { "load.u.alt", emit_do_load_u_pri_alt },
+  { "load.u.pri", emit_do_load_u_pri_alt },
+  { "lodb.i",     emit_do_lodb_strb },
+  { "lref.alt",   emit_parm1_data },
+  { "lref.pri",   emit_parm1_data },
+  { "lref.s.alt", emit_parm1_local },
+  { "lref.s.pri", emit_parm1_local },
+  { "move.alt",   emit_parm0 },
+  { "move.pri",   emit_parm0 },
+  { "movs",       emit_parm1_nonneg },
+  { "neg",        emit_parm0 },
+  { "neq",        emit_parm0 },
+  { "nop",        emit_parm0 },
+  { "not",        emit_parm0 },
+  { "or",         emit_parm0 },
+  { "pop.alt",    emit_parm0 },
+  { "pop.pri",    emit_parm0 },
+  { "proc",       emit_parm0 },
+  { "push",       emit_parm1_data },
+  { "push.adr",   emit_parm1_local },
+  { "push.alt",   emit_parm0 },
+  { "push.c",     emit_parm1_any },
+  { "push.pri",   emit_parm0 },
+  { "push.r",     emit_parm1_integer },
+  { "push.s",     emit_parm1_local },
+  { "push.u",     emit_do_push_u },
+  { "push.u.adr", emit_do_push_u_adr },
+  { "push2",      emit_do_pushn },
+  { "push2.adr",  emit_do_pushn_s_adr },
+  { "push2.c",    emit_do_pushn_c },
+  { "push2.s",    emit_do_pushn_s_adr },
+  { "push3",      emit_do_pushn },
+  { "push3.adr",  emit_do_pushn_s_adr },
+  { "push3.c",    emit_do_pushn_c },
+  { "push3.s",    emit_do_pushn_s_adr },
+  { "push4",      emit_do_pushn },
+  { "push4.adr",  emit_do_pushn_s_adr },
+  { "push4.c",    emit_do_pushn_c },
+  { "push4.s",    emit_do_pushn_s_adr },
+  { "push5",      emit_do_pushn },
+  { "push5.adr",  emit_do_pushn_s_adr },
+  { "push5.c",    emit_do_pushn_c },
+  { "push5.s",    emit_do_pushn_s_adr },
+  { "ret",        emit_parm0 },
+  { "retn",       emit_parm0 },
+  { "sctrl",      emit_parm1_integer },
+  { "sdiv",       emit_parm0 },
+  { "sdiv.alt",   emit_parm0 },
+  { "sgeq",       emit_parm0 },
+  { "sgrtr",      emit_parm0 },
+  { "shl",        emit_parm0 },
+  { "shl.c.alt",  emit_parm1_shift },
+  { "shl.c.pri",  emit_parm1_shift },
+  { "shr",        emit_parm0 },
+  { "shr.c.alt",  emit_parm1_shift },
+  { "shr.c.pri",  emit_parm1_shift },
+  { "sign.alt",   emit_parm0 },
+  { "sign.pri",   emit_parm0 },
+  { "sleq",       emit_parm0 },
+  { "sless",      emit_parm0 },
+  { "smul",       emit_parm0 },
+  { "smul.c",     emit_parm1_integer },
+  { "sref.alt",   emit_parm1_data },
+  { "sref.pri",   emit_parm1_data },
+  { "sref.s.alt", emit_parm1_local },
+  { "sref.s.pri", emit_parm1_local },
+  { "sshr",       emit_parm0 },
+  { "stack",      emit_parm1_integer },
+  { "stor.alt",   emit_parm1_data },
+  { "stor.i",     emit_parm0 },
+  { "stor.pri",   emit_parm1_data },
+  { "stor.s.alt", emit_parm1_local_noref },
+  { "stor.s.pri", emit_parm1_local_noref },
+  { "stor.u.alt", emit_do_stor_u_pri_alt },
+  { "stor.u.pri", emit_do_stor_u_pri_alt },
+  { "strb.i",     emit_do_lodb_strb },
+  { "sub",        emit_parm0 },
+  { "sub.alt",    emit_parm0 },
+  { "swap.alt",   emit_parm0 },
+  { "swap.pri",   emit_parm0 },
+  { "switch",     emit_parm1_label },
+  { "sysreq.c",   emit_do_sysreq_c },
+  { "sysreq.n",   emit_do_sysreq_n },
+  { "sysreq.pri", emit_parm0 },
+  { "udiv",       emit_parm0 },
+  { "udiv.alt",   emit_parm0 },
+  { "umul",       emit_parm0 },
+  { "xchg",       emit_parm0 },
+  { "xor",        emit_parm0 },
+  { "zero",       emit_parm1_data },
+  { "zero.alt",   emit_parm0 },
+  { "zero.pri",   emit_parm0 },
+  { "zero.s",     emit_parm1_local_noref },
+  { "zero.u",     emit_do_zero_u },
 };
 
-static int emit_findopcode(const char *instr,int maxlen)
+static int emit_findopcode(const char *instr)
 {
   int low,high,mid,cmp;
 
@@ -6851,7 +7446,6 @@ static int emit_findopcode(const char *instr,int maxlen)
   high=(sizeof emit_opcodelist / sizeof emit_opcodelist[0])-1;
   while (low<high) {
     mid=(low+high)/2;
-    assert(emit_opcodelist[mid].name!=NULL);
     cmp=strcmp(instr,emit_opcodelist[mid].name);
     if (cmp>0)
       low=mid+1;
@@ -6874,6 +7468,23 @@ SC_FUNC void emit_parse_line(void)
   symbol *sym;
   char name[MAX_INSTR_LEN];
 
+  #if !defined NDEBUG
+    /* verify that the opcode list is sorted (skip entry 1; it is reserved
+     * for a non-existant opcode)
+     */
+    { /* local */
+      static int sorted=FALSE;
+      if (!sorted) {
+        assert(emit_opcodelist[1].name!=NULL);
+        for (i=2; i<(sizeof emit_opcodelist / sizeof emit_opcodelist[0]); i++) {
+          assert(emit_opcodelist[i].name!=NULL);
+          assert(stricmp(emit_opcodelist[i].name,emit_opcodelist[i-1].name)>0);
+        } /* for */
+        sorted=TRUE;
+      } /* if */
+    } /* local */
+  #endif
+
   tok=tokeninfo(&val,&st);
   if (tok==tSYMBOL || (tok>tMIDDLE && tok<=tLAST)) {
     /* get the token length */
@@ -6886,13 +7497,13 @@ SC_FUNC void emit_parse_line(void)
      * and copy the instruction name
      */
     lptr-=len;
-    for (i=0; i<sizeof(name) && (isalnum(*lptr) || *lptr=='.'); ++i,++lptr)
+    for (i=0; i<sizeof(name)-1 && (isalnum(*lptr) || *lptr=='.'); ++i,++lptr)
       name[i]=(char)tolower(*lptr);
     name[i]='\0';
 
     /* find the corresponding argument handler and call it */
-    i=emit_findopcode(name,strlen(name));
-    if (emit_opcodelist[i].name==NULL && *name!='\0')
+    i=emit_findopcode(name);
+    if (emit_opcodelist[i].name==NULL && name[0]!='\0')
       error(104,name); /* invalid assembler instruction */
     emit_opcodelist[i].func(name);
   } else if (tok==tLABEL) {
@@ -6954,6 +7565,7 @@ static void doreturn(void)
     ident=doexpr(TRUE,FALSE,TRUE,FALSE,&tag,&sym,TRUE);
     needtoken(tTERM);
     /* see if this function already has a sub type (an array attached) */
+    assert(curfunc!=NULL);
     sub=finddepend(curfunc);
     assert(sub==NULL || sub->ident==iREFARRAY);
     if ((rettype & uRETVALUE)!=0) {
@@ -6966,7 +7578,6 @@ static void doreturn(void)
     } /* if */
     rettype|=uRETVALUE;                 /* function returns a value */
     /* check tagname with function tagname */
-    assert(curfunc!=NULL);
     check_tagmismatch(curfunc->tag,tag,TRUE,-1);
     if (ident==iARRAY || ident==iREFARRAY) {
       int dim[sDIMEN_MAX],numdim=0;
@@ -7036,8 +7647,7 @@ static void doreturn(void)
           sub=addvariable(curfunc->name,(argcount+3)*sizeof(cell),iREFARRAY,sGLOBAL,
                           curfunc->tag,dim,numdim,idxtag,0);
           sub->parent=curfunc;
-          if (curfunc)
-            curfunc->child=sub;
+          curfunc->child=sub;
         } /* if */
         /* get the hidden parameter, copy the array (the array is on the heap;
          * it stays on the heap for the moment, and it is removed -usually- at
@@ -7193,7 +7803,7 @@ static void dostate(void)
   sym=findglb(uENTRYFUNC,sGLOBAL);
   if (sc_status==statWRITE && sym!=NULL && sym->ident==iFUNCTN && sym->states!=NULL) {
     for (stlist=sym->states->first; stlist!=NULL; stlist=stlist->next) {
-      assert(strlen(stlist->name)!=0);
+      assert(!strempty(stlist->name));
       if (state_getfsa(stlist->index)==automaton->index && state_inlist(stlist->index,(int)state->value))
         break;      /* found! */
     } /* for */

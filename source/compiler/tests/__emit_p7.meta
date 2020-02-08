@@ -1,0 +1,27 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+__emit_p7.pwn(21) : error 022: must be lvalue (non-constant)
+__emit_p7.pwn(22) : error 022: must be lvalue (non-constant)
+__emit_p7.pwn(23) : error 022: must be lvalue (non-constant)
+__emit_p7.pwn(24) : error 022: must be lvalue (non-constant)
+__emit_p7.pwn(25) : error 033: array must be indexed (variable "local_array")
+__emit_p7.pwn(26) : error 033: array must be indexed (variable "local_refarray")
+__emit_p7.pwn(27) : error 035: argument type mismatch (argument 1)
+__emit_p7.pwn(28) : error 035: argument type mismatch (argument 1)
+__emit_p7.pwn(47) : error 022: must be lvalue (non-constant)
+__emit_p7.pwn(48) : error 022: must be lvalue (non-constant)
+__emit_p7.pwn(49) : error 022: must be lvalue (non-constant)
+__emit_p7.pwn(50) : error 022: must be lvalue (non-constant)
+__emit_p7.pwn(51) : error 022: must be lvalue (non-constant)
+__emit_p7.pwn(52) : error 033: array must be indexed (variable "local_array")
+__emit_p7.pwn(53) : error 033: array must be indexed (variable "local_refarray")
+__emit_p7.pwn(72) : error 022: must be lvalue (non-constant)
+__emit_p7.pwn(73) : error 022: must be lvalue (non-constant)
+__emit_p7.pwn(74) : error 022: must be lvalue (non-constant)
+__emit_p7.pwn(75) : error 022: must be lvalue (non-constant)
+__emit_p7.pwn(76) : error 022: must be lvalue (non-constant)
+__emit_p7.pwn(77) : error 033: array must be indexed (variable "local_array")
+__emit_p7.pwn(78) : error 033: array must be indexed (variable "local_refarray")
+"""
+}

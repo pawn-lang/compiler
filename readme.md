@@ -21,7 +21,7 @@ This project exists to:
 - Fix known bugs with the original compiler
 - Provide a better development experience for the SA:MP community
 
-If you find problem, you can [open an issue][issues] and contributors can work
+If you find a problem, you can [open an issue][issues] and contributors can work
 on a fix. This isn't true with the original compiler that comes with the SA:MP
 server distribution.
 
@@ -62,19 +62,25 @@ Download the ZIP archive and extract `pawnc.dll`, `pawncc.exe`,
 `pawndisasmsm.exe` to your original `pawncc` directory. If you use Pawno, this
 will be in the `pawno/` folder that's inside your server directory.
 
-### openSUSE/SLES
+### openSUSE
 
-There is an installation package available for openSUSE/SLES users so that you
-can easily install the compiler on your distribution. Please follow these steps:
+There is an installation package available for openSUSE users so that you
+can easily install the latest compiler on your distribution. Please follow
+these steps:
 
-1.  Go to <https://build.opensuse.org/package/show/home:mschnitzer/pawncc>
+1.  Go to https://build.opensuse.org/package/show/home:mschnitzer:pawncc/pawncc
 2.  On the right side, select your distribution (only if it's not disabled!)
 3.  Click "Go to download repository"
 4.  Copy the link and enter in sudo mode in your shell:
-    `zypper ar $COPIED_LINK home:mschnitzer`
+    `zypper ar $COPIED_LINK home:mschnitzer:pawncc`
 5.  Again as root, type: `zypper ref`
 6.  Install the package with `zypper in pawncc`
 7.  Run `pawncc` in your shell to test if it's working
+
+The download repository for openSUSE does provide older versions as well (oldest
+version: 3.10.7). Just install the version you like (e.g.:
+`zypper in pawncc-3.10.8` and run it via `$ pawncc-3.10.8 -Z -O3 [...]`).
+Parallel installation is supported.
 
 ### With sampctl
 

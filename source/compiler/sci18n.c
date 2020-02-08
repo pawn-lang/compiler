@@ -122,7 +122,7 @@ SC_FUNC int cp_path(const char *root, const char *directory)
   len1= (root!=NULL) ? strlen(root) : 0;
   add_slash1= (len1==0 || root[len1-1]!=DIRSEP_CHAR);
   len2= (directory!=NULL) ? strlen(directory) : 0;
-  add_slash2= (len2>0 && root[len2-1]!=DIRSEP_CHAR);
+  add_slash2= (len2>0 && directory[len2-1]!=DIRSEP_CHAR);
   if (len1+add_slash1+len2+add_slash2>=(_MAX_PATH-MAXCODEPAGE))
     return FALSE;       /* full filename may not fit */
   if (root!=NULL)

@@ -1,0 +1,25 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+__emit_p2.pwn(30) : error 001: expected token: "-integer value-", but found "-data offset-"
+__emit_p2.pwn(31) : error 001: expected token: "-integer value-", but found "-function-"
+__emit_p2.pwn(32) : error 001: expected token: "-integer value-", but found "-reference-"
+__emit_p2.pwn(33) : error 001: expected token: "-integer value-", but found "-reference-"
+__emit_p2.pwn(34) : error 001: expected token: "-integer value-", but found "-local variable-"
+__emit_p2.pwn(35) : error 001: expected token: "-integer value-", but found "-data offset-"
+__emit_p2.pwn(36) : error 001: expected token: "-integer value-", but found "-label-"
+__emit_p2.pwn(37) : error 050: invalid range
+__emit_p2.pwn(38) : error 050: invalid range
+__emit_p2.pwn(43) : error 050: invalid range
+__emit_p2.pwn(44) : error 050: invalid range
+__emit_p2.pwn(65) : error 001: expected token: "-label-", but found "-numeric value-"
+__emit_p2.pwn(66) : error 001: expected token: "-label-", but found "-data offset-"
+__emit_p2.pwn(67) : error 001: expected token: "-label-", but found "-function-"
+__emit_p2.pwn(68) : error 001: expected token: "-label-", but found "-reference-"
+__emit_p2.pwn(69) : error 001: expected token: "-label-", but found "-reference-"
+__emit_p2.pwn(70) : error 001: expected token: "-label-", but found "-numeric value-"
+__emit_p2.pwn(71) : error 001: expected token: "-label-", but found "-local variable-"
+__emit_p2.pwn(72) : error 001: expected token: "-label-", but found "-data offset-"
+__emit_p2.pwn(73) : error 001: expected token: "-label-", but found "-integer value-"
+  """
+}

@@ -34,8 +34,8 @@ deploy:
     secure: gDAuRNlF2uVhVHyZtJrX6MwNxnkfkQzohrC/6UcKAgqt+NKs4vZyq5FzTUceiDAkB0se70ZVx08e9ibAiXP/b7D1MPkAEiRxt9J6Vu3x6Bi1kPPuK5RfjFeT3gc1SbrULAP8Nz0NdU0chUhei6/V5NGhTegwp925DJOISq7+Ibw=
   file_glob: true
   file:
-    - 'build/pawnc-*-linux.tar.gz'
-    - 'build/pawnc-*-macos.zip'
+    - 'pawnc-*-linux.tar.gz'
+    - 'pawnc-*-macos.zip'
   draft: true
   skip_cleanup: true
   on:

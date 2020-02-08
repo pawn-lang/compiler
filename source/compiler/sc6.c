@@ -259,13 +259,15 @@ static unsigned char *encode_cell(ucell c,int *len)
     c>>=7;
   } while (index>=0);
   /* skip leading zeros */
-  while (index<ENC_MAX-1 && buffer[index]==0 && (buffer[index+1] & 0x40)==0)
+  while (index<ENC_MAX-2 && buffer[index+1]==0 && (buffer[index+2] & 0x40)==0)
     index++;
   /* skip leading -1s */
-  if (index==0 && buffer[index]==ENC_MASK && (buffer[index+1] & 0x40)!=0)
+  if (index==-1 && buffer[index+1]==ENC_MASK && (buffer[index+2] & 0x40)!=0)
     index++;
-  while (index<ENC_MAX-1 && buffer[index]==0x7f && (buffer[index+1] & 0x40)!=0)
+  while (index<ENC_MAX-2 && buffer[index+1]==0x7f && (buffer[index+2] & 0x40)!=0)
     index++;
+  assert(index<ENC_MAX-1);
+  ++index;
   *len=ENC_MAX-index;
   ptr=&buffer[index];
   while (index<ENC_MAX-1)
@@ -286,7 +288,7 @@ static void write_encoded(FILE *fbin,ucell *c,int num)
       writeerror |= !pc_writebin(fbin,bytes,len);
       bytes_out+=len;
       bytes_in+=sizeof *c;
-      assert(AMX_COMPACTMARGIN>2);
+      assert_static(AMX_COMPACTMARGIN>2);
       if (bytes_out-bytes_in>=AMX_COMPACTMARGIN-2)
         longjmp(compact_err,1);
     } else {
@@ -308,6 +310,7 @@ static void write_encoded_n(FILE *fbin,ucell c,int num)
     assert(len>0);
     bytes_in += num*sizeof c;
     bytes_out += num*len;
+    assert_static(AMX_COMPACTMARGIN>2);
     if (bytes_out-bytes_in>=AMX_COMPACTMARGIN-2)
       longjmp(compact_err,1);
     while (num-->0)
@@ -507,23 +510,6 @@ static cell SC_FASTCALL do_jump(FILE *fbin,char *params,cell opcode)
   return opcodes(1)+opargs(1);
 }
 
-static cell SC_FASTCALL do_switch(FILE *fbin,char *params,cell opcode)
-{
-  int i;
-  ucell p;
-
-  i=(int)hex2long(params,NULL);
-  assert(i>=0 && i<sc_labnum);
-
-  if (fbin!=NULL) {
-    assert(lbltab!=NULL);
-    p=lbltab[i];
-    write_encoded(fbin,(ucell*)&opcode,1);
-    write_encoded(fbin,&p,1);
-  } /* if */
-  return opcodes(1)+opargs(1);
-}
-
 #if defined __BORLANDC__ || defined __WATCOMC__
   #pragma argsused
 #endif
@@ -697,7 +683,7 @@ static OPCODE opcodelist[] = {
   { 80, "sub.alt",    sIN_CSEG, parm0 },
   {132, "swap.alt",   sIN_CSEG, parm0 },  /* version 4 */
   {131, "swap.pri",   sIN_CSEG, parm0 },  /* version 4 */
-  {129, "switch",     sIN_CSEG, do_switch }, /* version 1 */
+  {129, "switch",     sIN_CSEG, do_jump }, /* version 1 */
 /*{126, "symbol",     sIN_CSEG, do_symbol }, */
 /*{136, "symtag",     sIN_CSEG, parm1 },  -- version 7 */
   {123, "sysreq.c",   sIN_CSEG, parm1 },
@@ -822,7 +808,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
   if (pc_addlibtable) {
     for (constptr=libname_tab.first; constptr!=NULL; constptr=constptr->next) {
       if (constptr->value>0) {
-        assert(strlen(constptr->name)>0);
+        assert(!strempty(constptr->name));
         numlibraries++;
         nametablesize+=strlen(constptr->name)+1;
       } /* if */
@@ -833,7 +819,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
   numtags=0;
   for (constptr=tagname_tab.first; constptr!=NULL; constptr=constptr->next) {
     if ((constptr->value & PUBLICTAG)!=0) {
-      assert(strlen(constptr->name)>0);
+      assert(!strempty(constptr->name));
       numtags++;
       nametablesize+=strlen(constptr->name)+1;
     } /* if */
@@ -959,7 +945,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
     count=0;
     for (constptr=libname_tab.first; constptr!=NULL; constptr=constptr->next) {
       if (constptr->value>0) {
-        assert(strlen(constptr->name)>0);
+        assert(!strempty(constptr->name));
         func.address=0;
         func.nameofs=nameofs;
         #if BYTE_ORDER==BIG_ENDIAN
@@ -1003,7 +989,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
   count=0;
   for (constptr=tagname_tab.first; constptr!=NULL; constptr=constptr->next) {
     if ((constptr->value & PUBLICTAG)!=0) {
-      assert(strlen(constptr->name)>0);
+      assert(!strempty(constptr->name));
       func.address=constptr->value & TAGMASK;
       func.nameofs=nameofs;
       #if BYTE_ORDER==BIG_ENDIAN
@@ -1097,7 +1083,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
     } /* while */
   } /* for */
   if (bytes_out-bytes_in>0)
-    error(106);         /* compression buffer overflow */
+    longjmp(compact_err,1);
 
   if (lbltab!=NULL) {
     free(lbltab);
@@ -1222,21 +1208,21 @@ static void append_dbginfo(FILE *fout)
 
   /* tag table */
   for (constptr=tagname_tab.first; constptr!=NULL; constptr=constptr->next) {
-    assert(strlen(constptr->name)>0);
+    assert(!strempty(constptr->name));
     dbghdr.tags++;
     dbghdr.size+=sizeof(AMX_DBG_TAG)+strlen(constptr->name);
   } /* for */
 
   /* automaton table */
   for (constptr=sc_automaton_tab.first; constptr!=NULL; constptr=constptr->next) {
-    assert(constptr->index==0 && strlen(constptr->name)==0 || strlen(constptr->name)>0);
+    assert(constptr->index==0 && strempty(constptr->name) || !strempty(constptr->name));
     dbghdr.automatons++;
     dbghdr.size+=sizeof(AMX_DBG_MACHINE)+strlen(constptr->name);
   } /* for */
 
   /* state table */
   for (constptr=sc_state_tab.first; constptr!=NULL; constptr=constptr->next) {
-    assert(strlen(constptr->name)>0);
+    assert(!strempty(constptr->name));
     dbghdr.states++;
     dbghdr.size+=sizeof(AMX_DBG_STATE)+strlen(constptr->name);
   } /* for */
@@ -1355,7 +1341,7 @@ static void append_dbginfo(FILE *fout)
 
   /* tag table */
   for (constptr=tagname_tab.first; constptr!=NULL; constptr=constptr->next) {
-    assert(strlen(constptr->name)>0);
+    assert(!strempty(constptr->name));
     id1=(int16_t)(constptr->value & TAGMASK);
     #if BYTE_ORDER==BIG_ENDIAN
       align16(&id1);
@@ -1366,7 +1352,7 @@ static void append_dbginfo(FILE *fout)
 
   /* automaton table */
   for (constptr=sc_automaton_tab.first; constptr!=NULL; constptr=constptr->next) {
-    assert(constptr->index==0 && strlen(constptr->name)==0 || strlen(constptr->name)>0);
+    assert(constptr->index==0 && strempty(constptr->name) || !strempty(constptr->name));
     id1=(int16_t)constptr->index;
     address=(ucell)constptr->value;
     #if BYTE_ORDER==BIG_ENDIAN
@@ -1380,7 +1366,7 @@ static void append_dbginfo(FILE *fout)
 
   /* state table */
   for (constptr=sc_state_tab.first; constptr!=NULL; constptr=constptr->next) {
-    assert(strlen(constptr->name)>0);
+    assert(!strempty(constptr->name));
     id1=(int16_t)constptr->value;
     id2=(int16_t)constptr->index;
     address=(ucell)constptr->value;

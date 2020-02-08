@@ -1,0 +1,6 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+    gh_258.pwn(10) : warning 203: symbol is never used: "operator~(Tag:)"
+  """
+}

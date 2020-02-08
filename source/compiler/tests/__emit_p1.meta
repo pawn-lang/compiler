@@ -1,0 +1,30 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+__emit_p1.pwn(56) : error 001: expected token: "-any value-", but found "-(-function-)"
+__emit_p1.pwn(57) : error 001: expected token: "-any value-", but found "-(-label-)"
+__emit_p1.pwn(58) : error 001: expected token: "-any value-", but found "--"
+__emit_p1.pwn(58) : warning 215: expression has no effect
+__emit_p1.pwn(59) : error 017: undefined symbol "local_label2"
+__emit_p1.pwn(60) : error 001: expected token: "-any value-", but found "-:"
+__emit_p1.pwn(60) : error 029: invalid expression, assumed zero
+__emit_p1.pwn(60) : warning 215: expression has no effect
+__emit_p1.pwn(83) : error 001: expected token: "-integer value-", but found "-data offset-"
+__emit_p1.pwn(84) : error 001: expected token: "-integer value-", but found "-function-"
+__emit_p1.pwn(85) : error 001: expected token: "-integer value-", but found "-reference-"
+__emit_p1.pwn(86) : error 001: expected token: "-integer value-", but found "-reference-"
+__emit_p1.pwn(87) : error 001: expected token: "-integer value-", but found "-local variable-"
+__emit_p1.pwn(88) : error 001: expected token: "-integer value-", but found "-data offset-"
+__emit_p1.pwn(89) : error 001: expected token: "-integer value-", but found "-label-"
+__emit_p1.pwn(115) : error 001: expected token: "-nonnegative integer-", but found "-data offset-"
+__emit_p1.pwn(116) : error 001: expected token: "-nonnegative integer-", but found "-function-"
+__emit_p1.pwn(117) : error 001: expected token: "-nonnegative integer-", but found "-reference-"
+__emit_p1.pwn(118) : error 001: expected token: "-nonnegative integer-", but found "-reference-"
+__emit_p1.pwn(119) : error 001: expected token: "-nonnegative integer-", but found "-local variable-"
+__emit_p1.pwn(120) : error 001: expected token: "-nonnegative integer-", but found "-data offset-"
+__emit_p1.pwn(121) : error 001: expected token: "-nonnegative integer-", but found "-label-"
+__emit_p1.pwn(122) : error 001: expected token: "-nonnegative integer-", but found "-1"
+__emit_p1.pwn(123) : error 001: expected token: "-nonnegative integer-", but found "-1"
+__emit_p1.pwn(127) : error 001: expected token: "-nonnegative integer-", but found "-2147483648"
+  """
+}

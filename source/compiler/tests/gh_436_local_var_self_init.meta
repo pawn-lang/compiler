@@ -1,0 +1,7 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+gh_436_local_var_self_init.pwn(6) : error 017: undefined symbol "test"
+gh_436_local_var_self_init.pwn(7) : error 017: undefined symbol "test2"; did you mean "test"?
+"""
+}

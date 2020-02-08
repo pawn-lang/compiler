@@ -59,6 +59,10 @@
   #define SC_FASTCALL
 #endif
 
+#if !defined strempty
+  #define strempty(str) ((str)[0]=='\0')
+#endif
+
 /* Note: the "cell" and "ucell" types are defined in AMX.H */
 
 #define PUBLIC_CHAR '@'     /* character that defines a function "public" */
@@ -188,7 +192,7 @@ typedef struct s_symbol {
 
 /*  Possible entries for "usage"
  *
- *  This byte is used as a serie of bits, the syntax is different for
+ *  This byte is used as a series of bits, the syntax is different for
  *  functions and other symbols:
  *
  *  VARIABLE
@@ -232,13 +236,16 @@ typedef struct s_symbol {
 #define uENUMFIELD  0x040
 #define uMISSING    0x080
 #define uFORWARD    0x100
+#define uNODESTRUCT 0x200 /* "no destruct(or)", not "node struct" */
+/* symbol is referenced "globally", e.g. via "__emit" or "#emit" used outside functions */
+#define uGLOBALREF  0x400
 /* uRETNONE is not stored in the "usage" field of a symbol. It is
  * used during parsing a function, to detect a mix of "return;" and
  * "return value;" in a few special cases.
  */
 #define uRETNONE    0x10
 
-#define flgDEPRECATED 0x01  /* symbol is deprecated (avoid use) */
+#define flagDEPRECATED 0x01  /* symbol is deprecated (avoid use) */
 #define flagNAKED     0x10  /* function is naked */
 #define flagPREDEF    0x20  /* symbol is pre-defined; successor of uPREDEF */
 
@@ -280,6 +287,7 @@ enum {
 enum {
   statIDLE,     /* not compiling yet */
   statFIRST,    /* first pass */
+  statSECOND,   /* second pass */
   statWRITE,    /* writing output */
   statSKIP,     /* skipping output */
 };
@@ -316,108 +324,116 @@ typedef struct s_valuepair {
 /*  Tokens recognized by lex()
  *  Some of these constants are assigned as well to the variable "lastst" (see SC1.C)
  */
-#define tFIRST      256 /* value of first multi-character operator */
-#define tMIDDLE     280 /* value of last multi-character operator */
-#define tLAST       331 /* value of last multi-character match-able token */
-/* multi-character operators */
-#define taMULT      256 /* *= */
-#define taDIV       257 /* /= */
-#define taMOD       258 /* %= */
-#define taADD       259 /* += */
-#define taSUB       260 /* -= */
-#define taSHL       261 /* <<= */
-#define taSHRU      262 /* >>>= */
-#define taSHR       263 /* >>= */
-#define taAND       264 /* &= */
-#define taXOR       265 /* ^= */
-#define taOR        266 /* |= */
-#define tlOR        267 /* || */
-#define tlAND       268 /* && */
-#define tlEQ        269 /* == */
-#define tlNE        270 /* != */
-#define tlLE        271 /* <= */
-#define tlGE        272 /* >= */
-#define tSHL        273 /* << */
-#define tSHRU       274 /* >>> */
-#define tSHR        275 /* >> */
-#define tINC        276 /* ++ */
-#define tDEC        277 /* -- */
-#define tELLIPS     278 /* ... */
-#define tDBLDOT     279 /* .. */
-#define tDBLCOLON   280 /* :: */
-/* reserved words (statements) */
-#define tASSERT     281
-#define tBEGIN      282
-#define tBREAK      283
-#define tCASE       284
-#define tCHAR       285
-#define tCONST      286
-#define tCONTINUE   287
-#define tDEFAULT    288
-#define tDEFINED    289
-#define tDO         290
-#define tELSE       291
-#define tEMIT       292
-#define t__EMIT     293
-#define tEND        294
-#define tENUM       295
-#define tEXIT       296
-#define tFOR        297
-#define tFORWARD    298
-#define tGOTO       299
-#define tIF         300
-#define tNATIVE     301
-#define tNEW        302
-#define tOPERATOR   303
-#define tPUBLIC     304
-#define tRETURN     305
-#define tSIZEOF     306
-#define tSLEEP      307
-#define tSTATE      308
-#define tSTATIC     309
-#define tSTOCK      310
-#define tSWITCH     311
-#define tTAGOF      312
-#define tTHEN       313
-#define tWHILE      314
-/* compiler directives */
-#define tpASSERT    315 /* #assert */
-#define tpDEFINE    316
-#define tpELSE      317 /* #else */
-#define tpELSEIF    318 /* #elseif */
-#define tpEMIT      319
-#define tpENDIF     320
-#define tpENDINPUT  321
-#define tpENDSCRPT  322
-#define tpERROR     323
-#define tpFILE      324
-#define tpIF        325 /* #if */
-#define tINCLUDE    326
-#define tpLINE      327
-#define tpPRAGMA    328
-#define tpTRYINCLUDE 329
-#define tpUNDEF     330
-#define tpWARNING   331
-/* semicolon is a special case, because it can be optional */
-#define tTERM       332 /* semicolon or newline */
-#define tENDEXPR    333 /* forced end of expression */
-/* other recognized tokens */
-#define tNUMBER     334 /* integer number */
-#define tRATIONAL   335 /* rational number */
-#define tSYMBOL     336
-#define tLABEL      337
-#define tSTRING     338
-/* argument types for emit/__emit */
-#define teANY       339 /* any value */
-#define teNUMERIC   340 /* integer/rational number */
-#define teDATA      341 /* data (variable name or address) */
-#define teLOCAL     342 /* local variable (name or offset) */
-#define teFUNCTN    343 /* Pawn function */
-#define teNATIVE    344 /* native function */
-#define teNONNEG    345 /* nonnegative integer */
-/* for assigment to "lastst" only (see SC1.C) */
-#define tEXPR       346
-#define tENDLESS    347 /* endless loop */
+enum {
+  /* multi-character operators */
+  tFIRST  = 256,  /* value of first multi-character operator */
+
+  taMULT  =  tFIRST,  /* *= */
+  taDIV,  /* /= */
+  taMOD,  /* %= */
+  taADD,  /* += */
+  taSUB,  /* -= */
+  taSHL,  /* <<= */
+  taSHRU, /* >>>= */
+  taSHR,  /* >>= */
+  taAND,  /* &= */
+  taXOR,  /* ^= */
+  taOR,   /* |= */
+  tlOR,   /* || */
+  tlAND,  /* && */
+  tlEQ,   /* == */
+  tlNE,   /* != */
+  tlLE,   /* <= */
+  tlGE,   /* >= */
+  tSHL,   /* << */
+  tSHRU,  /* >>> */
+  tSHR,   /* >> */
+  tINC,   /* ++ */
+  tDEC,   /* -- */
+  tELLIPS,  /* ... */
+  tDBLDOT,  /* .. */
+
+  tMIDDLE = tDBLDOT, /* value of last multi-character operator */
+
+  /* reserved words (statements) */
+  t__ADDRESSOF,
+  tASSERT,
+  tBEGIN,
+  tBREAK,
+  tCASE,
+  tCHAR,
+  tCONST,
+  tCONTINUE,
+  tDEFAULT,
+  tDEFINED,
+  tDO,
+  tELSE,
+  t__EMIT,
+  tEND,
+  tENUM,
+  tEXIT,
+  tFOR,
+  tFORWARD,
+  tGOTO,
+  tIF,
+  tNATIVE,
+  tNEW,
+  tOPERATOR,
+  tPUBLIC,
+  tRETURN,
+  tSIZEOF,
+  tSLEEP,
+  tSTATE,
+  tSTATIC,
+  tSTOCK,
+  tSWITCH,
+  tTAGOF,
+  tTHEN,
+  tWHILE,
+
+  /* compiler directives */
+  tpASSERT, /* #assert */
+  tpDEFINE,
+  tpELSE, /* #else */
+  tpELSEIF, /* #elseif */
+  tpEMIT,
+  tpENDIF,
+  tpENDINPUT,
+  tpENDSCRPT,
+  tpERROR,
+  tpFILE,
+  tpIF,/* #if */
+  tpINCLUDE,
+  tpLINE,
+  tpPRAGMA,
+  tpTRYINCLUDE,
+  tpUNDEF,
+  tpWARNING,
+
+  tLAST = tpWARNING, /* value of last multi-character match-able token */
+
+  /* semicolon is a special case, because it can be optional */
+  tTERM,/* semicolon or newline */
+  tENDEXPR, /* forced end of expression */
+  /* other recognized tokens */
+  tNUMBER,/* integer number */
+  tRATIONAL, /* rational number */
+  tSYMBOL,
+  tLABEL,
+  tSTRING,
+  /* argument types for emit/__emit */
+  teANY, /* any value */
+  teNUMERIC, /* integer/rational number */
+  teDATA, /* data (variable name or address) */
+  teLOCAL, /* local variable (name or offset) */
+  teREFERENCE, /* function argument passed by reference */
+  teFUNCTN, /* Pawn function */
+  teNATIVE, /* native function */
+  teNONNEG, /* nonnegative integer */
+  /* for assigment to "lastst" only (see SC1.C) */
+  tEXPR,
+  tENDLESS, /* endless loop */
+};
 
 /* (reversed) evaluation of staging buffer */
 #define sSTARTREORDER 0x01
@@ -507,13 +523,31 @@ enum {  /* identifier types */
   estAUTOMATON,
   estSTATE
 };
-enum {  /* symbol types */
-  essNONLABEL,  /* find symbols of any type but labels */
-  essVARCONST,  /* array, single variable or named constant */
-  essARRAY,
-  essCONST,
-  essFUNCTN,
-  essLABEL
+enum {  /* search types for error_suggest() when the identifier type is "estSYMBOL" */
+/* symbol type flags */
+  esfLABEL      = 1 << 0, /* label */
+  esfCONST      = 1 << 1, /* named constant */
+  esfVARIABLE   = 1 << 2, /* single variable */
+  esfARRAY      = 1 << 3, /* array */
+  esfPAWNFUNC   = 1 << 4, /* Pawn function */
+  esfNATIVE     = 1 << 5, /* native function */
+
+/* composite search types */
+  /* find symbols of any type (used only to define other search types) */
+  esfANY        = esfLABEL | esfCONST | esfVARIABLE | esfARRAY | esfPAWNFUNC | esfNATIVE,
+
+  /* any function */
+  esfFUNCTION   = esfPAWNFUNC | esfNATIVE,
+
+  /* find symbols of any type but labels */
+  esfNONLABEL   = esfANY & ~esfLABEL,
+
+  /* find symbols of any type except constants and native functions
+   * (for the "__addressof" operator) */
+  esfADDRESSOF  = esfANY & ~(esfCONST | esfNATIVE),
+
+  /* find an array, a single variable, or a named constant */
+  esfVARCONST   = esfCONST | esfVARIABLE | esfARRAY
 };
 
 /* interface functions */
@@ -912,9 +946,9 @@ SC_VDECL FILE *outf;          /* file written to */
 SC_VDECL jmp_buf errbuf;      /* target of longjmp() on a fatal error */
 
 /*  Possible entries for "emit_flags"
- *  Bits: 0     (epmBLOCK) multiline ('{}' block) syntax
- *        1     (epmEXPR) used within an expression
- *        2     (epmGLOBAL) used outside of a function
+ *  Bits: 0     (efBLOCK) multiline ('()' block) syntax
+ *        1     (efEXPR) used within an expression
+ *        2     (efGLOBAL) used outside of a function
  */
 #define efBLOCK         1
 #define efEXPR          2

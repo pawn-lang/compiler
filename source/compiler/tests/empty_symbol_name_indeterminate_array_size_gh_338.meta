@@ -1,0 +1,6 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+empty_symbol_name_indeterminate_array_size_gh_338.pwn(2) : warning 224: indeterminate array size in "sizeof" expression (symbol "arr")
+"""
+}

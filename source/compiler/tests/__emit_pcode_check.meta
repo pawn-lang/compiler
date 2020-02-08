@@ -1,0 +1,702 @@
+{
+  'test_type': 'pcode_check',
+  'code_pattern': r"""
+[0-9a-f]+  push.r 00000000
+[0-9a-f]+  load.pri 00000000
+[0-9a-f]+  load.pri 00000004
+[0-9a-f]+  load.pri 0000000c
+[0-9a-f]+  push.r 00000001
+[0-9a-f]+  load.s.pri 00001234
+[0-9a-f]+  load.s.pri 0000000c
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  load.s.pri 00005678
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  load.s.pri 0000fedc
+[0-9a-f]+  push.r 00000002
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  sysreq.c 00000000
+[0-9a-f]+  push.c 00000000
+[0-9a-f]+  sysreq.c 00000000
+[0-9a-f]+  stack 00000004
+[0-9a-f]+  push.r 00000003
+[0-9a-f]+  lodb.i 00000001
+[0-9a-f]+  lodb.i 00000001
+[0-9a-f]+  lodb.i 00000001
+[0-9a-f]+  lodb.i 00000002
+[0-9a-f]+  lodb.i 00000004
+[0-9a-f]+  lodb.i 00000001
+[0-9a-f]+  lodb.i 00000002
+[0-9a-f]+  lodb.i 00000004
+[0-9a-f]+  push.r 00000004
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  align.pri 00000000
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  align.pri 00000002
+[0-9a-f]+  align.pri 00000003
+[0-9a-f]+  align.pri 00000000
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  align.pri 00000002
+[0-9a-f]+  align.pri 00000003
+[0-9a-f]+  push.r 00000005
+[0-9a-f]+  push.c 00001234
+[0-9a-f]+  push.c 00005678
+[0-9a-f]+  push.c 00009abc
+[0-9a-f]+  push.c 00000000
+[0-9a-f]+  push.c 00000004
+[0-9a-f]+  push.c 0000000c
+[0-9a-f]+  push.c 0000000c
+[0-9a-f]+  push.c fffffffc
+[0-9a-f]+  push.r 00000006
+[0-9a-f]+  push 00000000
+[0-9a-f]+  push 0000000c
+[0-9a-f]+  push.r 00000007
+[0-9a-f]+  push.s 00001234
+[0-9a-f]+  push.s 00005678
+[0-9a-f]+  push.s 0000000c
+[0-9a-f]+  push.s 00000010
+[0-9a-f]+  push.s fffffffc
+[0-9a-f]+  push.r 00000008
+[0-9a-f]+  push.adr 00001234
+[0-9a-f]+  push.adr 00005678
+[0-9a-f]+  push.adr 0000000c
+[0-9a-f]+  push.adr 00000010
+[0-9a-f]+  push.adr fffffffc
+[0-9a-f]+  push.r 00000009
+[0-9a-f]+  push.pri
+[0-9a-f]+  const.pri 00001234
+[0-9a-f]+  stor.pri 00000000
+[0-9a-f]+  pop.pri
+[0-9a-f]+  push.pri
+[0-9a-f]+  const.pri 00005678
+[0-9a-f]+  stor.pri 0000000c
+[0-9a-f]+  pop.pri
+[0-9a-f]+  push.r 0000000a
+[0-9a-f]+  push.pri
+[0-9a-f]+  const.pri 00005678
+[0-9a-f]+  stor.s.pri fffffffc
+[0-9a-f]+  pop.pri
+[0-9a-f]+  push.r 0000000b
+[0-9a-f]+  load.pri 00000000
+[0-9a-f]+  load.alt 0000000c
+[0-9a-f]+  push.r 0000000c
+[0-9a-f]+  load.s.pri 0000000c
+[0-9a-f]+  load.s.alt fffffffc
+[0-9a-f]+  push.r 00000010
+[0-9a-f]+  zero.pri
+[0-9a-f]+  zero.alt
+[0-9a-f]+  load.s.pri 0000000c
+[0-9a-f]+  load.s.alt 0000000c
+[0-9a-f]+  addr.pri fffffffc
+[0-9a-f]+  addr.alt fffffffc
+[0-9a-f]+  const.pri 0000000c
+[0-9a-f]+  const.alt 0000000c
+[0-9a-f]+  push.r 00000011
+[0-9a-f]+  const.pri 00000004
+[0-9a-f]+  const.alt 00000008
+[0-9a-f]+  const.pri 00000010
+[0-9a-f]+  const.alt 00000014
+[0-9a-f]+  addr.pri fffffff4
+[0-9a-f]+  addr.alt fffffff8
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  add.c 00000004
+[0-9a-f]+  move.alt
+[0-9a-f]+  push.r 00000012
+[0-9a-f]+  const.pri 00000004
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  const.alt 00000005
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  const.pri 00000010
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  const.alt 00000011
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  addr.pri fffffff4
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  addr.alt fffffff5
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  push.r 00000013
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  inc.pri
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  inc.alt
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  add.c 00000002
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  add.c 00000002
+[0-9a-f]+  move.alt
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  push.r 00000014
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  const.alt 00000004
+[0-9a-f]+  idxaddr
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  const.alt 00000004
+[0-9a-f]+  idxaddr
+[0-9a-f]+  move.alt
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  const.alt 00000010
+[0-9a-f]+  idxaddr
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  const.alt 00000010
+[0-9a-f]+  idxaddr
+[0-9a-f]+  move.alt
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  addr.alt fffffff4
+[0-9a-f]+  idxaddr
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  addr.alt fffffff4
+[0-9a-f]+  idxaddr
+[0-9a-f]+  move.alt
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  idxaddr
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  idxaddr
+[0-9a-f]+  move.alt
+[0-9a-f]+  push.r 00000015
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  add.c 00000004
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  add.c 00000004
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  add.c 00000010
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  add.c 00000010
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  addr.alt fffffff4
+[0-9a-f]+  add
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  addr.alt fffffff4
+[0-9a-f]+  add
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  add
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  add
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  push.r 00000016
+[0-9a-f]+  push.c 00000000
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  const.alt 00000004
+[0-9a-f]+  idxaddr
+[0-9a-f]+  push.c 00000000
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  const.alt 00000004
+[0-9a-f]+  idxaddr
+[0-9a-f]+  move.alt
+[0-9a-f]+  push.r 00000017
+[0-9a-f]+  push.c 00000000
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  add.c 00000004
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  push.c 00000000
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  add.c 00000004
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  push.r 00000018
+[0-9a-f]+  const.pri 00001234
+[0-9a-f]+  load.pri 00000000
+[0-9a-f]+  lref.s.pri 0000000c
+[0-9a-f]+  const.pri 00005678
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  load.pri 0000000c
+[0-9a-f]+  const.pri 00009abc
+[0-9a-f]+  push.r 00000019
+[0-9a-f]+  const.pri 000068ac
+[0-9a-f]+  push.r 0000001a
+[0-9a-f]+  load.pri 00000000
+[0-9a-f]+  push.pri
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  pop.alt
+[0-9a-f]+  smul
+[0-9a-f]+  move.alt
+[0-9a-f]+  push.r 0000001b
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  load.i
+[0-9a-f]+  push.r 00000020
+[0-9a-f]+  stor.pri 00000000
+[0-9a-f]+  stor.alt 00000000
+[0-9a-f]+  sref.s.pri 0000000c
+[0-9a-f]+  sref.s.alt 0000000c
+[0-9a-f]+  stor.s.pri fffffffc
+[0-9a-f]+  stor.s.alt fffffffc
+[0-9a-f]+  stor.pri 0000000c
+[0-9a-f]+  stor.alt 0000000c
+[0-9a-f]+  push.r 00000021
+[0-9a-f]+  stor.pri 00000004
+[0-9a-f]+  stor.alt 00000008
+[0-9a-f]+  stor.s.pri fffffff4
+[0-9a-f]+  stor.s.alt fffffff8
+[0-9a-f]+  sref.s.pri 00000010
+[0-9a-f]+  move.alt
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  add.c 00000004
+[0-9a-f]+  xchg
+[0-9a-f]+  stor.i
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  add.c 00000004
+[0-9a-f]+  xchg
+[0-9a-f]+  stor.i
+[0-9a-f]+  push.r 00000022
+[0-9a-f]+  const.alt 00000004
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  move.pri
+[0-9a-f]+  const.alt 00000004
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  const.alt 00000005
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  move.pri
+[0-9a-f]+  const.alt 00000005
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  push.r 00000023
+[0-9a-f]+  addr.alt fffffff4
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  move.pri
+[0-9a-f]+  addr.alt fffffff4
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  addr.alt fffffff5
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  move.pri
+[0-9a-f]+  addr.alt fffffff5
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  push.r 00000024
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  move.pri
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  inc.alt
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  move.pri
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  inc.alt
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  add.c 00000002
+[0-9a-f]+  xchg
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  add.c 00000002
+[0-9a-f]+  xchg
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  push.r 00000025
+[0-9a-f]+  push.pri
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  const.alt 00000004
+[0-9a-f]+  idxaddr
+[0-9a-f]+  move.alt
+[0-9a-f]+  pop.pri
+[0-9a-f]+  stor.i
+[0-9a-f]+  push.alt
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  const.alt 00000004
+[0-9a-f]+  idxaddr
+[0-9a-f]+  move.alt
+[0-9a-f]+  pop.pri
+[0-9a-f]+  stor.i
+[0-9a-f]+  push.pri
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  addr.alt fffffff4
+[0-9a-f]+  idxaddr
+[0-9a-f]+  move.alt
+[0-9a-f]+  pop.pri
+[0-9a-f]+  stor.i
+[0-9a-f]+  push.alt
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  addr.alt fffffff4
+[0-9a-f]+  idxaddr
+[0-9a-f]+  move.alt
+[0-9a-f]+  pop.pri
+[0-9a-f]+  stor.i
+[0-9a-f]+  push.pri
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  idxaddr
+[0-9a-f]+  move.alt
+[0-9a-f]+  pop.pri
+[0-9a-f]+  stor.i
+[0-9a-f]+  push.alt
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  idxaddr
+[0-9a-f]+  move.alt
+[0-9a-f]+  pop.pri
+[0-9a-f]+  stor.i
+[0-9a-f]+  push.r 00000026
+[0-9a-f]+  push.pri
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  add.c 00000004
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  pop.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  push.alt
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  add.c 00000004
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  pop.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  push.pri
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  addr.alt fffffff4
+[0-9a-f]+  add
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  pop.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  push.alt
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  addr.alt fffffff4
+[0-9a-f]+  add
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  pop.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  push.pri
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  add
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  pop.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  push.alt
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  add
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  pop.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  push.r 00000028
+[0-9a-f]+  push.c 00001234
+[0-9a-f]+  push 00000000
+[0-9a-f]+  lref.s.pri 0000000c
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00005678
+[0-9a-f]+  push.s fffffffc
+[0-9a-f]+  push 0000000c
+[0-9a-f]+  push.c 00009abc
+[0-9a-f]+  push.r 00000029
+[0-9a-f]+  push.c 000068ac
+[0-9a-f]+  push.r 0000002a
+[0-9a-f]+  load.pri 00000000
+[0-9a-f]+  push.pri
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  pop.alt
+[0-9a-f]+  smul
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.r 0000002b
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  load.i
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.r 00000030
+[0-9a-f]+  push.c 00000000
+[0-9a-f]+  push.c 0000000c
+[0-9a-f]+  push.adr fffffffc
+[0-9a-f]+  push.s 0000000c
+[0-9a-f]+  push.r 00000031
+[0-9a-f]+  push.c 00000004
+[0-9a-f]+  push.c 00000008
+[0-9a-f]+  push.c 00000010
+[0-9a-f]+  push.c 00000014
+[0-9a-f]+  push.adr fffffff4
+[0-9a-f]+  push.adr fffffff8
+[0-9a-f]+  push.s 00000010
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  add.c 00000004
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.r 00000032
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  const.alt 00000004
+[0-9a-f]+  idxaddr
+[0-9a-f]+  push.pri
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  const.alt 00000010
+[0-9a-f]+  idxaddr
+[0-9a-f]+  push.pri
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  addr.alt fffffff4
+[0-9a-f]+  idxaddr
+[0-9a-f]+  push.pri
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  idxaddr
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.r 00000038
+[0-9a-f]+  zero 00000000
+[0-9a-f]+  zero 0000000c
+[0-9a-f]+  zero.s fffffffc
+[0-9a-f]+  zero.pri
+[0-9a-f]+  sref.s.pri 0000000c
+[0-9a-f]+  push.r 00000039
+[0-9a-f]+  zero 00000004
+[0-9a-f]+  zero 00000008
+[0-9a-f]+  zero 00000010
+[0-9a-f]+  zero 00000014
+[0-9a-f]+  zero.s fffffff4
+[0-9a-f]+  zero.s fffffff8
+[0-9a-f]+  zero.pri
+[0-9a-f]+  sref.s.pri 00000010
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  add.c 00000004
+[0-9a-f]+  move.alt
+[0-9a-f]+  zero.pri
+[0-9a-f]+  stor.i
+[0-9a-f]+  push.r 0000003a
+[0-9a-f]+  const.alt 00000004
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  zero.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  const.alt 00000005
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  zero.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  const.alt 00000010
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  zero.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  const.alt 00000011
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  zero.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  addr.alt fffffff4
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  zero.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  addr.alt fffffff5
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  zero.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  zero.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  inc.alt
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  zero.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  add.c 00000002
+[0-9a-f]+  move.alt
+[0-9a-f]+  align.alt 00000001
+[0-9a-f]+  zero.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  push.r 0000003b
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  const.alt 00000004
+[0-9a-f]+  idxaddr
+[0-9a-f]+  move.alt
+[0-9a-f]+  zero.pri
+[0-9a-f]+  stor.i
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  const.alt 00000010
+[0-9a-f]+  idxaddr
+[0-9a-f]+  move.alt
+[0-9a-f]+  zero.pri
+[0-9a-f]+  stor.i
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  addr.alt fffffff4
+[0-9a-f]+  idxaddr
+[0-9a-f]+  move.alt
+[0-9a-f]+  zero.pri
+[0-9a-f]+  stor.i
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  idxaddr
+[0-9a-f]+  move.alt
+[0-9a-f]+  zero.pri
+[0-9a-f]+  stor.i
+[0-9a-f]+  push.r 0000003c
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  add.c 00000004
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  zero.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  add.c 00000010
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  zero.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  addr.alt fffffff4
+[0-9a-f]+  add
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  zero.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  add
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  zero.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  push.r 00000040
+[0-9a-f]+  inc 00000000
+[0-9a-f]+  inc 0000000c
+[0-9a-f]+  inc.s fffffffc
+[0-9a-f]+  load.s.pri 0000000c
+[0-9a-f]+  inc.i
+[0-9a-f]+  push.r 00000041
+[0-9a-f]+  inc 00000004
+[0-9a-f]+  inc 00000008
+[0-9a-f]+  inc 00000010
+[0-9a-f]+  inc 00000014
+[0-9a-f]+  inc.s fffffff4
+[0-9a-f]+  inc.s fffffff8
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  inc.i
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  add.c 00000004
+[0-9a-f]+  inc.i
+[0-9a-f]+  push.r 00000042
+[0-9a-f]+  const.pri 00000004
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  lodb.i 00000001
+[0-9a-f]+  inc.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  const.pri 00000005
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  lodb.i 00000001
+[0-9a-f]+  inc.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  const.pri 00000010
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  lodb.i 00000001
+[0-9a-f]+  inc.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  const.pri 00000011
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  lodb.i 00000001
+[0-9a-f]+  inc.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  addr.pri fffffff4
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  lodb.i 00000001
+[0-9a-f]+  inc.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  addr.pri fffffff5
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  lodb.i 00000001
+[0-9a-f]+  inc.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  lodb.i 00000001
+[0-9a-f]+  inc.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  inc.pri
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  lodb.i 00000001
+[0-9a-f]+  inc.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  load.s.pri 00000010
+[0-9a-f]+  add.c 00000002
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  lodb.i 00000001
+[0-9a-f]+  inc.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  push.r 00000043
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  const.alt 00000004
+[0-9a-f]+  idxaddr
+[0-9a-f]+  inc.i
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  const.alt 00000010
+[0-9a-f]+  idxaddr
+[0-9a-f]+  inc.i
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  addr.alt fffffff4
+[0-9a-f]+  idxaddr
+[0-9a-f]+  inc.i
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  idxaddr
+[0-9a-f]+  inc.i
+[0-9a-f]+  push.r 00000044
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  add.c 00000004
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  lodb.i 00000001
+[0-9a-f]+  inc.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  add.c 00000010
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  lodb.i 00000001
+[0-9a-f]+  inc.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  addr.alt fffffff4
+[0-9a-f]+  add
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  lodb.i 00000001
+[0-9a-f]+  inc.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  load.s.alt 00000010
+[0-9a-f]+  add
+[0-9a-f]+  align.pri 00000001
+[0-9a-f]+  move.alt
+[0-9a-f]+  lodb.i 00000001
+[0-9a-f]+  inc.pri
+[0-9a-f]+  strb.i 00000001
+[0-9a-f]+  nop
+"""
+}

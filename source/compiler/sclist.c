@@ -63,10 +63,8 @@ static stringpair *insert_stringpair(stringpair *root,char *first,char *second,i
   cur->second=duplicatestring(second);
   cur->matchlength=matchlength;
   if (cur->first==NULL || cur->second==NULL) {
-    if (cur->first!=NULL)
-      free(cur->first);
-    if (cur->second!=NULL)
-      free(cur->second);
+    free(cur->first);
+    free(cur->second);
     free(cur);
     return NULL;
   } /* if */

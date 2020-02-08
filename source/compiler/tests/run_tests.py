@@ -29,8 +29,6 @@ def run_command(args, executable=None, merge_stderr=False):
                              stderr=subprocess.PIPE,
                              universal_newlines=True)
   stdout, stderr = process.communicate()
-  stdout = stdout.decode('utf-8')
-  stderr = stderr.decode('utf-8')
   if merge_stderr:
     output = ''
     if stdout:
@@ -68,7 +66,7 @@ class OutputCheckTest:
   def run(self):
     args = [self.name + '.pwn']
     if self.extra_args is not None:
-      args += extra_args
+      args += self.extra_args
     process, stdout, stderr = run_compiler(args=args)
     if self.errors is None:
       if process.returncode != 0:
@@ -79,7 +77,7 @@ class OutputCheckTest:
         return False
 
     errors = strip(stderr)
-    expected_errors = strip(self.errors)
+    expected_errors = strip(self.errors) if self.errors is not None else ''
     if errors != expected_errors:
       self.fail_reason = (
         'Error output didn\'t match\n\nExpected errors:\n\n{}\n\n'

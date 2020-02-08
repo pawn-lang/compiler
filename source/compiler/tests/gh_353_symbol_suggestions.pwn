@@ -50,6 +50,25 @@ public test_nosuggest5()
 	return staticval;
 }
 
+forward test_nosuggest6();
+public test_nosuggest6()
+{
+	// The compiler shouldn't suggest global variable "test_nosuggest6_val"
+	// as it's not defined yet.
+	return test_nosuggest6_val;
+}
+static test_nosuggest6_val;
+
+forward test_nosuggest7();
+public test_nosuggest7()
+{
+	// The compiler shouldn't try to suggest anything when tagof is used on
+	// string/numeric literals.
+	new a = tagof 0;
+	new b = tagof "";
+	return a + b;
+}
+
 forward test_e017();
 public test_e017()
 {
@@ -65,9 +84,14 @@ public test_e017()
 	new str[4] = "a";
 	strcaf(str, "b");
 
+	// error 017: undefined symbol "DoNothin"; did you mean "DoNothing"?
+	DoNothin();
+
 	// error 017: undefined symbol "test_e17"; did you mean "test_e017"?
 	printf("%d\n", tagof test_e17);
 }
+DoNothing(){}
+#pragma unused DoNothing
 
 forward test_e019();
 public test_e019()
@@ -115,4 +139,20 @@ public test_e087()
 
 	// error 087: unknown state "STATE_1" for automaton "automaton_2"; did you mean "automaton_1:STATE_1"?
 	state automaton_2:STATE_1;
+}
+
+new test_e017_sug2_var <automaton_3:STATE_2>;
+forward test_e017_sug2();
+public test_e017_sug2()
+{
+	printf("%d\n", test_e017_sug2_var); // error 017: undefined symbol "test_e017_sug2_var"; state variable out of scope
+}
+forward test_e017_sug2_func();
+public test_e017_sug2_func() <automaton_3:STATE_1>
+{
+	printf("%d\n", test_e017_sug2_var); // error 017: undefined symbol "test_e017_sug2_var"; state variable out of scope
+}
+public test_e017_sug2_func() <automaton_3:STATE_2>
+{
+	#pragma unused test_e017_sug2_var
 }
