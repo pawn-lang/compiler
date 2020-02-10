@@ -249,6 +249,7 @@ typedef struct s_symbol {
 #define flagNAKED     0x10  /* function is naked */
 #define flagPREDEF    0x20  /* symbol is pre-defined; successor of uPREDEF */
 
+#define uTAGOF_TAG 0x20  /* set in the "hasdefault" field of the arginfo struct */
 #define uTAGOF    0x40  /* set in the "hasdefault" field of the arginfo struct */
 #define uSIZEOF   0x80  /* set in the "hasdefault" field of the arginfo struct */
 
