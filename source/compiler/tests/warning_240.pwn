@@ -8,21 +8,20 @@ test_local()
 {
 	new local_var;
 	local_var = 1;
-	local_var = 2; // warning
-	local_var = 3; // warning
+	local_var = 2; // warning 240
+	local_var = 3; // warning 240
 	#pragma unused local_var
-	local_var = 4;
+	local_var = 4; // warning 204
 	new local_var2 = 0;
 	local_var2 = 1;
 	#pragma unused local_var2
-} // warning (value assigned to "local_var"
-  // wasn't used upon symbol destruction)
+}
 
 test_local_static()
 {
 	static local_static_var = 0;
-	local_static_var = 1; // warning
-	local_static_var = 2; // warning
+	local_static_var = 1; // warning 240
+	local_static_var = 2; // warning 240
 	#pragma unused local_static_var
 	local_static_var = 4;
 }
@@ -48,7 +47,7 @@ test_global_static()
 test_arg(arg)
 {
 	arg = 0;
-	arg = 1; // warning (240, 204)
+	arg = 1; // warning 240, warning 204
 }
 
 main()

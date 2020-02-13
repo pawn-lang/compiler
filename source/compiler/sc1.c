@@ -5080,8 +5080,11 @@ static void destructsymbols(symbol *root,int level)
       /* check that the assigned value was used, but don't show the warning
        * if the variable is completely unused (we already have warning 203 for that) */
       if ((sym->usage & (uASSIGNED | uREAD | uWRITTEN))==(uASSIGNED | uREAD | uWRITTEN)
-          && sym->vclass!=sSTATIC)
+          && sym->vclass!=sSTATIC) {
+        errorset(sSETPOS,sym->lnumber);
         error(204,sym->name);   /* symbol is assigned a value that is never used */
+        errorset(sSETPOS,-1);
+      } /* if */
     } /* if */
     sym=sym->next;
   } /* while */
