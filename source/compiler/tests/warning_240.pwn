@@ -50,6 +50,18 @@ test_arg(arg)
 	arg = 1; // warning 240, warning 204
 }
 
+stock Tag:operator =(oper)
+	return Tag:oper;
+
+test_ovl_assignment()
+{
+	// Overloaded assignments are essentially function calls which may have
+	// desirable side effects, so they shouldn't trigger warning 204.
+	new Tag:a = 1;
+	new Tag:b;
+	b = 2;
+}
+
 main()
 {
 	test_local();
@@ -58,4 +70,5 @@ main()
 	test_global_static();
 	new x = 0;
 	test_arg(x);
+	test_ovl_assignment();
 }

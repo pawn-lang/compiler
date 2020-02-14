@@ -925,6 +925,7 @@ SC_VDECL short fnumber;       /* number of files in the file table (debugging) *
 SC_VDECL short fcurrent;      /* current file being processed (debugging) */
 SC_VDECL short sc_intest;     /* true if inside a test */
 SC_VDECL int pc_sideeffect;   /* true if an expression causes a side-effect */
+SC_VDECL int pc_ovlassignment;/* true if an expression contains an overloaded assignment */
 SC_VDECL int stmtindent;      /* current indent of the statement */
 SC_VDECL int indent_nowarn;   /* skip warning "217 loose indentation" */
 SC_VDECL int sc_tabsize;      /* number of spaces that a TAB represents */

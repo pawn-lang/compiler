@@ -891,6 +891,7 @@ static void resetglobals(void)
   fcurrent=0;           /* current file being processed (debugging) */
   sc_intest=FALSE;      /* true if inside a test */
   pc_sideeffect=0;      /* true if an expression causes a side-effect */
+  pc_ovlassignment=FALSE;/* true if an expression contains an overloaded assignment */
   stmtindent=0;         /* current indent of the statement */
   indent_nowarn=FALSE;  /* do not skip warning "217 loose indentation" */
   sc_allowtags=TRUE;    /* allow/detect tagnames */
@@ -2380,7 +2381,7 @@ static int declloc(int fstatic)
         lval.ident=iVARIABLE;
         lval.constval=0;
         lval.tag=tag;
-        check_userop(NULL,ctag,lval.tag,2,NULL,&ctag);
+        suppress_w240 |= check_userop(NULL,ctag,lval.tag,2,NULL,&ctag);
         store(&lval);
         markexpr(sEXPR,NULL,0); /* full expression ends after the store */
         assert(staging);        /* end staging phase (optimize expression) */
@@ -2426,6 +2427,8 @@ static int declloc(int fstatic)
     } /* if */
     if (explicit_init)
       markinitialized(sym,!suppress_w240);
+    if (pc_ovlassignment)
+      sym->usage |= uREAD;
   } while (matchtoken(',')); /* enddo */   /* more? */
   needtoken(tTERM);    /* if not comma, must be semicolumn */
   return ident;
@@ -5535,6 +5538,7 @@ static int doexpr(int comma,int chkeffect,int allowarray,int mark_endexpr,
     if (index!=stgidx)
       markexpr(sEXPR,NULL,0);
     pc_sideeffect=FALSE;
+    pc_ovlassignment=FALSE;
     ident=expression(val,tag,symptr,chkfuncresult);
     if (!allowarray && (ident==iARRAY || ident==iREFARRAY))
       error(33,"-unknown-");    /* array must be indexed */
