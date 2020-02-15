@@ -879,7 +879,7 @@ static void resetglobals(void)
   litidx=0;             /* index to literal table */
   stgidx=0;             /* index to the staging buffer */
   sc_labnum=0;          /* top value of (internal) labels */
-  staging=0;            /* true if staging output */
+  staging=FALSE;        /* true if staging output */
   declared=0;           /* number of local cells declared */
   glb_declared=0;       /* number of global cells declared */
   code_idx=0;           /* number of bytes with generated code */
@@ -890,7 +890,7 @@ static void resetglobals(void)
   fnumber=0;            /* the file number in the file table (debugging) */
   fcurrent=0;           /* current file being processed (debugging) */
   sc_intest=FALSE;      /* true if inside a test */
-  pc_sideeffect=0;      /* true if an expression causes a side-effect */
+  pc_sideeffect=FALSE;  /* true if an expression causes a side-effect */
   stmtindent=0;         /* current indent of the statement */
   indent_nowarn=FALSE;  /* do not skip warning "217 loose indentation" */
   sc_allowtags=TRUE;    /* allow/detect tagnames */
