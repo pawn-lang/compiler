@@ -626,15 +626,20 @@ static void plnge2(void (*oper)(void),
     if (check_userop(oper,lval1->tag,lval2->tag,2,NULL,&lval1->tag)) {
       lval1->ident=iEXPRESSION;
       lval1->constval=0;
-    } else if (lval1->ident==iCONSTEXPR && lval2->ident==iCONSTEXPR) {
-      /* only constant expression if both constant */
-      stgdel(index,cidx);       /* scratch generated code and calculate */
-      check_tagmismatch(lval1->tag,lval2->tag,FALSE,-1);
-      lval1->constval=calc(lval1->constval,oper,lval2->constval,&lval1->boolresult);
     } else {
-      check_tagmismatch(lval1->tag,lval2->tag,FALSE,-1);
-      (*oper)();                /* do the (signed) operation */
-      lval1->ident=iEXPRESSION;
+      if ((oper==ob_sal || oper==os_sar || oper==ou_sar)
+          && (lval2->ident==iCONSTEXPR && (lval2->constval<0 || lval2->constval>=PAWN_CELL_SIZE)))
+        error(241);             /* negative or too big shift count */
+      if (lval1->ident==iCONSTEXPR && lval2->ident==iCONSTEXPR) {
+        /* only constant expression if both constant */
+        stgdel(index,cidx);       /* scratch generated code and calculate */
+        check_tagmismatch(lval1->tag,lval2->tag,FALSE,-1);
+        lval1->constval=calc(lval1->constval,oper,lval2->constval,&lval1->boolresult);
+      } else {
+        check_tagmismatch(lval1->tag,lval2->tag,FALSE,-1);
+        (*oper)();                /* do the (signed) operation */
+        lval1->ident=iEXPRESSION;
+      } /* if */
     } /* if */
   } /* if */
 }

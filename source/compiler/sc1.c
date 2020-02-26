@@ -6550,7 +6550,7 @@ static void SC_FASTCALL emit_param_index(emit_outval *p,int isrange,
       if (val==valid_values[i])
         return;
   } /* if */
-  error(50);    /* invalid range */
+  error(241);    /* negative or too big shift count */
 }
 
 static void SC_FASTCALL emit_param_nonneg(emit_outval *p)
