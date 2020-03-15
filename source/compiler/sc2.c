@@ -1964,6 +1964,7 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
 {
   const unsigned char *stringize;
   int instring=1;
+  int brackets=0;
   if (*flags & STRINGIZE)                 /* ignore leading spaces after the # */
     while (*lptr==' ' || *lptr=='\t')     /* this is as defines with parameters may add them */
       lptr++;                             /* when you use a space after , in a match pattern */
@@ -1980,6 +1981,7 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
         lptr--;
         instring=1;
         *flags |= STRINGIZE;
+        brackets=0;
       } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' ||
                  *lptr==':' || *lptr=='\r' || *lptr=='\n') {
         break;
@@ -1996,17 +1998,24 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
         stringize++; /* find next non space */
       if (*stringize=='#') { /* new stringize string */
         lptr=stringize+1;
+        brackets=0;
         while (*lptr==' ' || *lptr=='\t')
           lptr++;
         continue;
       } else if (*stringize=='\"') { /* new string */
-        lptr=stringize+1;
+        lptr = stringize + 1;
         *flags &= ~STRINGIZE;
         continue;
-      } else if (*stringize==',' || *stringize==')' || *stringize=='}' ||
-                 *stringize==';') { /* end */
-        lptr=stringize;
-        break;
+      } else if (*stringize=='(') {
+        brackets++;
+      } else if (*stringize==')') {
+        if (brackets--==0)
+          break;
+      } else if (*stringize==',' || *stringize=='}' || *stringize==';') { /* end */
+        if (brackets==0) {
+          lptr=stringize;
+          break;
+        }
       } else if (*stringize=='\0') {
         lptr=stringize;
         *flags &= ~STRINGIZE; /* shouldn't happen - trigger an error */
@@ -2035,6 +2044,7 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
   ucell val,c;
   const unsigned char *stringize;
   int instring=1;
+  int brackets=0;
   if (*flags & STRINGIZE)
     while (*lptr==' ' || *lptr=='\t')
       lptr++;
@@ -2053,6 +2063,7 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
         while (*++lptr==' ' || *lptr=='\t');
         lptr--;
         instring=1;
+        brackets=0;
         *flags |= STRINGIZE;
       } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' ||
                  *lptr==':' || *lptr=='\r' || *lptr=='\n') {
@@ -2070,6 +2081,7 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
         stringize++; /* find next non space */
       if (*stringize=='#') { /* new stringize string */
         lptr=stringize+1;
+        brackets=0;
         while (*lptr==' ' || *lptr=='\t')
           lptr++;
         continue;
@@ -2077,10 +2089,16 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
         lptr=stringize+1;
         *flags &= ~STRINGIZE;
         continue;
-      } else if (*stringize==',' || *stringize==')' || *stringize=='}' ||
-                 *stringize==';') { /* end */
-        lptr=stringize;
-        break;
+      } else if (*stringize=='(') {
+        brackets++;
+      } else if (*stringize==')') {
+        if (brackets--==0)
+          break;
+      } else if (*stringize==',' || *stringize=='}' || *stringize==';') { /* end */
+        if (brackets==0) {
+          lptr=stringize;
+          break;
+        }
       } else if (*stringize=='\0') {
         lptr=stringize;
         *flags &= ~STRINGIZE; /* shouldn't happen - trigger an error */
