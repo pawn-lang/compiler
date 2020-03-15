@@ -1,0 +1,9 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+switch-case-tag-control.pwn(10) : warning 213: tag mismatch: expected tag none ("_"), but found "Float"
+switch-case-tag-control.pwn(16) : warning 213: tag mismatch: expected tag "Float", but found "bool"
+switch-case-tag-control.pwn(17) : warning 213: tag mismatch: expected tag "Float", but found none ("_")
+switch-case-tag-control.pwn(24) : warning 213: tag mismatch: expected tag none ("_"), but found "Tag"
+"""
+}
