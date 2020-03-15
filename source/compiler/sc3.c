@@ -1741,15 +1741,12 @@ static int hier2(value *lval)
               error(50);                /* invalid range */
             while (++val<=end) {
               casecount++;
-              /* find the new insertion point */
-              for (csp=NULL, cse=caselist.first;
-                   cse!=NULL && cse->value<val;
-                   csp=cse, cse=cse->next)
-                /* nothing */;
+              csp=newval;
+              cse=newval->next;
               if (cse!=NULL && cse->value==val)
                 error(40,val);          /* duplicate "case" label */
-              assert(csp==NULL || csp->next==cse);
-              insert_constval(csp,cse,itoh(lbl_case),val,0);
+              assert(csp!=NULL && csp->next==cse);
+              newval=insert_constval(csp,cse,itoh(lbl_case),val,0);
             } /* while */
           } /* if */
         } while (matchtoken(','));
