@@ -16,4 +16,11 @@ main()
 		case true: {} // bool (tag mismatch)
 		case 2: {} // no tag (tag mismatch)
 	}
+	const Tag:THREE = Tag:3;
+	switch (x)
+	{
+		case -2 .. -1: {} // no tag (ok)
+		case 0 .. true: {} // bool (should work since "bool" is a weak tag)
+		case 2 .. THREE: {} // Tag: (tag mismatch; "Tag" is a strong tag)
+	}
 }

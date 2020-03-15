@@ -5900,9 +5900,10 @@ static void doswitch(void)
           caselist.first=newval;
         if (matchtoken(tDBLDOT)) {
           cell end;
-          constexpr(&end,NULL,NULL);
+          constexpr(&end,&csetag,NULL);
           if (end<=val)
             error(50);                  /* invalid range */
+          check_tagmismatch(swtag,csetag,TRUE,-1);
           while (++val<=end) {
             casecount++;
             /* find the new insertion point */
