@@ -3791,9 +3791,9 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     cidx=code_idx;
     glbdecl=glb_declared;
   } /* if */
-  if ((sym->flags & flagDEPRECATED)!=0) {
+  if ((sym->flags & flagDEPRECATED)!=0 && fpublic) {
     char *ptr= (sym->documentation!=NULL) ? sym->documentation : "";
-    error(234,symbolname,ptr);  /* deprecated (probably a public function) */
+    error(234,symbolname,ptr);  /* deprecated (definitely a public function) */
   } /* if */
   if (pc_naked) {
     sym->flags|=flagNAKED;
