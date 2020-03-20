@@ -3942,6 +3942,8 @@ static int argcompare(arginfo *a1,arginfo *a2)
           result= a1->hasdefault==a2->hasdefault
                   && strcmp(a1->defvalue.size.symname,a2->defvalue.size.symname)==0
                   && a1->defvalue.size.level==a2->defvalue.size.level;
+        else if ((a1->hasdefault & uTAGOF_TAG)!=0)
+          a1->defvalue.val=a2->defvalue.val;
         else
           result= a1->defvalue.val==a2->defvalue.val;
       } /* if */
@@ -4215,18 +4217,24 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
       if (size_tag_token==0)
         size_tag_token=(unsigned char)(matchtoken(tTAGOF) ? uTAGOF : 0);
       if (size_tag_token!=0) {
+        char* symname;
+        cell val;
         int paranthese;
         if (ident==iREFERENCE)
           error(66,name);       /* argument may not be a reference */
         paranthese=0;
         while (matchtoken('('))
           paranthese++;
-        if (needtoken(tSYMBOL)) {
+        if (matchtoken(tLABEL)) {
+          constvalue *tagsym;
+          tokeninfo(&val,&symname);
+          tagsym=find_constval(&tagname_tab,symname,0);
+          arg->defvalue.val=(tagsym!=NULL) ? tagsym->value : (cell)0;
+          arg->hasdefault |= uTAGOF_TAG;
+        } else if (needtoken(tSYMBOL)) {
           /* save the name of the argument whose size id to take */
-          char *name;
-          cell val;
-          tokeninfo(&val,&name);
-          if ((arg->defvalue.size.symname=duplicatestring(name)) == NULL)
+          tokeninfo(&val,&symname);
+          if ((arg->defvalue.size.symname=duplicatestring(symname)) == NULL)
             error(103);         /* insufficient memory */
           arg->defvalue.size.level=0;
           if (size_tag_token==uSIZEOF) {
