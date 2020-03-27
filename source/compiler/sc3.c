@@ -195,8 +195,9 @@ static void (*unopers[])(void) = { lneg, neg, user_inc, user_dec };
   if ((sym->usage & uMISSING)!=0 || (sym->usage & uPROTOTYPED)==0) {
     char symname[2*sNAMEMAX+16];  /* allow space for user defined operators */
     funcdisplayname(symname,sym->name);
+    char *ptr= (sym->documentation!=NULL) ? sym->documentation : "";
     if ((sym->usage & uMISSING)!=0)
-      error(4,symname);           /* function not defined */
+      error(4,symname,ptr);       /* function not defined */
     if ((sym->usage & uPROTOTYPED)==0)
       error(71,symname);          /* operator must be declared before use */
   } /* if */
@@ -1880,7 +1881,8 @@ restart:
       } else if ((sym->usage & uMISSING)!=0) {
         char symname[2*sNAMEMAX+16];  /* allow space for user defined operators */
         funcdisplayname(symname,sym->name);
-        error(4,symname);             /* function not defined */
+        char *ptr= (sym->documentation!=NULL) ? sym->documentation : "";
+        error(4,symname,ptr);         /* function not defined */
       } /* if */
       callfunction(sym,lval1,TRUE);
       return FALSE;             /* result of function call is no lvalue */

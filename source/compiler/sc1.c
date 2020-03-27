@@ -5010,8 +5010,9 @@ static void destructsymbols(symbol *root,int level)
         if ((opsym->usage & uMISSING)!=0 || (opsym->usage & uPROTOTYPED)==0) {
           char symname[2*sNAMEMAX+16];  /* allow space for user defined operators */
           funcdisplayname(symname,opsym->name);
+          char *ptr= (sym->documentation!=NULL) ? sym->documentation : "";
           if ((opsym->usage & uMISSING)!=0)
-            error(4,symname);           /* function not defined */
+            error(4,symname,ptr);       /* function not defined */
           if ((opsym->usage & uPROTOTYPED)==0)
             error(71,symname);          /* operator must be declared before use */
         } /* if */

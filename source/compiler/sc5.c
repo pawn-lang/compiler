@@ -43,7 +43,7 @@ static char *errmsg[] = {
 /*001*/  "expected token: \"%s\", but found \"%s\"\n",
 /*002*/  "only a single statement (or expression) can follow each \"case\"\n",
 /*003*/  "declaration of a local variable must appear in a compound block\n",
-/*004*/  "function \"%s\" is not implemented\n",
+/*004*/  "function \"%s\" is not implemented %s\n",
 /*005*/  "function may not have arguments\n",
 /*006*/  "must be assigned to an array\n",
 /*007*/  "operator cannot be redefined\n",
