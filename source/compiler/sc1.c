@@ -1481,7 +1481,7 @@ static void about(void)
 static void invalid_option(const char *optptr)
 {
   usage();
-  pc_printf("\nInvalid or unsupported option: %s\n",optptr);
+  pc_printf("\nInvalid or unsupported option: -%s\n",optptr);
   longjmp(errbuf,3);        /* user abort */
 }
 
