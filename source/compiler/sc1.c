@@ -83,6 +83,8 @@ static void setopt(int argc,char **argv,char *oname,char *ename,char *pname,
 static void setconfig(char *root);
 static void setcaption(void);
 static void about(void);
+static void invalid_option(const char *opt);
+static void usage(void);
 static void setconstants(void);
 static void setstringconstants(void);
 static void parse(void);
@@ -1011,7 +1013,7 @@ static int toggle_option(const char *optptr, int option)
     option=TRUE;
     break;
   default:
-    about();
+    invalid_option(optptr);
   } /* switch */
   return option;
 }
@@ -1045,11 +1047,11 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
         if ((i % sizeof(cell))==0)
           sc_dataalign=i;
         else
-          about();
+          invalid_option(ptr);
         break;
       case 'a':
         if (*(ptr+1)!='\0')
-          about();
+          invalid_option(ptr);
         sc_asmfile=TRUE;        /* skip last pass of making binary file */
         if (verbosity>1)
           verbosity=1;
@@ -1058,7 +1060,7 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
         #if AMX_COMPACTMARGIN > 2
           sc_compress=toggle_option(ptr,sc_compress);
         #else
-          about();
+          invalid_option(ptr);
         #endif
         break;
       case 'c':
@@ -1091,7 +1093,7 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
           /* also avoid peephole optimization */
           break;
         default:
-          about();
+          invalid_option(ptr);
         } /* switch */
         debug=0;
         if ((sc_debug & (sCHKBOUNDS | sSYMBOLIC))==(sCHKBOUNDS | sSYMBOLIC))
@@ -1125,7 +1127,7 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
         break;
       case 'l':
         if (*(ptr+1)!='\0')
-          about();
+          invalid_option(ptr);
         sc_listing=TRUE;        /* skip second pass & code generation */
         break;
       case 'o':
@@ -1135,7 +1137,7 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
       case 'O':
         pc_optimize=*option_value(ptr) - '0';
         if (pc_optimize<sOPTIMIZE_NONE || pc_optimize>=sOPTIMIZE_NUMBER)
-          about();
+          invalid_option(ptr);
         break;
       case 'p':
         if (pname)
@@ -1170,7 +1172,7 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
         if (i>32)
           pc_stksize=(cell)i;   /* stack size has minimum size */
         else
-          about();
+          invalid_option(ptr);
         break;
       case 's':
         skipinput=atoi(option_value(ptr));
@@ -1180,7 +1182,7 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
         if (i>0)
           sc_tabsize=i;
         else
-          about();
+          invalid_option(ptr);
         break;
       case 'v':
         verbosity= isdigit(*option_value(ptr)) ? atoi(option_value(ptr)) : 2;
@@ -1215,13 +1217,13 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
           if (i>64)
             pc_amxram=(cell)i;  /* abstract machine data/stack has minimum size */
           else
-            about();
+            invalid_option(ptr);
         } else {
           i=atoi(option_value(ptr));
           if (i>64)
             pc_amxlimit=(cell)i;/* abstract machine has minimum size */
           else
-            about();
+            invalid_option(ptr);
         } /* if */
         break;
       case 'Z': {
@@ -1247,7 +1249,7 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
         optproccall=!toggle_option(ptr,!optproccall);
         break;
       default:                  /* wrong option */
-        about();
+        invalid_option(ptr);
       } /* switch */
     } else if (argv[arg][0]=='@') {
       #if !defined SC_LIGHT
@@ -1472,6 +1474,19 @@ static void setcaption(void)
 
 static void about(void)
 {
+  usage();
+  longjmp(errbuf,3);        /* user abort */
+}
+
+static void invalid_option(const char *optptr)
+{
+  usage();
+  pc_printf("\nInvalid or unsupported option: %s\n",optptr);
+  longjmp(errbuf,3);        /* user abort */
+}
+
+static void usage(void)
+{
   if (strempty(errfname)) {
     setcaption();
     pc_printf("Usage:   pawncc <filename> [filename...] [options]\n\n");
@@ -1527,7 +1542,6 @@ static void about(void)
     pc_printf("with a colon (\":\") or an equal sign (\"=\"). That is, the options \"-d0\", \"-d=0\"\n");
     pc_printf("and \"-d:0\" are all equivalent.\n");
   } /* if */
-  longjmp(errbuf,3);        /* user abort */
 }
 
 static void setconstants(void)
