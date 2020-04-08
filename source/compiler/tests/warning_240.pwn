@@ -46,7 +46,7 @@ test_global_static()
 
 test_arg(arg)
 {
-	arg = 0;
+	arg = 0; // warning 240
 	arg = 1; // warning 240, warning 204
 }
 

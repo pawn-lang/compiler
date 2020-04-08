@@ -4294,7 +4294,9 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
       argsym->usage|=uREAD;     /* arguments of public functions are always "used" */
       if(argsym->ident==iREFARRAY || argsym->ident==iREFERENCE)
         argsym->usage|=uWRITTEN;
-    }
+    } else if (argsym->ident==iVARIABLE) {
+      argsym->usage|=uASSIGNED;
+    } /* if */
 
     if (fconst)
       argsym->usage|=uCONST;
