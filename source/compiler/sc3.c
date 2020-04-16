@@ -1776,11 +1776,11 @@ restart:
           } /* if */
           charalign();                  /* align character index into array */
         } /* if */
-        /* if the array index is a field from an enumeration, get the tag name
-         * from the field and save the size of the field too.
+        /* if the array index is a field from a named enumeration, get the tag
+         * name from the field and save the size of the field too.
          */
         assert(lval2.sym==NULL || lval2.sym->dim.array.level==0);
-        if (lval2.sym!=NULL && lval2.sym->dim.array.length>0 && sym->dim.array.level==0) {
+        if (lval2.sym!=NULL && lval2.sym->parent!=NULL && lval2.sym->dim.array.length>0 && sym->dim.array.level==0) {
           lval1->tag=lval2.sym->x.tags.index;
           lval1->constval=lval2.sym->dim.array.length;
         } /* if */
@@ -1832,8 +1832,6 @@ restart:
       if (lval2.ident==iCONSTEXPR && lval2.sym!=NULL
           && lval2.sym->dim.array.length>0 && sym->dim.array.level==0)
       {
-        lval1->tag=lval2.sym->x.tags.index;
-        lval1->constval=lval2.sym->dim.array.length;
         if (lval2.tag==sym->x.tags.index && lval1->constval>1 && matchtoken('[')) {
           /* an array indexed with an enumeration field may be considered a sub-array */
           lexpush();
