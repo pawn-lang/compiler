@@ -7588,8 +7588,6 @@ static void doreturn(void)
         error(90,curfunc->name);        /* public function may not return array */
     } /* if */
     rettype|=uRETVALUE;                 /* function returns a value */
-    /* check tagname with function tagname */
-    check_tagmismatch(curfunc->tag,tag,TRUE,-1);
     if (ident==iARRAY || ident==iREFARRAY) {
       int dim[sDIMEN_MAX],numdim=0;
       cell arraysize;
@@ -7682,6 +7680,11 @@ static void doreturn(void)
         /* moveto1(); is not necessary, callfunction() does a popreg() */
       } /* if */
     } /* if */
+    /* try to use "operator=" if tags don't match */
+    if (!matchtag(curfunc->tag,tag,TRUE))
+      check_userop(NULL,tag,curfunc->tag,2,NULL,&tag);
+    /* check tagname with function tagname */
+    check_tagmismatch(curfunc->tag,tag,TRUE,-1);
   } else {
     /* this return statement contains no expression */
     ldconst(0,sPRI);
