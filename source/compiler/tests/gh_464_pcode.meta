@@ -1,0 +1,28 @@
+{
+  'test_type': 'pcode_check',
+  'code_pattern': r"""
+[0-9a-f]+  nop
+
+[0-9a-f]+  proc
+[0-9a-f]+  const.pri 00000007
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000004
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  retn
+
+[0-9a-f]+  proc
+[0-9a-f]+  const.pri 00000007
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000004
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  retn
+
+[0-9a-f]+  proc
+[0-9a-f]+  const.pri 00000007
+[0-9a-f]+  retn
+
+[0-9a-f]+  proc
+[0-9a-f]+  const.pri 00000007
+[0-9a-f]+  retn
+"""
+}
