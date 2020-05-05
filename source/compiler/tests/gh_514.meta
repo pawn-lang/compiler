@@ -1,0 +1,14 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+gh_514.pwn(19) : warning 213: tag mismatch: expected tag "Tag", but found none ("_")
+gh_514.pwn(20) : warning 213: tag mismatch: expected tag "Tag", but found none ("_")
+gh_514.pwn(22) : warning 213: tag mismatch: expected tag none ("_"), but found "Tag"
+gh_514.pwn(23) : warning 213: tag mismatch: expected tag none ("_"), but found "Tag"
+gh_514.pwn(31) : warning 213: tag mismatch: expected tag "Tag", but found "bool"
+gh_514.pwn(32) : warning 213: tag mismatch: expected tag "bool", but found "Tag"
+gh_514.pwn(34) : warning 213: tag mismatch: expected tag "eArrayStructure", but found none ("_")
+gh_514.pwn(34) : warning 213: tag mismatch: expected tag none ("_"), but found "Tag"
+gh_514.pwn(35) : warning 213: tag mismatch: expected tag "eArrayStructure", but found none ("_")
+"""
+}
