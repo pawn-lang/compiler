@@ -3660,11 +3660,7 @@ static void funcstub(int fnative)
    * for a native function, this is optional
    */
   if (fnative) {
-    if (opertok!=0) {
-      needtoken('=');
-      lexpush();        /* push back, for matchtoken() to retrieve again */
-    } /* if */
-    if (matchtoken('=')) {
+    if ((opertok!=0) ? needtoken('=') : matchtoken('=')) {
       /* allow number or symbol */
       if (matchtoken(tSYMBOL)) {
         tokeninfo(&val,&str);
