@@ -1,0 +1,6 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+gh_525.pwn(1) : error 001: expected token: "=", but found ";"
+  """
+}
