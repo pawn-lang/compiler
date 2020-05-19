@@ -782,6 +782,8 @@ cleanup:
                                            * done (i.e. on a fatal error) */
   delete_symbols(&glbtab,0,TRUE,TRUE);
   line_sym=NULL;
+  free(pc_deprecate);
+  pc_deprecate=NULL;
   hashtable_term(&symbol_cache_ht);
   delete_consttable(&tagname_tab);
   delete_consttable(&libname_tab);
@@ -904,6 +906,7 @@ static void resetglobals(void)
   pc_addlibtable=TRUE;  /* by default, add a "library table" to the output file */
   sc_alignnext=FALSE;
   pc_docexpr=FALSE;
+  free(pc_deprecate);
   pc_deprecate=NULL;
   sc_curstates=0;
   pc_memflags=0;

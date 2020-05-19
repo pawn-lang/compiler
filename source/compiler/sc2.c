@@ -1164,6 +1164,7 @@ static int command(void)
           /* remove leading whitespace */
           while (*lptr<=' ' && *lptr!='\0')
             lptr++;
+          free(pc_deprecate);   /* free the previous deprecation message, if it wasn't used */
           pc_deprecate=strdupwithouta((const char *)lptr);
           if (pc_deprecate!=NULL) {
             char *ptr=pc_deprecate+strlen(pc_deprecate)-1;
