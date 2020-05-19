@@ -1246,10 +1246,8 @@ static int command(void)
         } else if (strcmp(str,"unused")==0 || strcmp(str,"unread")==0 || strcmp(str,"unwritten")==0) {
           char name[sNAMEMAX+1];
           int i,comma;
-          /* mark as read if the pragma wasn't `unwritten` */
-          int read = str[2] == 'w' ? 0 : uREAD;
-          /* mark as written if the pragma wasn't `unread` */
-          int write = str[2] == 'r' ? 0 : uWRITTEN;
+          int unread = str[2] == 'r';
+          int unwritten = str[2] == 'w';
           symbol *sym;
           do {
             /* get the name */
@@ -1263,13 +1261,7 @@ static int command(void)
             if (sym==NULL)
               sym=findglb(name,sSTATEVAR);
             if (sym!=NULL) {
-              /* mark as read if the pragma wasn't `unwritten` */
-              sym->usage |= read;
-              if (sym->ident==iVARIABLE || sym->ident==iREFERENCE
-                  || sym->ident==iARRAY || sym->ident==iREFARRAY) {
-                sym->usage |= write;
-                sym->usage &= ~uASSIGNED;
-              } /* if */
+              pragma_unused(sym,unread,unwritten);
             } else {
               error(17,name);     /* undefined symbol */
             } /* if */
@@ -2197,9 +2189,9 @@ char *sc_tokens[] = {
          "...", "..",
          "__addressof", "assert", "*begin", "break", "case", "char", "const", "continue",
          "default", "defined", "do", "else", "__emit", "*end", "enum", "exit", "for",
-         "forward", "goto", "if", "__nameof", "native", "new", "operator", "public",
-         "return", "sizeof", "sleep", "state", "static", "stock", "switch", "tagof",
-         "*then", "while",
+         "forward", "goto", "if", "__nameof", "native", "new", "operator", "__pragma",
+         "public", "return", "sizeof", "sleep", "state", "static", "stock", "switch",
+         "tagof", "*then", "while",
          "#assert", "#define", "#else", "#elseif", "#emit", "#endif", "#endinput",
          "#endscript", "#error", "#file", "#if", "#include", "#line", "#pragma",
          "#tryinclude", "#undef", "#warning",

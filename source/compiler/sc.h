@@ -400,6 +400,7 @@ enum {
   tNATIVE,
   tNEW,
   tOPERATOR,
+  t__PRAGMA,
   tPUBLIC,
   tRETURN,
   tSIZEOF,
@@ -571,6 +572,16 @@ enum {  /* search types for error_suggest() when the identifier type is "estSYMB
   esfVARCONST   = esfCONST | esfVARIABLE | esfARRAY
 };
 
+enum { /* attribute flags for "__pragma" */
+  attrDEPRECATED,
+  attrUNUSED,
+  attrUNREAD,
+  attrUNWRITTEN,
+  attrNODESTRUCT,
+  attrNAKED,
+  NUM_ATTRS
+};
+
 /* interface functions */
 #if defined __cplusplus
   extern "C" {
@@ -659,6 +670,9 @@ SC_FUNC symbol *add_builtin_string_constant(char *name,const char *val,int vclas
 SC_FUNC void exporttag(int tag);
 SC_FUNC void sc_attachdocumentation(symbol *sym);
 SC_FUNC void emit_parse_line(void);
+SC_FUNC void pragma_deprecated(symbol *sym);
+SC_FUNC void pragma_unused(symbol *sym,int unread,int unwritten);
+SC_FUNC void pragma_nodestruct(symbol *sym);
 
 /* function prototypes in SC2.C */
 #define PUSHSTK_P(v)  { stkitem s_; s_.pv=(v); pushstk(s_); }
@@ -955,6 +969,7 @@ SC_VDECL int pc_memflags;     /* special flags for the stack/heap usage */
 SC_VDECL int pc_naked;        /* if true mark following function as naked */
 SC_VDECL int pc_compat;       /* running in compatibility mode? */
 SC_VDECL int pc_recursion;    /* enable detailed recursion report? */
+SC_VDECL unsigned int pc_attributes;/* currently set attribute flags (for the "__pragma" operator) */
 
 SC_VDECL constvalue_root sc_automaton_tab; /* automaton table */
 SC_VDECL constvalue_root sc_state_tab;     /* state table */
