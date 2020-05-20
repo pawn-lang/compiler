@@ -5683,7 +5683,6 @@ static int doif(void)
   test(flab1,TEST_THEN,FALSE);  /* get expression, branch to flab1 if false */
   clearassignments(&loctab);
   statement(NULL,FALSE);        /* if true, do a statement */
-  clearassignments(&loctab);
   if (!matchtoken(tELSE)) {     /* if...else ? */
     setlabel(flab1);            /* no, simple if..., print false label */
   } else {
@@ -5692,6 +5691,7 @@ static int doif(void)
      * has a lower indent than the matching "if" */
     if (stmtindent<ifindent && sc_tabsize>0)
       error(217);               /* loose indentation */
+    clearassignments(&loctab);
     flab2=getlabel();
     if ((lastst!=tRETURN) && (lastst!=tGOTO))
       jumplabel(flab2);         /* "true" branch jumps around "else" clause, unless the "true" branch statement already jumped */
