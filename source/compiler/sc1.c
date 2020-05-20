@@ -5898,10 +5898,10 @@ static void doswitch(void)
   swdefault=FALSE;
   casecount=0;
   do {
-    clearassignments(&loctab);
     tok=lex(&val,&str);         /* read in (new) token */
     switch (tok) {
     case tCASE:
+      clearassignments(&loctab);
       if (swdefault!=FALSE)
         error(15);        /* "default" case must be last in switch statement */
       lbl_case=getlabel();
@@ -5969,6 +5969,7 @@ static void doswitch(void)
       jumplabel(lbl_exit);
       break;
     case tDEFAULT:
+      clearassignments(&loctab);
       if (swdefault!=FALSE)
         error(16);         /* multiple defaults in switch */
       lbl_case=getlabel();
@@ -5990,7 +5991,6 @@ static void doswitch(void)
       } /* if */
     } /* switch */
   } while (tok!=endtok);
-  clearassignments(&loctab);
 
   #if !defined NDEBUG
     /* verify that the case table is sorted (unfortunatly, duplicates can
