@@ -6052,6 +6052,8 @@ static void dogoto(void)
 
   if (lex(&val,&st)==tSYMBOL) {
     sym=fetchlab(st);
+    if ((sym->usage & uDEFINE)!=0)
+      clearassignments(&loctab);
     jumplabel((int)sym->addr);
     sym->usage|=uREAD;  /* set "uREAD" bit */
     // ??? if the label is defined (check sym->usage & uDEFINE), check
