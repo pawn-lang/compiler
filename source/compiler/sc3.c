@@ -478,6 +478,10 @@ static int plnge(int *opstr,int opoff,int (*hier)(value *lval),value *lval,
     if (chkbitwise && count++>0 && bitwise_opercount!=0)
       error(212);
     opidx+=opoff;               /* add offset to index returned by nextop() */
+    if (lval->sym!=NULL)
+      checkinitialized(lval->sym);
+    if (lval2.sym!=NULL)
+      checkinitialized(lval2.sym);
     plnge2(op1[opidx],hier,lval,&lval2);
     if (op1[opidx]==ob_and || op1[opidx]==ob_or)
       bitwise_opercount++;
@@ -823,6 +827,7 @@ static int hier14(value *lval1)
   int bwcount,leftarray;
   cell arrayidx1[sDIMEN_MAX],arrayidx2[sDIMEN_MAX];  /* last used array indices */
   cell *org_arrayidx;
+  int markinit=FALSE;
 
   bwcount=bitwise_opercount;
   bitwise_opercount=0;
@@ -877,6 +882,7 @@ static int hier14(value *lval1)
       oper=ob_sal;
       break;
     case '=':           /* simple assignment */
+      markinit=TRUE;
       oper=NULL;
       if (sc_intest)
         error(211);     /* possibly unintended assignment */
@@ -926,6 +932,8 @@ static int hier14(value *lval1)
     plnge2(oper,hier14,lval1,&lval2);
     if (lval2.ident!=iARRAYCELL && lval2.ident!=iARRAYCHAR)
       lval2.arrayidx=NULL;
+    if (lval2.ident==iARRAYCELL || lval2.ident==iARRAYCHAR || lval2.ident==iREFARRAY)
+      checkinitialized(lval2.sym);
     if (oper)
       popreg(sALT);
     if (!oper && lval3.arrayidx!=NULL && lval2.arrayidx!=NULL
@@ -1063,6 +1071,10 @@ static int hier14(value *lval1)
   pc_sideeffect=TRUE;
   bitwise_opercount=bwcount;
   lval1->ident=iEXPRESSION;
+  if (markinit)
+    markinitialized(lval3.sym);
+  else
+    checkinitialized(lval3.sym);
   return FALSE;         /* expression result is never an lvalue */
 }
 
@@ -1241,6 +1253,7 @@ static int hier2(value *lval)
     assert(lval->sym!=NULL);
     if ((lval->sym->usage & uCONST)!=0)
       return error(22);         /* assignment to const argument */
+    markinitialized(lval->sym);
     if (!check_userop(user_inc,lval->tag,0,1,lval,&lval->tag))
       inc(lval);                /* increase variable first */
     rvalue(lval);               /* and read the result into PRI */
@@ -1252,6 +1265,7 @@ static int hier2(value *lval)
     assert(lval->sym!=NULL);
     if ((lval->sym->usage & uCONST)!=0)
       return error(22);         /* assignment to const argument */
+    markinitialized(lval->sym);
     if (!check_userop(user_dec,lval->tag,0,1,lval,&lval->tag))
       dec(lval);                /* decrease variable first */
     rvalue(lval);               /* and read the result into PRI */
@@ -1623,6 +1637,7 @@ static int hier2(value *lval)
         assert(lval->sym!=NULL);
         if ((lval->sym->usage & uCONST)!=0)
           return error(22);     /* assignment to const argument */
+        markinitialized(lval->sym);
         /* on incrementing array cells, the address in PRI must be saved for
          * incremening the value, whereas the current value must be in PRI
          * on exit.
@@ -1645,6 +1660,7 @@ static int hier2(value *lval)
         assert(lval->sym!=NULL);
         if ((lval->sym->usage & uCONST)!=0)
           return error(22);     /* assignment to const argument */
+        markinitialized(lval->sym);
         saveresult= (lval->ident==iARRAYCELL || lval->ident==iARRAYCHAR);
         if (saveresult)
           pushreg(sPRI);        /* save address in PRI */
@@ -1735,6 +1751,8 @@ restart:
         rvalue(&lval2);
       if (lval2.ident==iARRAY || lval2.ident==iREFARRAY)
         error(33,lval2.sym->name);      /* array must be indexed */
+      else if (lval2.ident==iARRAYCELL || lval2.ident==iARRAYCHAR)
+        checkinitialized(lval2.sym);
       needtoken(close);
       check_tagmismatch(sym->x.tags.index,lval2.tag,TRUE,-1);
       if (lval2.ident==iCONSTEXPR) {    /* constant expression */
@@ -1960,7 +1978,14 @@ static int primary(value *lval)
       lval->ident=sym->ident;
       lval->tag=sym->tag;
       if (sym->ident==iARRAY || sym->ident==iREFARRAY) {
+        /* temporarily mark the symbol as initialized before obtaining its address
+         * in order to avoid warning 210 on assignment to an array cell */
+        const int was_uninitialized=((sym->usage & uEXPLINIT)==0);
+        sym->usage |= uEXPLINIT;
         address(sym,sPRI);  /* get starting address in primary register */
+        /* clear the initialization flag that was temporarily set earlier */
+        if (was_uninitialized)
+          sym->usage &= ~uEXPLINIT;
         return FALSE;       /* return 0 for array (not lvalue) */
       } else {
         return TRUE;        /* return 1 if lvalue (not label or array) */
@@ -1982,7 +2007,14 @@ static int primary(value *lval)
         lval->ident=sym->ident;
         lval->tag=sym->tag;
         if (sym->ident==iARRAY || sym->ident==iREFARRAY) {
+          /* temporarily mark the symbol as initialized before obtaining its address
+           * in order to avoid warning 210 on assignment to an array cell */
+          const int was_uninitialized=((sym->usage & uEXPLINIT)==0);
+          sym->usage |= uEXPLINIT;
           address(sym,sPRI);    /* get starting address in primary register */
+          /* clear the initialization flag that was temporarily set earlier */
+          if (was_uninitialized)
+            sym->usage &= ~uEXPLINIT;
           return FALSE;         /* return 0 for array (not lvalue) */
         } else {
           return TRUE;          /* return 1 if lvalue (not function or array) */
@@ -2229,13 +2261,6 @@ static int nesting=0;
         if (arg[argidx].ident!=0 && arg[argidx].numtags==1)
           lval.cmptag=arg[argidx].tags[0];  /* set the expected tag, if any */
         lvalue=hier14(&lval);
-        /* Mark the symbol as "read" so it won't be omitted from P-code.
-         * Native functions are marked as read at the point of their call,
-         * so we don't handle them here; see ffcall().
-         */
-        if (lval.sym!=NULL && (lval.sym->usage & uNATIVE)==0) {
-          markusage(lval.sym,uREAD);
-        } /* if */
         assert(sc_status==statFIRST || arg[argidx].ident==0 || arg[argidx].tags!=NULL);
         switch (arg[argidx].ident) {
         case 0:
@@ -2243,6 +2268,10 @@ static int nesting=0;
           break;
         case iVARARGS:
           /* always pass by reference */
+          if (lval.sym!=NULL) {
+            markinitialized(lval.sym);
+            markusage(lval.sym,uWRITTEN);
+          } /* if */
           if (lval.ident==iVARIABLE || lval.ident==iREFERENCE) {
             assert(lval.sym!=NULL);
             if ((lval.sym->usage & uCONST)!=0 && (arg[argidx].usage & uCONST)==0) {
@@ -2277,8 +2306,6 @@ static int nesting=0;
           } /* if */
           /* ??? handle const array passed by reference */
           /* otherwise, the address is already in PRI */
-          if (lval.sym!=NULL)
-            markusage(lval.sym,uWRITTEN);
           check_tagmismatch_multiple(arg[argidx].tags,arg[argidx].numtags,lval.tag,-1);
           if (lval.tag!=0)
             append_constval(&taglst,arg[argidx].name,lval.tag,0);
@@ -2298,6 +2325,11 @@ static int nesting=0;
           argidx++;               /* argument done */
           break;
         case iREFERENCE:
+          if (lval.sym!=NULL) {
+            if ((arg[argidx].usage & uCONST)==0)
+              markinitialized(lval.sym);
+            markusage(lval.sym,uWRITTEN);
+          } /* if */
           if (!lvalue || lval.ident==iARRAYCHAR)
             error(35,argidx+1);   /* argument type mismatch */
           if (lval.sym!=NULL && (lval.sym->usage & uCONST)!=0 && (arg[argidx].usage & uCONST)==0)
@@ -2317,10 +2349,12 @@ static int nesting=0;
           if (lval.tag!=0)
             append_constval(&taglst,arg[argidx].name,lval.tag,0);
           argidx++;               /* argument done */
-          if (lval.sym!=NULL)
-            markusage(lval.sym,uWRITTEN);
           break;
         case iREFARRAY:
+          if (lval.sym!=NULL && (arg[argidx].usage & uCONST)==0) {
+            markinitialized(lval.sym);
+            markusage(lval.sym,uWRITTEN);
+          } /* if */
           if (lval.ident!=iARRAY && lval.ident!=iREFARRAY
               && lval.ident!=iARRAYCELL)
           {
@@ -2396,11 +2430,16 @@ static int nesting=0;
           check_tagmismatch_multiple(arg[argidx].tags,arg[argidx].numtags,lval.tag,-1);
           if (lval.tag!=0)
             append_constval(&taglst,arg[argidx].name,lval.tag,0);
-          if (lval.sym!=NULL && (arg[argidx].usage & uCONST)==0)
-            markusage(lval.sym,uWRITTEN);
           argidx++;               /* argument done */
           break;
         } /* switch */
+        /* Mark the symbol as "read" so it won't be omitted from P-code.
+         * Native functions are marked as read at the point of their call,
+         * so we don't handle them here; see ffcall().
+         */
+        if (lval.sym!=NULL && (lval.sym->usage & uNATIVE)==0) {
+          markusage(lval.sym,uREAD);
+        } /* if */
         pushreg(sPRI);            /* store the function argument on the stack */
         markexpr(sPARM,NULL,0);   /* mark the end of a sub-expression */
         nest_stkusage++;

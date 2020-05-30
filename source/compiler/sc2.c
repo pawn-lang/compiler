@@ -1423,6 +1423,7 @@ static int command(void)
             } else {
               outval(sym->addr,FALSE);
               /* mark symbol as "used", unknown whether for read or write */
+              markinitialized(sym);
               markusage(sym,uREAD | uWRITTEN);
             } /* if */
             code_idx+=opargs(1);
@@ -3180,6 +3181,8 @@ SC_FUNC void markusage(symbol *sym,int usage)
   sym->usage |= (char)usage;
   if ((usage & uWRITTEN)!=0)
     sym->lnumber=fline;
+  if ((usage & uREAD)!=0)
+    checkinitialized(sym);
   /* check if (global) reference must be added to the symbol */
   if ((usage & (uREAD | uWRITTEN))!=0) {
     /* only do this for global symbols */
@@ -3190,6 +3193,36 @@ SC_FUNC void markusage(symbol *sym,int usage)
         sym->usage |= uGLOBALREF;
     } /* if */
   } /* if */
+}
+
+SC_FUNC void markinitialized(symbol *sym)
+{
+  symbol *cursym;
+  assert(sym!=NULL);
+  if (sym->ident!=iVARIABLE && sym->ident!=iARRAY)
+    return;
+  if (sc_status==statFIRST && (sym->vclass==sLOCAL || sym->vclass==sSTATIC))
+    return;
+  cursym=sym;
+  do {
+    cursym->usage |= uEXPLINIT;
+  } while ((cursym=cursym->child)!=NULL);
+  cursym=sym;
+  while ((cursym=cursym->parent)!=NULL)
+    cursym->usage |= uEXPLINIT;
+}
+
+SC_FUNC void checkinitialized(symbol *sym)
+{
+  assert(sym!=NULL);
+  if (sc_status==statFIRST)
+    return;
+  if (sym->ident!=iVARIABLE && sym->ident!=iARRAY)
+    return;
+  if ((sym->usage & uDEFINE)==0 || (sym->usage & uEXPLINIT)!=0)
+    return;
+  error(210,sym->name); /* possible use of symbol before initialization */
+  markinitialized(sym); /* don't issue the same error for this symbol again */
 }
 
 

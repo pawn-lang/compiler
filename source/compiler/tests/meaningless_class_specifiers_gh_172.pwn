@@ -14,7 +14,7 @@ f6(&v) {
 }
 
 main() {
-	new a;
+	new a = 0;
 	f1(a);
 	f2(a);
 	f3(a);

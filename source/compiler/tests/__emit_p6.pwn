@@ -104,7 +104,7 @@ stock test__push_u(&local_refvar, local_refarray[])
 
 main()
 {
-	new t, a[2];
+	new t = 0, a[2] = { 0, ... };
 	test__op_load_u_pri_alt(t, a); // 4
 	test__op_stor_u_pri_alt(t, a); // 7
 	test__op_addr_u_pri_alt(t, a); // 6

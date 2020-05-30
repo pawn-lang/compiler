@@ -98,7 +98,7 @@ static void decl_const(int table);
 static void decl_enum(int table,int fstatic);
 static cell needsub(int *tag,constvalue_root **enumroot);
 static void initials(int ident,int tag,cell *size,int dim[],int numdim,
-                     constvalue_root *enumroot);
+                     constvalue_root *enumroot,int *explicit_init);
 static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
                       int startlit,int counteddim[],constvalue_root *lastdim,
                       constvalue_root *enumroot,int *errorfound);
@@ -2018,6 +2018,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
   char *str;
   int dim[sDIMEN_MAX];
   int numdim;
+  int explicit_init;
   short filenum;
   symbol *sym;
   constvalue_root *enumroot=NULL;
@@ -2122,7 +2123,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
       litidx=0;         /* global initial data is dumped, so restart at zero */
     } /* if */
     assert(litidx==0);  /* literal queue should be empty (again) */
-    initials(ident,tag,&size,dim,numdim,enumroot);/* stores values in the literal queue */
+    initials(ident,tag,&size,dim,numdim,enumroot,&explicit_init);/* stores values in the literal queue */
     assert(size>=litidx);
     if (numdim==1)
       dim[0]=(int)size;
@@ -2246,6 +2247,8 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
       sym->usage|=uSTOCK;
     if (fstatic)
       sym->fnumber=filenum;
+    if (explicit_init)
+      markinitialized(sym);
     sc_attachdocumentation(sym);/* attach any documenation to the variable */
     if (sc_status==statSKIP) {
       sc_status=statWRITE;
@@ -2282,6 +2285,7 @@ static int declloc(int fstatic)
   int numdim;
   int fconst;
   int staging_start;
+  int explicit_init;    /* is the variable explicitly initialized? */
 
   fconst=matchtoken(tCONST);
   do {
@@ -2332,7 +2336,7 @@ static int declloc(int fstatic)
         sc_alignnext=FALSE;
       } /* if */
       cur_lit=litidx;           /* save current index in the literal table */
-      initials(ident,tag,&size,dim,numdim,enumroot);
+      initials(ident,tag,&size,dim,numdim,enumroot,&explicit_init);
       if (size==0)
         return ident;           /* error message already given */
       if (numdim==1)
@@ -2371,7 +2375,7 @@ static int declloc(int fstatic)
       if (ident==iVARIABLE) {
         /* simple variable, also supports initialization */
         int ctag = tag;         /* set to "tag" by default */
-        int explicit_init=FALSE;/* is the variable explicitly initialized? */
+        explicit_init=FALSE;
         if (matchtoken('=')) {
           sym->usage &= ~uDEFINE;   /* temporarily mark the variable as undefined to prevent
                                      * possible self-assignment through its initialization expression */
@@ -2430,6 +2434,8 @@ static int declloc(int fstatic)
         } /* if */
       } /* if */
     } /* if */
+    if (explicit_init)
+      markinitialized(sym);
   } while (matchtoken(',')); /* enddo */   /* more? */
   needtoken(tTERM);    /* if not comma, must be semicolumn */
   return ident;
@@ -2510,7 +2516,7 @@ static int base;
  *  Global references: litidx (altered)
  */
 static void initials(int ident,int tag,cell *size,int dim[],int numdim,
-                     constvalue_root *enumroot)
+                     constvalue_root *enumroot,int *explicit_init)
 {
   int ctag;
   cell tablesize;
@@ -2518,6 +2524,8 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
   int err=0;
   int i;
 
+  if (explicit_init!=NULL)
+    *explicit_init=FALSE;
   if (!matchtoken('=')) {
     assert(ident!=iARRAY || numdim>0);
     if (ident==iARRAY) {
@@ -2548,6 +2556,8 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
     return;
   } /* if */
 
+  if (explicit_init!=NULL)
+    *explicit_init=TRUE;
   if (ident==iVARIABLE) {
     assert(*size==1);
     init(ident,&ctag,NULL);
@@ -4203,7 +4213,7 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
       lexpush();                /* initials() needs the "=" token again */
       assert(litidx==0);        /* at the start of a function, this is reset */
       assert(numtags>0);
-      initials(ident,tags[0],&size,arg->dim,arg->numdim,enumroot);
+      initials(ident,tags[0],&size,arg->dim,arg->numdim,enumroot,NULL);
       assert(size>=litidx);
       /* allocate memory to hold the initial values */
       arg->defvalue.array.data=(cell *)malloc(litidx*sizeof(cell));
@@ -4287,14 +4297,15 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
     assert(numtags>0);
     argsym=addvariable(name,offset,ident,sLOCAL,tags[0],
                        arg->dim,arg->numdim,arg->idxtag,0);
+    markinitialized(argsym);
     if (fpublic) {
-      argsym->usage|=uREAD;     /* arguments of public functions are always "used" */
-      if(argsym->ident==iREFARRAY || argsym->ident==iREFERENCE)
-        argsym->usage|=uWRITTEN;
-    }
+      argsym->usage |= uREAD;   /* arguments of public functions are always "used" */
+      if (argsym->ident==iREFARRAY || argsym->ident==iREFERENCE)
+        argsym->usage |= uWRITTEN;
+    } /* if */
 
     if (fconst)
-      argsym->usage|=uCONST;
+      argsym->usage |= uCONST;
   } /* if */
 }
 
@@ -5288,9 +5299,9 @@ SC_FUNC symbol *add_builtin_string_constant(char *name,const char *val,
     glb_declared+=litidx;
     dumplits();
     litidx=0;
-  }
-  sym->usage|=uDEFINE;
-  sym->flags|=flagPREDEF;
+  } /* if */
+  sym->usage |= (uDEFINE | uEXPLINIT);
+  sym->flags |= flagPREDEF;
   return sym;
 }
 
@@ -5766,8 +5777,13 @@ static int dofor(void)
       /* The variable in expr1 of the for loop is at a
        * 'compound statement' level of it own.
        */
+      symbol *sym;
       nestlevel++;
       declloc(FALSE); /* declare local variable */
+      for (sym=loctab.next; sym!=NULL; sym=sym->next) {
+        if (sym->compound==nestlevel)
+          markinitialized(sym);
+      } /* for */
     } else {
       doexpr(TRUE,TRUE,TRUE,TRUE,NULL,NULL,FALSE);  /* expression 1 */
       needtoken(';');
@@ -6145,6 +6161,7 @@ invalid_lvalue:
     error(17,str);      /* undefined symbol */
     return FALSE;
   } /* if */
+  markinitialized(sym);
   markusage(sym,uREAD | uWRITTEN);
   if (!allow_const && (sym->usage & uCONST)!=0)
     goto invalid_lvalue;
@@ -6544,6 +6561,7 @@ static void SC_FASTCALL emit_param_data(emit_outval *p)
   case tSYMBOL:
     sym=findloc(str);
     if (sym!=NULL) {
+      markinitialized(sym);
       markusage(sym,uREAD | uWRITTEN);
       if (sym->ident==iLABEL) {
         tok=tLABEL;
@@ -6562,6 +6580,7 @@ static void SC_FASTCALL emit_param_data(emit_outval *p)
         error(17,str);  /* undefined symbol */
         return;
       } /* if */
+      markinitialized(sym);
       markusage(sym,(sym->ident==iFUNCTN || sym->ident==iREFFUNC) ? uREAD : (uREAD | uWRITTEN));
       if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
         tok=((sym->usage & uNATIVE)!=0) ? teNATIVE : teFUNCTN;
@@ -6602,6 +6621,7 @@ fetchtok:
   case tSYMBOL:
     sym=findloc(str);
     if (sym!=NULL) {
+      markinitialized(sym);
       markusage(sym,uREAD | uWRITTEN);
       if (sym->ident==iLABEL) {
         tok=tLABEL;
@@ -6625,6 +6645,7 @@ fetchtok:
         error(17,str);  /* undefined symbol */
         return;
       } /* if */
+      markinitialized(sym);
       markusage(sym,(sym->ident==iFUNCTN || sym->ident==iREFFUNC) ? uREAD : (uREAD | uWRITTEN));
       if (sym->ident!=iCONSTEXPR) {
         if (sym->ident==iFUNCTN || sym->ident==iREFFUNC)

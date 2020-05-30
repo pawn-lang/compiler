@@ -1,0 +1,19 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+warning_210.pwn(59) : warning 210: possible use of symbol before initialization: "local_var3"
+warning_210.pwn(62) : warning 210: possible use of symbol before initialization: "local_var4"
+warning_210.pwn(85) : warning 210: possible use of symbol before initialization: "local_arr1d4"
+warning_210.pwn(88) : warning 210: possible use of symbol before initialization: "local_arr1d5"
+warning_210.pwn(92) : warning 210: possible use of symbol before initialization: "local_arr1d6"
+warning_210.pwn(96) : warning 210: possible use of symbol before initialization: "local_arr1d7"
+warning_210.pwn(119) : warning 210: possible use of symbol before initialization: "local_arr2d4"
+warning_210.pwn(122) : warning 210: possible use of symbol before initialization: "local_arr2d5"
+warning_210.pwn(126) : warning 210: possible use of symbol before initialization: "local_arr2d6"
+warning_210.pwn(130) : warning 210: possible use of symbol before initialization: "local_arr2d7"
+warning_210.pwn(134) : warning 210: possible use of symbol before initialization: "local_arr2d8"
+warning_210.pwn(149) : warning 210: possible use of symbol before initialization: "global_var3"
+warning_210.pwn(165) : warning 210: possible use of symbol before initialization: "global_arr1d4"
+warning_210.pwn(181) : warning 210: possible use of symbol before initialization: "global_arr2d4"
+  """
+}
