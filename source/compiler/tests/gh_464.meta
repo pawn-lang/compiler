@@ -1,0 +1,6 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+gh_464.pwn(27) : warning 203: symbol is never used: "Tag:operator=(Tag:)"
+"""
+}
