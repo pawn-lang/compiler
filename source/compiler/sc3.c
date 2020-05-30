@@ -1055,7 +1055,8 @@ static int hier14(value *lval1)
   if (leftarray) {
     memcopy(val*sizeof(cell));
   } else {
-    check_userop(NULL,lval2.tag,lval3.tag,2,&lval3,&lval2.tag);
+    if (check_userop(NULL,(oper==NULL) ? lval2.tag : lval1->tag,lval3.tag,2,&lval3,&lval2.tag))
+      lval1->tag=lval2.tag; /* user-defined assignment operator can override the resulting tag */
     store(&lval3);      /* now, store the expression result */
   } /* if */
   if (!oper)
