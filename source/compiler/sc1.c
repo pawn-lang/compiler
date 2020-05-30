@@ -3654,7 +3654,7 @@ static void funcstub(int fnative)
   if (fnative) {
     sym->usage=(short)(uNATIVE | uRETVALUE | uDEFINE | (sym->usage & uPROTOTYPED));
     sym->x.lib=curlibrary;
-  } else if (fpublic) {
+  } else if (fpublic && opertok==0) {
     sym->usage|=uPUBLIC;
   } /* if */
   sym->usage|=uFORWARD;
@@ -3665,6 +3665,11 @@ static void funcstub(int fnative)
   sc_attachdocumentation(sym);  /* attach any documenation to the function */
   if (!operatoradjust(opertok,sym,symbolname,tag))
     sym->usage &= ~uDEFINE;
+  if (fpublic && opertok!=0) {
+    char symname[2*sNAMEMAX+16];  /* allow space for user defined operators */
+    funcdisplayname(symname,sym->name);
+    error(56,symname);  /* operators cannot be public */
+  } /* if */
 
   if (getstates(symbolname)!=0) {
     if (fnative || opertok!=0)
@@ -3753,7 +3758,6 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   } else {
     tag= (firsttag>=0) ? firsttag : pc_addtag(NULL);
     tok=lex(&val,&str);
-    assert(!fpublic);
     if (tok==tNATIVE || (tok==tPUBLIC && stock))
       error(42);                /* invalid combination of class specifiers */
     if (tok==tOPERATOR) {
@@ -3783,7 +3787,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   sym=fetchfunc(symbolname,tag);/* get a pointer to the function entry */
   if (sym==NULL || (sym->usage & uNATIVE)!=0)
     return TRUE;                /* it was recognized as a function declaration, but not as a valid one */
-  if (fpublic)
+  if (fpublic && opertok==0)
     sym->usage|=uPUBLIC;
   if (fstatic)
     sym->fnumber=filenum;
@@ -3791,11 +3795,16 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   /* we want public functions to be explicitly prototyped, as they are called
    * from the outside
    */
-  if (fpublic && (sym->usage & uFORWARD)==0)
+  if (fpublic && (sym->usage & uFORWARD)==0 && opertok==0)
     error(235,symbolname);
   /* declare all arguments */
   argcnt=declargs(sym,TRUE);
   opererror=!operatoradjust(opertok,sym,symbolname,tag);
+  if (fpublic && opertok!=0) {
+    char symname[2*sNAMEMAX+16];  /* allow space for user defined operators */
+    funcdisplayname(symname,sym->name);
+    error(56,symname);  /* operators cannot be public */
+  } /* if */
   if (strcmp(symbolname,uMAINFUNC)==0 || strcmp(symbolname,uENTRYFUNC)==0) {
     if (argcnt>0)
       error(5);         /* "main()" and "entry()" functions may not have any arguments */

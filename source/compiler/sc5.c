@@ -95,7 +95,7 @@ static char *errmsg[] = {
 /*053*/  "exceeding maximum number of dimensions\n",
 /*054*/  "unmatched closing brace (\"}\")\n",
 /*055*/  "start of function body without function header\n",
-/*056*/  "arrays, local variables and function arguments cannot be public (variable \"%s\")\n",
+/*056*/  "arrays, local variables, function arguments and user-defined operators cannot be public (symbol \"%s\")\n",
 /*057*/  "unfinished expression before compiler directive\n",
 /*058*/  "duplicate argument; same argument is passed twice\n",
 /*059*/  "function argument may not have a default value (variable \"%s\")\n",

@@ -1,0 +1,10 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+gh_522.pwn(3) : error 056: arrays, local variables, function arguments and user-defined operators cannot be public (symbol "_:operator=(Tag:)")
+gh_522.pwn(4) : error 056: arrays, local variables, function arguments and user-defined operators cannot be public (symbol "_:operator=(Tag:)")
+gh_522.pwn(5) : error 056: arrays, local variables, function arguments and user-defined operators cannot be public (symbol "_:operator=(Tag:)")
+gh_522.pwn(15) : warning 203: symbol is never used: "_:operator=(Tag:)"
+gh_522.pwn(15) : warning 203: symbol is never used: "_:operator=(Tag2:)"
+"""
+}
