@@ -144,8 +144,8 @@ static void (*unopers[])(void) = { lneg, neg, user_inc, user_dec };
       if (lval!=NULL && (lval->ident==iARRAYCELL || lval->ident==iARRAYCHAR))
         savealt=TRUE;
     } else {
-      assert( (sizeof binoperstr / sizeof binoperstr[0]) == (sizeof op1 / sizeof op1[0]) );
-      for (i=0; i<sizeof op1 / sizeof op1[0]; i++) {
+      assert( arraysize(binoperstr) == arraysize(op1) );
+      for (i=0; i<arraysize(op1); i++) {
         if (oper==op1[i]) {
           strcpy(opername,binoperstr[i]);
           savepri=binoper_savepri[i];
@@ -157,9 +157,9 @@ static void (*unopers[])(void) = { lneg, neg, user_inc, user_dec };
     assert(oper!=NULL);
     assert(numparam==1);
     /* try a select group of unary operators */
-    assert( (sizeof unoperstr / sizeof unoperstr[0]) == (sizeof unopers / sizeof unopers[0]) );
+    assert( arraysize(unoperstr) == arraysize(unopers) );
     if (opername[0]=='\0') {
-      for (i=0; i<sizeof unopers / sizeof unopers[0]; i++) {
+      for (i=0; i<arraysize(unopers); i++) {
         if (oper==unopers[i]) {
           strcpy(opername,unoperstr[i]);
           break;
@@ -738,7 +738,7 @@ SC_FUNC int sc_getstateid(constvalue **automaton,constvalue **state)
     return 0;
 
   tokeninfo(&val,&str);
-  assert(strlen(str)<sizeof name);
+  assert(strlen(str)<arraysize(name));
   strcpy(name,str);
   if (islabel || matchtoken(':')) {
     /* token is an automaton name, add the name and get a new token */
@@ -755,7 +755,7 @@ SC_FUNC int sc_getstateid(constvalue **automaton,constvalue **state)
       return 0;
     } /* if */
     assert((*automaton)->index>0);
-    assert(strlen(str)<sizeof name);
+    assert(strlen(str)<arraysize(name));
     strcpy(name,str);
   } else {
     *automaton=automaton_find("");
@@ -1305,6 +1305,7 @@ static int hier2(value *lval)
         #else
           #error Unsupported cell size
         #endif
+        assert_static(sizeof(lval->constval)==sizeof(*f));
         *f= - *f; /* this modifies lval->constval */
       } else {
         /* the negation of a fixed point number is just an integer negation */
@@ -1314,7 +1315,7 @@ static int hier2(value *lval)
       lval->ident=iEXPRESSION;
       lval->constval=0;
     } else {
-      neg();                    /* arithmic negation */
+      neg();                    /* arithmetic negation */
       lval->constval=-lval->constval;
       if (lval->ident==iVARIABLE || lval->ident==iARRAYCELL)
         lval->ident=iEXPRESSION;
@@ -1953,7 +1954,7 @@ static int primary(value *lval)
   if (tok==tSYMBOL) {
     /* lastsymbol is char[sNAMEMAX+1], lex() should have truncated any symbol
      * to sNAMEMAX significant characters */
-    assert(strlen(st)<sizeof lastsymbol);
+    assert(strlen(st)<arraysize(lastsymbol));
     strcpy(lastsymbol,st);
   } /* if */
   if (tok==tSYMBOL && !findconst(st,NULL)) {
@@ -2352,7 +2353,7 @@ static int nesting=0;
               if (arg[argidx].dim[0]!=0) {
                 assert(arg[argidx].dim[0]>0);
                 if (lval.ident==iARRAYCELL) {
-                  error(7);        /* array sizes must match */
+                  error(47);        /* array sizes must match */
                 } else {
                   assert(lval.constval!=0); /* literal array must have a size */
                   /* A literal array must have exactly the same size as the

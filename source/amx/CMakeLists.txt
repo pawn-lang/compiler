@@ -1,6 +1,8 @@
 project(pawnamx C)
 cmake_minimum_required(VERSION 2.8)
 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 # check for optional include files
 include(CheckIncludeFile)
 check_include_file("unistd.h" HAVE_UNISTD_H)
