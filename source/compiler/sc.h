@@ -226,7 +226,9 @@ typedef struct s_symbol {
  * used during parsing a function, to detect a mix of "return;" and
  * "return value;" in a few special cases.
  */
-#define uRETNONE    0x10
+#define uRETNONE    0x010
+/* uASSIGNED indicates that a value assigned to the variable is not used yet */
+#define uASSIGNED   0x080
 
 #define flagDEPRECATED 0x01  /* symbol is deprecated (avoid use) */
 #define flagNAKED     0x10  /* function is naked */
@@ -684,6 +686,8 @@ SC_FUNC void delete_symbol(symbol *root,symbol *sym);
 SC_FUNC void delete_symbols(symbol *root,int level,int del_labels,int delete_functions);
 SC_FUNC int refer_symbol(symbol *entry,symbol *bywhom);
 SC_FUNC void markusage(symbol *sym,int usage);
+SC_FUNC void markinitialized(symbol *sym,int assignment);
+SC_FUNC void clearassignments(symbol *root);
 SC_FUNC void rename_symbol(symbol *sym,const char *newname);
 SC_FUNC symbol *findglb(const char *name,int filter);
 SC_FUNC symbol *findloc(const char *name);
@@ -934,6 +938,7 @@ SC_VDECL short fnumber;       /* number of files in the file table (debugging) *
 SC_VDECL short fcurrent;      /* current file being processed (debugging) */
 SC_VDECL short sc_intest;     /* true if inside a test */
 SC_VDECL int pc_sideeffect;   /* true if an expression causes a side-effect */
+SC_VDECL int pc_ovlassignment;/* true if an expression contains an overloaded assignment */
 SC_VDECL int stmtindent;      /* current indent of the statement */
 SC_VDECL int indent_nowarn;   /* skip warning "217 loose indentation" */
 SC_VDECL int sc_tabsize;      /* number of spaces that a TAB represents */

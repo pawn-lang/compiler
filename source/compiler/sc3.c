@@ -190,6 +190,8 @@ static void (*unopers[])(void) = { lneg, neg, user_inc, user_dec };
     if (sym==NULL /*|| (sym->usage & uDEFINE)==0*/)
       return FALSE;
   } /* if */
+  if (oper==NULL)
+    pc_ovlassignment=TRUE;
 
   /* check existance and the proper declaration of this function */
   if ((sym->usage & uMISSING)!=0 || (sym->usage & uPROTOTYPED)==0) {
@@ -1063,6 +1065,15 @@ static int hier14(value *lval1)
   pc_sideeffect=TRUE;
   bitwise_opercount=bwcount;
   lval1->ident=iEXPRESSION;
+  if (oper==NULL) {
+    symbol *sym=lval3.sym;
+    assert(sym!=NULL);
+    if ((sym->usage & uASSIGNED)!=0 && (sym->vclass==sLOCAL || sym->vclass==sSTATIC))
+      error(240,sym->name); /* previously assigned value is unused */
+    markinitialized(sym,TRUE);
+    if (pc_ovlassignment)
+      markusage(sym,uREAD);
+  } /* if */
   return FALSE;         /* expression result is never an lvalue */
 }
 

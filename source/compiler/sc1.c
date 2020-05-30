@@ -98,7 +98,7 @@ static void decl_const(int table);
 static void decl_enum(int table,int fstatic);
 static cell needsub(int *tag,constvalue_root **enumroot);
 static void initials(int ident,int tag,cell *size,int dim[],int numdim,
-                     constvalue_root *enumroot);
+                     constvalue_root *enumroot,int *explicit_init);
 static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
                       int startlit,int counteddim[],constvalue_root *lastdim,
                       constvalue_root *enumroot,int *errorfound);
@@ -123,7 +123,7 @@ static void statement(int *lastindent,int allow_decl);
 static void compound(int stmt_sameline,int starttok);
 static int test(int label,int parens,int invert);
 static int doexpr(int comma,int chkeffect,int allowarray,int mark_endexpr,
-                  int *tag,symbol **symptr,int chkfuncresult);
+                  int *tag,symbol **symptr,int chkfuncresult,cell *val);
 static void doassert(void);
 static void doexit(void);
 static int doif(void);
@@ -893,6 +893,7 @@ static void resetglobals(void)
   fcurrent=0;           /* current file being processed (debugging) */
   sc_intest=FALSE;      /* true if inside a test */
   pc_sideeffect=FALSE;  /* true if an expression causes a side-effect */
+  pc_ovlassignment=FALSE;/* true if an expression contains an overloaded assignment */
   stmtindent=0;         /* current indent of the statement */
   indent_nowarn=FALSE;  /* do not skip warning "217 loose indentation" */
   sc_allowtags=TRUE;    /* allow/detect tagnames */
@@ -2018,6 +2019,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
   char *str;
   int dim[sDIMEN_MAX];
   int numdim;
+  int explicit_init;
   short filenum;
   symbol *sym;
   constvalue_root *enumroot=NULL;
@@ -2122,7 +2124,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
       litidx=0;         /* global initial data is dumped, so restart at zero */
     } /* if */
     assert(litidx==0);  /* literal queue should be empty (again) */
-    initials(ident,tag,&size,dim,numdim,enumroot);/* stores values in the literal queue */
+    initials(ident,tag,&size,dim,numdim,enumroot,&explicit_init);/* stores values in the literal queue */
     assert(size>=litidx);
     if (numdim==1)
       dim[0]=(int)size;
@@ -2246,6 +2248,8 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
       sym->usage|=uSTOCK;
     if (fstatic)
       sym->fnumber=filenum;
+    if (explicit_init)
+      markinitialized(sym,TRUE);
     sc_attachdocumentation(sym);/* attach any documenation to the variable */
     if (sc_status==statSKIP) {
       sc_status=statWRITE;
@@ -2282,6 +2286,8 @@ static int declloc(int fstatic)
   int numdim;
   int fconst;
   int staging_start;
+  int explicit_init;    /* is the variable explicitly initialized? */
+  int suppress_w240=FALSE;
 
   fconst=matchtoken(tCONST);
   do {
@@ -2332,7 +2338,7 @@ static int declloc(int fstatic)
         sc_alignnext=FALSE;
       } /* if */
       cur_lit=litidx;           /* save current index in the literal table */
-      initials(ident,tag,&size,dim,numdim,enumroot);
+      initials(ident,tag,&size,dim,numdim,enumroot,&explicit_init);
       if (size==0)
         return ident;           /* error message already given */
       if (numdim==1)
@@ -2371,13 +2377,16 @@ static int declloc(int fstatic)
       if (ident==iVARIABLE) {
         /* simple variable, also supports initialization */
         int ctag = tag;         /* set to "tag" by default */
-        int explicit_init=FALSE;/* is the variable explicitly initialized? */
+        explicit_init=FALSE;
         if (matchtoken('=')) {
+          int initexpr_ident;
+          cell val;
           sym->usage &= ~uDEFINE;   /* temporarily mark the variable as undefined to prevent
                                      * possible self-assignment through its initialization expression */
-          doexpr(FALSE,FALSE,FALSE,FALSE,&ctag,NULL,TRUE);
+          initexpr_ident=doexpr(FALSE,FALSE,FALSE,FALSE,&ctag,NULL,TRUE,&val);
           sym->usage |= uDEFINE;
           explicit_init=TRUE;
+          suppress_w240=(initexpr_ident==iCONSTEXPR && val==0);
         } else {
           ldconst(0,sPRI);      /* uninitialized variable, set to zero */
         } /* if */
@@ -2386,7 +2395,7 @@ static int declloc(int fstatic)
         lval.ident=iVARIABLE;
         lval.constval=0;
         lval.tag=tag;
-        check_userop(NULL,ctag,lval.tag,2,NULL,&ctag);
+        suppress_w240 |= check_userop(NULL,ctag,lval.tag,2,NULL,&ctag);
         store(&lval);
         markexpr(sEXPR,NULL,0); /* full expression ends after the store */
         assert(staging);        /* end staging phase (optimize expression) */
@@ -2430,6 +2439,10 @@ static int declloc(int fstatic)
         } /* if */
       } /* if */
     } /* if */
+    if (explicit_init)
+      markinitialized(sym,!suppress_w240);
+    if (pc_ovlassignment)
+      sym->usage |= uREAD;
   } while (matchtoken(',')); /* enddo */   /* more? */
   needtoken(tTERM);    /* if not comma, must be semicolumn */
   return ident;
@@ -2510,7 +2523,7 @@ static int base;
  *  Global references: litidx (altered)
  */
 static void initials(int ident,int tag,cell *size,int dim[],int numdim,
-                     constvalue_root *enumroot)
+                     constvalue_root *enumroot,int *explicit_init)
 {
   int ctag;
   cell tablesize;
@@ -2518,6 +2531,8 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
   int err=0;
   int i;
 
+  if (explicit_init!=NULL)
+    *explicit_init=FALSE;
   if (!matchtoken('=')) {
     assert(ident!=iARRAY || numdim>0);
     if (ident==iARRAY) {
@@ -2548,6 +2563,8 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
     return;
   } /* if */
 
+  if (explicit_init!=NULL)
+    *explicit_init=TRUE;
   if (ident==iVARIABLE) {
     assert(*size==1);
     init(ident,&ctag,NULL);
@@ -4203,7 +4220,7 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
       lexpush();                /* initials() needs the "=" token again */
       assert(litidx==0);        /* at the start of a function, this is reset */
       assert(numtags>0);
-      initials(ident,tags[0],&size,arg->dim,arg->numdim,enumroot);
+      initials(ident,tags[0],&size,arg->dim,arg->numdim,enumroot,NULL);
       assert(size>=litidx);
       /* allocate memory to hold the initial values */
       arg->defvalue.array.data=(cell *)malloc(litidx*sizeof(cell));
@@ -4291,7 +4308,9 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
       argsym->usage|=uREAD;     /* arguments of public functions are always "used" */
       if(argsym->ident==iREFARRAY || argsym->ident==iREFERENCE)
         argsym->usage|=uWRITTEN;
-    }
+    } else if (argsym->ident==iVARIABLE) {
+      argsym->usage|=uASSIGNED;
+    } /* if */
 
     if (fconst)
       argsym->usage|=uCONST;
@@ -5077,6 +5096,14 @@ static void destructsymbols(symbol *root,int level)
         if ((opsym->usage & uNATIVE)!=0 && opsym->x.lib!=NULL)
           opsym->x.lib->value += 1; /* increment "usage count" of the library */
       } /* if */
+      /* check that the assigned value was used, but don't show the warning
+       * if the variable is completely unused (we already have warning 203 for that) */
+      if ((sym->usage & (uASSIGNED | uREAD | uWRITTEN))==(uASSIGNED | uREAD | uWRITTEN)
+          && sym->vclass!=sSTATIC) {
+        errorset(sSETPOS,sym->lnumber);
+        error(204,sym->name);   /* symbol is assigned a value that is never used */
+        errorset(sSETPOS,-1);
+    } /* if */
     } /* if */
     sym=sym->next;
   } /* while */
@@ -5440,7 +5467,7 @@ static void statement(int *lastindent,int allow_decl)
   default:          /* non-empty expression */
     sc_allowproccall=optproccall;
     lexpush();      /* analyze token later */
-    doexpr(TRUE,TRUE,TRUE,TRUE,NULL,NULL,FALSE);
+    doexpr(TRUE,TRUE,TRUE,TRUE,NULL,NULL,FALSE,NULL);
     needtoken(tTERM);
     lastst=tEXPR;
     sc_allowproccall=FALSE;
@@ -5510,11 +5537,10 @@ static void compound(int stmt_sameline,int starttok)
  *  Global references: stgidx   (referred to only)
  */
 static int doexpr(int comma,int chkeffect,int allowarray,int mark_endexpr,
-                  int *tag,symbol **symptr,int chkfuncresult)
+                  int *tag,symbol **symptr,int chkfuncresult,cell *val)
 {
   int index,ident;
   int localstaging=FALSE;
-  cell val;
 
   if (!staging) {
     stgset(TRUE);               /* start stage-buffering */
@@ -5528,7 +5554,8 @@ static int doexpr(int comma,int chkeffect,int allowarray,int mark_endexpr,
     if (index!=stgidx)
       markexpr(sEXPR,NULL,0);
     pc_sideeffect=FALSE;
-    ident=expression(&val,tag,symptr,chkfuncresult);
+    pc_ovlassignment=FALSE;
+    ident=expression(val,tag,symptr,chkfuncresult);
     if (!allowarray && (ident==iARRAY || ident==iREFARRAY))
       error(33,"-unknown-");    /* array must be indexed */
     if (chkeffect && !pc_sideeffect)
@@ -5668,6 +5695,7 @@ static int doif(void)
   ifindent=stmtindent;          /* save the indent of the "if" instruction */
   flab1=getlabel();             /* get label number for false branch */
   test(flab1,TEST_THEN,FALSE);  /* get expression, branch to flab1 if false */
+  clearassignments(&loctab);
   statement(NULL,FALSE);        /* if true, do a statement */
   if (!matchtoken(tELSE)) {     /* if...else ? */
     setlabel(flab1);            /* no, simple if..., print false label */
@@ -5677,6 +5705,7 @@ static int doif(void)
      * has a lower indent than the matching "if" */
     if (stmtindent<ifindent && sc_tabsize>0)
       error(217);               /* loose indentation */
+    clearassignments(&loctab);
     flab2=getlabel();
     if ((lastst!=tRETURN) && (lastst!=tGOTO))
       jumplabel(flab2);         /* "true" branch jumps around "else" clause, unless the "true" branch statement already jumped */
@@ -5707,7 +5736,9 @@ static int dowhile(void)
    */
   setline(TRUE);
   endlessloop=test(wq[wqEXIT],TEST_DO,FALSE);/* branch to wq[wqEXIT] if false */
+  clearassignments(&loctab);
   statement(NULL,FALSE);        /* if so, do a statement */
+  clearassignments(&loctab);
   jumplabel(wq[wqLOOP]);        /* and loop to "while" start */
   setlabel(wq[wqEXIT]);         /* exit label */
   delwhile();                   /* delete queue entry */
@@ -5730,7 +5761,9 @@ static int dodo(void)
   addwhile(wq);           /* see "dowhile" for more info */
   top=getlabel();         /* make a label first */
   setlabel(top);          /* loop label */
+  clearassignments(&loctab);
   statement(NULL,FALSE);
+  clearassignments(&loctab);
   needtoken(tWHILE);
   setlabel(wq[wqLOOP]);   /* "continue" always jumps to WQLOOP. */
   setline(TRUE);
@@ -5769,7 +5802,7 @@ static int dofor(void)
       nestlevel++;
       declloc(FALSE); /* declare local variable */
     } else {
-      doexpr(TRUE,TRUE,TRUE,TRUE,NULL,NULL,FALSE);  /* expression 1 */
+      doexpr(TRUE,TRUE,TRUE,TRUE,NULL,NULL,FALSE,NULL); /* expression 1 */
       needtoken(';');
     } /* if */
   } /* if */
@@ -5804,13 +5837,15 @@ static int dofor(void)
   } /* if */
   stgmark((char)(sEXPRSTART+1));    /* mark start of 3th expression in stage */
   if (!matchtoken(endtok)) {
-    doexpr(TRUE,TRUE,TRUE,TRUE,NULL,NULL,FALSE);    /* expression 3 */
+    doexpr(TRUE,TRUE,TRUE,TRUE,NULL,NULL,FALSE,NULL);   /* expression 3 */
     needtoken(endtok);
   } /* if */
   stgmark(sENDREORDER);             /* mark end of reversed evaluation */
   stgout(index);
   stgset(FALSE);                    /* stop staging */
+  clearassignments(&loctab);
   statement(NULL,FALSE);
+  clearassignments(&loctab);
   jumplabel(wq[wqLOOP]);
   setlabel(wq[wqEXIT]);
   delwhile();
@@ -5858,7 +5893,7 @@ static void doswitch(void)
   char labelname[sNAMEMAX+1];
 
   endtok= matchtoken('(') ? ')' : tDO;
-  doexpr(TRUE,FALSE,FALSE,FALSE,&swtag,NULL,TRUE);/* evaluate switch expression */
+  doexpr(TRUE,FALSE,FALSE,FALSE,&swtag,NULL,TRUE,NULL);/* evaluate switch expression */
   needtoken(endtok);
   /* generate the code for the switch statement, the label is the address
    * of the case table (to be generated later).
@@ -5880,6 +5915,7 @@ static void doswitch(void)
     tok=lex(&val,&str);         /* read in (new) token */
     switch (tok) {
     case tCASE:
+      clearassignments(&loctab);
       if (swdefault!=FALSE)
         error(15);        /* "default" case must be last in switch statement */
       lbl_case=getlabel();
@@ -5947,6 +5983,7 @@ static void doswitch(void)
       jumplabel(lbl_exit);
       break;
     case tDEFAULT:
+      clearassignments(&loctab);
       if (swdefault!=FALSE)
         error(16);         /* multiple defaults in switch */
       lbl_case=getlabel();
@@ -6029,6 +6066,8 @@ static void dogoto(void)
 
   if (lex(&val,&st)==tSYMBOL) {
     sym=fetchlab(st);
+    if ((sym->usage & uDEFINE)!=0)
+      clearassignments(&loctab);
     jumplabel((int)sym->addr);
     sym->usage|=uREAD;  /* set "uREAD" bit */
     // ??? if the label is defined (check sym->usage & uDEFINE), check
@@ -7587,7 +7626,7 @@ static void doreturn(void)
     /* "return <value>" */
     if ((rettype & uRETNONE)!=0)
       error(78);                        /* mix "return;" and "return value;" */
-    ident=doexpr(TRUE,FALSE,TRUE,FALSE,&tag,&sym,TRUE);
+    ident=doexpr(TRUE,FALSE,TRUE,FALSE,&tag,&sym,TRUE,NULL);
     needtoken(tTERM);
     /* see if this function already has a sub type (an array attached) */
     assert(curfunc!=NULL);
@@ -7759,7 +7798,7 @@ static void doexit(void)
   int tag=0;
 
   if (matchtoken(tTERM)==0){
-    doexpr(TRUE,FALSE,FALSE,FALSE,&tag,NULL,TRUE);
+    doexpr(TRUE,FALSE,FALSE,FALSE,&tag,NULL,TRUE,NULL);
     needtoken(tTERM);
   } else {
     ldconst(0,sPRI);
@@ -7775,7 +7814,7 @@ static void dosleep(void)
   int tag=0;
 
   if (matchtoken(tTERM)==0){
-    doexpr(TRUE,FALSE,FALSE,FALSE,&tag,NULL,TRUE);
+    doexpr(TRUE,FALSE,FALSE,FALSE,&tag,NULL,TRUE,NULL);
     needtoken(tTERM);
   } else {
     ldconst(0,sPRI);

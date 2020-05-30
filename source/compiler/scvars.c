@@ -80,6 +80,7 @@ SC_VDEFINE short fnumber=0;                 /* the file number in the file table
 SC_VDEFINE short fcurrent=0;                /* current file being processed (debugging) */
 SC_VDEFINE short sc_intest=FALSE;           /* true if inside a test */
 SC_VDEFINE int pc_sideeffect=FALSE;         /* true if an expression causes a side-effect */
+SC_VDEFINE int pc_ovlassignment=FALSE;      /* true if an expression contains an overloaded assignment */
 SC_VDEFINE int stmtindent=0;                /* current indent of the statement */
 SC_VDEFINE int indent_nowarn=FALSE;         /* skip warning "217 loose indentation" */
 SC_VDEFINE int sc_tabsize=8;                /* number of spaces that a TAB represents */
