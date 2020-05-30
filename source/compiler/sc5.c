@@ -204,7 +204,7 @@ static char *noticemsg[] = {
 /*002*/  "; state variable out of scope\n"
 };
 
-#define NUM_WARNINGS    (sizeof warnmsg / sizeof warnmsg[0])
+#define NUM_WARNINGS    arraysize(warnmsg)
 static struct s_warnstack {
   unsigned char disable[(NUM_WARNINGS + 7) / 8]; /* 8 flags in a char */
   struct s_warnstack *next;
@@ -261,31 +261,31 @@ static short lastfile;
   } /* if */
 
   if (number<100) {
-    assert(number>0 && number<(1+sizeof(errmsg)/sizeof(errmsg[0])));
+    assert(number>0 && number<(1+arraysize(errmsg)));
     msg=errmsg[number-1];
     pre=prefix[0];
     errflag=TRUE;       /* set errflag (skip rest of erroneous expression) */
     errnum++;
   } else if (number<200) {
-    assert(number>=100 && number<(100+sizeof(fatalmsg)/sizeof(fatalmsg[0])));
+    assert(number>=100 && number<(100+arraysize(fatalmsg)));
     msg=fatalmsg[number-100];
     pre=prefix[1];
     errnum++;           /* a fatal error also counts as an error */
   } else if (errwarn) {
-    assert(number>=200 && number<(200+sizeof(warnmsg)/sizeof(warnmsg[0])));
+    assert(number>=200 && number<(200+arraysize(warnmsg)));
     msg=warnmsg[number-200];
     pre=prefix[0];
     errflag=TRUE;
     errnum++;
   } else {
-    assert(number>=200 && number<(200+sizeof(warnmsg)/sizeof(warnmsg[0])));
+    assert(number>=200 && number<(200+arraysize(warnmsg)));
     msg=warnmsg[number-200];
     pre=prefix[2];
     warnnum++;
   } /* if */
 
   if (notice!=0) {
-    assert(notice>0 && notice<(1+sizeof(noticemsg)/sizeof(noticemsg[0])) && noticemsg[notice-1][0]!='\0');
+    assert(notice>0 && notice<(1+arraysize(noticemsg)) && noticemsg[notice-1][0]!='\0');
     strcpy(string,msg);
     strcpy(&string[strlen(string)-1],noticemsg[notice-1]);
     msg=string;
