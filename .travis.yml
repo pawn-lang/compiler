@@ -31,7 +31,7 @@ after_failure:
 deploy:
   provider: releases
   api_key:
-    secure: gDAuRNlF2uVhVHyZtJrX6MwNxnkfkQzohrC/6UcKAgqt+NKs4vZyq5FzTUceiDAkB0se70ZVx08e9ibAiXP/b7D1MPkAEiRxt9J6Vu3x6Bi1kPPuK5RfjFeT3gc1SbrULAP8Nz0NdU0chUhei6/V5NGhTegwp925DJOISq7+Ibw=
+    secure: T90PePvue0C/4u5EwZKGLUc/aXyu2U2XMGDzdNdpla6wXONWABg3F6mY3vYXRRxdWPhz8W6qEFwQmbEIIExxLFrgH8CUGDoF/9dftaCxJIBw59WRwfbaIAWiK5p6wLzZBfRuZQWJMwWdjDu8woAYzfxWBL37hbZateUrcAB7lkc=
   file_glob: true
   file:
     - 'pawnc-*-linux.tar.gz'
