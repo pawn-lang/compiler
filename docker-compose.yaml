@@ -1,0 +1,10 @@
+version: '3.7'
+
+services:
+  compiler:
+    build: .
+    stdin_open: true
+    tty: true
+    restart: 'no'
+    volumes:
+      - ${PWD}/compiler:/home/compiler
