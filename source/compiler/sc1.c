@@ -155,7 +155,6 @@ enum {
   TEST_OPT,             /* '(' <expr> ')' or <expr> */
 };
 static int lastst     = 0;      /* last executed statement type */
-static int nestlevel  = 0;      /* number of active (open) compound statements */
 static int endlessloop= 0;      /* nesting level of endless loop */
 static int rettype    = 0;      /* the type that a "return" expression should have */
 static int skipinput  = 0;      /* number of lines to skip from the first input file */
@@ -876,7 +875,7 @@ static void resetglobals(void)
   /* reset the subset of global variables that is modified by the first pass */
   curfunc=NULL;         /* pointer to current function */
   lastst=0;             /* last executed statement type */
-  nestlevel=0;          /* number of active (open) compound statements */
+  pc_nestlevel=0;       /* number of active (open) compound statements */
   rettype=0;            /* the type that a "return" expression should have */
   litidx=0;             /* index to literal table */
   stgidx=0;             /* index to the staging buffer */
@@ -2309,13 +2308,13 @@ static int declloc(int fstatic)
      * the "nesting level" of local variables to verify the
      * multi-definition of symbols.
      */
-    if ((sym=findloc(name))!=NULL && sym->compound==nestlevel)
+    if ((sym=findloc(name))!=NULL && sym->compound==pc_nestlevel)
       error(21,name);                   /* symbol already defined */
     /* Although valid, a local variable whose name is equal to that
      * of a global variable or to that of a local variable at a lower
      * level might indicate a bug.
      */
-    if (((sym=findloc(name))!=NULL && sym->compound!=nestlevel) || findglb(name,sGLOBAL)!=NULL)
+    if (((sym=findloc(name))!=NULL && sym->compound!=pc_nestlevel) || findglb(name,sGLOBAL)!=NULL)
       error(219,name);                  /* variable shadows another symbol */
     while (matchtoken('[')){
       ident=iARRAY;
@@ -2350,11 +2349,11 @@ static int declloc(int fstatic)
       while (litidx<cur_lit+size)
         litadd(0);
       sym=addvariable(name,(cur_lit+glb_declared)*sizeof(cell),ident,sSTATIC,
-                      tag,dim,numdim,idxtag,nestlevel);
+                      tag,dim,numdim,idxtag,pc_nestlevel);
     } else {
       declared+=(int)size;      /* variables are put on stack, adjust "declared" */
       sym=addvariable(name,-declared*sizeof(cell),ident,sLOCAL,
-                      tag,dim,numdim,idxtag,nestlevel);
+                      tag,dim,numdim,idxtag,pc_nestlevel);
       if (ident==iVARIABLE) {
         assert(!staging);
         stgset(TRUE);           /* start stage-buffering */
@@ -5261,7 +5260,7 @@ redef_enumfield:
   sym=addsym(name,val,iCONSTEXPR,vclass,tag,uDEFINE);
   assert(sym!=NULL);            /* fatal error 103 must be given on error */
   if (vclass==sLOCAL)
-    sym->compound=nestlevel;
+    sym->compound=pc_nestlevel;
   return sym;
 }
 
@@ -5505,7 +5504,7 @@ static void compound(int stmt_sameline,int starttok)
   } /* if */
 
   endtok=(starttok=='{') ? '}' : tEND;
-  nestlevel+=1;                 /* increase compound statement level */
+  pc_nestlevel+=1;              /* increase compound statement level */
   while (matchtoken(endtok)==0){/* repeat until compound statement is closed */
     if (!freading){
       error(30,block_start);    /* compound block not closed at end of file */
@@ -5518,17 +5517,17 @@ static void compound(int stmt_sameline,int starttok)
     } /* if */
   } /* while */
   if (lastst!=tRETURN)
-    if (nestlevel >= 1 || (curfunc->flags & flagNAKED)==0)
-      destructsymbols(&loctab,nestlevel);
+    if (pc_nestlevel >= 1 || (curfunc->flags & flagNAKED)==0)
+      destructsymbols(&loctab,pc_nestlevel);
   if (lastst!=tRETURN && lastst!=tGOTO)
-    if (nestlevel >= 1 || (curfunc->flags & flagNAKED)==0)
+    if (pc_nestlevel >= 1 || (curfunc->flags & flagNAKED)==0)
       modstk((int)(declared-save_decl)*sizeof(cell)); /* delete local variable space */
-  testsymbols(&loctab,nestlevel,FALSE,TRUE);        /* look for unused block locals */
+  testsymbols(&loctab,pc_nestlevel,FALSE,TRUE);     /* look for unused block locals */
   declared=save_decl;
-  delete_symbols(&loctab,nestlevel,FALSE,TRUE);     /* erase local symbols, but
+  delete_symbols(&loctab,pc_nestlevel,FALSE,TRUE);  /* erase local symbols, but
                                                      * retain block local labels
                                                      * (within the function) */
-  nestlevel-=1;                 /* decrease compound statement level */
+  pc_nestlevel-=1;              /* decrease compound statement level */
 }
 
 /*  doexpr
@@ -5786,7 +5785,7 @@ static int dofor(void)
   int *ptr;
 
   save_decl=declared;
-  save_nestlevel=nestlevel;
+  save_nestlevel=pc_nestlevel;
   save_endlessloop=endlessloop;
 
   addwhile(wq);
@@ -5798,7 +5797,7 @@ static int dofor(void)
       /* The variable in expr1 of the for loop is at a
        * 'compound statement' level of it own.
        */
-      nestlevel++;
+      pc_nestlevel++;
       declloc(FALSE); /* declare local variable */
     } else {
       doexpr(TRUE,TRUE,TRUE,TRUE,NULL,NULL,FALSE,NULL); /* expression 1 */
@@ -5814,7 +5813,7 @@ static int dofor(void)
   assert(ptr!=NULL);
   ptr[wqBRK]=(int)declared;
   ptr[wqCONT]=(int)declared;
-  ptr[wqLVL]=nestlevel+1;
+  ptr[wqLVL]=pc_nestlevel+1;
   jumplabel(skiplab);               /* skip expression 3 1st time */
   setlabel(wq[wqLOOP]);             /* "continue" goes to this label: expr3 */
   setline(TRUE);
@@ -5850,17 +5849,17 @@ static int dofor(void)
   setlabel(wq[wqEXIT]);
   delwhile();
 
-  assert(nestlevel>=save_nestlevel);
-  if (nestlevel>save_nestlevel) {
+  assert(pc_nestlevel>=save_nestlevel);
+  if (pc_nestlevel>save_nestlevel) {
     /* Clean up the space and the symbol table for the local
      * variable in "expr1".
      */
-    destructsymbols(&loctab,nestlevel);
+    destructsymbols(&loctab,pc_nestlevel);
     modstk((int)(declared-save_decl)*sizeof(cell));
-    testsymbols(&loctab,nestlevel,FALSE,TRUE);  /* look for unused block locals */
+    testsymbols(&loctab,pc_nestlevel,FALSE,TRUE);   /* look for unused block locals */
     declared=save_decl;
-    delete_symbols(&loctab,nestlevel,FALSE,TRUE);
-    nestlevel=save_nestlevel;     /* reset 'compound statement' nesting level */
+    delete_symbols(&loctab,pc_nestlevel,FALSE,TRUE);
+    pc_nestlevel=save_nestlevel;  /* reset 'compound statement' nesting level */
   } /* if */
 
   index=endlessloop ? tENDLESS : tFOR;
@@ -6071,8 +6070,8 @@ static void dogoto(void)
     jumplabel((int)sym->addr);
     sym->usage|=uREAD;  /* set "uREAD" bit */
     // ??? if the label is defined (check sym->usage & uDEFINE), check
-    //     sym->compound (nesting level of the label) against nestlevel;
-    //     if sym->compound < nestlevel, call the destructor operator
+    //     sym->compound (nesting level of the label) against pc_nestlevel;
+    //     if sym->compound < pc_nestlevel, call the destructor operator
   } else {
     error_suggest(20,st,NULL,estSYMBOL,esfLABEL);   /* illegal symbol name */
   } /* if */
@@ -6119,7 +6118,7 @@ static symbol *fetchlab(char *name)
     sym=addsym(name,getlabel(),iLABEL,sLOCAL,0,0);
     assert(sym!=NULL);          /* fatal error 103 must be given on error */
     sym->x.declared=(int)declared;
-    sym->compound=nestlevel;
+    sym->compound=pc_nestlevel;
   } /* if */
   return sym;
 }
@@ -7945,7 +7944,7 @@ static void addwhile(int *ptr)
   ptr[wqCONT]=(int)declared;    /* for "continue", possibly adjusted later */
   ptr[wqLOOP]=getlabel();
   ptr[wqEXIT]=getlabel();
-  ptr[wqLVL]=nestlevel+1;
+  ptr[wqLVL]=pc_nestlevel+1;
   if (wqptr>=(wq+wqTABSZ-wqSIZE))
     error(102,"loop table");    /* loop table overflow (too many active loops)*/
   k=0;
