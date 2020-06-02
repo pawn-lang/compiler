@@ -3212,12 +3212,17 @@ SC_FUNC void markinitialized(symbol *sym,int assignment)
 
 SC_FUNC void clearassignments(symbol *root)
 {
+  symbol *sym;
+
+  /* the error messages are only printed on the "writing" pass,
+   * so if we are not writing yet, then we have a quick exit */
+  if (sc_status!=statWRITE)
+    return;
+
   /* clear the unused assignment flag for all variables in the table */
-  symbol *sym=root->next;
-  while (sym!=NULL) {
+  sym=root;
+  while ((sym=sym->next)!=NULL)
     sym->usage &= ~uASSIGNED;
-    sym=sym->next;
-  } /* while */
 }
 
 
