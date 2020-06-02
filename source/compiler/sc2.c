@@ -1013,7 +1013,7 @@ static int command(void)
     iflevel++;
     if (SKIPPING)
       break;                    /* break out of switch */
-    clearassignments(&loctab);
+    clearassignments(&loctab,1);
     skiplevel=iflevel;
     preproc_expr(&val,NULL);    /* get value (or 0 on error) */
     ifstack[iflevel-1]=(char)(val ? PARSEMODE : SKIPMODE);
@@ -1053,7 +1053,7 @@ static int command(void)
           } /* if */
         } else {
           /* previous conditions were all FALSE */
-          clearassignments(&loctab);
+          clearassignments(&loctab,1);
           if (tok==tpELSEIF) {
             /* if we were already skipping this section, allow expressions with
              * undefined symbols; otherwise check the expression to catch errors
@@ -1080,7 +1080,7 @@ static int command(void)
       error(26);        /* no matching "#if" */
       errorset(sRESET,0);
     } else {
-      clearassignments(&loctab);
+      clearassignments(&loctab,1);
       iflevel--;
       if (iflevel<skiplevel)
         skiplevel=iflevel;
@@ -3221,7 +3221,8 @@ SC_FUNC void markinitialized(symbol *sym,int assignment)
   } /* if */
 }
 
-SC_FUNC void clearassignments(symbol *root)
+/* clears assignments starting from the specified 'compound statement' nesting level and higher */
+SC_FUNC void clearassignments(symbol *root,int fromlevel)
 {
   symbol *sym;
 
@@ -3230,10 +3231,10 @@ SC_FUNC void clearassignments(symbol *root)
   if (sc_status!=statWRITE)
     return;
 
-  /* clear the unused assignment flag for all variables in the table */
   sym=root;
   while ((sym=sym->next)!=NULL)
-    sym->usage &= ~uASSIGNED;
+    if (sym->assignlevel>=fromlevel)
+      sym->usage &= ~uASSIGNED;
 }
 
 

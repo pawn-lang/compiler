@@ -690,7 +690,7 @@ SC_FUNC void delete_symbols(symbol *root,int level,int del_labels,int delete_fun
 SC_FUNC int refer_symbol(symbol *entry,symbol *bywhom);
 SC_FUNC void markusage(symbol *sym,int usage);
 SC_FUNC void markinitialized(symbol *sym,int assignment);
-SC_FUNC void clearassignments(symbol *root);
+SC_FUNC void clearassignments(symbol *root,int fromlevel);
 SC_FUNC void rename_symbol(symbol *sym,const char *newname);
 SC_FUNC symbol *findglb(const char *name,int filter);
 SC_FUNC symbol *findloc(const char *name);

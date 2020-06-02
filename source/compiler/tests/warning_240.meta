@@ -4,15 +4,16 @@
 warning_240.pwn(11) : warning 240: previously assigned value is never used (symbol "local_var")
 warning_240.pwn(12) : warning 240: previously assigned value is never used (symbol "local_var")
 warning_240.pwn(14) : warning 204: symbol is assigned a value that is never used: "local_var"
-warning_240.pwn(31) : warning 204: symbol is assigned a value that is never used: "local_var2"
+warning_240.pwn(27) : warning 240: previously assigned value is never used (symbol "local_var2")
+warning_240.pwn(32) : warning 204: symbol is assigned a value that is never used: "local_var2"
 warning_240.pwn(25) : warning 204: symbol is assigned a value that is never used: "local_var"
-warning_240.pwn(53) : warning 204: symbol is assigned a value that is never used: "local_var2"
-warning_240.pwn(63) : warning 240: previously assigned value is never used (symbol "local_static_var")
+warning_240.pwn(54) : warning 204: symbol is assigned a value that is never used: "local_var2"
 warning_240.pwn(64) : warning 240: previously assigned value is never used (symbol "local_static_var")
-warning_240.pwn(89) : warning 240: previously assigned value is never used (symbol "arg")
-warning_240.pwn(90) : warning 240: previously assigned value is never used (symbol "arg")
-warning_240.pwn(90) : warning 204: symbol is assigned a value that is never used: "arg"
-warning_240.pwn(96) : warning 204: symbol is assigned a value that is never used: "arg"
-warning_240.pwn(103) : warning 204: symbol is assigned a value that is never used: "arg"
+warning_240.pwn(65) : warning 240: previously assigned value is never used (symbol "local_static_var")
+warning_240.pwn(92) : warning 240: previously assigned value is never used (symbol "arg")
+warning_240.pwn(93) : warning 240: previously assigned value is never used (symbol "arg")
+warning_240.pwn(93) : warning 204: symbol is assigned a value that is never used: "arg"
+warning_240.pwn(99) : warning 204: symbol is assigned a value that is never used: "arg"
+warning_240.pwn(106) : warning 204: symbol is assigned a value that is never used: "arg"
 """
 }

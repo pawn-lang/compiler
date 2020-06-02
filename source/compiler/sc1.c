@@ -5698,7 +5698,7 @@ static int doif(void)
   ifindent=stmtindent;          /* save the indent of the "if" instruction */
   flab1=getlabel();             /* get label number for false branch */
   test(flab1,TEST_THEN,FALSE);  /* get expression, branch to flab1 if false */
-  clearassignments(&loctab);
+  clearassignments(&loctab,1);
   statement(NULL,FALSE);        /* if true, do a statement */
   if (!matchtoken(tELSE)) {     /* if...else ? */
     setlabel(flab1);            /* no, simple if..., print false label */
@@ -5708,7 +5708,7 @@ static int doif(void)
      * has a lower indent than the matching "if" */
     if (stmtindent<ifindent && sc_tabsize>0)
       error(217);               /* loose indentation */
-    clearassignments(&loctab);
+    clearassignments(&loctab,pc_nestlevel+1);
     flab2=getlabel();
     if ((lastst!=tRETURN) && (lastst!=tGOTO))
       jumplabel(flab2);         /* "true" branch jumps around "else" clause, unless the "true" branch statement already jumped */
@@ -5739,9 +5739,9 @@ static int dowhile(void)
    */
   setline(TRUE);
   endlessloop=test(wq[wqEXIT],TEST_DO,FALSE);/* branch to wq[wqEXIT] if false */
-  clearassignments(&loctab);
+  clearassignments(&loctab,1);
   statement(NULL,FALSE);        /* if so, do a statement */
-  clearassignments(&loctab);
+  clearassignments(&loctab,pc_nestlevel+1);
   jumplabel(wq[wqLOOP]);        /* and loop to "while" start */
   setlabel(wq[wqEXIT]);         /* exit label */
   delwhile();                   /* delete queue entry */
@@ -5764,9 +5764,9 @@ static int dodo(void)
   addwhile(wq);           /* see "dowhile" for more info */
   top=getlabel();         /* make a label first */
   setlabel(top);          /* loop label */
-  clearassignments(&loctab);
+  clearassignments(&loctab,1);
   statement(NULL,FALSE);
-  clearassignments(&loctab);
+  clearassignments(&loctab,pc_nestlevel+1);
   needtoken(tWHILE);
   setlabel(wq[wqLOOP]);   /* "continue" always jumps to WQLOOP. */
   setline(TRUE);
@@ -5847,9 +5847,9 @@ static int dofor(void)
   stgmark(sENDREORDER);             /* mark end of reversed evaluation */
   stgout(index);
   stgset(FALSE);                    /* stop staging */
-  clearassignments(&loctab);
+  clearassignments(&loctab,1);
   statement(NULL,FALSE);
-  clearassignments(&loctab);
+  clearassignments(&loctab,save_nestlevel+1);
   jumplabel(wq[wqLOOP]);
   setlabel(wq[wqEXIT]);
   delwhile();
@@ -5919,7 +5919,7 @@ static void doswitch(void)
     tok=lex(&val,&str);         /* read in (new) token */
     switch (tok) {
     case tCASE:
-      clearassignments(&loctab);
+      clearassignments(&loctab,(casecount==0) ? 0 : (pc_nestlevel+1));
       if (swdefault!=FALSE)
         error(15);        /* "default" case must be last in switch statement */
       lbl_case=getlabel();
@@ -5987,7 +5987,7 @@ static void doswitch(void)
       jumplabel(lbl_exit);
       break;
     case tDEFAULT:
-      clearassignments(&loctab);
+      clearassignments(&loctab,(casecount==0) ? 0 : (pc_nestlevel+1));
       if (swdefault!=FALSE)
         error(16);         /* multiple defaults in switch */
       lbl_case=getlabel();
@@ -6071,7 +6071,7 @@ static void dogoto(void)
   if (lex(&val,&st)==tSYMBOL) {
     sym=fetchlab(st);
     if ((sym->usage & uDEFINE)!=0)
-      clearassignments(&loctab);
+      clearassignments(&loctab,1);
     jumplabel((int)sym->addr);
     sym->usage|=uREAD;  /* set "uREAD" bit */
     // ??? if the label is defined (check sym->usage & uDEFINE), check
@@ -7769,7 +7769,7 @@ static void dobreak(void)
   if (ptr==NULL)
     return;
   destructsymbols(&loctab,ptr[wqLVL]);
-  clearassignments(&loctab);
+  clearassignments(&loctab,1);
   modstk(((int)declared-ptr[wqBRK])*sizeof(cell));
   jumplabel(ptr[wqEXIT]);
 }
@@ -7783,7 +7783,7 @@ static void docont(void)
   if (ptr==NULL)
     return;
   destructsymbols(&loctab,ptr[wqLVL]);
-  clearassignments(&loctab);
+  clearassignments(&loctab,1);
   modstk(((int)declared-ptr[wqCONT])*sizeof(cell));
   jumplabel(ptr[wqLOOP]);
 }

@@ -19,11 +19,12 @@ test_local()
 
 test_local2()
 {
-	new local_var, local_var2;
+	new local_var, local_var2 = 1;
 	if (random(2))
 	{
 		local_var = 1; // warning 204
 	}
+	local_var2 = 2; // warning 240
 	switch (random(2))
 	{
 		case 0:
@@ -86,6 +87,8 @@ test_global_static()
 
 test_arg1(arg)
 {
+	if (random(2))
+		arg = 1;
 	arg = 0; // warning 240
 	arg = 1; // warning 240, warning 204
 }
