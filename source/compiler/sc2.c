@@ -3003,6 +3003,15 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
       mustdelete=delete_labels;
       break;
     case iVARIABLE:
+      /* check that the assigned value was used, but don't show the warning
+       * if the variable is completely unused (we already have warning 203 for that) */
+      if ((sym->usage & (uASSIGNED | uREAD | uWRITTEN))==(uASSIGNED | uREAD | uWRITTEN)
+          && sym->vclass==sLOCAL) {
+        errorset(sSETPOS,sym->lnumber);
+        error(204,sym->name);   /* symbol is assigned a value that is never used */
+        errorset(sSETPOS,-1);
+      } /* if */
+      /* fallthrough */
     case iARRAY:
       /* do not delete global variables if functions are preserved */
       mustdelete=delete_functions;
