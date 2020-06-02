@@ -3215,8 +3215,10 @@ SC_FUNC void markinitialized(symbol *sym,int assignment)
     return;
   if (sc_status==statFIRST && (sym->vclass==sLOCAL || sym->vclass==sSTATIC))
     return;
-  if (assignment && sym->ident==iVARIABLE)
+  if (assignment && sym->ident==iVARIABLE) {
     sym->usage |= uASSIGNED;
+    sym->assignlevel=pc_nestlevel;
+  } /* if */
 }
 
 SC_FUNC void clearassignments(symbol *root)
@@ -3328,6 +3330,7 @@ SC_FUNC symbol *addsym(const char *name,cell addr,int ident,int vclass,int tag,i
   entry.ident=(char)ident;
   entry.tag=tag;
   entry.usage=(char)usage;
+  entry.assignlevel=0;
   entry.fnumber=-1;     /* assume global visibility (ignored for local symbols) */
   entry.lnumber=fline;
   entry.numrefers=1;

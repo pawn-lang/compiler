@@ -146,6 +146,7 @@ typedef struct s_symbol {
       short level;      /* number of dimensions below this level */
     } array;
   } dim;                /* for 'dimension', both functions and arrays */
+  int assignlevel;      /* 'compound statement' level at which the variable was assigned a value */
   constvalue_root *states;/* list of state function/state variable ids + addresses */
   int fnumber;          /* static global variables: file number in which the declaration is visible */
   int lnumber;          /* line number (in the current source file) for the declaration */
