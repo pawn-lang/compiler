@@ -5698,7 +5698,6 @@ static int doif(void)
   ifindent=stmtindent;          /* save the indent of the "if" instruction */
   flab1=getlabel();             /* get label number for false branch */
   test(flab1,TEST_THEN,FALSE);  /* get expression, branch to flab1 if false */
-  clearassignments(&loctab,1);
   statement(NULL,FALSE);        /* if true, do a statement */
   if (!matchtoken(tELSE)) {     /* if...else ? */
     setlabel(flab1);            /* no, simple if..., print false label */
@@ -5739,8 +5738,11 @@ static int dowhile(void)
    * tiniest loop, set it below the top of the loop
    */
   setline(TRUE);
+  pc_nestlevel++; /* temporarily increase the "compound statement" nesting level,
+                   * so any assignments made inside the loop control expression
+                   * could be cleaned up later */
   endlessloop=test(wq[wqEXIT],TEST_DO,FALSE);/* branch to wq[wqEXIT] if false */
-  clearassignments(&loctab,1);
+  pc_nestlevel--;
   statement(NULL,FALSE);        /* if so, do a statement */
   clearassignments(&loctab,pc_nestlevel+1);
   jumplabel(wq[wqLOOP]);        /* and loop to "while" start */
@@ -5765,13 +5767,16 @@ static int dodo(void)
   addwhile(wq);           /* see "dowhile" for more info */
   top=getlabel();         /* make a label first */
   setlabel(top);          /* loop label */
-  clearassignments(&loctab,1);
   statement(NULL,FALSE);
-  clearassignments(&loctab,pc_nestlevel+1);
   needtoken(tWHILE);
   setlabel(wq[wqLOOP]);   /* "continue" always jumps to WQLOOP. */
   setline(TRUE);
+  pc_nestlevel++; /* temporarily increase the "compound statement" nesting level,
+                   * so any assignments made inside the loop control expression
+                   * could be cleaned up later */
   endlessloop=test(wq[wqEXIT],TEST_OPT,FALSE);
+  pc_nestlevel--;
+  clearassignments(&loctab,pc_nestlevel+1);
   jumplabel(top);
   setlabel(wq[wqEXIT]);
   delwhile();
@@ -5797,6 +5802,9 @@ static int dofor(void)
   addwhile(wq);
   skiplab=getlabel();
   endtok= matchtoken('(') ? ')' : tDO;
+  pc_nestlevel++; /* temporarily increase the "compound statement" nesting level,
+                   * so any assignments made inside the loop initialization, control
+                   * expression and increment blocks could be cleaned up later */
   if (matchtoken(';')==0) {
     /* new variable declarations are allowed here */
     if (matchtoken(tNEW)) {
@@ -5848,15 +5856,14 @@ static int dofor(void)
   stgmark(sENDREORDER);             /* mark end of reversed evaluation */
   stgout(index);
   stgset(FALSE);                    /* stop staging */
-  clearassignments(&loctab,1);
   statement(NULL,FALSE);
   clearassignments(&loctab,save_nestlevel+1);
   jumplabel(wq[wqLOOP]);
   setlabel(wq[wqEXIT]);
   delwhile();
 
-  assert(pc_nestlevel>=save_nestlevel);
-  if (pc_nestlevel>save_nestlevel) {
+  assert(pc_nestlevel>=save_nestlevel+1);
+  if (pc_nestlevel>save_nestlevel+1) {
     /* Clean up the space and the symbol table for the local
      * variable in "expr1".
      */
@@ -5865,8 +5872,8 @@ static int dofor(void)
     testsymbols(&loctab,pc_nestlevel,FALSE,TRUE);   /* look for unused block locals */
     declared=save_decl;
     delete_symbols(&loctab,pc_nestlevel,FALSE,TRUE);
-    pc_nestlevel=save_nestlevel;  /* reset 'compound statement' nesting level */
   } /* if */
+  pc_nestlevel=save_nestlevel;    /* reset 'compound statement' nesting level */
 
   index=endlessloop ? tENDLESS : tFOR;
   endlessloop=save_endlessloop;
@@ -5920,7 +5927,8 @@ static void doswitch(void)
     tok=lex(&val,&str);         /* read in (new) token */
     switch (tok) {
     case tCASE:
-      clearassignments(&loctab,(casecount==0) ? 0 : (pc_nestlevel+1));
+      if (casecount!=0)
+        clearassignments(&loctab,pc_nestlevel+1);
       if (swdefault!=FALSE)
         error(15);        /* "default" case must be last in switch statement */
       lbl_case=getlabel();
@@ -5988,7 +5996,8 @@ static void doswitch(void)
       jumplabel(lbl_exit);
       break;
     case tDEFAULT:
-      clearassignments(&loctab,(casecount==0) ? 0 : (pc_nestlevel+1));
+      if (casecount!=0)
+        clearassignments(&loctab,pc_nestlevel+1);
       if (swdefault!=FALSE)
         error(16);         /* multiple defaults in switch */
       lbl_case=getlabel();
