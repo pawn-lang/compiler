@@ -5722,6 +5722,7 @@ static int doif(void)
     if (lastst==lastst_true)
       return lastst;
   } /* if */
+  demoteassignments(&loctab,pc_nestlevel);
   return tIF;
 }
 
@@ -6009,6 +6010,7 @@ static void doswitch(void)
       } /* if */
     } /* switch */
   } while (tok!=endtok);
+  demoteassignments(&loctab,pc_nestlevel);
 
   #if !defined NDEBUG
     /* verify that the case table is sorted (unfortunatly, duplicates can

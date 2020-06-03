@@ -3237,6 +3237,22 @@ SC_FUNC void clearassignments(symbol *root,int fromlevel)
       sym->usage &= ~uASSIGNED;
 }
 
+/* demotes assignments to the specified 'compound statement' nesting level */
+SC_FUNC void demoteassignments(symbol* root,int level)
+{
+  symbol* sym;
+
+  /* the error messages are only printed on the "writing" pass,
+   * so if we are not writing yet, then we have a quick exit */
+  if (sc_status!=statWRITE)
+    return;
+
+  sym=root;
+  while ((sym=sym->next)!=NULL)
+    if (sym->assignlevel>level)
+      sym->assignlevel=level;
+}
+
 
 /*  findglb
  *
