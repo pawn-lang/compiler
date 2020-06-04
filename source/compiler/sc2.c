@@ -3211,11 +3211,11 @@ SC_FUNC void markusage(symbol *sym,int usage)
 SC_FUNC void markinitialized(symbol *sym,int assignment)
 {
   assert(sym!=NULL);
-  if (sym->ident!=iVARIABLE && sym->ident!=iARRAY)
+  if (sym->ident!=iVARIABLE && sym->ident!=iREFERENCE && sym->ident!=iARRAY)
     return;
   if (sc_status==statFIRST && (sym->vclass==sLOCAL || sym->vclass==sSTATIC))
     return;
-  if (assignment && sym->ident==iVARIABLE) {
+  if (assignment && (sym->ident==iVARIABLE || sym->ident==iREFERENCE)) {
     sym->usage |= uASSIGNED;
     sym->assignlevel=pc_nestlevel;
   } /* if */
