@@ -1,0 +1,77 @@
+{
+  'test_type': 'pcode_check',
+  'code_pattern': r"""
+[0-9a-f]+  nop
+[0-9a-f]+  load.pri 00000000
+[0-9a-f]+  jzer [0-9a-f]+
+[0-9a-f]+  push.c 00000002
+[0-9a-f]+  load.pri 00000000
+[0-9a-f]+  jzer [0-9a-f]+
+[0-9a-f]+  push.c 00000003
+[0-9a-f]+  load.pri 00000000
+[0-9a-f]+  jzer [0-9a-f]+
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000001
+[0-9a-f]+  addr.pri fffffff8
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000008
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  push.c 00000001
+[0-9a-f]+  addr.pri fffffffc
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000008
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  pop.pri
+[0-9a-f]+  stack 00000008
+[0-9a-f]+  jump [0-9a-f]+
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000001
+[0-9a-f]+  addr.pri fffffff8
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000008
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  pop.pri
+[0-9a-f]+  stack 00000004
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000001
+[0-9a-f]+  addr.pri fffffffc
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000008
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  pop.pri
+[0-9a-f]+  stack 00000004
+[0-9a-f]+  jump [0-9a-f]+
+[0-9a-f]+  nop
+[0-9a-f]+  push.c 00000000
+[0-9a-f]+  load.pri 00000000
+[0-9a-f]+  jzer [0-9a-f]+
+[0-9a-f]+  jump [0-9a-f]+
+[0-9a-f]+  jump [0-9a-f]+
+[0-9a-f]+  nop
+[0-9a-f]+  push.c 00000000
+[0-9a-f]+  jump [0-9a-f]+
+[0-9a-f]+  load.pri 00000000
+[0-9a-f]+  jzer [0-9a-f]+
+[0-9a-f]+  jump [0-9a-f]+
+[0-9a-f]+  jump [0-9a-f]+
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000001
+[0-9a-f]+  addr.pri fffffff8
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000008
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  pop.pri
+[0-9a-f]+  stack 00000004
+[0-9a-f]+  nop
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000001
+[0-9a-f]+  addr.pri fffffffc
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000008
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  pop.pri
+[0-9a-f]+  stack 00000004
+[0-9a-f]+  zero.pri
+[0-9a-f]+  retn
+"""
+}
