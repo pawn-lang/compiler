@@ -265,6 +265,8 @@ enum {
   wqCONT,       /* used to restore stack for "continue" */
   wqLOOP,       /* loop start label number */
   wqEXIT,       /* loop exit label number (jump if false) */
+  wqLVL,        /* "compound statement" nesting level for the loop body
+                 * (used to call destructors for "break" and "continue") */
   /* --- */
   wqSIZE        /* "while queue" size */
 };
