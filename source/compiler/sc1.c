@@ -5811,7 +5811,6 @@ static int dofor(void)
       /* The variable in expr1 of the for loop is at a
        * 'compound statement' level of it own.
        */
-      pc_nestlevel++;
       declloc(FALSE); /* declare local variable */
     } else {
       doexpr(TRUE,TRUE,TRUE,TRUE,NULL,NULL,FALSE,NULL); /* expression 1 */
@@ -5862,8 +5861,8 @@ static int dofor(void)
   setlabel(wq[wqEXIT]);
   delwhile();
 
-  assert(pc_nestlevel>=save_nestlevel+1);
-  if (pc_nestlevel>save_nestlevel+1) {
+  assert(pc_nestlevel>save_nestlevel);
+  if (declared>save_decl) {
     /* Clean up the space and the symbol table for the local
      * variable in "expr1".
      */
