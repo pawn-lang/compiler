@@ -5694,6 +5694,7 @@ static int doif(void)
   int flab1,flab2;
   int ifindent;
   int lastst_true;
+  int returnst=tIF;
 
   ifindent=stmtindent;          /* save the indent of the "if" instruction */
   flab1=getlabel();             /* get label number for false branch */
@@ -5719,10 +5720,10 @@ static int doif(void)
      * to the generic tIF; this allows for better "unreachable code" checking
      */
     if (lastst==lastst_true)
-      return lastst;
+      returnst=lastst;
   } /* if */
   demoteassignments(&loctab,pc_nestlevel);
-  return tIF;
+  return returnst;
 }
 
 static int dowhile(void)
