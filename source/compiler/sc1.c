@@ -5703,18 +5703,20 @@ static int doif(void)
   if (!matchtoken(tELSE)) {     /* if...else ? */
     setlabel(flab1);            /* no, simple if..., print false label */
   } else {
+    assigninfo *assignments=NULL;
     lastst_true=lastst;         /* save last statement of the "true" branch */
     /* to avoid the "dangling else" error, we want a warning if the "else"
      * has a lower indent than the matching "if" */
     if (stmtindent<ifindent && sc_tabsize>0)
       error(217);               /* loose indentation */
-    clearassignments(&loctab,pc_nestlevel+1);
+    memoizeassignments(&loctab,pc_nestlevel+1,&assignments);
     flab2=getlabel();
     if ((lastst!=tRETURN) && (lastst!=tGOTO))
       jumplabel(flab2);         /* "true" branch jumps around "else" clause, unless the "true" branch statement already jumped */
     setlabel(flab1);            /* print false label */
     statement(NULL,FALSE);      /* do "else" clause */
     setlabel(flab2);            /* print true label */
+    restoreassignments(&loctab,pc_nestlevel+1,assignments);
     /* if both the "true" branch and the "false" branch ended with the same
      * kind of statement, set the last statement id to that kind, rather than
      * to the generic tIF; this allows for better "unreachable code" checking

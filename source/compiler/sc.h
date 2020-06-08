@@ -301,6 +301,16 @@ typedef struct s_valuepair {
   long second;
 } valuepair;
 
+/* struct "assigninfo" is used to synchronize the status of assignments that
+ * were made in multiple "if" and "switch" branches, so the compiler could
+ * detect unused assignments in all of those branches, not only the last one */
+typedef struct s_assigninfo {
+  int unused;       /* true if the variable has an unused value assigned to it
+                     * in one of the branches" */
+  int lnumber;      /* line number of the first unused assignment made in one of
+                     * the branches (used for error messages) */
+} assigninfo;
+
 /* macros for code generation */
 #define opcodes(n)      ((n)*sizeof(cell))      /* opcode size */
 #define opargs(n)       ((n)*sizeof(cell))      /* size of typical argument */
@@ -692,6 +702,8 @@ SC_FUNC void markusage(symbol *sym,int usage);
 SC_FUNC void markinitialized(symbol *sym,int assignment);
 SC_FUNC void clearassignments(symbol *root,int fromlevel);
 SC_FUNC void demoteassignments(symbol* root,int level);
+SC_FUNC void memoizeassignments(symbol *root,int fromlevel,assigninfo **assignments);
+SC_FUNC void restoreassignments(symbol *root,int fromlevel,assigninfo *assignments);
 SC_FUNC void rename_symbol(symbol *sym,const char *newname);
 SC_FUNC symbol *findglb(const char *name,int filter);
 SC_FUNC symbol *findloc(const char *name);

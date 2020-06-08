@@ -3253,6 +3253,71 @@ SC_FUNC void demoteassignments(symbol* root,int level)
       sym->assignlevel=level;
 }
 
+/* memoizes all assignments done on the specified compound level and higher */
+SC_FUNC void memoizeassignments(symbol *root,int fromlevel,assigninfo **assignments)
+{
+  symbol *sym;
+  int num;
+
+  /* the error messages are only printed on the "writing" pass,
+   * so if we are not writing yet, then we have a quick exit */
+  if (sc_status!=statWRITE)
+    return;
+
+  /* allocate memory to store the information about assignments */
+  if (*assignments==NULL) {
+    sym=root;
+    while ((sym=sym->next)!=NULL && sym->ident==iLABEL) {}  /* skip labels */
+    /* count the number of variables */
+    for (num=0; sym!=NULL; num++,sym=sym->next)
+      /* nothing */;
+    /* if there are no variables, then we have an early exit */
+    if (num==0)
+      return;
+    *assignments=(assigninfo *)calloc((size_t)num,sizeof(assigninfo));
+    if (*assignments==NULL)
+      error(103); /* insufficient memory */
+  } /* if */
+
+  sym=root;
+  while ((sym=sym->next)!=NULL && sym->ident==iLABEL) {}    /* skip labels */
+  for (num=0; sym!=NULL; num++,sym=sym->next) {
+    /* if the assignment is unused and it was done inside the branch... */
+    if ((sym->usage & uASSIGNED)!=0 && sym->assignlevel>=fromlevel) {
+      /* clear the assignment flag, so the compiler won't report this assignment as unused
+       * if the next "if" or "switch" branch also contains an assignment to this variable */
+      sym->usage &= ~uASSIGNED;
+      /* memoize the assignment only if there was no other unused assignment
+       * in any other "if" or "switch" branch */
+      if ((*assignments)[num].unused==FALSE) {
+        (*assignments)[num].unused=TRUE;
+        (*assignments)[num].lnumber=sym->lnumber;
+      } /* if */
+    } /* if */
+  } /* for */
+}
+
+/* restores all memoized assignments */
+SC_FUNC void restoreassignments(symbol *root,int fromlevel,assigninfo *assignments)
+{
+  symbol *sym;
+  int num;
+
+  /* if we previously didn't memoize any assignments, then we have a quick exit */
+  if (assignments==NULL)
+    return;
+
+  sym=root;
+  while ((sym=sym->next)!=NULL && sym->ident==iLABEL) {}    /* skip labels */
+  for (num=0; sym!=NULL; num++,sym=sym->next) {
+    if (assignments[num].unused) {
+      sym->usage |= uASSIGNED;
+      sym->lnumber=assignments[num].lnumber;
+    } /* if */
+  } /* for */
+  free(assignments);
+}
+
 
 /*  findglb
  *
