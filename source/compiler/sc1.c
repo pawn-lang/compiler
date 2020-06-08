@@ -5905,6 +5905,7 @@ static void doswitch(void)
   constvalue_root caselist = { NULL, NULL};   /* case list starts empty */
   constvalue *cse,*csp,*newval;
   char labelname[sNAMEMAX+1];
+  assigninfo *assignments=NULL;
 
   endtok= matchtoken('(') ? ')' : tDO;
   doexpr(TRUE,FALSE,FALSE,FALSE,&swtag,NULL,TRUE,NULL);/* evaluate switch expression */
@@ -5930,7 +5931,7 @@ static void doswitch(void)
     switch (tok) {
     case tCASE:
       if (casecount!=0)
-        clearassignments(&loctab,pc_nestlevel+1);
+        memoizeassignments(&loctab,pc_nestlevel+1,&assignments);
       if (swdefault!=FALSE)
         error(15);        /* "default" case must be last in switch statement */
       lbl_case=getlabel();
@@ -5999,7 +6000,7 @@ static void doswitch(void)
       break;
     case tDEFAULT:
       if (casecount!=0)
-        clearassignments(&loctab,pc_nestlevel+1);
+        memoizeassignments(&loctab,pc_nestlevel+1,&assignments);
       if (swdefault!=FALSE)
         error(16);         /* multiple defaults in switch */
       lbl_case=getlabel();
@@ -6021,6 +6022,7 @@ static void doswitch(void)
       } /* if */
     } /* switch */
   } while (tok!=endtok);
+  restoreassignments(&loctab,pc_nestlevel+1,assignments);
   demoteassignments(&loctab,pc_nestlevel);
 
   #if !defined NDEBUG
