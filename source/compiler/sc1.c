@@ -5101,6 +5101,8 @@ static void destructsymbols(symbol *root,int level)
         if ((opsym->usage & uNATIVE)!=0 && opsym->x.lib!=NULL)
           opsym->x.lib->value += 1; /* increment "usage count" of the library */
       } /* if */
+    } else if (level==0 && sym->ident==iREFERENCE) {
+      sym->usage &= ~uASSIGNED;
     } /* if */
     sym=sym->next;
   } /* while */
