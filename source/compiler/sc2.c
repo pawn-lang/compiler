@@ -3237,22 +3237,6 @@ SC_FUNC void clearassignments(symbol *root,int fromlevel)
       sym->usage &= ~uASSIGNED;
 }
 
-/* demotes assignments to the specified 'compound statement' nesting level */
-SC_FUNC void demoteassignments(symbol* root,int level)
-{
-  symbol* sym;
-
-  /* the error messages are only printed on the "writing" pass,
-   * so if we are not writing yet, then we have a quick exit */
-  if (sc_status!=statWRITE)
-    return;
-
-  sym=root;
-  while ((sym=sym->next)!=NULL)
-    if (sym->assignlevel>level)
-      sym->assignlevel=level;
-}
-
 /* memoizes all assignments done on the specified compound level and higher */
 SC_FUNC void memoizeassignments(symbol *root,int fromlevel,assigninfo **assignments)
 {
@@ -3303,17 +3287,17 @@ SC_FUNC void restoreassignments(symbol *root,int fromlevel,assigninfo *assignmen
   symbol *sym;
   int num;
 
-  /* if we previously didn't memoize any assignments, then we have a quick exit */
-  if (assignments==NULL)
-    return;
-
   sym=root;
   while ((sym=sym->next)!=NULL && sym->ident==iLABEL) {}    /* skip labels */
   for (num=0; sym!=NULL; num++,sym=sym->next) {
-    if (assignments[num].unused) {
+    if (assignments!=NULL && assignments[num].unused) {
       sym->usage |= uASSIGNED;
       sym->lnumber=assignments[num].lnumber;
     } /* if */
+    /* demote all assignments that were made inside any of the "if"/"switch"
+     * branches to the previous "compound statement" nesting level */
+    if (sym->assignlevel>=fromlevel)
+      sym->assignlevel=fromlevel-1;
   } /* for */
   free(assignments);
 }

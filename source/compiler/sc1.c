@@ -5697,6 +5697,7 @@ static int doif(void)
   int ifindent;
   int lastst_true;
   int returnst=tIF;
+  assigninfo *assignments=NULL;
 
   ifindent=stmtindent;          /* save the indent of the "if" instruction */
   flab1=getlabel();             /* get label number for false branch */
@@ -5705,7 +5706,6 @@ static int doif(void)
   if (!matchtoken(tELSE)) {     /* if...else ? */
     setlabel(flab1);            /* no, simple if..., print false label */
   } else {
-    assigninfo *assignments=NULL;
     lastst_true=lastst;         /* save last statement of the "true" branch */
     /* to avoid the "dangling else" error, we want a warning if the "else"
      * has a lower indent than the matching "if" */
@@ -5718,7 +5718,6 @@ static int doif(void)
     setlabel(flab1);            /* print false label */
     statement(NULL,FALSE);      /* do "else" clause */
     setlabel(flab2);            /* print true label */
-    restoreassignments(&loctab,pc_nestlevel+1,assignments);
     /* if both the "true" branch and the "false" branch ended with the same
      * kind of statement, set the last statement id to that kind, rather than
      * to the generic tIF; this allows for better "unreachable code" checking
@@ -5726,7 +5725,7 @@ static int doif(void)
     if (lastst==lastst_true)
       returnst=lastst;
   } /* if */
-  demoteassignments(&loctab,pc_nestlevel);
+  restoreassignments(&loctab,pc_nestlevel+1,assignments);
   return returnst;
 }
 
@@ -6025,7 +6024,6 @@ static void doswitch(void)
     } /* switch */
   } while (tok!=endtok);
   restoreassignments(&loctab,pc_nestlevel+1,assignments);
-  demoteassignments(&loctab,pc_nestlevel);
 
   #if !defined NDEBUG
     /* verify that the case table is sorted (unfortunatly, duplicates can
