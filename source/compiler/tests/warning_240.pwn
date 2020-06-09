@@ -40,6 +40,34 @@ test_locals()
 	}
 
 	{
+		new local_var;
+		if (TRUE)
+		{
+			local_var = 1;
+		}
+		else
+		{
+		}
+		// The previous assignment ("local_var = 1") should be reported as unused.
+		local_var = 2; // warning 240
+		UseVariable(local_var);
+	}
+
+	{
+		new local_var;
+		if (TRUE)
+		{
+		}
+		else
+		{
+			local_var = 1;
+		}
+		// The previous assignment ("local_var = 1") should be reported as unused.
+		local_var = 2; // warning 240
+		UseVariable(local_var);
+	}
+
+	{
 		new local_var = 1;
 		if (TRUE) {}
 		// The previous assignment ("local_var = 1") should be reported as unused.
@@ -51,6 +79,30 @@ test_locals()
 		new local_var = 1;
 		switch (TRUE)
 		{
+			default: local_var = 2;
+		}
+		// The previous assignment ("local_var = 2") should be reported as unused.
+		local_var = 3; // warning 240
+		UseVariable(local_var);
+	}
+
+	{
+		new local_var = 1;
+		switch (TRUE)
+		{
+			case true: local_var = 2;
+			default: {}
+		}
+		// The previous assignment ("local_var = 2") should be reported as unused.
+		local_var = 3; // warning 240
+		UseVariable(local_var);
+	}
+
+	{
+		new local_var = 1;
+		switch (TRUE)
+		{
+			case true: {}
 			default: local_var = 2;
 		}
 		// The previous assignment ("local_var = 2") should be reported as unused.
