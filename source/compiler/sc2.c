@@ -787,7 +787,7 @@ static int ftoi(cell *val,const unsigned char *curptr)
     /* floating point */
     #if PAWN_CELL_SIZE==32
       float value=(float)fnum;
-      assert_static(sizeof(val)==sizeof(value));
+      assert_static(sizeof(*val)==sizeof(value));
       *val=*((cell *)&value);
       #if !defined NDEBUG
         /* I assume that the C/C++ compiler stores "float" values in IEEE 754
@@ -806,7 +806,7 @@ static int ftoi(cell *val,const unsigned char *curptr)
         }
       #endif
     #elif PAWN_CELL_SIZE==64
-      assert_static(sizeof(val)==sizeof(fnum));
+      assert_static(sizeof(*val)==sizeof(fnum));
       *val=*((cell *)&fnum);
       #if !defined NDEBUG
         /* I assume that the C/C++ compiler stores "double" values in IEEE 754
