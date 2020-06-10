@@ -3233,7 +3233,7 @@ SC_FUNC symbol *fetchfunc(char *name,int tag)
 {
   symbol *sym;
 
-  if ((sym=findglb(name,sGLOBAL))!=0) {   /* already in symbol table? */
+  if ((sym=findglb(name,sGLOBAL))!=NULL) {/* already in symbol table? */
     if (sym->ident!=iFUNCTN) {
       error(21,name);                     /* yes, but not as a function */
       return NULL;                        /* make sure the old symbol is not damaged */

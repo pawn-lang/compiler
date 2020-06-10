@@ -1973,7 +1973,7 @@ static int primary(value *lval)
   } /* if */
   if (tok==tSYMBOL && !findconst(st,NULL)) {
     /* first look for a local variable */
-    if ((sym=findloc(st))!=0) {
+    if ((sym=findloc(st))!=NULL) {
       if (sym->ident==iLABEL) {
         error(29);          /* expression error, assumed 0 */
         ldconst(0,sPRI);    /* load 0 */
@@ -1992,7 +1992,7 @@ static int primary(value *lval)
       } /* if */
     } /* if */
     /* now try a global variable */
-    if ((sym=findglb(st,sSTATEVAR))!=0) {
+    if ((sym=findglb(st,sSTATEVAR))!=NULL) {
       if (sym->ident==iFUNCTN || sym->ident==iREFFUNC) {
         /* if the function is only in the table because it was inserted as a
          * stub in the first pass (i.e. it was "used" but never declared or
@@ -2655,7 +2655,7 @@ static int constant(value *lval)
   int cmptag=lval->cmptag;
 
   tok=lex(&val,&st);
-  if (tok==tSYMBOL && (sym=findconst(st,&cmptag))!=0) {
+  if (tok==tSYMBOL && (sym=findconst(st,&cmptag))!=NULL) {
     if (cmptag>1)
       error(91,sym->name);  /* ambiguity: multiple matching constants (different tags) */
     lval->constval=sym->addr;
