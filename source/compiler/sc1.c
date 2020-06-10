@@ -133,6 +133,7 @@ static int dofor(void);
 static void doswitch(void);
 static void dogoto(void);
 static void dolabel(void);
+static int isterminal(int tok);
 static void doreturn(void);
 static void dobreak(void);
 static void docont(void);
@@ -5616,7 +5617,7 @@ static void compound(int stmt_sameline,int starttok)
       error(30,block_start);    /* compound block not closed at end of file */
       break;
     } else {
-      if (count_stmt>0 && (lastst==tRETURN || lastst==tBREAK || lastst==tCONTINUE || lastst==tENDLESS))
+      if (count_stmt>0 && isterminal(lastst))
         error(225);             /* unreachable code */
       statement(&indent,TRUE);  /* do a statement */
       count_stmt++;
@@ -5831,6 +5832,10 @@ static int doif(void)
      */
     if (lastst==lastst_true)
       returnst=lastst;
+    /* otherwise, if both branches end with terminal statements (not necessary
+     * of the same kind), set the last statement ID to tTERMINAL */
+    else if (isterminal(lastst_true) && isterminal(lastst))
+      returnst=tTERMINAL;
   } /* if */
   restoreassignments(pc_nestlevel+1,assignments);
   return returnst;
@@ -7783,6 +7788,15 @@ static int isvariadic(symbol *sym)
     } /* if */
   } /* for */
   return FALSE;
+}
+
+/* isterminal
+ *
+ * Checks if the token represents one of the terminal kinds of statements.
+ */
+static int isterminal(int tok)
+{
+  return (tok==tRETURN || tok==tBREAK || tok==tCONTINUE || tok==tENDLESS || tok==tTERMINAL);
 }
 
 /*  doreturn

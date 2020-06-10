@@ -469,6 +469,8 @@ enum {
   /* for assigment to "lastst" only (see SC1.C) */
   tEXPR,
   tENDLESS, /* endless loop */
+  tTERMINAL,/* all "if" branches or "switch" cases end with
+             * terminal statements ("return", "break" etc.) */
 };
 
 /* (reversed) evaluation of staging buffer */
