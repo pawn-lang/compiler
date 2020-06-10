@@ -1116,7 +1116,11 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
         break;
 #if defined	__WIN32__ || defined _WIN32 || defined _Windows
       case 'H':
-        hwndFinish=(HWND)atoi(option_value(ptr));
+        #if defined __64BIT__
+          hwndFinish=(HWND)atoll(option_value(ptr));
+        #else
+          hwndFinish=(HWND)atoi(option_value(ptr));
+        #endif
         if (!IsWindow(hwndFinish))
           hwndFinish=(HWND)0;
         break;
