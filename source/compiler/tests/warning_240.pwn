@@ -153,7 +153,7 @@ test_locals()
 
 test_globals()
 {
-	// Assignments to global variables are not tracked (yet?)
+	// Assignments to global variables are not tracked
 	global_var = 1;
 	global_var = 2;
 	UseVariable(global_var);

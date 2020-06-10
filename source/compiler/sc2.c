@@ -3215,7 +3215,7 @@ SC_FUNC void markinitialized(symbol *sym,int assignment)
     return;
   if (sc_status==statFIRST && (sym->vclass==sLOCAL || sym->vclass==sSTATIC))
     return;
-  if (assignment && (sym->ident==iVARIABLE || sym->ident==iREFERENCE)) {
+  if (assignment && sym->vclass!=sGLOBAL && (sym->ident==iVARIABLE || sym->ident==iREFERENCE)) {
     sym->usage |= uASSIGNED;
     sym->assignlevel=pc_nestlevel;
   } /* if */
