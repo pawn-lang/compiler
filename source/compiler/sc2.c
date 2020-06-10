@@ -1013,7 +1013,7 @@ static int command(void)
     iflevel++;
     if (SKIPPING)
       break;                    /* break out of switch */
-    clearassignments(&loctab,1);
+    clearassignments(1);
     skiplevel=iflevel;
     preproc_expr(&val,NULL);    /* get value (or 0 on error) */
     ifstack[iflevel-1]=(char)(val ? PARSEMODE : SKIPMODE);
@@ -1053,7 +1053,7 @@ static int command(void)
           } /* if */
         } else {
           /* previous conditions were all FALSE */
-          clearassignments(&loctab,1);
+          clearassignments(1);
           if (tok==tpELSEIF) {
             /* if we were already skipping this section, allow expressions with
              * undefined symbols; otherwise check the expression to catch errors
@@ -1080,7 +1080,7 @@ static int command(void)
       error(26);        /* no matching "#if" */
       errorset(sRESET,0);
     } else {
-      clearassignments(&loctab,1);
+      clearassignments(1);
       iflevel--;
       if (iflevel<skiplevel)
         skiplevel=iflevel;
@@ -3222,7 +3222,7 @@ SC_FUNC void markinitialized(symbol *sym,int assignment)
 }
 
 /* clears assignments starting from the specified 'compound statement' nesting level and higher */
-SC_FUNC void clearassignments(symbol *root,int fromlevel)
+SC_FUNC void clearassignments(int fromlevel)
 {
   symbol *sym;
 
@@ -3231,14 +3231,14 @@ SC_FUNC void clearassignments(symbol *root,int fromlevel)
   if (sc_status!=statWRITE)
     return;
 
-  sym=root;
+  sym=&loctab;
   while ((sym=sym->next)!=NULL)
     if (sym->assignlevel>=fromlevel)
       sym->usage &= ~uASSIGNED;
 }
 
 /* memoizes all assignments done on the specified compound level and higher */
-SC_FUNC void memoizeassignments(symbol *root,int fromlevel,assigninfo **assignments)
+SC_FUNC void memoizeassignments(int fromlevel,assigninfo **assignments)
 {
   symbol *sym;
   int num;
@@ -3250,7 +3250,7 @@ SC_FUNC void memoizeassignments(symbol *root,int fromlevel,assigninfo **assignme
 
   /* allocate memory to store the information about assignments */
   if (*assignments==NULL) {
-    sym=root;
+    sym=&loctab;
     while ((sym=sym->next)!=NULL && sym->ident==iLABEL) {}  /* skip labels */
     /* count the number of variables */
     for (num=0; sym!=NULL; num++,sym=sym->next)
@@ -3263,7 +3263,7 @@ SC_FUNC void memoizeassignments(symbol *root,int fromlevel,assigninfo **assignme
       error(103); /* insufficient memory */
   } /* if */
 
-  sym=root;
+  sym=&loctab;
   while ((sym=sym->next)!=NULL && sym->ident==iLABEL) {}    /* skip labels */
   for (num=0; sym!=NULL; num++,sym=sym->next) {
     /* if the assignment is unused and it was done inside the branch... */
@@ -3282,12 +3282,12 @@ SC_FUNC void memoizeassignments(symbol *root,int fromlevel,assigninfo **assignme
 }
 
 /* restores all memoized assignments */
-SC_FUNC void restoreassignments(symbol *root,int fromlevel,assigninfo *assignments)
+SC_FUNC void restoreassignments(int fromlevel,assigninfo *assignments)
 {
   symbol *sym;
   int num;
 
-  sym=root;
+  sym=&loctab;
   while ((sym=sym->next)!=NULL && sym->ident==iLABEL) {}    /* skip labels */
   for (num=0; sym!=NULL; num++,sym=sym->next) {
     if (assignments!=NULL && assignments[num].unused) {

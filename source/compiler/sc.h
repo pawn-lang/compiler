@@ -700,9 +700,9 @@ SC_FUNC void delete_symbols(symbol *root,int level,int del_labels,int delete_fun
 SC_FUNC int refer_symbol(symbol *entry,symbol *bywhom);
 SC_FUNC void markusage(symbol *sym,int usage);
 SC_FUNC void markinitialized(symbol *sym,int assignment);
-SC_FUNC void clearassignments(symbol *root,int fromlevel);
-SC_FUNC void memoizeassignments(symbol *root,int fromlevel,assigninfo **assignments);
-SC_FUNC void restoreassignments(symbol *root,int fromlevel,assigninfo *assignments);
+SC_FUNC void clearassignments(int fromlevel);
+SC_FUNC void memoizeassignments(int fromlevel,assigninfo **assignments);
+SC_FUNC void restoreassignments(int fromlevel,assigninfo *assignments);
 SC_FUNC void rename_symbol(symbol *sym,const char *newname);
 SC_FUNC symbol *findglb(const char *name,int filter);
 SC_FUNC symbol *findloc(const char *name);

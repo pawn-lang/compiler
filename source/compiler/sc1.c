@@ -5711,7 +5711,7 @@ static int doif(void)
      * has a lower indent than the matching "if" */
     if (stmtindent<ifindent && sc_tabsize>0)
       error(217);               /* loose indentation */
-    memoizeassignments(&loctab,pc_nestlevel+1,&assignments);
+    memoizeassignments(pc_nestlevel+1,&assignments);
     flab2=getlabel();
     if ((lastst!=tRETURN) && (lastst!=tGOTO))
       jumplabel(flab2);         /* "true" branch jumps around "else" clause, unless the "true" branch statement already jumped */
@@ -5725,7 +5725,7 @@ static int doif(void)
     if (lastst==lastst_true)
       returnst=lastst;
   } /* if */
-  restoreassignments(&loctab,pc_nestlevel+1,assignments);
+  restoreassignments(pc_nestlevel+1,assignments);
   return returnst;
 }
 
@@ -5748,7 +5748,7 @@ static int dowhile(void)
   endlessloop=test(wq[wqEXIT],TEST_DO,FALSE);/* branch to wq[wqEXIT] if false */
   pc_nestlevel--;
   statement(NULL,FALSE);        /* if so, do a statement */
-  clearassignments(&loctab,pc_nestlevel+1);
+  clearassignments(pc_nestlevel+1);
   jumplabel(wq[wqLOOP]);        /* and loop to "while" start */
   setlabel(wq[wqEXIT]);         /* exit label */
   delwhile();                   /* delete queue entry */
@@ -5780,7 +5780,7 @@ static int dodo(void)
                    * could be cleaned up later */
   endlessloop=test(wq[wqEXIT],TEST_OPT,FALSE);
   pc_nestlevel--;
-  clearassignments(&loctab,pc_nestlevel+1);
+  clearassignments(pc_nestlevel+1);
   jumplabel(top);
   setlabel(wq[wqEXIT]);
   delwhile();
@@ -5860,7 +5860,7 @@ static int dofor(void)
   stgout(index);
   stgset(FALSE);                    /* stop staging */
   statement(NULL,FALSE);
-  clearassignments(&loctab,save_nestlevel+1);
+  clearassignments(save_nestlevel+1);
   jumplabel(wq[wqLOOP]);
   setlabel(wq[wqEXIT]);
   delwhile();
@@ -5932,7 +5932,7 @@ static void doswitch(void)
     switch (tok) {
     case tCASE:
       if (casecount!=0)
-        memoizeassignments(&loctab,pc_nestlevel+1,&assignments);
+        memoizeassignments(pc_nestlevel+1,&assignments);
       if (swdefault!=FALSE)
         error(15);        /* "default" case must be last in switch statement */
       lbl_case=getlabel();
@@ -6001,7 +6001,7 @@ static void doswitch(void)
       break;
     case tDEFAULT:
       if (casecount!=0)
-        memoizeassignments(&loctab,pc_nestlevel+1,&assignments);
+        memoizeassignments(pc_nestlevel+1,&assignments);
       if (swdefault!=FALSE)
         error(16);         /* multiple defaults in switch */
       lbl_case=getlabel();
@@ -6023,7 +6023,7 @@ static void doswitch(void)
       } /* if */
     } /* switch */
   } while (tok!=endtok);
-  restoreassignments(&loctab,pc_nestlevel+1,assignments);
+  restoreassignments(pc_nestlevel+1,assignments);
 
   #if !defined NDEBUG
     /* verify that the case table is sorted (unfortunatly, duplicates can
@@ -6086,7 +6086,7 @@ static void dogoto(void)
   if (lex(&val,&st)==tSYMBOL) {
     sym=fetchlab(st);
     if ((sym->usage & uDEFINE)!=0)
-      clearassignments(&loctab,1);
+      clearassignments(1);
     jumplabel((int)sym->addr);
     sym->usage|=uREAD;  /* set "uREAD" bit */
     // ??? if the label is defined (check sym->usage & uDEFINE), check
@@ -7784,7 +7784,7 @@ static void dobreak(void)
   if (ptr==NULL)
     return;
   destructsymbols(&loctab,ptr[wqLVL]);
-  clearassignments(&loctab,1);
+  clearassignments(1);
   modstk(((int)declared-ptr[wqBRK])*sizeof(cell));
   jumplabel(ptr[wqEXIT]);
 }
@@ -7798,7 +7798,7 @@ static void docont(void)
   if (ptr==NULL)
     return;
   destructsymbols(&loctab,ptr[wqLVL]);
-  clearassignments(&loctab,1);
+  clearassignments(1);
   modstk(((int)declared-ptr[wqCONT])*sizeof(cell));
   jumplabel(ptr[wqLOOP]);
 }
