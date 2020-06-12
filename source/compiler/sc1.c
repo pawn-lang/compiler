@@ -3972,7 +3972,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     modstk((int)declared*sizeof(cell)); /* remove all local variables */
     declared=0;
   } /* if */
-  if ((lastst!=tRETURN) && (lastst!=tGOTO) && (sym->flags & flagNAKED)==0) {
+  if (!isterminal(lastst) && lastst!=tGOTO && (sym->flags & flagNAKED)==0) {
     destructsymbols(&loctab,0);
     ldconst(0,sPRI);
     ffret(strcmp(sym->name,uENTRYFUNC)!=0);
