@@ -644,7 +644,7 @@ static cell flooreddiv(cell a,cell b,int return_remainder)
   cell q,r;
 
   if (b==0) {
-    error(29);
+    error(94);  /* division by zero */
     return 0;
   } /* if */
   /* first implement truncated division in a portable way */
