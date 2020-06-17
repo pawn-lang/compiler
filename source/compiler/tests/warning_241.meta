@@ -1,0 +1,13 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+warning_241.pwn(8) : warning 241: negative or too big shift count
+warning_241.pwn(9) : warning 241: negative or too big shift count
+warning_241.pwn(14) : warning 241: negative or too big shift count
+warning_241.pwn(15) : warning 241: negative or too big shift count
+warning_241.pwn(18) : warning 241: negative or too big shift count
+warning_241.pwn(19) : warning 241: negative or too big shift count
+warning_241.pwn(24) : warning 241: negative or too big shift count
+warning_241.pwn(25) : warning 241: negative or too big shift count
+"""
+}
