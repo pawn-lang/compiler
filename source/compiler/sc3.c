@@ -701,9 +701,9 @@ static cell calc(cell left,void (*oper)(),cell right,char *boolresult)
   else if (oper==os_mult)
     return (left * right);
   else if (oper==os_div)
-    return flooreddiv(left,right,0);
+    return flooreddiv(left,right,FALSE);
   else if (oper==os_mod)
-    return flooreddiv(left,right,1);
+    return flooreddiv(left,right,TRUE);
   else
     error(29);  /* invalid expression, assumed 0 (this should never occur) */
   return 0;
