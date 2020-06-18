@@ -197,7 +197,8 @@ static char *warnmsg[] = {
 /*237*/  "user warning: %s\n",
 /*238*/  "meaningless combination of class specifiers (%s)\n",
 /*239*/  "literal array/string passed to a non-const parameter\n",
-/*240*/  "previously assigned value is never used (symbol \"%s\")\n"
+/*240*/  "previously assigned value is never used (symbol \"%s\")\n",
+/*241*/  "enum item \"%s\" not handled in switch\n"
 };
 
 static char *noticemsg[] = {
