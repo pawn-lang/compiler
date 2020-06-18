@@ -1365,23 +1365,23 @@ static int filewrite(char *str)
  *                     staging (referred to only)
  *                     stglen  (altered)
  */
-SC_FUNC void stgwrite(const char *st)
+SC_FUNC void stgwrite(const char *str)
 {
   int len;
-  int st_len=strlen(st);
+  int st_len=strlen(str);
 
   if (staging) {
     assert(stgidx==0 || stgbuf!=NULL);  /* staging buffer must be valid if there is (apparently) something in it */
     if (stgidx>=2 && stgbuf[stgidx-1]=='\0' && stgbuf[stgidx-2]!='\n')
       stgidx-=1;                        /* overwrite last '\0' */
     CHECK_STGBUFFER(stgidx+st_len+1);
-    memcpy(stgbuf+stgidx,st,st_len+1);  /* copy to staging buffer */
+    memcpy(stgbuf+stgidx,str,st_len+1); /* copy to staging buffer */
     stgidx+=st_len+1;
     stglen+=st_len;
   } else {
     len=(stgbuf!=NULL) ? stglen : 0;
     CHECK_STGBUFFER(len+st_len+1);
-    memcpy(stgbuf+len,st,st_len+1);
+    memcpy(stgbuf+len,str,st_len+1);
     len=len+st_len;
     stglen=len;
     if (len>0 && stgbuf[len-1]=='\n') {

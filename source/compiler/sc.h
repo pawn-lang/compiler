@@ -639,7 +639,7 @@ void *pc_openasm(char *filename); /* read/write */
 void pc_closeasm(void *handle,int deletefile);
 void pc_resetasm(void *handle);
 int  pc_writeasm(void *handle,char *str);
-char *pc_readasm(void *handle,char *target,int maxchars);
+char *pc_readasm(void *handle,char *string,int maxchars);
 
 /* output to binary (.AMX) file */
 void *pc_openbin(char *filename);
@@ -711,7 +711,7 @@ SC_FUNC void litinsert(cell value,int pos);
 SC_FUNC int alphanum(char c);
 SC_FUNC int ishex(char c);
 SC_FUNC void delete_symbol(symbol *root,symbol *sym);
-SC_FUNC void delete_symbols(symbol *root,int level,int del_labels,int delete_functions);
+SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_functions);
 SC_FUNC int refer_symbol(symbol *entry,symbol *bywhom);
 SC_FUNC void markusage(symbol *sym,int usage);
 SC_FUNC void markinitialized(symbol *sym,int assignment);
@@ -721,7 +721,7 @@ SC_FUNC void restoreassignments(int fromlevel,assigninfo *assignments);
 SC_FUNC void rename_symbol(symbol *sym,const char *newname);
 SC_FUNC symbol *findglb(const char *name,int filter);
 SC_FUNC symbol *findloc(const char *name);
-SC_FUNC symbol *findconst(const char *name,int *matchtag);
+SC_FUNC symbol *findconst(const char *name,int *cmptag);
 SC_FUNC symbol *finddepend(const symbol *parent);
 SC_FUNC symbol *addsym(const char *name,cell addr,int ident,int vclass,int tag,
                        int usage);
@@ -749,14 +749,14 @@ SC_FUNC void setfiledirect(char *name);
 SC_FUNC void setfileconst(char *name);
 SC_FUNC void setlinedirect(int line);
 SC_FUNC void setlineconst(int line);
-SC_FUNC void setlabel(int index);
+SC_FUNC void setlabel(int number);
 SC_FUNC void markexpr(optmark type,const char *name,cell offset);
 SC_FUNC void startfunc(char *fname,int generateproc);
 SC_FUNC void endfunc(void);
 SC_FUNC void alignframe(int numbytes);
 SC_FUNC void rvalue(value *lval);
 SC_FUNC void dereference(void);
-SC_FUNC void address(symbol *ptr,regid reg);
+SC_FUNC void address(symbol *sym,regid reg);
 SC_FUNC void store(value *lval);
 SC_FUNC void loadreg(cell address,regid reg);
 SC_FUNC void storereg(cell address,regid reg);
@@ -833,7 +833,7 @@ SC_FUNC void outinstr(const char *name,emit_outval params[],int numparams);
 /* function prototypes in SC5.C */
 SC_FUNC int error(long number,...);
 SC_FUNC void errorset(int code,int line);
-SC_FUNC int error_suggest(int error,const char *name,const char *name2,int type,int subtype);
+SC_FUNC int error_suggest(int number,const char *name,const char *name2,int type,int subtype);
 
 /* function prototypes in SC6.C */
 SC_FUNC int assemble(FILE *fout,FILE *fin);
@@ -841,7 +841,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin);
 /* function prototypes in SC7.C */
 SC_FUNC void stgbuffer_cleanup(void);
 SC_FUNC void stgmark(char mark);
-SC_FUNC void stgwrite(const char *st);
+SC_FUNC void stgwrite(const char *str);
 SC_FUNC void stgout(int index);
 SC_FUNC void stgdel(int index,cell code_index);
 SC_FUNC int stgget(int *index,cell *code_index);

@@ -92,10 +92,10 @@ static void dumplits(void);
 static void dumpzero(int count);
 static void declfuncvar(int fpublic,int fstatic,int fstock,int fconst);
 static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,
-                    int stock,int fconst);
+                    int fstock,int fconst);
 static int declloc(int fstatic);
-static void decl_const(int table);
-static void decl_enum(int table,int fstatic);
+static void decl_const(int vclass);
+static void decl_enum(int vclass,int fstatic);
 static cell needsub(int *tag,constvalue_root **enumroot);
 static void initials(int ident,int tag,cell *size,int dim[],int numdim,
                      constvalue_root *enumroot,int *explicit_init);
@@ -1489,10 +1489,10 @@ static void about(void)
   longjmp(errbuf,3);        /* user abort */
 }
 
-static void invalid_option(const char *optptr)
+static void invalid_option(const char *opt)
 {
   usage();
-  pc_printf("\nInvalid or unsupported option: -%s\n",optptr);
+  pc_printf("\nInvalid or unsupported option: -%s\n",opt);
   longjmp(errbuf,3);        /* user abort */
 }
 
