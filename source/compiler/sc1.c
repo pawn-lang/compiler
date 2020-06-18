@@ -5891,6 +5891,7 @@ static void doswitch(void)
   int swdefault,casecount;
   int tok,endtok;
   int swtag,csetag;
+  int ident;
   cell val;
   char *str;
   constvalue_root caselist = { NULL, NULL};   /* case list starts empty */
@@ -5898,7 +5899,9 @@ static void doswitch(void)
   char labelname[sNAMEMAX+1];
 
   endtok= matchtoken('(') ? ')' : tDO;
-  doexpr(TRUE,FALSE,FALSE,FALSE,&swtag,NULL,TRUE,NULL);/* evaluate switch expression */
+  ident=doexpr(TRUE,FALSE,FALSE,FALSE,&swtag,NULL,TRUE,NULL);   /* evaluate switch expression */
+  if (ident==iCONSTEXPR)
+    error(241);                 /* redundant code: switch control expression is constant */
   needtoken(endtok);
   /* generate the code for the switch statement, the label is the address
    * of the case table (to be generated later).
