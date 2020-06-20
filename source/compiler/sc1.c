@@ -738,16 +738,16 @@ cleanup:
     if (errnum==0 && strempty(errfname)) {
       int recursion;
       long stacksize=max_stacksize(&glbtab,&recursion);
-      int flag_exceed=0;
+      int flag_exceed=FALSE;
       if (pc_amxlimit>0) {
         long totalsize=hdrsize+code_idx;
         if (pc_amxram==0)
           totalsize+=(glb_declared+pc_stksize)*sizeof(cell);
         if (totalsize>=pc_amxlimit)
-          flag_exceed=1;
+          flag_exceed=TRUE;
       } /* if */
       if (pc_amxram>0 && (glb_declared+pc_stksize)*sizeof(cell)>=(unsigned long)pc_amxram)
-        flag_exceed=1;
+        flag_exceed=TRUE;
       if ((sc_debug & sSYMBOLIC)!=0 || verbosity>=2 || stacksize+32>=(long)pc_stksize || flag_exceed) {
         pc_printf("Header size:       %8ld bytes\n", (long)hdrsize);
         pc_printf("Code size:         %8ld bytes\n", (long)code_idx);
@@ -2688,7 +2688,7 @@ static cell initarray(int ident,int tag,int dim[],int numdim,int cur,
   assert(errorfound!=NULL && *errorfound==FALSE);
   totalsize=0;
   needtoken('{');
-  for (do_insert=0,idx=0; idx<=cur; idx++) {
+  for (do_insert=FALSE,idx=0; idx<=cur; idx++) {
     if (dim[idx]==0) {
       do_insert=TRUE;
       break;
@@ -4915,7 +4915,7 @@ static long max_stacksize_recurse(symbol **sourcesym,symbol *sym,symbol **rsourc
       *(rsourcesym+1)=NULL;
       for (stkpos=0; sourcesym[stkpos]!=NULL; stkpos++) {
         if (sym->refer[i]==sourcesym[stkpos]) {   /* recursion detection */
-          *recursion=1;
+          *recursion=TRUE;
           goto break_recursion;         /* recursion was detected, quit loop */
         } /* if */
       } /* for */
@@ -4998,7 +4998,7 @@ static long max_stacksize(symbol *root,int *recursion)
     /* accumulate stack size for this symbol */
     symstack[0]=sym;
     assert(symstack[1]==NULL);
-    recursion_detected=0;
+    recursion_detected=FALSE;
     size=max_stacksize_recurse(symstack,sym,rsymstack,0L,&maxparams,&recursion_detected);
     if (recursion_detected && pc_recursion) {
       if (rsymstack[1]==NULL) {
@@ -5091,11 +5091,11 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
         error(204,sym->name);       /* value assigned to symbol is never used */
         errorset(sSETPOS,-1);
       } else if ((sym->usage & (uWRITTEN | uPUBLIC | uCONST))==0 && sym->ident==iREFARRAY) {
-        int warn = 1;
+        int warn = TRUE;
         symbol* depend = finddepend(sym);
         while (depend != NULL) {
           if ((depend->usage & (uWRITTEN | uPUBLIC | uCONST)) != 0) {
-            warn = 0;
+            warn = FALSE;
             break;
           }
           depend = finddepend(depend);
@@ -5319,22 +5319,22 @@ SC_FUNC symbol *add_constant(char *name,cell val,int vclass,int tag)
   if (sym==NULL)
     sym=findloc(name);
   if (sym!=NULL) {
-    int redef=0;
+    int redef=FALSE;
     if (sym->ident!=iCONSTEXPR)
-      redef=1;                  /* redefinition a function/variable to a constant is not allowed */
+      redef=TRUE;               /* redefinition of a function/variable to a constant is not allowed */
     if ((sym->usage & uENUMFIELD)!=0) {
       /* enum field, special case if it has a different tag and the new symbol is also an enum field */
       constvalue *tagid;
       symbol *tagsym;
       if (sym->tag==tag)
-        redef=1;                /* enumeration field is redefined (same tag) */
+        redef=TRUE;             /* enumeration field is redefined (same tag) */
       tagid=find_tag_byval(tag);
       if (tagid==NULL) {
-        redef=1;                /* new constant does not have a tag */
+        redef=TRUE;             /* new constant does not have a tag */
       } else {
         tagsym=findconst(tagid->name,NULL);
         if (tagsym==NULL || (tagsym->usage & uENUMROOT)==0)
-          redef=1;              /* new constant is not an enumeration field */
+          redef=TRUE;           /* new constant is not an enumeration field */
       } /* if */
       /* in this particular case (enumeration field that is part of a different
        * enum, and non-conflicting with plain constants) we want to be able to
@@ -5343,7 +5343,7 @@ SC_FUNC symbol *add_constant(char *name,cell val,int vclass,int tag)
       if (!redef)
         goto redef_enumfield;
     } else if (sym->tag!=tag) {
-      redef=1;                  /* redefinition of a constant (non-enum) to a different tag is not allowed */
+      redef=TRUE;               /* redefinition of a constant (non-enum) to a different tag is not allowed */
     } /* if */
     if (redef) {
       error(21,name);           /* symbol already defined */

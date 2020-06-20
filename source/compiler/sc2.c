@@ -1963,7 +1963,7 @@ SC_FUNC void preprocess(void)
 static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
 {
   const unsigned char *stringize;
-  int instring=1;
+  int instring=TRUE;
   int brackets=0;
   if (*flags & STRINGIZE)                 /* ignore leading spaces after the # */
     while (*lptr==' ' || *lptr=='\t')     /* this is as defines with parameters may add them */
@@ -1975,11 +1975,11 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
     } /* if */
     if (!instring) {
       if (*lptr=='\"') {
-        instring=1;
+        instring=TRUE;
       } else if (*lptr=='#') {
         while (*++lptr==' ' || *lptr=='\t');
         lptr--;
-        instring=1;
+        instring=TRUE;
         *flags |= STRINGIZE;
         brackets=0;
       } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' ||
@@ -2024,7 +2024,7 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
     } else {
       if (*lptr=='\"') {
         stringize=lptr++;
-        instring=0;
+        instring=FALSE;
         continue;
       } /* if (*flags & STRINGIZE) */
     }
@@ -2043,7 +2043,7 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
   int i;
   ucell val,c;
   const unsigned char *stringize;
-  int instring=1;
+  int instring=TRUE;
   int brackets=0;
   if (*flags & STRINGIZE)
     while (*lptr==' ' || *lptr=='\t')
@@ -2058,11 +2058,11 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
     } /* if */
     if (!instring) {
       if (*lptr=='\"') {
-        instring=1;
+        instring=TRUE;
       } else if (*lptr=='#') {
         while (*++lptr==' ' || *lptr=='\t');
         lptr--;
-        instring=1;
+        instring=TRUE;
         brackets=0;
         *flags |= STRINGIZE;
       } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' ||
@@ -2107,7 +2107,7 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
     } else {
       if (*lptr=='\"') {
         stringize=lptr++;
-        instring=0;
+        instring=FALSE;
         continue;
       } /* if (*flags & STRINGIZE) */
     }
@@ -2287,14 +2287,14 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
      */
     _lextok=tSYMBOL;
     i=0;
-    toolong=0;
+    toolong=FALSE;
     while (alphanum(*lptr)){
       _lexstr[i]=*lptr;
       lptr+=1;
       if (i<sNAMEMAX)
         i+=1;
       else
-        toolong=1;
+        toolong=TRUE;
     } /* while */
     _lexstr[i]='\0';
     if (toolong)
