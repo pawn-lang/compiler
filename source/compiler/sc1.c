@@ -5268,6 +5268,8 @@ SC_FUNC symbol *add_constant(char *name,cell val,int vclass,int tag)
 redef_enumfield:
   sym=addsym(name,val,iCONSTEXPR,vclass,tag,uDEFINE);
   assert(sym!=NULL);            /* fatal error 103 must be given on error */
+  if (vclass==sLOCAL)
+    sym->compound=nestlevel;
   return sym;
 }
 
