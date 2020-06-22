@@ -1,0 +1,7 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+gh_541.pwn(21) : error 017: undefined symbol "CONSTVAL"
+gh_541.pwn(22) : error 017: undefined symbol "ENUM_ITEM1"
+  """
+}
