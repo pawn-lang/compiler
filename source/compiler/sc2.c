@@ -1116,7 +1116,7 @@ static int command(void)
     check_empty(lptr);
     break;
   case tpASSERT:
-    if (!SKIPPING && (sc_debug & sCHKBOUNDS)!=0) {
+    if (!SKIPPING) {
       for (str=(char*)lptr; *str<=' ' && *str!='\0'; str++)
         /* nothing */;          /* save start of expression */
       preproc_expr(&val,NULL);  /* get constant expression (or 0 on error) */
