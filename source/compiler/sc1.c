@@ -2967,8 +2967,12 @@ static void decl_enum(int vclass,int fstatic)
     if (tok==taADD || tok==taMULT || tok==taSHL) {
       inctok=tok;
       constexpr(&increment,NULL,NULL);
-      if (tok==taSHL && increment<0)
-        increment=0;
+      if (tok==taSHL) {
+        if (increment<0 || increment>=PAWN_CELL_SIZE)
+          error(241);                   /* negative or too big shift count */
+        if (increment<0)
+          increment=0;
+      } /* if */
     } else {
       lexpush();
     } /* if */
