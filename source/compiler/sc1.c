@@ -2929,6 +2929,7 @@ static void decl_enum(int vclass,int fstatic)
   char *str;
   int tag,explicittag;
   int inctok;
+  int overflow;
   cell increment;
   constvalue_root *enumroot=NULL;
   symbol *enumsym=NULL;
@@ -2996,13 +2997,16 @@ static void decl_enum(int vclass,int fstatic)
   needtoken('{');
   /* go through all constants */
   value=0;                              /* default starting value */
+  overflow=FALSE;
   do {
     int idxtag,fieldtag;
+    int symline;
     symbol *sym;
     if (matchtoken('}')) {              /* quick exit if '}' follows ',' */
       lexpush();
       break;
     } /* if */
+    symline=fline;
     idxtag=(enumname[0]=='\0') ? tag : pc_addtag(NULL); /* optional explicit item tag */
     if (needtoken(tSYMBOL)) {           /* read in (new) token */
       tokeninfo(&val,&str);             /* get the information */
@@ -3016,8 +3020,14 @@ static void decl_enum(int vclass,int fstatic)
       constexpr(&size,&fieldtag,NULL);  /* get size */
       needtoken(']');
     } /* if */
-    if (matchtoken('='))
+    if (matchtoken('=')) {
       constexpr(&value,NULL,NULL);      /* get value */
+      overflow=FALSE;
+    } else if (overflow) {
+      errorset(sSETPOS,symline);
+      error(242,constname);             /* shift overflow for enum item */
+      errorset(sSETPOS,-1);
+    } /* if */
     /* add_constant() checks whether a variable (global or local) or
      * a constant with the same name already exists
      */
@@ -3043,12 +3053,15 @@ static void decl_enum(int vclass,int fstatic)
       sym->usage |= uENUMFIELD;
       append_constval(enumroot,constname,value,tag);
     } /* if */
-    if (inctok==taADD)
+    if (inctok==taADD) {
       value+=size;
-    else if (inctok==taMULT)
+    } else if (inctok==taMULT) {
       value*=(size*increment);
-    else // taSHL
+    } else { // taSHL
+      if ((ucell)value>=((ucell)1 << (PAWN_CELL_SIZE-increment)))
+        overflow=TRUE;
       value*=(size << increment);
+    } /* if */
   } while (matchtoken(','));
   needtoken('}');       /* terminates the constant list */
   matchtoken(';');      /* eat an optional ; */

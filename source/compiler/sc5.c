@@ -198,7 +198,8 @@ static char *warnmsg[] = {
 /*238*/  "meaningless combination of class specifiers (%s)\n",
 /*239*/  "literal array/string passed to a non-const parameter\n",
 /*240*/  "previously assigned value is never used (symbol \"%s\")\n",
-/*241*/  "negative or too big shift count\n"
+/*241*/  "negative or too big shift count\n",
+/*242*/  "shift overflow in enum item declaration (symbol \"%s\")\n"
 };
 
 static char *noticemsg[] = {
