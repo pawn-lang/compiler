@@ -5806,6 +5806,7 @@ static int doif(void)
   int returnst=tIF;
   assigninfo *assignments=NULL;
 
+  lastst=0;                     /* reset the last statement */
   ifindent=stmtindent;          /* save the indent of the "if" instruction */
   flab1=getlabel();             /* get label number for false branch */
   test(flab1,TEST_THEN,FALSE);  /* get expression, branch to flab1 if false */
@@ -5814,6 +5815,7 @@ static int doif(void)
     setlabel(flab1);            /* no, simple if..., print false label */
   } else {
     lastst_true=lastst;         /* save last statement of the "true" branch */
+    lastst=0;                   /* reset the last statement */
     /* to avoid the "dangling else" error, we want a warning if the "else"
      * has a lower indent than the matching "if" */
     if (stmtindent<ifindent && sc_tabsize>0)
@@ -5829,7 +5831,7 @@ static int doif(void)
      * kind of statement, set the last statement id to that kind, rather than
      * to the generic tIF; this allows for better "unreachable code" checking
      */
-    if (lastst==lastst_true)
+    if (lastst==lastst_true && lastst!=0)
       returnst=lastst;
     /* otherwise, if both branches end with terminal statements (not necessary
      * of the same kind), set the last statement ID to tTERMINAL */
@@ -6061,6 +6063,7 @@ static int doswitch(void)
     tok=lex(&val,&str);         /* read in (new) token */
     switch (tok) {
     case tCASE:
+      lastst=0;
       if (casecount!=0)
         memoizeassignments(pc_nestlevel+1,&assignments);
       if (swdefault!=FALSE)
@@ -6138,6 +6141,7 @@ static int doswitch(void)
       allterminal &= isterminal(lastst);
       break;
     case tDEFAULT:
+      lastst=0;
       if (casecount!=0)
         memoizeassignments(pc_nestlevel+1,&assignments);
       if (swdefault!=FALSE)
