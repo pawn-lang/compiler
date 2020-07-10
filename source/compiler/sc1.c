@@ -4281,6 +4281,10 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
           } /* if */
           if (ident==iVARIABLE) /* make sure we set this only if not a reference */
             arg->hasdefault |= size_tag_token;  /* uSIZEOF or uTAGOF */
+        } else {
+          /* ignore the argument, otherwise it would cause more error messages, until it
+           * will trigger a fatal error because of too many error messages on one line */
+          lexclr(FALSE);
         } /* if */
         while (paranthese--)
           needtoken(')');
