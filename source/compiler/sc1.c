@@ -4261,7 +4261,7 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
         paranthese=0;
         while (matchtoken('('))
           paranthese++;
-        if (matchtoken(tLABEL)) {
+        if (size_tag_token==uTAGOF && matchtoken(tLABEL)) {
           constvalue *tagsym;
           tokeninfo(&val,&symname);
           tagsym=find_constval(&tagname_tab,symname,0);
