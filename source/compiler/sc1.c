@@ -131,7 +131,7 @@ static int dowhile(void);
 static int dodo(void);
 static int dofor(void);
 static int doswitch(void);
-static void dogoto(void);
+static int dogoto(void);
 static void dolabel(void);
 static int isterminal(int tok);
 static void doreturn(void);
@@ -5504,8 +5504,7 @@ static void statement(int *lastindent,int allow_decl)
     error(14);     /* not in switch */
     break;
   case tGOTO:
-    dogoto();
-    lastst=tGOTO;
+    lastst=dogoto();
     break;
   case tLABEL:
     dolabel();
@@ -5625,8 +5624,7 @@ static void compound(int stmt_sameline,int starttok)
   if (lastst!=tRETURN)
     if (pc_nestlevel >= 1 || (curfunc->flags & flagNAKED)==0)
       destructsymbols(&loctab,pc_nestlevel);
-  if (lastst!=tRETURN && lastst!=tGOTO)
-    if (pc_nestlevel >= 1 || (curfunc->flags & flagNAKED)==0)
+  if (!isterminal(lastst) && (pc_nestlevel>=1 || (curfunc->flags & flagNAKED)==0))
       modstk((int)(declared-save_decl)*sizeof(cell)); /* delete local variable space */
   testsymbols(&loctab,pc_nestlevel,FALSE,TRUE);     /* look for unused block locals */
   declared=save_decl;
@@ -5822,7 +5820,7 @@ static int doif(void)
       error(217);               /* loose indentation */
     memoizeassignments(pc_nestlevel+1,&assignments);
     flab2=getlabel();
-    if ((lastst!=tRETURN) && (lastst!=tGOTO))
+    if (!isterminal(lastst))
       jumplabel(flab2);         /* "true" branch jumps around "else" clause, unless the "true" branch statement already jumped */
     setlabel(flab1);            /* print false label */
     statement(NULL,FALSE);      /* do "else" clause */
@@ -6242,11 +6240,12 @@ static void doassert(void)
   needtoken(tTERM);
 }
 
-static void dogoto(void)
+static int dogoto(void)
 {
   char *st;
   cell val;
   symbol *sym;
+  int returnst=tGOTO;
 
   /* if we were inside an endless loop, assume that we jump out of it */
   endlessloop=0;
@@ -6257,6 +6256,15 @@ static void dogoto(void)
       clearassignments(1);
     jumplabel((int)sym->addr);
     sym->usage|=uREAD;  /* set "uREAD" bit */
+    if ((sym->usage & uDEFINE)!=0) {
+      /* if there are no unimplemented labels, then the subsequent code is unreachable */
+      symbol *cur;
+      for (cur=&loctab; (cur=cur->next)!=NULL; )
+        if (cur->ident==iLABEL && (cur->usage & uDEFINE)==0)
+          break;
+      if (cur==NULL)
+        returnst=tTERMINAL;
+    } /* if */
     // ??? if the label is defined (check sym->usage & uDEFINE), check
     //     sym->compound (nesting level of the label) against pc_nestlevel;
     //     if sym->compound < pc_nestlevel, call the destructor operator
@@ -6264,6 +6272,7 @@ static void dogoto(void)
     error_suggest(20,st,NULL,estSYMBOL,esfLABEL);   /* illegal symbol name */
   } /* if */
   needtoken(tTERM);
+  return returnst;
 }
 
 static void dolabel(void)
