@@ -2242,8 +2242,12 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
     sc_curstates=0;
     if (ispublic)
       sym->usage|=uPUBLIC;
-    if (fconst)
-      sym->usage|=uCONST;
+    if (fconst) {
+      symbol *cur=sym;
+      do {
+        cur->usage|=uCONST;
+      } while ((cur=cur->child)!=NULL);
+    } /* if */
     if (fstock)
       sym->usage|=uSTOCK;
     if (fstatic)
@@ -2371,8 +2375,12 @@ static int declloc(int fstatic)
     /* now that we have reserved memory for the variable, we can proceed
      * to initialize it */
     assert(sym!=NULL);          /* we declared it, it must be there */
-    if (fconst)
-      sym->usage|=uCONST;
+    if (fconst) {
+      symbol *cur=sym;
+      do {
+        cur->usage|=uCONST;
+      } while ((cur=cur->child)!=NULL);
+    } /* if */
     if (!fstatic) {             /* static variables already initialized */
       if (ident==iVARIABLE) {
         /* simple variable, also supports initialization */
