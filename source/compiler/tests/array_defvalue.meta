@@ -1,0 +1,8 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+array_defvalue.pwn(5) : error 025: function heading differs from prototype
+array_defvalue.pwn(8) : error 025: function heading differs from prototype
+array_defvalue.pwn(10) : error 025: function heading differs from prototype
+  """
+}
