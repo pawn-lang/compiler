@@ -43,6 +43,15 @@ test_if_4()
 	// shouldn't cause warning 209 ("function should return a value")
 }
 
+test_if_5()
+{
+	if (g_var != 0)
+		return 1;
+	else
+		{}
+	return 1;
+}
+
 test_switch_1()
 {
 	switch (g_var)
@@ -101,6 +110,7 @@ main()
 	test_if_2();
 	test_if_3();
 	test_if_4();
+	test_if_5();
 	test_switch_1();
 	test_switch_2();
 	test_switch_3();
