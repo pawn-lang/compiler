@@ -5616,7 +5616,19 @@ static void compound(int stmt_sameline,int starttok)
       break;
     } else {
       if (count_stmt>0 && isterminal(lastst))
-        error(225);             /* unreachable code */
+        if (matchtoken(tLABEL)) {
+          cell val;
+          char *name;
+          symbol *sym;
+          tokeninfo(&val,&name);
+          lexpush();            /* push the token so it can be analyzed later */
+          sym=findloc(name);
+          assert(sym!=NULL);
+          if ((sym->usage & uREAD)==0)  /* label wasn't previously used via 'goto' */
+            error(225);         /* unreachable code */
+        } else {
+          error(225);           /* unreachable code */
+        } /* if */
       statement(&indent,TRUE);  /* do a statement */
       count_stmt++;
     } /* if */
