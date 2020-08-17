@@ -5,5 +5,6 @@ unreachable_code.pwn(12) : warning 225: unreachable code
 unreachable_code.pwn(24) : warning 225: unreachable code
 unreachable_code.pwn(66) : warning 225: unreachable code
 unreachable_code.pwn(81) : warning 225: unreachable code
+unreachable_code.pwn(111) : warning 225: unreachable code
 """
 }

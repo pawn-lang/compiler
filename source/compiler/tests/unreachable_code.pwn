@@ -104,6 +104,33 @@ test_endless()
 	// shouldn't cause warning 209 ("function should return a value")
 }
 
+test_goto_1()
+{
+label_1:
+	goto label_1;
+	return 0; // warning 225: unreachable code
+}
+
+test_goto_2()
+{
+	if (g_var == 0)
+		goto label_2;
+label_1:
+	goto label_1;
+label_2:
+	// shouldn't cause warning 225 ("unreachable code")
+	return 1;
+}
+
+test_goto_3()
+{
+	if (g_var != 0)
+		return 1;
+label_1:
+	goto label_1;
+	// shouldn't cause warning 209 ("function should return a value")
+}
+
 main()
 {
 	test_if_1();
@@ -115,4 +142,7 @@ main()
 	test_switch_2();
 	test_switch_3();
 	test_endless();
+	test_goto_1();
+	test_goto_2();
+	test_goto_3();
 }
