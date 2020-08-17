@@ -3,7 +3,7 @@
   'errors': """
 unreachable_code.pwn(12) : warning 225: unreachable code
 unreachable_code.pwn(24) : warning 225: unreachable code
-unreachable_code.pwn(39) : warning 225: unreachable code
-unreachable_code.pwn(54) : warning 225: unreachable code
+unreachable_code.pwn(57) : warning 225: unreachable code
+unreachable_code.pwn(72) : warning 225: unreachable code
 """
 }
