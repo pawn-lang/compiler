@@ -54,16 +54,17 @@ test_if_5()
 
 test_switch_1()
 {
+	new var0 = 0, var1 = 1, var2 = 2, var3 = 3;
 	switch (g_var)
 	{
 		case 0:
-			return 0;
+			return var0;
 		case 1:
-			return 1;
+			return var1;
 		default:
-			return 2;
+			return var2;
 	}
-	return 3; // warning 225: unreachable code
+	return var3; // warning 225: unreachable code
 }
 
 test_switch_2()
@@ -94,6 +95,21 @@ test_switch_3()
 	}
 	// shouldn't cause warning 225 ("unreachable code")
 	return 2;
+}
+
+test_switch_4()
+{
+	switch (g_var)
+	{
+		case 0:
+			return 0;
+		case 1:
+			return 1;
+		default:
+			return 2;
+	}
+	// shouldn't cause warning 225 ("unreachable code")
+	return 3;
 }
 
 test_endless()
@@ -155,6 +171,7 @@ main()
 	test_switch_1();
 	test_switch_2();
 	test_switch_3();
+	test_switch_4();
 	test_endless();
 	test_goto_1();
 	test_goto_2();
