@@ -5626,6 +5626,8 @@ static void compound(int stmt_sameline,int starttok)
           assert(sym!=NULL);
           if ((sym->usage & uREAD)==0)  /* label wasn't previously used via 'goto' */
             error(225);         /* unreachable code */
+        } else if (lastst==tTERMSWITCH && matchtoken(tRETURN)) {
+          lexpush();            /* push the token so it can be analyzed later */
         } else {
           error(225);           /* unreachable code */
         } /* if */
@@ -6226,7 +6228,7 @@ static int doswitch(void)
   setlabel(lbl_exit);
   delete_consttable(&caselist); /* clear list of case labels */
 
-  return (swdefault && allterminal) ? tTERMINAL : tSWITCH;
+  return (swdefault && allterminal) ? tTERMSWITCH : tSWITCH;
 }
 
 static void doassert(void)
@@ -7826,7 +7828,8 @@ static int isvariadic(symbol *sym)
  */
 static int isterminal(int tok)
 {
-  return (tok==tRETURN || tok==tBREAK || tok==tCONTINUE || tok==tENDLESS || tok==tTERMINAL);
+  return (tok==tRETURN || tok==tBREAK || tok==tCONTINUE || tok==tENDLESS
+          || tok==tTERMINAL || tok==tTERMSWITCH);
 }
 
 /*  doreturn
@@ -7849,6 +7852,9 @@ static void doreturn(void)
     ident=doexpr(TRUE,FALSE,TRUE,FALSE,&tag,&sym,TRUE,NULL);
     pc_retexpr=FALSE;
     needtoken(tTERM);
+    /* only warn about unreachable code if the return value is not constant */
+    if (ident!=iCONSTEXPR && lastst==tTERMSWITCH)
+      error(225); /* unreachable code */
     /* see if this function already has a sub type (an array attached) */
     assert(curfunc!=NULL);
     sub=finddepend(curfunc);
