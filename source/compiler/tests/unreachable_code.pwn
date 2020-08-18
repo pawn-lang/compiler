@@ -131,6 +131,20 @@ label_1:
 	// shouldn't cause warning 209 ("function should return a value")
 }
 
+test_goto_4()
+{
+	new var = 0;
+	if (var == 0)
+		goto label_1;
+	if (var != 0)
+		return 0;
+	else
+		return 1;
+	// shouldn't cause warning 225 ("unreachable code")
+label_1:
+	return 2;
+}
+
 main()
 {
 	test_if_1();
@@ -145,4 +159,5 @@ main()
 	test_goto_1();
 	test_goto_2();
 	test_goto_3();
+	test_goto_4();
 }
