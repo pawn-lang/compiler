@@ -7829,7 +7829,7 @@ static int isvariadic(symbol *sym)
 static int isterminal(int tok)
 {
   return (tok==tRETURN || tok==tBREAK || tok==tCONTINUE || tok==tENDLESS
-          || tok==tTERMINAL || tok==tTERMSWITCH);
+          || tok==tEXIT || tok==tTERMINAL || tok==tTERMSWITCH);
 }
 
 /*  doreturn
