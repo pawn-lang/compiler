@@ -161,6 +161,12 @@ label_1:
 	return 2;
 }
 
+test_exit()
+{
+	exit 0;
+	return 0; // warning 225: unreachable code
+}
+
 main()
 {
 	test_if_1();
@@ -177,4 +183,5 @@ main()
 	test_goto_2();
 	test_goto_3();
 	test_goto_4();
+	test_exit();
 }
