@@ -1,0 +1,8 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+gh_500.pwn(13) : error 004: function "Test1" is not implemented - use "Test4"
+gh_500.pwn(14) : error 004: function "Test2" is not implemented 
+gh_500.pwn(15) : error 004: function "Test3" is not implemented 
+"""
+}
