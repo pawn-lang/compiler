@@ -906,6 +906,7 @@ static void resetglobals(void)
   sc_curstates=0;
   pc_memflags=0;
   pc_naked=FALSE;
+  pc_retexpr=FALSE;
   emit_flags=0;
   emit_stgbuf_idx=-1;
 }
@@ -7631,7 +7632,11 @@ static void doreturn(void)
     /* "return <value>" */
     if ((rettype & uRETNONE)!=0)
       error(78);                        /* mix "return;" and "return value;" */
+    assert(pc_retexpr==FALSE);
+    pc_retexpr=TRUE;
+    pc_retheap=0;
     ident=doexpr(TRUE,FALSE,TRUE,FALSE,&tag,&sym,TRUE,NULL);
+    pc_retexpr=FALSE;
     needtoken(tTERM);
     /* see if this function already has a sub type (an array attached) */
     assert(curfunc!=NULL);
@@ -7738,6 +7743,7 @@ static void doreturn(void)
         /* moveto1(); is not necessary, callfunction() does a popreg() */
       } /* if */
     } /* if */
+    modheap(pc_retheap);
     /* try to use "operator=" if tags don't match */
     if (!matchtag(curfunc->tag,tag,TRUE))
       check_userop(NULL,tag,curfunc->tag,2,NULL,&tag);

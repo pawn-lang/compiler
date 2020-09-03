@@ -711,7 +711,14 @@ SC_FUNC int expression(cell *val,int *tag,symbol **symptr,int chkfuncresult)
     rvalue(&lval);
   /* scrap any arrays left on the heap */
   assert(decl_heap>=locheap);
-  modheap((locheap-decl_heap)*sizeof(cell));  /* remove heap space, so negative delta */
+  if (!pc_retexpr) {
+    modheap((locheap-decl_heap)*sizeof(cell));/* remove heap space, so negative delta */
+  } else {
+    /* we need to copy the data from the leftover space first (e.g. when used
+     * from 'return' when returning a string returned by another function),
+     * so we'll free it manually later */
+    pc_retheap=(locheap-decl_heap)*sizeof(cell);
+  } /* if */
   decl_heap=locheap;
 
   if (lval.ident==iCONSTEXPR && val!=NULL)    /* constant expression */
