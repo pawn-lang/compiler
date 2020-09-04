@@ -5557,8 +5557,16 @@ static int doexpr(int comma,int chkeffect,int allowarray,int mark_endexpr,
   errorset(sEXPRMARK,0);
   do {
     /* on second round through, mark the end of the previous expression */
-    if (index!=stgidx)
+    if (index!=stgidx) {
       markexpr(sEXPR,NULL,0);
+      /* also, if this is not the first expression and we are inside a "return"
+       * statement, we need to manually free the heap space allocated for the
+       * array returned by the function called in the previous expression */
+      if (pc_retexpr) {
+        modheap(pc_retheap);
+        pc_retheap=0;
+      } /* if */
+    } /* if */
     pc_sideeffect=FALSE;
     pc_ovlassignment=FALSE;
     ident=expression(val,tag,symptr,chkfuncresult);
