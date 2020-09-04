@@ -9,8 +9,11 @@ StringOrigin()
 
 ReturnString()
 {
+	static x = 0;
 	__emit nop; // mark the start of checked P-code
-	return StringOrigin();
+	if (x)
+		return StringOrigin();
+	return StringOrigin(), StringOrigin();
 }
 
 main()
