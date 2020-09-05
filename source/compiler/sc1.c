@@ -2379,7 +2379,6 @@ static int declloc(int fstatic)
         explicit_init=FALSE;
         if (matchtoken('=')) {
           int initexpr_ident;
-          cell val;
           sym->usage &= ~uDEFINE;   /* temporarily mark the variable as undefined to prevent
                                      * possible self-assignment through its initialization expression */
           initexpr_ident=doexpr(FALSE,FALSE,FALSE,FALSE,&ctag,NULL,TRUE,&val);
