@@ -316,7 +316,7 @@ static void write_encoded_n(FILE *fbin,ucell c,int num)
     while (num-->0)
       writeerror |= !pc_writebin(fbin,bytes,len);
   } else {
-    c=aligncell(c);
+    (void)aligncell(&c);
     while (num-->0) {
       assert((pc_lengthbin(fbin) % sizeof(cell)) == 0);
       writeerror |= !pc_writebin(fbin,&c,sizeof c);
