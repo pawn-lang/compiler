@@ -4,30 +4,31 @@
 warning_241_242.pwn(3) : warning 241: negative or too big shift count
 warning_241_242.pwn(8) : warning 241: negative or too big shift count
 warning_241_242.pwn(56) : warning 242: shift overflow in enum item declaration (symbol "e32")
-warning_241_242.pwn(95) : warning 242: shift overflow in enum item declaration (symbol "f34")
-warning_241_242.pwn(103) : warning 241: negative or too big shift count
-warning_241_242.pwn(104) : warning 241: negative or too big shift count
+warning_241_242.pwn(96) : warning 242: shift overflow in enum item declaration (symbol "f34")
+warning_241_242.pwn(97) : warning 242: shift overflow in enum item declaration (symbol "f35")
 warning_241_242.pwn(105) : warning 241: negative or too big shift count
 warning_241_242.pwn(106) : warning 241: negative or too big shift count
 warning_241_242.pwn(107) : warning 241: negative or too big shift count
 warning_241_242.pwn(108) : warning 241: negative or too big shift count
-warning_241_242.pwn(121) : warning 241: negative or too big shift count
-warning_241_242.pwn(122) : warning 241: negative or too big shift count
+warning_241_242.pwn(109) : warning 241: negative or too big shift count
+warning_241_242.pwn(110) : warning 241: negative or too big shift count
 warning_241_242.pwn(123) : warning 241: negative or too big shift count
 warning_241_242.pwn(124) : warning 241: negative or too big shift count
 warning_241_242.pwn(125) : warning 241: negative or too big shift count
 warning_241_242.pwn(126) : warning 241: negative or too big shift count
-warning_241_242.pwn(129) : warning 241: negative or too big shift count
-warning_241_242.pwn(130) : warning 241: negative or too big shift count
+warning_241_242.pwn(127) : warning 241: negative or too big shift count
+warning_241_242.pwn(128) : warning 241: negative or too big shift count
 warning_241_242.pwn(131) : warning 241: negative or too big shift count
 warning_241_242.pwn(132) : warning 241: negative or too big shift count
 warning_241_242.pwn(133) : warning 241: negative or too big shift count
 warning_241_242.pwn(134) : warning 241: negative or too big shift count
-warning_241_242.pwn(147) : warning 241: negative or too big shift count
-warning_241_242.pwn(148) : warning 241: negative or too big shift count
+warning_241_242.pwn(135) : warning 241: negative or too big shift count
+warning_241_242.pwn(136) : warning 241: negative or too big shift count
 warning_241_242.pwn(149) : warning 241: negative or too big shift count
 warning_241_242.pwn(150) : warning 241: negative or too big shift count
 warning_241_242.pwn(151) : warning 241: negative or too big shift count
 warning_241_242.pwn(152) : warning 241: negative or too big shift count
+warning_241_242.pwn(153) : warning 241: negative or too big shift count
+warning_241_242.pwn(154) : warning 241: negative or too big shift count
 """
 }
