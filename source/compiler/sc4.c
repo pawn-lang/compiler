@@ -1246,6 +1246,8 @@ SC_FUNC void inc(value *lval)
   symbol *sym;
 
   sym=lval->sym;
+  if (sym!=NULL)
+    markusage(sym,uWRITTEN);
   if (lval->ident==iARRAYCELL) {
     /* indirect increment, address already in PRI */
     stgwrite("\tinc.i\n");
@@ -1304,6 +1306,8 @@ SC_FUNC void dec(value *lval)
   symbol *sym;
 
   sym=lval->sym;
+  if (sym!=NULL)
+    markusage(sym,uWRITTEN);
   if (lval->ident==iARRAYCELL) {
     /* indirect decrement, address already in PRI */
     stgwrite("\tdec.i\n");
