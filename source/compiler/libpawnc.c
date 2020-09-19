@@ -205,9 +205,9 @@ void *pc_createtmpsrc(char **filename)
     if ((tname=malloc(sizeof(template)))!=NULL) {
       int fdtmp;
       strncpy(tname,template,sizeof(template));
-      if ((fdtmp=mkstemp(tname)) >= 0) {
+      if ((fdtmp=mkstemp(tname))>=0)
         ftmp=fdopen(fdtmp,"wt");
-      } else {
+      if (fdtmp<0 || filename==NULL) {
         free(tname);
         tname=NULL;
       } /* if */

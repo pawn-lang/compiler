@@ -46,23 +46,6 @@
 #include "../amx/osdefs.h"
 #include "../amx/amx.h"
 
-#if defined _MSC_VER
-  #define SC_FASTCALL __fastcall
-#elif defined __GNUC__ && (defined __i386__ || defined __x86_64__ || defined __amd64__)
-  #if !defined __x86_64__ && !defined __amd64__ && (__GNUC__>=4 || __GNUC__==3 && __GNUC_MINOR__>=4)
-    #define SC_FASTCALL __attribute__((fastcall))
-  #else
-    #define SC_FASTCALL __attribute__((regparam(3)))
-  #endif
-#endif
-#if !defined SC_FASTCALL
-  #define SC_FASTCALL
-#endif
-
-#if !defined strempty
-  #define strempty(str) ((str)[0]=='\0')
-#endif
-
 /* Note: the "cell" and "ucell" types are defined in AMX.H */
 
 #define PUBLIC_CHAR '@'     /* character that defines a function "public" */
@@ -243,12 +226,15 @@ typedef struct s_symbol {
  * used during parsing a function, to detect a mix of "return;" and
  * "return value;" in a few special cases.
  */
-#define uRETNONE    0x10
+#define uRETNONE    0x010
+/* uASSIGNED indicates that a value assigned to the variable is not used yet */
+#define uASSIGNED   0x080
 
 #define flagDEPRECATED 0x01  /* symbol is deprecated (avoid use) */
 #define flagNAKED     0x10  /* function is naked */
 #define flagPREDEF    0x20  /* symbol is pre-defined; successor of uPREDEF */
 
+#define uTAGOF_TAG 0x20  /* set in the "hasdefault" field of the arginfo struct */
 #define uTAGOF    0x40  /* set in the "hasdefault" field of the arginfo struct */
 #define uSIZEOF   0x80  /* set in the "hasdefault" field of the arginfo struct */
 
@@ -279,6 +265,8 @@ enum {
   wqCONT,       /* used to restore stack for "continue" */
   wqLOOP,       /* loop start label number */
   wqEXIT,       /* loop exit label number (jump if false) */
+  wqLVL,        /* "compound statement" nesting level for the loop body
+                 * (used to call destructors for "break" and "continue") */
   /* --- */
   wqSIZE        /* "while queue" size */
 };
@@ -317,6 +305,40 @@ typedef struct s_valuepair {
 #define opargs(n)       ((n)*sizeof(cell))      /* size of typical argument */
 
 /* general purpose macros */
+#if defined _MSC_VER
+  #define SC_FASTCALL __fastcall
+#elif defined __GNUC__ && (defined __i386__ || defined __x86_64__ || defined __amd64__)
+  #if !defined __x86_64__ && !defined __amd64__ && (__GNUC__>=4 || __GNUC__==3 && __GNUC_MINOR__>=4)
+    #define SC_FASTCALL __attribute__((fastcall))
+  #else
+    #define SC_FASTCALL __attribute__((regparm(3)))
+  #endif
+#endif
+#if !defined SC_FASTCALL
+  #define SC_FASTCALL
+#endif
+#if !defined strempty
+  #define strempty(str) ((str)[0]=='\0')
+#endif
+#if !defined arraysize
+  #if defined __clang__
+    #if !__is_identifier(__builtin_types_compatible_p)
+      #define USE_GCC_ARRAYSIZE
+    #endif
+  #elif !defined __clang__ && defined __GNUC__
+    #if (__GNUC__==3 && __GNUC_MINOR__>=1) || __GNUC__>=4
+      #define USE_GCC_ARRAYSIZE
+    #endif
+  #endif
+  #if defined USE_GCC_ARRAYSIZE
+    #undef USE_GCC_ARRAYSIZE
+    #define arraysize(array) \
+      (sizeof(struct{int x[-__builtin_types_compatible_p(typeof(array),typeof(&(array)[0]))];}) | \
+      sizeof(array) / sizeof(array[0]))
+  #else
+    #define arraysize(array) (sizeof(array) / sizeof(array[0]))
+  #endif
+#endif
 #if !defined makelong
   #define makelong(low,high) ((long)(low) | ((long)(high) << (sizeof(long)*4)))
 #endif
@@ -376,6 +398,7 @@ enum {
   tFORWARD,
   tGOTO,
   tIF,
+  t__NAMEOF,
   tNATIVE,
   tNEW,
   tOPERATOR,
@@ -665,6 +688,8 @@ SC_FUNC void delete_symbol(symbol *root,symbol *sym);
 SC_FUNC void delete_symbols(symbol *root,int level,int del_labels,int delete_functions);
 SC_FUNC int refer_symbol(symbol *entry,symbol *bywhom);
 SC_FUNC void markusage(symbol *sym,int usage);
+SC_FUNC void markinitialized(symbol *sym,int assignment);
+SC_FUNC void clearassignments(symbol *root);
 SC_FUNC void rename_symbol(symbol *sym,const char *newname);
 SC_FUNC symbol *findglb(const char *name,int filter);
 SC_FUNC symbol *findloc(const char *name);
@@ -793,20 +818,16 @@ SC_FUNC void stgout(int index);
 SC_FUNC void stgdel(int index,cell code_index);
 SC_FUNC int stgget(int *index,cell *code_index);
 SC_FUNC void stgset(int onoff);
-SC_FUNC int phopt_init(void);
-SC_FUNC int phopt_cleanup(void);
 
 /* function prototypes in SCLIST.C */
 SC_FUNC char* duplicatestring(const char* sourcestring);
 SC_FUNC stringpair *insert_alias(char *name,char *alias);
-SC_FUNC stringpair *find_alias(char *name);
 SC_FUNC int lookup_alias(char *target,char *name);
 SC_FUNC void delete_aliastable(void);
 SC_FUNC stringlist *insert_path(char *path);
 SC_FUNC char *get_path(int index);
 SC_FUNC void delete_pathtable(void);
 SC_FUNC stringpair *insert_subst(char *pattern,char *substitution,int prefixlen);
-SC_FUNC int get_subst(int index,char **pattern,char **substitution);
 SC_FUNC stringpair *find_subst(char *name,int length);
 SC_FUNC int delete_subst(char *name,int length);
 SC_FUNC void delete_substtable(void);
@@ -919,6 +940,7 @@ SC_VDECL short fnumber;       /* number of files in the file table (debugging) *
 SC_VDECL short fcurrent;      /* current file being processed (debugging) */
 SC_VDECL short sc_intest;     /* true if inside a test */
 SC_VDECL int pc_sideeffect;   /* true if an expression causes a side-effect */
+SC_VDECL int pc_ovlassignment;/* true if an expression contains an overloaded assignment */
 SC_VDECL int stmtindent;      /* current indent of the statement */
 SC_VDECL int indent_nowarn;   /* skip warning "217 loose indentation" */
 SC_VDECL int sc_tabsize;      /* number of spaces that a TAB represents */

@@ -172,7 +172,7 @@ static char extensions[][6] = { "", ".inc", ".p", ".pawn" };
       found=FALSE;
     } /* if */
     ext_idx++;
-  } while (!found && ext_idx<(sizeof extensions / sizeof extensions[0]));
+  } while (!found && ext_idx<arraysize(extensions));
   if (!found) {
     *ext='\0';                  /* restore filename */
     free(path);
@@ -231,7 +231,7 @@ SC_FUNC int plungefile(char *name,int try_currentpath,int try_includepaths)
         if (len+strlen(name)<_MAX_PATH) {
           char path[_MAX_PATH];
           strlcpy(path,inpfname,len+1);
-          strlcat(path,name,sizeof path);
+          strlcat(path,name,arraysize(path));
           result=plungequalifiedfile(path);
         } /* if */
       } /* if */
@@ -243,8 +243,8 @@ SC_FUNC int plungefile(char *name,int try_currentpath,int try_includepaths)
     char *ptr;
     for (i=0; !result && (ptr=get_path(i))!=NULL; i++) {
       char path[_MAX_PATH];
-      strlcpy(path,ptr,sizeof path);
-      strlcat(path,name,sizeof path);
+      strlcpy(path,ptr,arraysize(path));
+      strlcat(path,name,arraysize(path));
       result=plungequalifiedfile(path);
     } /* while */
   } /* if */
@@ -292,11 +292,11 @@ static void doinclude(int silent)
   } /* if */
 
   i=0;
-  while (*lptr!=c && *lptr!='\0' && i<sizeof name - 1)  /* find the end of the string */
+  while (*lptr!=c && *lptr!='\0' && i<arraysize(name) - 1)  /* find the end of the string */
     name[i++]=*lptr++;
   while (i>0 && name[i-1]<=' ')
     i--;                        /* strip trailing whitespace */
-  assert(i>=0 && i<sizeof name);
+  assert(i>=0 && i<arraysize(name));
   name[i]='\0';                 /* zero-terminate the string */
 
   if (*lptr!=c) {               /* verify correct string termination */
@@ -318,9 +318,9 @@ static void doinclude(int silent)
       #endif
     strcpy(symname,"_inc_");
     if ((ptr=strrchr(name,dirsep))!=NULL)
-      strlcat(symname,ptr+1,sizeof symname);
+      strlcat(symname,ptr+1,arraysize(symname));
     else
-      strlcat(symname,name,sizeof symname);
+      strlcat(symname,name,arraysize(symname));
     included=find_symbol(&glbtab,symname,fcurrent,-1,NULL)!=NULL;
   } /* if */
 
@@ -787,6 +787,7 @@ static int ftoi(cell *val,const unsigned char *curptr)
     /* floating point */
     #if PAWN_CELL_SIZE==32
       float value=(float)fnum;
+      assert_static(sizeof(val)==sizeof(value));
       *val=*((cell *)&value);
       #if !defined NDEBUG
         /* I assume that the C/C++ compiler stores "float" values in IEEE 754
@@ -805,12 +806,13 @@ static int ftoi(cell *val,const unsigned char *curptr)
         }
       #endif
     #elif PAWN_CELL_SIZE==64
+      assert_static(sizeof(val)==sizeof(fnum));
       *val=*((cell *)&fnum);
       #if !defined NDEBUG
         /* I assume that the C/C++ compiler stores "double" values in IEEE 754
          * format (as mandated in the ANSI standard).
          */
-        { float test1 = 0.0, test2 = 50.0, test3 = -50.0;
+        { double test1 = 0.0, test2 = 50.0, test3 = -50.0;
           uint64_t bit = 1;
           /* test 0.0 == all bits 0 */
           assert(*(uint64_t*)&test1==0x00000000L);
@@ -1011,6 +1013,7 @@ static int command(void)
     iflevel++;
     if (SKIPPING)
       break;                    /* break out of switch */
+    clearassignments(&loctab);
     skiplevel=iflevel;
     preproc_expr(&val,NULL);    /* get value (or 0 on error) */
     ifstack[iflevel-1]=(char)(val ? PARSEMODE : SKIPMODE);
@@ -1050,6 +1053,7 @@ static int command(void)
           } /* if */
         } else {
           /* previous conditions were all FALSE */
+          clearassignments(&loctab);
           if (tok==tpELSEIF) {
             /* if we were already skipping this section, allow expressions with
              * undefined symbols; otherwise check the expression to catch errors
@@ -1076,6 +1080,7 @@ static int command(void)
       error(26);        /* no matching "#if" */
       errorset(sRESET,0);
     } else {
+      clearassignments(&loctab);
       iflevel--;
       if (iflevel<skiplevel)
         skiplevel=iflevel;
@@ -1091,7 +1096,7 @@ static int command(void)
   case tpFILE:
     if (!SKIPPING) {
       char pathname[_MAX_PATH];
-      lptr=getstring((unsigned char*)pathname,sizeof pathname,lptr);
+      lptr=getstring((unsigned char*)pathname,arraysize(pathname),lptr);
       if (!strempty(pathname)) {
         free(inpfname);
         inpfname=duplicatestring(pathname);
@@ -1132,10 +1137,10 @@ static int command(void)
           while (*lptr<=' ' && *lptr!='\0')
             lptr++;
           if (*lptr=='"') {
-            lptr=getstring((unsigned char*)name,sizeof name,lptr);
+            lptr=getstring((unsigned char*)name,arraysize(name),lptr);
           } else {
             int i;
-            for (i=0; i<sizeof name && alphanum(*lptr); i++,lptr++)
+            for (i=0; i<arraysize(name) && alphanum(*lptr); i++,lptr++)
               name[i]=*lptr;
             name[i]='\0';
           } /* if */
@@ -1176,10 +1181,10 @@ static int command(void)
           while (*lptr<=' ' && *lptr!='\0')
             lptr++;
           if (*lptr=='"') {
-            lptr=getstring((unsigned char*)name,sizeof name,lptr);
+            lptr=getstring((unsigned char*)name,arraysize(name),lptr);
           } else {
             int i;
-            for (i=0; i<sizeof name && (alphanum(*lptr) || *lptr=='-'); i++,lptr++)
+            for (i=0; i<arraysize(name) && (alphanum(*lptr) || *lptr=='-'); i++,lptr++)
               name[i]=*lptr;
             name[i]='\0';
           } /* if */
@@ -1203,7 +1208,7 @@ static int command(void)
           /* first gather all information, start with the tag name */
           while (*lptr<=' ' && *lptr!='\0')
             lptr++;
-          for (i=0; i<sizeof name && alphanum(*lptr); i++,lptr++)
+          for (i=0; i<arraysize(name) && alphanum(*lptr); i++,lptr++)
             name[i]=*lptr;
           name[i]='\0';
           /* then the precision (for fixed point arithmetic) */
@@ -1250,7 +1255,7 @@ static int command(void)
             /* get the name */
             while (*lptr<=' ' && *lptr!='\0')
               lptr++;
-            for (i=0; i<sizeof name && alphanum(*lptr); i++,lptr++)
+            for (i=0; i<arraysize(name) && alphanum(*lptr); i++,lptr++)
               name[i]=*lptr;
             name[i]='\0';
             /* get the symbol */
@@ -1261,8 +1266,10 @@ static int command(void)
               /* mark as read if the pragma wasn't `unwritten` */
               sym->usage |= read;
               if (sym->ident==iVARIABLE || sym->ident==iREFERENCE
-                  || sym->ident==iARRAY || sym->ident==iREFARRAY)
+                  || sym->ident==iARRAY || sym->ident==iREFARRAY) {
                 sym->usage |= write;
+                sym->usage &= ~uASSIGNED;
+              } /* if */
             } else {
               error(17,name);     /* undefined symbol */
             } /* if */
@@ -1281,7 +1288,7 @@ static int command(void)
             /* get the name */
             while (*lptr<=' ' && *lptr!='\0')
               lptr++;
-            for (i=0; i<sizeof name && alphanum(*lptr); i++,lptr++)
+            for (i=0; i<arraysize(name) && alphanum(*lptr); i++,lptr++)
               name[i]=*lptr;
             name[i]='\0';
             /* get the symbol */
@@ -1342,7 +1349,7 @@ static int command(void)
           /* first gather all information, start with the tag name */
           while (*lptr<=' ' && *lptr!='\0')
             lptr++;
-          for (i=0; i<sNAMEMAX && *lptr>' '; i++,lptr++)
+          for (i=0; i<arraysize(name)-1 && *lptr>' '; i++,lptr++)
             name[i]=*lptr;
           name[i]='\0';
           parsesingleoption(name);
@@ -1374,7 +1381,7 @@ static int command(void)
       insert_dbgline(fline);
       while (*lptr<=' ' && *lptr!='\0')
         lptr++;
-      for (i=0; i<sizeof(name)-1 && (isalpha(*lptr) || *lptr=='.'); i++,lptr++)
+      for (i=0; i<arraysize(name)-1 && (isalpha(*lptr) || *lptr=='.'); i++,lptr++)
         name[i]=(char)tolower(*lptr);
       name[i]='\0';
       stgwrite("\t");
@@ -1964,6 +1971,7 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
 {
   const unsigned char *stringize;
   int instring=1;
+  int brackets=0;
   if (*flags & STRINGIZE)                 /* ignore leading spaces after the # */
     while (*lptr==' ' || *lptr=='\t')     /* this is as defines with parameters may add them */
       lptr++;                             /* when you use a space after , in a match pattern */
@@ -1980,6 +1988,7 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
         lptr--;
         instring=1;
         *flags |= STRINGIZE;
+        brackets=0;
       } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' ||
                  *lptr==':' || *lptr=='\r' || *lptr=='\n') {
         break;
@@ -1996,17 +2005,24 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
         stringize++; /* find next non space */
       if (*stringize=='#') { /* new stringize string */
         lptr=stringize+1;
+        brackets=0;
         while (*lptr==' ' || *lptr=='\t')
           lptr++;
         continue;
       } else if (*stringize=='\"') { /* new string */
-        lptr=stringize+1;
+        lptr = stringize + 1;
         *flags &= ~STRINGIZE;
         continue;
-      } else if (*stringize==',' || *stringize==')' || *stringize=='}' ||
-                 *stringize==';') { /* end */
-        lptr=stringize;
-        break;
+      } else if (*stringize=='(') {
+        brackets++;
+      } else if (*stringize==')') {
+        if (brackets--==0)
+          break;
+      } else if (*stringize==',' || *stringize=='}' || *stringize==';') { /* end */
+        if (brackets==0) {
+          lptr=stringize;
+          break;
+        }
       } else if (*stringize=='\0') {
         lptr=stringize;
         *flags &= ~STRINGIZE; /* shouldn't happen - trigger an error */
@@ -2035,6 +2051,7 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
   ucell val,c;
   const unsigned char *stringize;
   int instring=1;
+  int brackets=0;
   if (*flags & STRINGIZE)
     while (*lptr==' ' || *lptr=='\t')
       lptr++;
@@ -2053,6 +2070,7 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
         while (*++lptr==' ' || *lptr=='\t');
         lptr--;
         instring=1;
+        brackets=0;
         *flags |= STRINGIZE;
       } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' ||
                  *lptr==':' || *lptr=='\r' || *lptr=='\n') {
@@ -2070,6 +2088,7 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
         stringize++; /* find next non space */
       if (*stringize=='#') { /* new stringize string */
         lptr=stringize+1;
+        brackets=0;
         while (*lptr==' ' || *lptr=='\t')
           lptr++;
         continue;
@@ -2077,10 +2096,16 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
         lptr=stringize+1;
         *flags &= ~STRINGIZE;
         continue;
-      } else if (*stringize==',' || *stringize==')' || *stringize=='}' ||
-                 *stringize==';') { /* end */
-        lptr=stringize;
-        break;
+      } else if (*stringize=='(') {
+        brackets++;
+      } else if (*stringize==')') {
+        if (brackets--==0)
+          break;
+      } else if (*stringize==',' || *stringize=='}' || *stringize==';') { /* end */
+        if (brackets==0) {
+          lptr=stringize;
+          break;
+        }
       } else if (*stringize=='\0') {
         lptr=stringize;
         *flags &= ~STRINGIZE; /* shouldn't happen - trigger an error */
@@ -2172,8 +2197,9 @@ char *sc_tokens[] = {
          "...", "..",
          "__addressof", "assert", "*begin", "break", "case", "char", "const", "continue",
          "default", "defined", "do", "else", "__emit", "*end", "enum", "exit", "for",
-         "forward", "goto", "if", "native", "new", "operator", "public", "return", "sizeof",
-         "sleep", "state", "static", "stock", "switch", "tagof", "*then", "while",
+         "forward", "goto", "if", "__nameof", "native", "new", "operator", "public",
+         "return", "sizeof", "sleep", "state", "static", "stock", "switch", "tagof",
+         "*then", "while",
          "#assert", "#define", "#else", "#elseif", "#emit", "#endif", "#endinput",
          "#endscript", "#error", "#file", "#if", "#include", "#line", "#pragma",
          "#tryinclude", "#undef", "#warning",
@@ -3159,6 +3185,8 @@ SC_FUNC void markusage(symbol *sym,int usage)
   sym->usage |= (char)usage;
   if ((usage & uWRITTEN)!=0)
     sym->lnumber=fline;
+  if ((usage & uREAD)!=0 && (sym->ident==iVARIABLE || sym->ident==iREFERENCE))
+    sym->usage &= ~uASSIGNED;
   /* check if (global) reference must be added to the symbol */
   if ((usage & (uREAD | uWRITTEN))!=0) {
     /* only do this for global symbols */
@@ -3169,6 +3197,27 @@ SC_FUNC void markusage(symbol *sym,int usage)
         sym->usage |= uGLOBALREF;
     } /* if */
   } /* if */
+}
+
+SC_FUNC void markinitialized(symbol *sym,int assignment)
+{
+  assert(sym!=NULL);
+  if (sym->ident!=iVARIABLE && sym->ident!=iARRAY)
+    return;
+  if (sc_status==statFIRST && (sym->vclass==sLOCAL || sym->vclass==sSTATIC))
+    return;
+  if (assignment && sym->ident==iVARIABLE)
+    sym->usage |= uASSIGNED;
+}
+
+SC_FUNC void clearassignments(symbol *root)
+{
+  /* clear the unused assignment flag for all variables in the table */
+  symbol *sym=root->next;
+  while (sym!=NULL) {
+    sym->usage &= ~uASSIGNED;
+    sym=sym->next;
+  } /* while */
 }
 
 
@@ -3290,8 +3339,8 @@ SC_FUNC symbol *addvariable(const char *name,cell addr,int ident,int vclass,int 
    * the symbol without states if no symbol with states exists).
    */
   assert(vclass!=sGLOBAL || (sym=findglb(name,sGLOBAL))==NULL || (sym->usage & uDEFINE)==0
-         || sym->ident==iFUNCTN && sym==curfunc
-         || sym->states==NULL && sc_curstates>0);
+         || (sym->ident==iFUNCTN && sym==curfunc)
+         || (sym->states==NULL && sc_curstates>0));
 
   if (ident==iARRAY || ident==iREFARRAY) {
     symbol *parent=NULL,*top;

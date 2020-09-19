@@ -1,0 +1,69 @@
+{
+  'test_type': 'pcode_check',
+  'code_pattern': r"""
+[0-9a-f]+  nop
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  const.alt 00000001
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.alt
+[0-9a-f]+  push.c 00000008
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000004
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  stor.s.pri fffffffc
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  const.alt 00000002
+[0-9a-f]+  push.alt
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000008
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000004
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  stor.s.pri fffffffc
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  const.alt 00000003
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.alt
+[0-9a-f]+  push.c 00000008
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000004
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  stor.s.pri fffffffc
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  const.alt 00000004
+[0-9a-f]+  push.alt
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000008
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000004
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  stor.s.pri fffffffc
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  const.alt 00000005
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.alt
+[0-9a-f]+  push.c 00000008
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000004
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  stor.s.pri fffffffc
+[0-9a-f]+  stor.s.pri fffffffc
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  const.alt 00000006
+[0-9a-f]+  push.alt
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000008
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000004
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  stor.s.pri fffffffc
+[0-9a-f]+  stor.s.pri fffffffc
+[0-9a-f]+  nop
+"""
+}

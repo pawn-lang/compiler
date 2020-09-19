@@ -91,9 +91,6 @@
   #endif
 #endif
 
-#if !defined arraysize
-  #define arraysize(array)  (sizeof(array) / sizeof((array)[0]))
-#endif
 #if !defined assert_static
   /* see "Compile-Time Assertions" by Ralf Holly,
    * C/C++ Users Journal, November 2004

@@ -57,10 +57,6 @@
   #endif
 #endif
 
-#if !defined ELEMENTS
-  #define ELEMENTS(array)       (sizeof(array) / sizeof(array[0]))
-#endif
-
 #if !defined NO_CODEPAGE
 
 #if !defined MAXCODEPAGE
@@ -169,7 +165,7 @@ SC_FUNC int cp_set(const char *name)
       wordtablesize=0;
       wordtabletop=0;
     } /* if */
-    for (index=0; index<ELEMENTS(bytetable); index++)
+    for (index=0; index<arraysize(bytetable); index++)
       bytetable[index]=(wchar_t)index;
     return TRUE;
   } /* if */
@@ -216,7 +212,7 @@ SC_FUNC int cp_set(const char *name)
     return FALSE;       /* all failed */
 
   /* clear the tables */
-  for (index=0; index<ELEMENTS(bytetable); index++)
+  for (index=0; index<arraysize(bytetable); index++)
     bytetable[index]=INVALID;   /* special code meaning "not found" */
   assert(wordtablesize==0 && wordtabletop==0 && wordtable==NULL
          || wordtablesize>0 && wordtable!=NULL);
@@ -228,7 +224,7 @@ SC_FUNC int cp_set(const char *name)
   } /* if */
 
   /* read in the table */
-  while (cp_readline(fp,filename,sizeof filename)) {
+  while (cp_readline(fp,filename,arraysize(filename))) {
     char *ptr;
     if ((ptr=strchr(filename,'#'))!=NULL)
       *ptr='\0';                /* strip of comment */

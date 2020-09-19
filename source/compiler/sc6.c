@@ -713,7 +713,7 @@ static int findopcode(char *instr,int maxlen)
    * to symbols)
    */
   low=1;                /* entry 0 is reserved (for "not found") */
-  high=(sizeof opcodelist / sizeof opcodelist[0])-1;
+  high=arraysize(opcodelist)-1;
   while (low<high) {
     mid=(low+high)/2;
     assert(opcodelist[mid].name!=NULL);
@@ -762,7 +762,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
      * for a non-existant opcode)
      */
     assert(opcodelist[1].name!=NULL);
-    for (i=2; i<(sizeof opcodelist / sizeof opcodelist[0]); i++) {
+    for (i=2; i<arraysize(opcodelist); i++) {
       assert(opcodelist[i].name!=NULL);
       assert(stricmp(opcodelist[i].name,opcodelist[i-1].name)>0);
     } /* for */
@@ -1198,7 +1198,7 @@ static void append_dbginfo(FILE *fout)
       assert(name!=NULL);
       str=strchr(name,' ');
       assert(str!=NULL);
-      assert((int)(str-name)<sizeof symname);
+      assert((int)(str-name)<arraysize(symname));
       dbghdr.size+=sizeof(AMX_DBG_SYMBOL)+(str-name);
       if ((prevstr=strchr(name,'['))!=NULL)
         while ((prevstr=strchr(prevstr+1,':'))!=NULL)
@@ -1302,7 +1302,7 @@ static void append_dbginfo(FILE *fout)
       name=skipwhitespace(str+1);
       str=strchr(name,' ');
       assert(str!=NULL);
-      assert((int)(str-name)<sizeof symname);
+      assert((int)(str-name)<arraysize(symname));
       strlcpy(symname,name,(int)(str-name)+1);
       dbgsym.codestart=hex2long(str,&str);
       dbgsym.codeend=hex2long(str,&str);
