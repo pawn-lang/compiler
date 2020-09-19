@@ -2928,7 +2928,9 @@ static void decl_enum(int vclass,int fstatic)
   cell val,value,size;
   char *str;
   int tag,explicittag;
-  cell increment,multiplier;
+  int inctok;
+  int warn_overflow;
+  cell increment;
   constvalue_root *enumroot=NULL;
   symbol *enumsym=NULL;
   short filenum;
@@ -2958,18 +2960,22 @@ static void decl_enum(int vclass,int fstatic)
     enumname[0]='\0';
   } /* if */
 
-  /* get increment and multiplier */
+  /* get the increment */
   increment=1;
-  multiplier=1;
+  inctok=taADD;
   if (matchtoken('(')) {
-    if (matchtoken(taADD)) {
+    int tok=lex(&val,&str);
+    if (tok==taADD || tok==taMULT || tok==taSHL) {
+      inctok=tok;
       constexpr(&increment,NULL,NULL);
-    } else if (matchtoken(taMULT)) {
-      constexpr(&multiplier,NULL,NULL);
-    } else if (matchtoken(taSHL)) {
-      constexpr(&val,NULL,NULL);
-      while (val-->0)
-        multiplier*=2;
+      if (tok==taSHL) {
+        if (increment<0 || increment>=PAWN_CELL_SIZE)
+          error(241);                   /* negative or too big shift count */
+        if (increment<0)
+          increment=0;
+      } /* if */
+    } else {
+      lexpush();
     } /* if */
     needtoken(')');
   } /* if */
@@ -2991,13 +2997,16 @@ static void decl_enum(int vclass,int fstatic)
   needtoken('{');
   /* go through all constants */
   value=0;                              /* default starting value */
+  warn_overflow=FALSE;
   do {
     int idxtag,fieldtag;
+    int symline;
     symbol *sym;
     if (matchtoken('}')) {              /* quick exit if '}' follows ',' */
       lexpush();
       break;
     } /* if */
+    symline=fline;
     idxtag=(enumname[0]=='\0') ? tag : pc_addtag(NULL); /* optional explicit item tag */
     if (needtoken(tSYMBOL)) {           /* read in (new) token */
       tokeninfo(&val,&str);             /* get the information */
@@ -3005,14 +3014,21 @@ static void decl_enum(int vclass,int fstatic)
     } else {
       constname[0]='\0';
     } /* if */
-    size=increment;                     /* default increment of 'val' */
+    size=(inctok==taADD) ? increment : 1;/* default increment of 'val' */
     fieldtag=0;                         /* default field tag */
     if (matchtoken('[')) {
       constexpr(&size,&fieldtag,NULL);  /* get size */
       needtoken(']');
     } /* if */
-    if (matchtoken('='))
+    if (matchtoken('=')) {
       constexpr(&value,NULL,NULL);      /* get value */
+      warn_overflow=FALSE;
+    } else if (warn_overflow) {
+      errorset(sSETPOS,symline);
+      error(242,constname);             /* shift overflow for enum item */
+      errorset(sSETPOS,-1);
+      warn_overflow=FALSE;
+    } /* if */
     /* add_constant() checks whether a variable (global or local) or
      * a constant with the same name already exists
      */
@@ -3027,6 +3043,8 @@ static void decl_enum(int vclass,int fstatic)
     sym->parent=enumsym;
     if (enumsym)
       enumsym->child=sym;
+    if (vclass==sLOCAL)
+      sym->compound=nestlevel;
 
     if (fstatic)
       sym->fnumber=filenum;
@@ -3036,10 +3054,15 @@ static void decl_enum(int vclass,int fstatic)
       sym->usage |= uENUMFIELD;
       append_constval(enumroot,constname,value,tag);
     } /* if */
-    if (multiplier==1)
+    if (inctok==taADD) {
       value+=size;
-    else
-      value*=size*multiplier;
+    } else if (inctok==taMULT) {
+      value*=(size*increment);
+    } else { // taSHL
+      if ((ucell)value>=((ucell)1 << (PAWN_CELL_SIZE-increment)))
+        warn_overflow=TRUE;
+      value*=(size << increment);
+    } /* if */
   } while (matchtoken(','));
   needtoken('}');       /* terminates the constant list */
   matchtoken(';');      /* eat an optional ; */
@@ -6546,7 +6569,7 @@ static void SC_FASTCALL emit_param_index(emit_outval *p,int isrange,
       if (val==valid_values[i])
         return;
   } /* if */
-  error(50);    /* invalid range */
+  error(241);    /* negative or too big shift count */
 }
 
 static void SC_FASTCALL emit_param_nonneg(emit_outval *p)

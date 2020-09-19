@@ -1,29 +1,29 @@
 {
   'test_type': 'output_check',
   'errors': """
-__emit_p5.pwn(25) : error 050: invalid range
+__emit_p5.pwn(25) : warning 241: negative or too big shift count
 __emit_p5.pwn(26) : error 001: expected token: "-integer value-", but found "-data offset-"
 __emit_p5.pwn(27) : error 001: expected token: "-integer value-", but found "-function-"
 __emit_p5.pwn(28) : error 001: expected token: "-integer value-", but found "-reference-"
-__emit_p5.pwn(29) : error 050: invalid range
+__emit_p5.pwn(29) : warning 241: negative or too big shift count
 __emit_p5.pwn(30) : error 001: expected token: "-integer value-", but found "-local variable-"
 __emit_p5.pwn(31) : error 001: expected token: "-integer value-", but found "-data offset-"
 __emit_p5.pwn(32) : error 001: expected token: "-integer value-", but found "-label-"
-__emit_p5.pwn(33) : error 050: invalid range
-__emit_p5.pwn(34) : error 050: invalid range
-__emit_p5.pwn(35) : error 050: invalid range
-__emit_p5.pwn(36) : error 050: invalid range
-__emit_p5.pwn(37) : error 050: invalid range
-__emit_p5.pwn(38) : error 050: invalid range
+__emit_p5.pwn(33) : warning 241: negative or too big shift count
+__emit_p5.pwn(34) : warning 241: negative or too big shift count
+__emit_p5.pwn(35) : warning 241: negative or too big shift count
+__emit_p5.pwn(36) : warning 241: negative or too big shift count
+__emit_p5.pwn(37) : warning 241: negative or too big shift count
+__emit_p5.pwn(38) : warning 241: negative or too big shift count
 __emit_p5.pwn(61) : error 001: expected token: "-integer value-", but found "-data offset-"
 __emit_p5.pwn(62) : error 001: expected token: "-integer value-", but found "-function-"
 __emit_p5.pwn(63) : error 001: expected token: "-integer value-", but found "-reference-"
 __emit_p5.pwn(64) : error 001: expected token: "-integer value-", but found "-local variable-"
 __emit_p5.pwn(65) : error 001: expected token: "-integer value-", but found "-data offset-"
 __emit_p5.pwn(66) : error 001: expected token: "-integer value-", but found "-label-"
-__emit_p5.pwn(67) : error 050: invalid range
-__emit_p5.pwn(68) : error 050: invalid range
-__emit_p5.pwn(69) : error 050: invalid range
-__emit_p5.pwn(70) : error 050: invalid range
+__emit_p5.pwn(67) : warning 241: negative or too big shift count
+__emit_p5.pwn(68) : warning 241: negative or too big shift count
+__emit_p5.pwn(69) : warning 241: negative or too big shift count
+__emit_p5.pwn(70) : warning 241: negative or too big shift count
 """
 }
