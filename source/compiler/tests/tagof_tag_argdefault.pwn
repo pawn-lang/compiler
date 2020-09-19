@@ -15,10 +15,13 @@ Func1(a = tagof(Float:))
 Func2(a = tagof(Tag:))
 	return a;
 
+Func3(Tag:a, tag = sizeof(Tag:)) // error 001: expected token: "-identifier-", but found "-label-"
+	return (a + Tag:0, tag);
+
 main()
 {
 	new Tag:t = Tag:0;
-	#pragma unused t
 	Func1();
 	Func2();
+	Func3(t);
 }
