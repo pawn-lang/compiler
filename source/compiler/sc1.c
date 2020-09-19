@@ -3942,9 +3942,8 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     litidx=0;
   } /* if */
   for (i=0; i<argcnt; i++) {
-    if (sym->dim.arglist[i].ident==iREFARRAY) {
-      lvar=findloc(sym->dim.arglist[i].name);
-      assert(lvar!=NULL);
+    if (sym->dim.arglist[i].ident==iREFARRAY
+        && (lvar=findloc(sym->dim.arglist[i].name))!=NULL) {
       if ((sym->dim.arglist[i].usage & uWRITTEN)==0) {
         /* check if the argument was written in this definition */
         depend=lvar;
@@ -3958,9 +3957,9 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
       } /* if */
       /* mark argument as written if it was written in another definition */
       lvar->usage|=sym->dim.arglist[i].usage & uWRITTEN;
-    } /* if */    
+    } /* if */
   } /* for */
-  
+
   testsymbols(&loctab,0,TRUE,TRUE);     /* test for unused arguments and labels */
   delete_symbols(&loctab,0,TRUE,TRUE);  /* clear local variables queue */
   assert(loctab.next==NULL);
