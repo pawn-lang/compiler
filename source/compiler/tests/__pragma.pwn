@@ -9,9 +9,14 @@ stock Func3(__pragma("unread") const arg) {}
 // "__pragma" can't be used between the tag and the symbol name
 stock Func4(Tag: __pragma("unread") arg) {}
 
-__pragma("naked") NakedFunc(__pragma("naked", "unused") arg) {}
-
 operator~(Tag:val[],count) {}
+
+NakedFunc()
+{
+	__pragma("naked", "deprecated - use NakedFunc2() instead");
+}
+
+__pragma("naked") NakedFunc2(__pragma("naked", "unused") arg = 0) {}
 
 main()
 {
@@ -30,7 +35,7 @@ main()
 	// warning 234: function is deprecated (symbol "Func") - use OtherFunc() instead
 	Func(0);
 
-	// NakedFunc() is marked as "naked", so there should be no warning about it
-	// having to return a value
-	return NakedFunc(0);
+	// NakedFunc() and NakedFunc2() are marked as "naked", so there should be
+	// no warnings about them having to return a value.
+	return NakedFunc(), NakedFunc2();
 }
