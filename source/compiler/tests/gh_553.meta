@@ -1,0 +1,13 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+gh_553.pwn(13) : error 022: must be lvalue (non-constant)
+gh_553.pwn(13) : warning 215: expression has no effect
+gh_553.pwn(14) : error 022: must be lvalue (non-constant)
+gh_553.pwn(14) : warning 215: expression has no effect
+gh_553.pwn(18) : error 022: must be lvalue (non-constant)
+gh_553.pwn(18) : warning 215: expression has no effect
+gh_553.pwn(19) : error 022: must be lvalue (non-constant)
+gh_553.pwn(19) : warning 215: expression has no effect
+  """
+}
