@@ -4,9 +4,10 @@
 const_array_args_and_literals_gh_276.pwn(13) : warning 214: possibly a "const" array argument was intended: "arr"
 const_array_args_and_literals_gh_276.pwn(18) : warning 214: possibly a "const" array argument was intended: "arr"
 const_array_args_and_literals_gh_276.pwn(30) : warning 214: possibly a "const" array argument was intended: "arr"
-const_array_args_and_literals_gh_276.pwn(45) : warning 239: literal array/string passed to a non-const parameter
-const_array_args_and_literals_gh_276.pwn(46) : warning 239: literal array/string passed to a non-const parameter
-const_array_args_and_literals_gh_276.pwn(47) : warning 239: literal array/string passed to a non-const parameter
-const_array_args_and_literals_gh_276.pwn(68) : warning 239: literal array/string passed to a non-const parameter
+const_array_args_and_literals_gh_276.pwn(48) : warning 239: literal array/string passed to a non-const parameter
+const_array_args_and_literals_gh_276.pwn(49) : warning 239: literal array/string passed to a non-const parameter
+const_array_args_and_literals_gh_276.pwn(50) : warning 239: literal array/string passed to a non-const parameter
+const_array_args_and_literals_gh_276.pwn(70) : warning 239: literal array/string passed to a non-const parameter
+const_array_args_and_literals_gh_276.pwn(72) : warning 239: literal array/string passed to a non-const parameter
 """
 }

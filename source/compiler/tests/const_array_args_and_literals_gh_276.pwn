@@ -40,11 +40,14 @@ f7(arr1[], arr2[], arr3[], arr4[]) {
 	arr3[0]++;
 	arr4[0]--;
 }
+f8(arr[]) {
+	++arr[0];
+}
 
 main () {
-	f0("test"); // line 45
-	f1("test"); // line 46
-	f2("test"); // line 47
+	f0("test"); // line 48
+	f1("test"); // line 49
+	f2("test"); // line 50
 	f3("test");
 	f4("test");
 
@@ -64,6 +67,7 @@ main () {
 	f6(arr2);
 
 	f7(arr, arr, arr, arr);
+	f8("hi");
 
 	SetTimer("test", 0, 0);
 }
