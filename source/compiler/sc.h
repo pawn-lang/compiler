@@ -146,6 +146,7 @@ typedef struct s_symbol {
       short level;      /* number of dimensions below this level */
     } array;
   } dim;                /* for 'dimension', both functions and arrays */
+  int assignlevel;      /* 'compound statement' level at which the variable was assigned a value */
   constvalue_root *states;/* list of state function/state variable ids + addresses */
   int fnumber;          /* static global variables: file number in which the declaration is visible */
   int lnumber;          /* line number (in the current source file) for the declaration */
@@ -299,6 +300,16 @@ typedef struct s_valuepair {
   long first;
   long second;
 } valuepair;
+
+/* struct "assigninfo" is used to synchronize the status of assignments that
+ * were made in multiple "if" and "switch" branches, so the compiler could
+ * detect unused assignments in all of those branches, not only the last one */
+typedef struct s_assigninfo {
+  int unused;       /* true if the variable has an unused value assigned to it
+                     * in one of the branches" */
+  int lnumber;      /* line number of the first unused assignment made in one of
+                     * the branches (used for error messages) */
+} assigninfo;
 
 /* macros for code generation */
 #define opcodes(n)      ((n)*sizeof(cell))      /* opcode size */
@@ -689,7 +700,9 @@ SC_FUNC void delete_symbols(symbol *root,int level,int del_labels,int delete_fun
 SC_FUNC int refer_symbol(symbol *entry,symbol *bywhom);
 SC_FUNC void markusage(symbol *sym,int usage);
 SC_FUNC void markinitialized(symbol *sym,int assignment);
-SC_FUNC void clearassignments(symbol *root);
+SC_FUNC void clearassignments(int fromlevel);
+SC_FUNC void memoizeassignments(int fromlevel,assigninfo **assignments);
+SC_FUNC void restoreassignments(int fromlevel,assigninfo *assignments);
 SC_FUNC void rename_symbol(symbol *sym,const char *newname);
 SC_FUNC symbol *findglb(const char *name,int filter);
 SC_FUNC symbol *findloc(const char *name);
@@ -959,6 +972,7 @@ SC_VDECL int pc_compat;       /* running in compatibility mode? */
 SC_VDECL int pc_recursion;    /* enable detailed recursion report? */
 SC_VDECL int pc_retexpr;      /* true if the current expression is a part of a "return" statement */
 SC_VDECL int pc_retheap;      /* heap space (in bytes) to be manually freed when returning an array returned by another function */
+SC_VDECL int pc_nestlevel;    /* number of active (open) compound statements */
 
 SC_VDECL constvalue_root sc_automaton_tab; /* automaton table */
 SC_VDECL constvalue_root sc_state_tab;     /* state table */

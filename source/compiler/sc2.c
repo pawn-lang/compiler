@@ -1013,7 +1013,7 @@ static int command(void)
     iflevel++;
     if (SKIPPING)
       break;                    /* break out of switch */
-    clearassignments(&loctab);
+    clearassignments(1);
     skiplevel=iflevel;
     preproc_expr(&val,NULL);    /* get value (or 0 on error) */
     ifstack[iflevel-1]=(char)(val ? PARSEMODE : SKIPMODE);
@@ -1053,7 +1053,7 @@ static int command(void)
           } /* if */
         } else {
           /* previous conditions were all FALSE */
-          clearassignments(&loctab);
+          clearassignments(1);
           if (tok==tpELSEIF) {
             /* if we were already skipping this section, allow expressions with
              * undefined symbols; otherwise check the expression to catch errors
@@ -1080,7 +1080,7 @@ static int command(void)
       error(26);        /* no matching "#if" */
       errorset(sRESET,0);
     } else {
-      clearassignments(&loctab);
+      clearassignments(1);
       iflevel--;
       if (iflevel<skiplevel)
         skiplevel=iflevel;
@@ -3003,6 +3003,15 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
       mustdelete=delete_labels;
       break;
     case iVARIABLE:
+      /* check that the assigned value was used, but don't show the warning
+       * if the variable is completely unused (we already have warning 203 for that) */
+      if ((sym->usage & (uASSIGNED | uREAD | uWRITTEN))==(uASSIGNED | uREAD | uWRITTEN)
+          && sym->vclass==sLOCAL) {
+        errorset(sSETPOS,sym->lnumber);
+        error(204,sym->name);   /* symbol is assigned a value that is never used */
+        errorset(sSETPOS,-1);
+      } /* if */
+      /* fallthrough */
     case iARRAY:
       /* do not delete global variables if functions are preserved */
       mustdelete=delete_functions;
@@ -3202,22 +3211,95 @@ SC_FUNC void markusage(symbol *sym,int usage)
 SC_FUNC void markinitialized(symbol *sym,int assignment)
 {
   assert(sym!=NULL);
-  if (sym->ident!=iVARIABLE && sym->ident!=iARRAY)
+  if (sym->ident!=iVARIABLE && sym->ident!=iREFERENCE && sym->ident!=iARRAY)
     return;
   if (sc_status==statFIRST && (sym->vclass==sLOCAL || sym->vclass==sSTATIC))
     return;
-  if (assignment && sym->ident==iVARIABLE)
+  if (assignment && sym->vclass!=sGLOBAL && (sym->ident==iVARIABLE || sym->ident==iREFERENCE)) {
     sym->usage |= uASSIGNED;
+    sym->assignlevel=pc_nestlevel;
+  } /* if */
 }
 
-SC_FUNC void clearassignments(symbol *root)
+/* clears assignments starting from the specified 'compound statement' nesting level and higher */
+SC_FUNC void clearassignments(int fromlevel)
 {
-  /* clear the unused assignment flag for all variables in the table */
-  symbol *sym=root->next;
-  while (sym!=NULL) {
-    sym->usage &= ~uASSIGNED;
-    sym=sym->next;
-  } /* while */
+  symbol *sym;
+
+  /* the error messages are only printed on the "writing" pass,
+   * so if we are not writing yet, then we have a quick exit */
+  if (sc_status!=statWRITE)
+    return;
+
+  sym=&loctab;
+  while ((sym=sym->next)!=NULL)
+    if (sym->assignlevel>=fromlevel)
+      sym->usage &= ~uASSIGNED;
+}
+
+/* memoizes all assignments done on the specified compound level and higher */
+SC_FUNC void memoizeassignments(int fromlevel,assigninfo **assignments)
+{
+  symbol *sym;
+  int num;
+
+  /* the error messages are only printed on the "writing" pass,
+   * so if we are not writing yet, then we have a quick exit */
+  if (sc_status!=statWRITE)
+    return;
+
+  /* allocate memory to store the information about assignments */
+  if (*assignments==NULL) {
+    sym=&loctab;
+    while ((sym=sym->next)!=NULL && sym->ident==iLABEL) {}  /* skip labels */
+    /* count the number of variables */
+    for (num=0; sym!=NULL; num++,sym=sym->next)
+      /* nothing */;
+    /* if there are no variables, then we have an early exit */
+    if (num==0)
+      return;
+    *assignments=(assigninfo *)calloc((size_t)num,sizeof(assigninfo));
+    if (*assignments==NULL)
+      error(103); /* insufficient memory */
+  } /* if */
+
+  sym=&loctab;
+  while ((sym=sym->next)!=NULL && sym->ident==iLABEL) {}    /* skip labels */
+  for (num=0; sym!=NULL; num++,sym=sym->next) {
+    /* if the assignment is unused and it was done inside the branch... */
+    if ((sym->usage & uASSIGNED)!=0 && sym->assignlevel>=fromlevel) {
+      /* clear the assignment flag, so the compiler won't report this assignment as unused
+       * if the next "if" or "switch" branch also contains an assignment to this variable */
+      sym->usage &= ~uASSIGNED;
+      /* memoize the assignment only if there was no other unused assignment
+       * in any other "if" or "switch" branch */
+      if ((*assignments)[num].unused==FALSE) {
+        (*assignments)[num].unused=TRUE;
+        (*assignments)[num].lnumber=sym->lnumber;
+      } /* if */
+    } /* if */
+  } /* for */
+}
+
+/* restores all memoized assignments */
+SC_FUNC void restoreassignments(int fromlevel,assigninfo *assignments)
+{
+  symbol *sym;
+  int num;
+
+  sym=&loctab;
+  while ((sym=sym->next)!=NULL && sym->ident==iLABEL) {}    /* skip labels */
+  for (num=0; sym!=NULL; num++,sym=sym->next) {
+    if (assignments!=NULL && assignments[num].unused) {
+      sym->usage |= uASSIGNED;
+      sym->lnumber=assignments[num].lnumber;
+    } /* if */
+    /* demote all assignments that were made inside any of the "if"/"switch"
+     * branches to the previous "compound statement" nesting level */
+    if (sym->assignlevel>=fromlevel)
+      sym->assignlevel=fromlevel-1;
+  } /* for */
+  free(assignments);
 }
 
 
@@ -3314,6 +3396,7 @@ SC_FUNC symbol *addsym(const char *name,cell addr,int ident,int vclass,int tag,i
   entry.ident=(char)ident;
   entry.tag=tag;
   entry.usage=(char)usage;
+  entry.assignlevel=0;
   entry.fnumber=-1;     /* assume global visibility (ignored for local symbols) */
   entry.lnumber=fline;
   entry.numrefers=1;
