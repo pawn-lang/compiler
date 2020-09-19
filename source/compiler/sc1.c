@@ -906,6 +906,7 @@ static void resetglobals(void)
   sc_curstates=0;
   pc_memflags=0;
   pc_naked=FALSE;
+  pc_retexpr=FALSE;
   emit_flags=0;
   emit_stgbuf_idx=-1;
 }
@@ -5590,8 +5591,16 @@ static int doexpr(int comma,int chkeffect,int allowarray,int mark_endexpr,
   errorset(sEXPRMARK,0);
   do {
     /* on second round through, mark the end of the previous expression */
-    if (index!=stgidx)
+    if (index!=stgidx) {
       markexpr(sEXPR,NULL,0);
+      /* also, if this is not the first expression and we are inside a "return"
+       * statement, we need to manually free the heap space allocated for the
+       * array returned by the function called in the previous expression */
+      if (pc_retexpr) {
+        modheap(pc_retheap);
+        pc_retheap=0;
+      } /* if */
+    } /* if */
     pc_sideeffect=FALSE;
     pc_ovlassignment=FALSE;
     ident=expression(val,tag,symptr,chkfuncresult);
@@ -7669,7 +7678,11 @@ static void doreturn(void)
     /* "return <value>" */
     if ((rettype & uRETNONE)!=0)
       error(78);                        /* mix "return;" and "return value;" */
+    assert(pc_retexpr==FALSE);
+    pc_retexpr=TRUE;
+    pc_retheap=0;
     ident=doexpr(TRUE,FALSE,TRUE,FALSE,&tag,&sym,TRUE,NULL);
+    pc_retexpr=FALSE;
     needtoken(tTERM);
     /* see if this function already has a sub type (an array attached) */
     assert(curfunc!=NULL);
@@ -7776,6 +7789,7 @@ static void doreturn(void)
         /* moveto1(); is not necessary, callfunction() does a popreg() */
       } /* if */
     } /* if */
+    modheap(pc_retheap);
     /* try to use "operator=" if tags don't match */
     if (!matchtag(curfunc->tag,tag,TRUE))
       check_userop(NULL,tag,curfunc->tag,2,NULL,&tag);

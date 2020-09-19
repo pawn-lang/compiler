@@ -1,0 +1,32 @@
+{
+  'test_type': 'pcode_check',
+  'code_pattern': r"""
+[0-9a-f]+  nop
+[0-9a-f]+  load.pri [0-9a-f]+
+[0-9a-f]+  jzer [0-9a-f]+
+[0-9a-f]+  heap 00000030
+[0-9a-f]+  push.alt
+[0-9a-f]+  push.c 00000000
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  pop.pri
+[0-9a-f]+  load.s.alt 0000000c
+[0-9a-f]+  movs 00000030
+[0-9a-f]+  heap ffffffd0
+[0-9a-f]+  retn
+[0-9a-f]+  heap 00000030
+[0-9a-f]+  push.alt
+[0-9a-f]+  push.c 00000000
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  pop.pri
+[0-9a-f]+  heap ffffffd0
+[0-9a-f]+  heap 00000030
+[0-9a-f]+  push.alt
+[0-9a-f]+  push.c 00000000
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  pop.pri
+[0-9a-f]+  load.s.alt 0000000c
+[0-9a-f]+  movs 00000030
+[0-9a-f]+  heap ffffffd0
+[0-9a-f]+  retn
+"""
+}
