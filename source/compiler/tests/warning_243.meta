@@ -1,0 +1,8 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+warning_243.pwn(6) : warning 243: redundant code: switch control expression is constant
+warning_243.pwn(7) : warning 243: redundant code: switch control expression is constant
+warning_243.pwn(8) : warning 243: redundant code: switch control expression is constant
+"""
+}
