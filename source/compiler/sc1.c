@@ -5510,6 +5510,11 @@ static void statement(int *lastindent,int allow_decl)
     matchtoken(tSTATIC);
     decl_enum(sLOCAL,FALSE);
     break;
+  case t__PRAGMA:
+    dopragma();
+    needtoken(tTERM);
+    pragma_apply(curfunc);
+    break;
   case t__EMIT: {
     extern char *sc_tokens[];
     const unsigned char *bck_lptr=lptr-strlen(sc_tokens[tok-tFIRST]);
