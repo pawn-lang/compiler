@@ -8172,7 +8172,7 @@ static void pragma_apply(symbol *sym)
       break;
     case attrNAKED:
       if (sym->ident==iFUNCTN)
-        sym->flags=flagNAKED;
+        sym->flags |= flagNAKED;
       break;
     default:
       assert(0);
