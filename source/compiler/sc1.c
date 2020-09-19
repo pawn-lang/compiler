@@ -141,6 +141,8 @@ static void dostate(void);
 static void addwhile(int *ptr);
 static void delwhile(void);
 static int *readwhile(void);
+static void dopragma(void);
+static void pragma_apply(symbol *sym);
 
 typedef void (SC_FASTCALL *OPCODE_PROC)(char *name);
 typedef struct {
@@ -779,6 +781,8 @@ cleanup:
                                            * done (i.e. on a fatal error) */
   delete_symbols(&glbtab,0,TRUE,TRUE);
   line_sym=NULL;
+  free(pc_deprecate);
+  pc_deprecate=NULL;
   hashtable_term(&symbol_cache_ht);
   delete_consttable(&tagname_tab);
   delete_consttable(&libname_tab);
@@ -901,11 +905,13 @@ static void resetglobals(void)
   pc_addlibtable=TRUE;  /* by default, add a "library table" to the output file */
   sc_alignnext=FALSE;
   pc_docexpr=FALSE;
+  free(pc_deprecate);
   pc_deprecate=NULL;
   sc_curstates=0;
   pc_memflags=0;
   pc_naked=FALSE;
   pc_retexpr=FALSE;
+  pc_attributes=0;
   emit_flags=0;
   emit_stgbuf_idx=-1;
 }
@@ -1759,6 +1765,7 @@ static void parse(void)
         declfuncvar(fpublic,fstatic,fstock,fconst);
       } /* if */
       break;
+    case t__PRAGMA:
     case tLABEL:
     case tSYMBOL:
     case tOPERATOR:
@@ -1974,6 +1981,11 @@ static void declfuncvar(int fpublic,int fstatic,int fstock,int fconst)
     return;
   } /* if */
 
+  if (tok==t__PRAGMA) {
+    dopragma();
+    tok=lex(&val,&str);
+  } /* if */
+
   if (tok!=tSYMBOL && tok!=tOPERATOR) {
     lexpush();
     needtoken(tSYMBOL);
@@ -2041,6 +2053,8 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
       firstname=NULL;
     } else {
       tag=pc_addtag(NULL);
+      if (matchtoken(t__PRAGMA))
+        dopragma();
       if (lex(&val,&str)!=tSYMBOL)      /* read in (new) token */
         error_suggest(20,str,NULL,estSYMBOL,esfFUNCTION);   /* invalid symbol name */
       assert(strlen(str)<=sNAMEMAX);
@@ -2262,6 +2276,9 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
     } else {
       glb_declared+=glb_incr;   /* add total number of cells (if added to the end) */
     } /* if */
+    if (matchtoken(t__PRAGMA))
+      dopragma();
+    pragma_apply(sym);
   } while (matchtoken(',')); /* enddo */   /* more? */
   needtoken(tTERM);    /* if not comma, must be semicolumn */
 }
@@ -2298,6 +2315,8 @@ static int declloc(int fstatic)
     ident=iVARIABLE;
     size=1;
     numdim=0;                           /* no dimensions */
+    if (matchtoken(t__PRAGMA))
+      dopragma();
     tag=pc_addtag(NULL);
     if (!needtoken(tSYMBOL)) {
       lexclr(TRUE);                     /* drop the rest of the line... */
@@ -2450,7 +2469,9 @@ static int declloc(int fstatic)
       markinitialized(sym,!suppress_w240);
     if (pc_ovlassignment)
       sym->usage |= uREAD;
-  } while (matchtoken(',')); /* enddo */   /* more? */
+    if (matchtoken(t__PRAGMA))
+      dopragma();
+    pragma_apply(sym);  } while (matchtoken(',')); /* enddo */   /* more? */
   needtoken(tTERM);    /* if not comma, must be semicolumn */
   return ident;
 }
@@ -3235,20 +3256,7 @@ SC_FUNC symbol *fetchfunc(char *name,int tag)
     /* set the required stack size to zero (only for non-native functions) */
     sym->x.stacksize=1;         /* 1 for PROC opcode */
   } /* if */
-  if (pc_deprecate!=NULL) {
-    assert(sym!=NULL);
-    sym->flags|=flagDEPRECATED;
-    if (sc_status==statWRITE) {
-      if (sym->documentation!=NULL) {
-        free(sym->documentation);
-        sym->documentation=NULL;
-      } /* if */
-      sym->documentation=pc_deprecate;
-    } else {
-      free(pc_deprecate);
-    } /* if */
-    pc_deprecate=NULL;
-  } /* if */
+  pragma_deprecated(sym);
 
   return sym;
 }
@@ -3634,6 +3642,9 @@ static void funcstub(int fnative)
   int numdim;
   symbol *sym,*sub;
   int opertok;
+  unsigned int bck_attributes;
+  char *bck_deprecate;  /* in case the user tries to use __pragma("deprecated")
+                         * on a function argument */
 
   opertok=0;
   lastst=0;
@@ -3670,6 +3681,11 @@ static void funcstub(int fnative)
       tok=lex(&val,&str);
   } /* if */
 
+  if (tok==t__PRAGMA) {
+    dopragma();
+    tok=lex(&val,&str);
+  } /* if */
+
   if (tok==tOPERATOR) {
     opertok=operatorname(symbolname);
     if (opertok==0)
@@ -3695,6 +3711,11 @@ static void funcstub(int fnative)
   } /* if */
   sym->usage|=uFORWARD;
   check_reparse(sym);
+
+  bck_attributes=pc_attributes;
+  bck_deprecate=pc_deprecate;
+  pc_attributes=0;
+  pc_deprecate=NULL;
 
   declargs(sym,FALSE);
   /* "declargs()" found the ")" */
@@ -3736,6 +3757,13 @@ static void funcstub(int fnative)
       } /* if */
     } /* if */
   } /* if */
+
+  pc_deprecate=bck_deprecate;
+  pc_attributes=bck_attributes;
+  if (matchtoken(t__PRAGMA))
+    dopragma();
+  pragma_apply(sym);
+
   needtoken(tTERM);
 
   /* attach the array to the function symbol */
@@ -3773,6 +3801,9 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   cell val,cidx,glbdecl;
   short filenum;
   int state_id;
+  unsigned int bck_attributes;
+  char *bck_deprecate;  /* in case the user tries to use __pragma("deprecated")
+                         * on a function argument */
 
   assert(litidx==0);    /* literal queue should be empty */
   litidx=0;             /* clear the literal pool (should already be empty) */
@@ -3792,6 +3823,10 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     tok=lex(&val,&str);
     if (tok==tNATIVE || (tok==tPUBLIC && stock))
       error(42);                /* invalid combination of class specifiers */
+    if (tok==t__PRAGMA) {
+      dopragma();
+      tok=lex(&val,&str);
+    } /* if */
     if (tok==tOPERATOR) {
       opertok=operatorname(symbolname);
       if (opertok==0)
@@ -3829,6 +3864,10 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
    */
   if (fpublic && (sym->usage & uFORWARD)==0 && opertok==0)
     error(235,symbolname);
+  bck_attributes=pc_attributes;
+  bck_deprecate=pc_deprecate;
+  pc_attributes=0;
+  pc_deprecate=NULL;
   /* declare all arguments */
   argcnt=declargs(sym,TRUE);
   opererror=!operatoradjust(opertok,sym,symbolname,tag);
@@ -3846,6 +3885,11 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   if (state_id>0 && (opertok!=0 || strcmp(symbolname,uMAINFUNC)==0))
     error(82);          /* operators may not have states, main() may neither */
   attachstatelist(sym,state_id);
+  pc_deprecate=bck_deprecate;
+  pc_attributes=bck_attributes;
+  if (matchtoken(t__PRAGMA))
+    dopragma();
+  pragma_apply(sym);
   /* "declargs()" found the ")"; if a ";" appears after this, it was a
    * prototype */
   if (matchtoken(';')) {
@@ -4033,12 +4077,13 @@ static int argcompare(arginfo *a1,arginfo *a2)
 static int declargs(symbol *sym,int chkshadow)
 {
   #define MAXTAGS 16
+  extern char* sc_tokens[];
   char *ptr;
   int argcnt,oldargcnt,tok,tags[MAXTAGS],numtags;
   cell val;
   arginfo arg, *arglist;
   char name[sNAMEMAX+1];
-  int ident,fpublic,fconst;
+  int ident,fpublic,fconst,fpragma;
   int idx;
 
   /* if the function is already defined earlier, get the number of arguments
@@ -4051,7 +4096,7 @@ static int declargs(symbol *sym,int chkshadow)
   argcnt=0;                             /* zero aruments up to now */
   ident=iVARIABLE;
   numtags=0;
-  fconst=FALSE;
+  fconst=fpragma=FALSE;
   fpublic= (sym->usage & uPUBLIC)!=0;
   /* the '(' parantheses has already been parsed */
   if (!matchtoken(')')){
@@ -4064,25 +4109,31 @@ static int declargs(symbol *sym,int chkshadow)
         break;
       case '&':
         if (ident!=iVARIABLE || numtags>0)
-          error(1,"-identifier-","&");
+          error(1,sc_tokens[tSYMBOL-tFIRST],"&");
         if (fconst)
           error(238, "const reference"); /* meaningless combination of class specifiers */
         ident=iREFERENCE;
         break;
       case tCONST:
-        if (ident!=iVARIABLE || numtags>0)
-          error(1,"-identifier-","const");
+        if (ident!=iVARIABLE || numtags>0 || fpragma)
+          error(1,sc_tokens[tSYMBOL-tFIRST],sc_tokens[tCONST-tFIRST]);
         fconst=TRUE;
+        break;
+      case t__PRAGMA:
+        if (ident!=iVARIABLE || numtags>0)
+          error(1,sc_tokens[tSYMBOL-tFIRST],sc_tokens[t__PRAGMA-tFIRST]);
+        dopragma();
+        fpragma=TRUE;
         break;
       case tLABEL:
         if (numtags>0)
-          error(1,"-identifier-","-tagname-");
+          error(1,sc_tokens[tSYMBOL-tFIRST],"-tagname-");
         tags[0]=pc_addtag(ptr);
         numtags=1;
         break;
       case '{':
         if (numtags>0)
-          error(1,"-identifier-","-tagname-");
+          error(1,sc_tokens[tSYMBOL-tFIRST],"-tagname-");
         numtags=0;
         while (numtags<MAXTAGS) {
           if (!matchtoken('_') && !needtoken(tSYMBOL))
@@ -4137,10 +4188,10 @@ static int declargs(symbol *sym,int chkshadow)
         argcnt++;
         ident=iVARIABLE;
         numtags=0;
-        fconst=FALSE;
+        fconst=fpragma=FALSE;
         break;
       case tELLIPS:
-        if (ident!=iVARIABLE)
+        if (ident!=iVARIABLE || fpragma)
           error(10);                    /* illegal function or declaration */
         if (fconst)
           error(238, "const variable arguments"); /* meaningless combination of class specifiers */
@@ -4171,7 +4222,7 @@ static int declargs(symbol *sym,int chkshadow)
       default:
         error(10);                      /* illegal function or declaration */
       } /* switch */
-    } while (tok=='&' || tok==tLABEL || tok==tCONST
+    } while (tok=='&' || tok==tLABEL || tok==tCONST || tok==t__PRAGMA
              || (tok!=tELLIPS && matchtoken(','))); /* more? */
     /* if the next token is not ",", it should be ")" */
     needtoken(')');
@@ -4360,6 +4411,9 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
     if (fconst)
       argsym->usage|=uCONST;
   } /* if */
+  if (matchtoken(t__PRAGMA))
+    dopragma();
+  pragma_apply(argsym);
 }
 
 static int has_referrers(symbol *entry)
@@ -8090,4 +8144,189 @@ static int *readwhile(void)
   } else {
     return (wqptr-wqSIZE);
   } /* if */
+}
+
+static void dopragma(void)
+{
+  extern char *sc_tokens[];
+  int tok;
+  int bck_litidx,bck_packstr;
+  int i;
+  int hasparams;
+  cell val;
+  char *str;
+
+  needtoken('(');
+
+  /* The options are specified as strings, e.g.
+   *   native Func() __pragma("naked", "deprecated - use OtherFunc() instead");
+   * In order to process the options, we can reuse the standard string parsing
+   * mechanism. This way, as a bonus, we'll also be able to use multi-line
+   * strings and the stringization operator.
+   */
+  /* first, back up litidx, so we can remove the string from the literal queue later */
+  bck_litidx=litidx;
+  /* also, force the string to be packed by default, so it would be easier to process it */
+  bck_packstr=sc_packstr;
+  sc_packstr=TRUE;
+
+  do {
+    /* read the option string */
+    tok=lex(&val,&str);
+    if (tok!=tSTRING) {
+      char tokstr[2];
+      if (tok<tFIRST) {
+        sprintf(tokstr,"%c",tok);
+        str=tokstr;
+      } else {
+        str=sc_tokens[tok-tBEGIN];
+      } /* if */
+      error(1,sc_tokens[tSTRING-tFIRST],str);
+      goto next;
+    } /* if */
+    assert(litidx>bck_litidx);
+
+    /* the user shouldn't prepend "!" to the option string */
+    if (litq[val]<=UNPACKEDMAX) {
+      error(1,sc_tokens[tSTRING-tFIRST],"!");
+      goto next;
+    } /* if */
+
+    /* swap the cell bytes if we're on a Little Endian platform */
+#if BYTE_ORDER==LITTLE_ENDIAN
+    { /* local */
+      char *bytes;
+      i=0;
+      do {
+        char t;
+        bytes=(char *)&litq[val+i];
+        i++;
+        #if PAWN_CELL_SIZE>=16
+          t=bytes[0], bytes[0]=bytes[sizeof(cell)-1], bytes[sizeof(cell)-1]=t;
+        #if PAWN_CELL_SIZE>=32
+          t=bytes[1], bytes[1]=bytes[sizeof(cell)-2], bytes[sizeof(cell)-2]=t;
+        #if PAWN_CELL_SIZE==64
+          t=bytes[2], bytes[2]=bytes[sizeof(cell)-3], bytes[sizeof(cell)-3]=t;
+          t=bytes[3], bytes[3]=bytes[sizeof(cell)-4], bytes[sizeof(cell)-4]=t;
+        #endif // PAWN_CELL_SIZE==64
+        #endif // PAWN_CELL_SIZE==32
+        #endif // PAWN_CELL_SIZE==16
+      } while (bytes[0]!='\0' && bytes[1]!='\0' && bytes[2]!='\0' && bytes[3]!='\0');
+    } /* local */
+#endif
+
+    /* split the option name from parameters */
+    str=(char*)&litq[val];
+    for (i=0; str[i]!='\0' && str[i]!=' '; i++) {}
+    hasparams=(str[i]!='\0');
+    str[i]='\0';
+    if (hasparams)
+      while (str[++i]==' ') {}
+
+    /* check the option name, set the corresponding attribute flag
+     * and parse the argument(s), if needed */
+    if (!strcmp(str,"deprecated")) {
+      free(pc_deprecate);
+      pc_deprecate=strdup(&str[i]);
+      if (pc_deprecate==NULL)
+        error(103);     /* insufficient memory */
+      pc_attributes |= (1U << attrDEPRECATED);
+    } else if (!strcmp(str,"unused")) {
+      pc_attributes |= (1U << attrUNUSED);
+    } else if (!strcmp(str,"unread")) {
+      pc_attributes |= (1U << attrUNREAD);
+    } else if (!strcmp(str,"unwritten")) {
+      pc_attributes |= (1U << attrUNWRITTEN);
+    } else if (!strcmp(str,"nodestruct")) {
+      pc_attributes |= (1U << attrNODESTRUCT);
+    } else if (!strcmp(str,"naked")) {
+      pc_attributes |= (1U << attrNAKED);
+    } else {
+      error(207);       /* unknown #pragma */
+    } /* if */
+
+  next:
+    /* remove the string from the literal queue */
+    litidx=bck_litidx;
+  } while (matchtoken(','));
+
+  needtoken(')');
+  sc_packstr=bck_packstr;
+}
+
+static void pragma_apply(symbol *sym)
+{
+  int attr;
+
+  /* make sure we have enough space for all attribute flags */
+  assert_static((int)NUM_ATTRS<=sizeof(pc_attributes)*8);
+
+  /* if no attributes are set, then we have a quick exit */
+  if (pc_attributes==0)
+    return;
+
+  assert(sym!=NULL);
+
+  for (attr=0; attr<NUM_ATTRS; attr++) {
+    if ((pc_attributes & (1U << attr))==0)
+      continue;
+    switch (attr) {
+    case attrDEPRECATED:
+      pragma_deprecated(sym);
+      break;
+    case attrUNREAD:
+    case attrUNWRITTEN:
+    case attrUNUSED:
+      pragma_unused(sym,(attr==attrUNREAD),(attr==attrUNWRITTEN));
+      break;
+    case attrNODESTRUCT:
+      pragma_nodestruct(sym);
+      break;
+    case attrNAKED:
+      if (sym->ident==iFUNCTN)
+        sym->flags=flagNAKED;
+      break;
+    default:
+      assert(0);
+    } /* switch */
+  } /* for */
+
+  pc_attributes=0;
+}
+
+SC_FUNC void pragma_deprecated(symbol *sym)
+{
+  if (pc_deprecate!=NULL) {
+    if (sym->ident==iFUNCTN) {
+      sym->flags |= flagDEPRECATED;
+      if (sc_status==statWRITE) {
+        if (sym->documentation!=NULL)
+          free(sym->documentation);
+        sym->documentation=pc_deprecate;
+        pc_deprecate=NULL;
+      } /* if */
+    } /* if */
+    free(pc_deprecate);
+    pc_deprecate=NULL;
+  } /* if */
+}
+
+SC_FUNC void pragma_unused(symbol *sym, int unread, int unwritten)
+{
+  assert(!unread || !unwritten);
+  /* mark as read if the pragma wasn't "unwritten" */
+  if (!unwritten) {
+    sym->usage |= uREAD;
+    sym->usage &= ~uASSIGNED;
+  } /* if */
+  /* mark as written if the pragma wasn't "unread" */
+  if (sym->ident == iVARIABLE || sym->ident == iREFERENCE
+      || sym->ident == iARRAY || sym->ident == iREFARRAY)
+    sym->usage |= unread ? 0 : uWRITTEN;
+}
+
+SC_FUNC void pragma_nodestruct(symbol *sym)
+{
+  if (sym->ident==iVARIABLE || sym->ident==iARRAY)
+    sym->usage |= uNODESTRUCT;
 }

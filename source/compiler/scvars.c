@@ -100,6 +100,7 @@ SC_VDEFINE int pc_recursion=FALSE;          /* enable detailed recursion report?
 SC_VDEFINE int pc_retexpr=FALSE;            /* true if the current expression is a part of a "return" statement */
 SC_VDEFINE int pc_retheap=0;                /* heap space (in bytes) to be manually freed when returning an array returned by another function */
 SC_VDEFINE int pc_nestlevel=0;              /* number of active (open) compound statements */
+SC_VDEFINE unsigned int pc_attributes=0;    /* currently set attribute flags (for the "__pragma" operator) */
 
 SC_VDEFINE constvalue_root sc_automaton_tab = { NULL, NULL}; /* automaton table */
 SC_VDEFINE constvalue_root sc_state_tab = { NULL, NULL};   /* state table */

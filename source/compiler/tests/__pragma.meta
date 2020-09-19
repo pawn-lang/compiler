@@ -1,0 +1,11 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+__pragma.pwn(6) : error 001: expected token: "-identifier-", but found "const"
+__pragma.pwn(10) : error 001: expected token: "-identifier-", but found "__pragma"
+__pragma.pwn(31) : warning 234: function is deprecated (symbol "Func") - use OtherFunc() instead
+__pragma.pwn(28) : warning 203: symbol is never used: "f"
+__pragma.pwn(24) : warning 204: symbol is assigned a value that is never used: "e"
+__pragma.pwn(24 -- 37) : warning 203: symbol is never used: "operator~(Tag:)"
+"""
+}
