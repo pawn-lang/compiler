@@ -134,6 +134,7 @@ typedef struct s_symbol {
     struct {
       int index;        /* array & enum: tag of array indices or the enum item */
       int field;        /* enumeration fields, where a size is attached to the field */
+      int unique;       /* number of enumeration elements with unique value */
     } tags;             /* extra tags */
     constvalue *lib;    /* native function: library it is part of */
     long stacksize;     /* normal/public function: stack requirements */

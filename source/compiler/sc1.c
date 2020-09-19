@@ -2935,6 +2935,7 @@ static void decl_enum(int vclass,int fstatic)
   cell val,value,size;
   char *str;
   int tag,explicittag;
+  int unique;
   int inctok;
   int warn_overflow;
   cell increment;
@@ -2992,9 +2993,10 @@ static void decl_enum(int vclass,int fstatic)
     enumsym=add_constant(enumname,0,vclass,tag);
     if (enumsym!=NULL) {
       enumsym->usage |= uENUMROOT;
+      unique=0;
       if (fstatic)
         enumsym->fnumber=filenum;
-    }
+    } /* if */
     /* start a new list for the element names */
     if ((enumroot=(constvalue_root*)malloc(sizeof(constvalue_root)))==NULL)
       error(103);                       /* insufficient memory (fatal error) */
@@ -3056,6 +3058,9 @@ static void decl_enum(int vclass,int fstatic)
     if (fstatic)
       sym->fnumber=filenum;
 
+    if (enumroot!=NULL && find_constval_byval(enumroot,value)==NULL)
+      unique++;
+
     /* add the constant to a separate list as well */
     if (enumroot!=NULL) {
       sym->usage |= uENUMFIELD;
@@ -3078,6 +3083,7 @@ static void decl_enum(int vclass,int fstatic)
   if (enumsym!=NULL) {
     assert((enumsym->usage & uENUMROOT)!=0);
     enumsym->addr=value;
+    enumsym->x.tags.unique=unique;
     /* assign the constant list */
     assert(enumroot!=NULL);
     enumsym->dim.enumlist=enumroot;
@@ -5943,6 +5949,9 @@ static void doswitch(void)
   int swdefault,casecount;
   int tok,endtok;
   int swtag,csetag;
+  int enumsymcount,diff;
+  int save_fline;
+  symbol *enumsym,*csesym;
   int ident;
   cell val;
   char *str;
@@ -5962,6 +5971,17 @@ static void doswitch(void)
   lbl_table=getlabel();
   lbl_case=0;                   /* just to avoid a compiler warning */
   ffswitch(lbl_table);
+
+  save_fline=fline;
+  enumsym=NULL;
+  if (swtag!=0) {
+    constvalue *tagsym=find_tag_byval(swtag);
+    assert(tagsym->name!=NULL);
+    enumsymcount=0;
+    enumsym=findconst(tagsym->name,NULL);
+    if (enumsym!=NULL && (enumsym->tag!=swtag || enumsym->dim.enumlist==NULL))
+      enumsym=NULL;
+  } /* if */
 
   if (matchtoken(tBEGIN)) {
     endtok=tEND;
@@ -5995,8 +6015,14 @@ static void doswitch(void)
          *     parse all expressions until that special token.
          */
 
-        constexpr(&val,&csetag,NULL);
+        constexpr(&val,&csetag,&csesym);
         check_tagmismatch(swtag,csetag,TRUE,-1);
+        if (enumsym!=NULL) {
+          if (csesym!=NULL && csesym->parent==enumsym)
+            enumsymcount++;
+          else
+            enumsym=NULL;
+        } /* if */
         /* Search the insertion point (the table is kept in sorted order, so
          * that advanced abstract machines can sift the case table with a
          * binary search). Check for duplicate case values at the same time.
@@ -6024,6 +6050,7 @@ static void doswitch(void)
           if (end<=val)
             error(50);                  /* invalid range */
           check_tagmismatch(swtag,csetag,TRUE,-1);
+          enumsym=NULL; /* stop counting the number of covered enum items */
           while (++val<=end) {
             casecount++;
             /* find the new insertion point */
@@ -6069,6 +6096,29 @@ static void doswitch(void)
     } /* switch */
   } while (tok!=endtok);
   restoreassignments(pc_nestlevel+1,assignments);
+
+  if (enumsym!=NULL && swdefault==FALSE && (diff=enumsym->x.tags.unique-enumsymcount)<=2) {
+    constvalue_root *enumlist=enumsym->dim.enumlist;
+    constvalue *val,*prev=NULL,*save_next=NULL;
+    for (val=enumlist->first; val!=NULL; prev=val,val=val->next) {
+      /* if multiple enum items share the same value, we only want to pick the first one */
+      if (prev!=NULL) {
+        /* see if there's another constvalue before the current one that has the same value */
+        constvalue *save_next=prev->next;
+        constvalue *found;
+        prev->next=NULL;
+        found=find_constval_byval(enumlist,val->value);
+        prev->next=save_next;
+        if (found!=NULL)
+          continue;
+      } /* if */
+      /* check if the value of this constant is handled in switch, if so - continue */
+      if (find_constval_byval(&caselist,val->value)!=NULL)
+        continue;
+      error(244,val->name); /* enum item not handled in switch */
+      /*  */
+    } /* while */
+  } /* if */
 
   #if !defined NDEBUG
     /* verify that the case table is sorted (unfortunatly, duplicates can

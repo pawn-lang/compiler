@@ -1,0 +1,7 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+warning_244.pwn(37) : warning 244: enum item "CONST2_3" not handled in switch
+warning_244.pwn(37) : warning 244: enum item "CONST2_5" not handled in switch
+"""
+}

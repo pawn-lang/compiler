@@ -200,7 +200,8 @@ static char *warnmsg[] = {
 /*240*/  "previously assigned value is never used (symbol \"%s\")\n",
 /*241*/  "negative or too big shift count\n",
 /*242*/  "shift overflow in enum item declaration (symbol \"%s\")\n",
-/*243*/  "redundant code: switch control expression is constant\n"
+/*243*/  "redundant code: switch control expression is constant\n",
+/*244*/  "enum item \"%s\" not handled in switch\n"
 };
 
 static char *noticemsg[] = {
