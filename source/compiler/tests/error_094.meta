@@ -1,0 +1,9 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+error_094.pwn(6) : error 094: division by zero
+error_094.pwn(7) : error 094: division by zero
+error_094.pwn(13) : error 094: division by zero
+error_094.pwn(14) : error 094: division by zero
+"""
+}
