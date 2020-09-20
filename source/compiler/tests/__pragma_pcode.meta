@@ -1,0 +1,12 @@
+{
+  'test_type': 'pcode_check',
+  'code_pattern': r"""
+[0-9a-f]+  halt 00000000
+[0-9a-f]+  nop
+
+[0-9a-f]+  proc
+[0-9a-f]+  push.c 00000000
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  retn
+"""
+}
