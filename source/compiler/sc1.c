@@ -3098,7 +3098,7 @@ static void decl_enum(int vclass,int fstatic)
       sym->usage |= uENUMFIELD;
       append_constval(enumroot,constname,value,tag);
     } /* if */
-    if (inctok!=taADD && value==0 && increment!=0) {
+    if (inctok!=taADD && value==0 && increment!=0 && noeffect_sym==NULL) {
       warn_noeffect=TRUE;
       noeffect_sym=sym;
     } /* if */
