@@ -2952,16 +2952,18 @@ static void decl_const(int vclass)
  */
 static void decl_enum(int vclass,int fstatic)
 {
+  extern const char *sc_tokens[];
   char enumname[sNAMEMAX+1],constname[sNAMEMAX+1];
   cell val,value,size;
   char *str;
   int tag,explicittag;
   int unique;
   int inctok;
-  int warn_overflow;
+  int warn_overflow,warn_noeffect;
   cell increment;
   constvalue_root *enumroot=NULL;
   symbol *enumsym=NULL;
+  symbol *noeffect_sym=NULL;
   short filenum;
 
   filenum=fcurrent;
@@ -3027,7 +3029,7 @@ static void decl_enum(int vclass,int fstatic)
   needtoken('{');
   /* go through all constants */
   value=0;                              /* default starting value */
-  warn_overflow=FALSE;
+  warn_overflow=warn_noeffect=FALSE;
   do {
     int idxtag,fieldtag;
     int symline;
@@ -3052,12 +3054,21 @@ static void decl_enum(int vclass,int fstatic)
     } /* if */
     if (matchtoken('=')) {
       constexpr(&value,NULL,NULL);      /* get value */
-      warn_overflow=FALSE;
-    } else if (warn_overflow) {
-      errorset(sSETPOS,symline);
-      error(242,constname);             /* shift overflow for enum item */
-      errorset(sSETPOS,-1);
-      warn_overflow=FALSE;
+      warn_overflow=warn_noeffect=FALSE;
+    } else {
+      if (warn_overflow) {
+        errorset(sSETPOS,symline);
+        error(242,constname);           /* shift overflow for enum item */
+        errorset(sSETPOS,-1);
+        warn_overflow=FALSE;
+      } /* if */
+      if (warn_noeffect) {
+        const char *str=sc_tokens[inctok-tFIRST],*name=noeffect_sym->name;
+        errorset(sSETPOS,noeffect_sym->lnumber);
+        error(245,str,increment,name);  /* enum increment has no effect on zero value */
+        errorset(sSETPOS,-1);
+        warn_noeffect=FALSE;
+      } /* if */
     } /* if */
     /* add_constant() checks whether a variable (global or local) or
      * a constant with the same name already exists
@@ -3086,6 +3097,10 @@ static void decl_enum(int vclass,int fstatic)
     if (enumroot!=NULL) {
       sym->usage |= uENUMFIELD;
       append_constval(enumroot,constname,value,tag);
+    } /* if */
+    if (inctok!=taADD && value==0 && increment!=0) {
+      warn_noeffect=TRUE;
+      noeffect_sym=sym;
     } /* if */
     if (inctok==taADD) {
       value+=size;
