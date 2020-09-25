@@ -1,5 +1,3 @@
-#pragma option -d1 // TODO: Remove this line when #544 is merged
-
 main()
 {
 	enum e1
@@ -76,11 +74,11 @@ main()
 
 	enum (*= 1)
 	{
-		e5Elem1,
-		e5Elem2,
-		e5Elem3
+		e6Elem1 = 1,
+		e6Elem2,
+		e6Elem3
 	};
-	#assert _:e5Elem1 == 0
-	#assert _:e5Elem2 == 0
-	#assert _:e5Elem3 == 0
+	#assert _:e6Elem1 == 1
+	#assert _:e6Elem2 == 1
+	#assert _:e6Elem3 == 1
 }
