@@ -3060,7 +3060,7 @@ static void decl_enum(int vclass,int fstatic)
         errorset(sSETPOS,symline);
         error(242,constname);           /* shift overflow for enum item */
         errorset(sSETPOS,-1);
-        warn_overflow=FALSE;
+        /* don't reset "warn_overflow" yet, we'll need to use it later */
       } /* if */
       if (warn_noeffect) {
         const char *str=sc_tokens[inctok-tFIRST],*name=noeffect_sym->name;
@@ -3098,10 +3098,12 @@ static void decl_enum(int vclass,int fstatic)
       sym->usage |= uENUMFIELD;
       append_constval(enumroot,constname,value,tag);
     } /* if */
-    if (inctok!=taADD && value==0 && increment!=0 && noeffect_sym==NULL) {
+    if (inctok!=taADD && value==0 && increment!=0
+        && noeffect_sym==NULL && warn_overflow==FALSE) {
       warn_noeffect=TRUE;
       noeffect_sym=sym;
     } /* if */
+    warn_overflow=FALSE;
     if (inctok==taADD) {
       value+=size;
     } else if (inctok==taMULT) {
