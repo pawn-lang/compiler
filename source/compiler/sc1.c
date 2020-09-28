@@ -3057,8 +3057,10 @@ static void decl_enum(int vclass,int fstatic)
       warn_overflow=warn_noeffect=FALSE;
     } else {
       if (warn_overflow) {
+        int num=(inctok==taSHL) ? 242   /* shift overflow in enum item declaration */
+                                : 246;  /* multiplication overflow in enum item declaration */
         errorset(sSETPOS,symline);
-        error(242,constname);           /* shift overflow for enum item */
+        error(num,constname);
         errorset(sSETPOS,-1);
         /* don't reset "warn_overflow" yet, we'll need to use it later */
       } /* if */
@@ -3107,6 +3109,17 @@ static void decl_enum(int vclass,int fstatic)
     if (inctok==taADD) {
       value+=size;
     } else if (inctok==taMULT) {
+#if PAWN_CELL_SIZE<64
+      /* use a bigger type to detect overflow */
+      int64_t t=(int64_t)value*(int64_t)size*(int64_t)increment;
+      if (t>(int64_t)CELL_MAX || t<(~(int64_t)CELL_MAX))
+#else
+      /* casting to a bigger type isn't possible as we don't have int128_t,
+       * so we'll have to use slower division */
+      cell t=size*increment;
+      if (value!=0 && (value*t)/value!=t)
+#endif
+        warn_overflow=TRUE;
       value*=(size*increment);
     } else { // taSHL
       if ((ucell)value>=((ucell)1 << (PAWN_CELL_SIZE-increment)))

@@ -203,7 +203,8 @@ static char *warnmsg[] = {
 /*242*/  "shift overflow in enum item declaration (symbol \"%s\")\n",
 /*243*/  "redundant code: switch control expression is constant\n",
 /*244*/  "enum item \"%s\" not handled in switch\n",
-/*245*/  "enum increment \"%s %d\" has no effect on zero value (symbol \"%s\")\n"
+/*245*/  "enum increment \"%s %d\" has no effect on zero value (symbol \"%s\")\n",
+/*246*/  "multiplication overflow in enum item declaration (symbol \"%s\")\n"
 };
 
 static char *noticemsg[] = {
