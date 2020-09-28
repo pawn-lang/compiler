@@ -2475,7 +2475,8 @@ static int declloc(int fstatic)
       sym->usage |= uREAD;
     if (matchtoken(t__PRAGMA))
       dopragma();
-    pragma_apply(sym);  } while (matchtoken(',')); /* enddo */   /* more? */
+    pragma_apply(sym);
+  } while (matchtoken(',')); /* enddo */   /* more? */
   needtoken(tTERM);    /* if not comma, must be semicolumn */
   return ident;
 }
