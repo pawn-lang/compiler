@@ -1,0 +1,8 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+gh_403.pwn(3) : warning 201: redefinition of constant/macro (symbol "test1")
+gh_403.pwn(10) : warning 201: redefinition of constant/macro (symbol "test2")
+gh_403.pwn(18) : warning 201: redefinition of constant/macro (symbol "test3")
+"""
+}
