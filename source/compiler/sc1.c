@@ -3017,6 +3017,10 @@ static void decl_enum(int vclass,int fstatic)
       unique=0;
       if (fstatic)
         enumsym->fnumber=filenum;
+      /* if we redefined a root symbol of another enum, then we need to delete
+       * the previous list of enum elements, otherwise it would be leaked */
+      if (enumsym->dim.enumlist!=NULL)
+        delete_consttable(enumsym->dim.enumlist);
     } /* if */
     /* start a new list for the element names */
     if ((enumroot=(constvalue_root*)malloc(sizeof(constvalue_root)))==NULL)
@@ -3065,27 +3069,37 @@ static void decl_enum(int vclass,int fstatic)
     sym=add_constant(constname,value,vclass,tag);
     if (sym==NULL)
       continue;                         /* error message already given */
-    /* set the item tag and the item size, for use in indexing arrays */
-    sym->x.tags.index=idxtag;
-    sym->x.tags.field=fieldtag;
-    sym->dim.array.length=size;
-    sym->dim.array.level=0;
-    sym->parent=enumsym;
-    if (enumsym)
-      enumsym->child=sym;
-    if (vclass==sLOCAL)
-      sym->compound=pc_nestlevel;
+    /* modify the symbol only if it's not the current enum root symbol
+     * being redefined by the user */
+    if (sym!=enumsym) {
+      /* clear the "enum root" flag and delete the list of enum elements,
+       * in case we redefined a root symbol of another enum */
+      if ((sym->usage & uENUMROOT)!=0) {
+        sym->usage &= ~uENUMROOT;
+        delete_consttable(sym->dim.enumlist);
+      } /* if */
+      /* set the item tag and the item size, for use in indexing arrays */
+      sym->x.tags.index=idxtag;
+      sym->x.tags.field=fieldtag;
+      sym->dim.array.length=size;
+      sym->dim.array.level=0;
+      sym->parent=enumsym;
+      if (enumsym)
+        enumsym->child=sym;
+      if (vclass==sLOCAL)
+        sym->compound=pc_nestlevel;
 
-    if (fstatic)
-      sym->fnumber=filenum;
+      if (fstatic)
+        sym->fnumber=filenum;
 
-    if (enumroot!=NULL && find_constval_byval(enumroot,value)==NULL)
-      unique++;
+      if (enumroot!=NULL && find_constval_byval(enumroot,value)==NULL)
+        unique++;
 
-    /* add the constant to a separate list as well */
-    if (enumroot!=NULL) {
-      sym->usage |= uENUMFIELD;
-      append_constval(enumroot,constname,value,tag);
+      /* add the constant to a separate list as well */
+      if (enumroot!=NULL) {
+        sym->usage |= uENUMFIELD;
+        append_constval(enumroot,constname,value,tag);
+      } /* if */
     } /* if */
     if (inctok==taADD) {
       value+=size;
