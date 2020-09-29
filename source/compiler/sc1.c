@@ -5344,7 +5344,7 @@ SC_FUNC symbol *add_constant(char *name,cell val,int vclass,int tag)
     if (redef) {
       error(21,name);           /* symbol already defined */
       return NULL;
-    } else if (sym->addr!=val) {
+    } else if (sym->addr!=val || (sym->usage & uENUMROOT)!=0) {
       error(201,name);          /* redefinition of constant (different value) */
       sym->addr=val;            /* set new value */
     } /* if */
