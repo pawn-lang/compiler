@@ -176,7 +176,7 @@ static char *warnmsg[] = {
 /*215*/  "expression has no effect\n",
 /*216*/  "nested comment\n",
 /*217*/  "loose indentation\n",
-/*218*/  "old style prototypes used with optional semicolumns\n",
+/*218*/  "old style prototypes used with optional semicolons\n",
 /*219*/  "local variable \"%s\" shadows a variable at a preceding level\n",
 /*220*/  "expression with tag override must appear between parentheses\n",
 /*221*/  "label name \"%s\" shadows tag name\n",
@@ -227,7 +227,7 @@ static int errwarn;
  *
  *  Outputs an error message (note: msg is passed optionally).
  *  If an error is found, the variable "errflag" is set and subsequent
- *  errors are ignored until lex() finds a semicolumn or a keyword
+ *  errors are ignored until lex() finds a semicolon or a keyword
  *  (lex() resets "errflag" in that case).
  *
  *  Global references: inpfname   (reffered to only)

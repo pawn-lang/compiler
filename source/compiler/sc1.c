@@ -2280,7 +2280,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
       dopragma();
     pragma_apply(sym);
   } while (matchtoken(',')); /* enddo */   /* more? */
-  needtoken(tTERM);    /* if not comma, must be semicolumn */
+  needtoken(tTERM);    /* if not comma, must be semicolon */
 }
 
 /*  declloc     - declare local symbols
@@ -2472,7 +2472,7 @@ static int declloc(int fstatic)
     if (matchtoken(t__PRAGMA))
       dopragma();
     pragma_apply(sym);  } while (matchtoken(',')); /* enddo */   /* more? */
-  needtoken(tTERM);    /* if not comma, must be semicolumn */
+  needtoken(tTERM);    /* if not comma, must be semicolon */
   return ident;
 }
 
@@ -3925,7 +3925,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   if (matchtoken(';')) {
     sym->usage|=uFORWARD;
     if (!sc_needsemicolon)
-      error(218);       /* old style prototypes used with optional semicolumns */
+      error(218);       /* old style prototypes used with optional semicolons */
     delete_symbols(&loctab,0,TRUE,TRUE);  /* prototype is done; forget everything */
     return TRUE;
   } /* if */

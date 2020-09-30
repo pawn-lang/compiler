@@ -2360,7 +2360,7 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
       lptr+=1;          /* skip final quote */
     else
       error(27);        /* invalid character constant (must be one character) */
-  } else if (*lptr==';') {      /* semicolumn resets "error" flag */
+  } else if (*lptr==';') {      /* semicolon resets "error" flag */
     _lextok=';';
     lptr+=1;
     errorset(sRESET,0); /* reset error flag (clear the "panic mode")*/
