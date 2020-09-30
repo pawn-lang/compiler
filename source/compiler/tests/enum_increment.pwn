@@ -43,8 +43,8 @@ main()
 	#assert sizeof arr3[e3Elem3] == 1
 	#assert _:e3Elem1 == 1
 	#assert _:e3Elem2 == 2  // 1 * (1 * 2); the first "1" is the value of the previous
-	                        // enum item, the second "1" is the size of the previous
-	                        // item, and "2" is the increment (multiplier)
+	                        // enum element, the second "1" is the size of the previous
+	                        // element, and "2" is the increment (multiplier)
 	#assert _:e3Elem3 == 12 // 2 * (3 * 2)
 
 	enum e4 (<<= 2)

@@ -3057,8 +3057,8 @@ static void decl_enum(int vclass,int fstatic)
       warn_overflow=warn_noeffect=FALSE;
     } else {
       if (warn_overflow) {
-        int num=(inctok==taSHL) ? 242   /* shift overflow in enum item declaration */
-                                : 246;  /* multiplication overflow in enum item declaration */
+        int num=(inctok==taSHL) ? 242   /* shift overflow in enum element declaration */
+                                : 246;  /* multiplication overflow in enum element declaration */
         errorset(sSETPOS,symline);
         error(num,constname);
         errorset(sSETPOS,-1);
@@ -6139,7 +6139,7 @@ static void doswitch(void)
           if (end<=val)
             error(50);                  /* invalid range */
           check_tagmismatch(swtag,csetag,TRUE,-1);
-          enumsym=NULL; /* stop counting the number of covered enum items */
+          enumsym=NULL; /* stop counting the number of covered enum elements */
           while (++val<=end) {
             casecount++;
             /* find the new insertion point */
@@ -6190,7 +6190,7 @@ static void doswitch(void)
     constvalue_root *enumlist=enumsym->dim.enumlist;
     constvalue *val,*prev=NULL,*save_next=NULL;
     for (val=enumlist->first; val!=NULL; prev=val,val=val->next) {
-      /* if multiple enum items share the same value, we only want to pick the first one */
+      /* if multiple enum elements share the same value, we only want to count the first one */
       if (prev!=NULL) {
         /* see if there's another constvalue before the current one that has the same value */
         constvalue *save_next=prev->next;
@@ -6204,7 +6204,7 @@ static void doswitch(void)
       /* check if the value of this constant is handled in switch, if so - continue */
       if (find_constval_byval(&caselist,val->value)!=NULL)
         continue;
-      error(244,val->name); /* enum item not handled in switch */
+      error(244,val->name); /* enum element not handled in switch */
       /*  */
     } /* while */
   } /* if */

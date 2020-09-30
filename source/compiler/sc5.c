@@ -200,11 +200,11 @@ static char *warnmsg[] = {
 /*239*/  "literal array/string passed to a non-const parameter\n",
 /*240*/  "previously assigned value is never used (symbol \"%s\")\n",
 /*241*/  "negative or too big shift count\n",
-/*242*/  "shift overflow in enum item declaration (symbol \"%s\")\n",
+/*242*/  "shift overflow in enum element declaration (symbol \"%s\")\n",
 /*243*/  "redundant code: switch control expression is constant\n",
-/*244*/  "enum item \"%s\" not handled in switch\n",
+/*244*/  "enum element \"%s\" not handled in switch\n",
 /*245*/  "enum increment \"%s %d\" has no effect on zero value (symbol \"%s\")\n",
-/*246*/  "multiplication overflow in enum item declaration (symbol \"%s\")\n"
+/*246*/  "multiplication overflow in enum element declaration (symbol \"%s\")\n"
 };
 
 static char *noticemsg[] = {

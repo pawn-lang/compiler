@@ -29,7 +29,7 @@ main()
 
 	switch (var2)
 	{
-		// Two or less items of a named enum are not covered by a switch
+		// Two or less elements of a named enum are not covered by a switch
 		// statement; warning 241 must be printed in this case.
 		// Also, 'CONST2_4' has the same value as 'CONST2_3', so the said
 		// warning must be printed only for 'CONST2_3' and 'CONST2_5'.
@@ -46,7 +46,7 @@ main()
 
 	switch (var2)
 	{
-		// More than two enum items are missing, which might be intentional,
+		// More than two enum elements are missing, which might be intentional,
 		// so warning 241 should NOT be printed in this case.
 		case CONST2_1: {}
 	}
