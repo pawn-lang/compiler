@@ -1557,10 +1557,10 @@ static void setconstants(void)
 
   assert(sc_status==statIDLE);
   append_constval(&tagname_tab,"_",0,0);/* "untagged" */
-  append_constval(&tagname_tab,"bool",1,0);
+  append_constval(&tagname_tab,"bool",BOOLTAG,0);
 
-  add_builtin_constant("true",1,sGLOBAL,1);     /* boolean flags */
-  add_builtin_constant("false",0,sGLOBAL,1);
+  add_builtin_constant("true",1,sGLOBAL,BOOLTAG);/* boolean flags */
+  add_builtin_constant("false",0,sGLOBAL,BOOLTAG);
   add_builtin_constant("EOS",0,sGLOBAL,0);      /* End Of String, or '\0' */
   #if PAWN_CELL_SIZE==16
   add_builtin_constant("cellbits",16,sGLOBAL,0);

@@ -535,6 +535,7 @@ typedef enum s_optmark {
   #define FIXEDTAG    0x40000000Lu
 #endif
 #define TAGMASK       (~PUBLICTAG)
+#define BOOLTAG       1
 #define CELL_MAX      (((ucell)1 << (sizeof(cell)*8-1)) - 1)
 
 #define MAX_INSTR_LEN   30
