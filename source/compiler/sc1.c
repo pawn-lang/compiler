@@ -3453,7 +3453,7 @@ static int check_operatortag(int opertok,int resulttag,char *opername)
   case tlNE:
   case tlLE:
   case tlGE:
-    if (resulttag!=pc_addtag("bool")) {
+    if (resulttag!=BOOLTAG) {
       error(63,opername,"bool:"); /* operator X requires a "bool:" result tag */
       return FALSE;
     } /* if */
@@ -5811,7 +5811,7 @@ static int test(int label,int parens,int invert)
     } /* if */
     return testtype;
   } /* if */
-  if (tag!=0 && tag!=pc_addtag("bool"))
+  if (tag!=0 && tag!=BOOLTAG)
     if (check_userop(lneg,tag,0,1,NULL,&tag))
       invert= !invert;          /* user-defined ! operator inverted result */
   if (invert)
