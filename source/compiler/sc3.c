@@ -1083,8 +1083,7 @@ static int hier14(value *lval1)
   if (oper==NULL) {
     symbol *sym=lval3.sym;
     assert(sym!=NULL);
-    if ((sym->usage & uASSIGNED)!=0 && sym->assignlevel>=pc_nestlevel
-        && (sym->vclass==sLOCAL || sym->vclass==sSTATIC))
+    if ((sym->usage & uASSIGNED)!=0 && sym->assignlevel>=pc_nestlevel && sym->vclass==sLOCAL)
       error(240,sym->name); /* previously assigned value is unused */
     markinitialized(sym,TRUE);
     if (pc_ovlassignment)
