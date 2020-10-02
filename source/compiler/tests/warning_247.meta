@@ -1,0 +1,7 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+warning_247.pwn(9) : warning 247: use of operator "~" on a "bool:" value always results in "true"; did you mean operator "!"?
+warning_247.pwn(11) : warning 247: use of operator "~" on a "bool:" value always results in "true"; did you mean operator "!"?
+"""
+}
