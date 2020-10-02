@@ -1291,6 +1291,8 @@ static int hier2(value *lval)
     lval->constval=~lval->constval;
     if (lval->ident==iVARIABLE || lval->ident==iARRAYCELL)
       lval->ident=iEXPRESSION;
+    if (lval->tag==BOOLTAG)
+      error(makelong(247,3),"!"); /* use of operator "~" on a "bool:" value always results in "true" */
     return FALSE;
   case '!':                     /* ! (logical negate) */
     if (hier2(lval))

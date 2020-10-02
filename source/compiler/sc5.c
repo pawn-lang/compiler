@@ -204,12 +204,14 @@ static char *warnmsg[] = {
 /*243*/  "redundant code: switch control expression is constant\n",
 /*244*/  "enum element \"%s\" not handled in switch\n",
 /*245*/  "enum increment \"%s %d\" has no effect on zero value (symbol \"%s\")\n",
-/*246*/  "multiplication overflow in enum element declaration (symbol \"%s\")\n"
+/*246*/  "multiplication overflow in enum element declaration (symbol \"%s\")\n",
+/*247*/  "use of operator \"~\" on a \"bool:\" value always results in \"true\"\n"
 };
 
 static char *noticemsg[] = {
 /*001*/  "; did you mean \"%s\"?\n",
-/*002*/  "; state variable out of scope\n"
+/*002*/  "; state variable out of scope\n",
+/*003*/  "; did you mean operator \"%s\"?\n"
 };
 
 #define NUM_WARNINGS    arraysize(warnmsg)
