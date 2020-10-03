@@ -1615,7 +1615,7 @@ static void setconstants(void)
   append_constval(&sc_automaton_tab,"",0,0);    /* anonymous automaton */
 }
 
-static void setstringconstants()
+static void setstringconstants(void)
 {
   time_t now;
   char timebuf[arraysize("11:22:33")];

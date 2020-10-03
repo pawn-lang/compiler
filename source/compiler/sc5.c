@@ -416,7 +416,7 @@ int pc_enablewarning(int number,int enable)
 /* pc_pushwarnings()
  * Saves currently disabled warnings, used to implement #pragma warning push
  */
-int pc_pushwarnings()
+int pc_pushwarnings(void)
 {
   void *p;
   p=calloc(sizeof(struct s_warnstack),1);
@@ -432,7 +432,7 @@ int pc_pushwarnings()
 /* pc_popwarnings()
  * This function is the reverse of pc_pushwarnings()
  */
-int pc_popwarnings()
+int pc_popwarnings(void)
 {
   void *p;
   if (warnstack.next==NULL)
@@ -451,7 +451,7 @@ void pc_seterrorwarnings(int enable)
   errwarn = enable;
 }
 
-int pc_geterrorwarnings()
+int pc_geterrorwarnings(void)
 {
   return errwarn;
 }
