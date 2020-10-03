@@ -509,7 +509,7 @@ enum {
 enum {
   sOPTIMIZE_NONE,               /* no optimization */
   sOPTIMIZE_NOMACRO,            /* no macro instructions */
-  sOPTIMIZE_DEFAULT,            /* full optimization */
+  sOPTIMIZE_FULL,               /* full optimization */
   /* ----- */
   sOPTIMIZE_NUMBER
 };
