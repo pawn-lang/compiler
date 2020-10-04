@@ -1,0 +1,7 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+warning_248.pwn(9) : warning 248: possible misuse of comma operator
+warning_248.pwn(20) : warning 248: possible misuse of comma operator
+"""
+}
