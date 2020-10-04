@@ -205,7 +205,8 @@ static char *warnmsg[] = {
 /*244*/  "enum element \"%s\" not handled in switch\n",
 /*245*/  "enum increment \"%s %d\" has no effect on zero value (symbol \"%s\")\n",
 /*246*/  "multiplication overflow in enum element declaration (symbol \"%s\")\n",
-/*247*/  "use of operator \"~\" on a \"bool:\" value always results in \"true\"\n"
+/*247*/  "use of operator \"~\" on a \"bool:\" value always results in \"true\"\n",
+/*248*/  "possible misuse of comma operator\n"
 };
 
 static char *noticemsg[] = {

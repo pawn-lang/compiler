@@ -5783,10 +5783,14 @@ static int test(int label,int parens,int invert)
   do {
     stgget(&index,&cidx);       /* mark position (of last expression) in
                                  * code generator */
+    pc_sideeffect=FALSE;
     ident=expression(&constval,&tag,&sym,TRUE);
     tok=matchtoken(',');
-    if (tok)
+    if (tok) {
+      if (!pc_sideeffect)
+        error(248);
       markexpr(sEXPR,NULL,0);
+    } /* if */
   } while (tok); /* do */
   if (endtok!=0)
     needtoken(endtok);
