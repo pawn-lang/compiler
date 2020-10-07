@@ -55,6 +55,7 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
 static void substallpatterns(unsigned char *line,int buffersize);
 static int match(char *st,int end);
 static int alpha(char c);
+static void markloopvariable(symbol *sym,int usage);
 
 #define SKIPMODE      1 /* bit field in "#if" stack */
 #define PARSEMODE     2 /* bit field in "#if" stack */
@@ -3308,6 +3309,11 @@ SC_FUNC void markusage(symbol *sym,int usage)
     sym->lnumber=fline;
   if ((usage & uREAD)!=0 && (sym->ident==iVARIABLE || sym->ident==iREFERENCE))
     sym->usage &= ~uASSIGNED;
+  if ((usage & (uREAD | uWRITTEN))!=0
+      && (sym->vclass==sLOCAL || sym->vclass==sSTATIC)
+      && (sym->ident==iVARIABLE || sym->ident==iREFERENCE
+          || sym->ident==iARRAY || sym->ident==iREFARRAY))
+    markloopvariable(sym,usage);
   /* check if (global) reference must be added to the symbol */
   if ((usage & (uREAD | uWRITTEN))!=0) {
     /* only do this for global symbols */
@@ -3338,7 +3344,7 @@ SC_FUNC void clearassignments(int fromlevel)
 {
   symbol *sym;
 
-  /* the error messages are only printed on the "writing" pass,
+  /* error messages are only printed on the "writing" pass,
    * so if we are not writing yet, then we have a quick exit */
   if (sc_status!=statWRITE)
     return;
@@ -3355,7 +3361,7 @@ SC_FUNC void memoizeassignments(int fromlevel,symstate **assignments)
   symbol *sym;
   int num;
 
-  /* the error messages are only printed on the "writing" pass,
+  /* error messages are only printed on the "writing" pass,
    * so if we are not writing yet, then we have a quick exit */
   if (sc_status!=statWRITE)
     return;
@@ -3413,6 +3419,28 @@ SC_FUNC void restoreassignments(int fromlevel,symstate *assignments)
       sym->assignlevel=fromlevel-1;
   } /* for */
   free(assignments);
+}
+
+static void markloopvariable(symbol *sym,int usage)
+{
+  while (sym->parent!=NULL)
+    sym=sym->parent;
+  /* check if the variable used inside a loop condition */
+  if (pc_loopcond) {
+    if ((usage & uWRITTEN)!=0) {
+      /* the symbol is being modified inside a loop condition before being read;
+       * set the uNOLOOPVAR flag, so later we'll know we shouldn't mark the symbol
+       * with the uLOOPVAR flag */
+      sym->usage |= uNOLOOPVAR;
+      pc_numloopvars++;
+    } else if ((usage & uREAD)!=0 && (sym->usage & (uNOLOOPVAR | uLOOPVAR))==0) {
+      sym->usage |= uLOOPVAR;
+      pc_numloopvars++;
+    } /* if */
+  } /* if */
+  /* unset the uLOOPVAR flag if the variable is being modified */
+  if ((usage & uWRITTEN)!=0)
+    sym->usage &= ~uLOOPVAR;
 }
 
 

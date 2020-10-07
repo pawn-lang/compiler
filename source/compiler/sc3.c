@@ -2177,6 +2177,7 @@ static int nesting=0;
   int nargs=0;      /* number of arguments */
   int heapalloc=0;
   int namedparams=FALSE;
+  int save_loopcond;
   value lval = {0};
   arginfo *arg;
   char arglist[sMAXARGS];
@@ -2195,7 +2196,11 @@ static int nesting=0;
     /* functions cannot be called at global scope */
     error(29); /* invalid expression, assumed zero */
     return;
-  }
+  } /* if */
+  /* make the compiler not count variables passed as function arguments
+   * as being used inside a loop condition */
+  save_loopcond=pc_loopcond;
+  pc_loopcond=FALSE;
   /* check whether this is a function that returns an array */
   symret=finddepend(sym);
   assert(symret==NULL || symret->ident==iREFARRAY);
@@ -2609,6 +2614,7 @@ static int nesting=0;
   if (symret!=NULL)
     popreg(sPRI);               /* pop hidden parameter as function result */
   pc_sideeffect=TRUE;           /* assume functions carry out a side-effect */
+  pc_loopcond=save_loopcond;
   delete_consttable(&arrayszlst);     /* clear list of array sizes */
   delete_consttable(&taglst);   /* clear list of parameter tags */
 

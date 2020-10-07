@@ -231,6 +231,16 @@ typedef struct s_symbol {
 #define uRETNONE    0x010
 /* uASSIGNED indicates that a value assigned to the variable is not used yet */
 #define uASSIGNED   0x080
+/* uLOOPVAR is set when a variable is read inside of a loop condition. This is
+ * used to detect situations when a variable is used in a loop condition, but
+ * not modified inside of a loop body. */
+#define uLOOPVAR    0x1000
+/* uNOLOOPVAR is set when a variable is
+ *   * modified inside of a loop condition before being read, or
+ *   * used in an enclosing loop and should be excluded from checks in an inner loop,
+ * so the compiler would know it shouldn't set the uLOOPVAR flag when the variable
+ * is read inside a loop condition */
+#define uNOLOOPVAR  0x2000
 
 #define flagDEPRECATED 0x01  /* symbol is deprecated (avoid use) */
 #define flagNAKED     0x10  /* function is naked */
@@ -305,7 +315,9 @@ typedef struct s_valuepair {
 /* struct "symstate" is used to:
  * * synchronize the status of assignments between all "if" branches or "switch"
  *   cases, so the compiler could detect unused assignments in all of those
- *   branches/cases, not only in the last one */
+ *   branches/cases, not only in the last one;
+ * * back up the "uNOLOOPVAR" flag when scanning for variables that were used
+ *   in a loop exit condition, but weren't modified inside the loop body */
 typedef struct s_assigninfo {
   int lnumber;      /* line number of the first unused assignment made in one of
                      * the branches (used for error messages) */
@@ -1011,6 +1023,8 @@ SC_VDECL int pc_retexpr;      /* true if the current expression is a part of a "
 SC_VDECL int pc_retheap;      /* heap space (in bytes) to be manually freed when returning an array returned by another function */
 SC_VDECL int pc_nestlevel;    /* number of active (open) compound statements */
 SC_VDECL unsigned int pc_attributes;/* currently set attribute flags (for the "__pragma" operator) */
+SC_VDECL int pc_loopcond;     /* true if the current expression is a loop condition */
+SC_VDECL int pc_numloopvars;  /* number of variables used inside a loop condition */
 
 SC_VDECL constvalue_root sc_automaton_tab; /* automaton table */
 SC_VDECL constvalue_root sc_state_tab;     /* state table */
