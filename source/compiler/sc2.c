@@ -2010,6 +2010,11 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
         lptr=stringize + 1;
         *flags &= ~STRINGIZE;
         continue;
+      } else if (*stringize=='`') { /* new string */
+        lptr=stringize + 1;
+        *flags &= ~STRINGIZE;
+        *flags |= MULTILINE;
+        continue;
       } else if (*stringize=='(') {
         brackets++;
       } else if (*stringize==')') {
@@ -2052,6 +2057,7 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
   } else {
     litadd(0);
   }
+
   if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';' ||
       *lptr==':' || *lptr=='\n' || *lptr=='\r')
     lptr=stringize;           /* backtrack to end of last string for closing " */
@@ -2078,6 +2084,9 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
     } /* if */
     if (!instring) {
       if (*lptr=='\"') {
+        instring=1;
+      } else if (*lptr=='`') {
+        *flags |= MULTILINE;
         instring=1;
       } else if (*lptr=='#') {
         while (*++lptr==' ' || *lptr=='\t');
@@ -2109,11 +2118,19 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
         lptr=stringize+1;
         *flags &= ~STRINGIZE;
         continue;
+      } else if (*stringize=='`') { /* new string */
+        lptr=stringize + 1;
+        *flags &= ~STRINGIZE;
+        *flags |= MULTILINE;
+        continue;
       } else if (*stringize=='(') {
         brackets++;
       } else if (*stringize==')') {
-        if (brackets--==0)
+        if (brackets==0) {
+          lptr=stringize;
           break;
+        }
+        brackets--;
       } else if (*stringize==',' || *stringize=='}' || *stringize==';') { /* end */
         if (brackets==0) {
           lptr=stringize;
@@ -2124,6 +2141,13 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
         *flags &= ~STRINGIZE; /* shouldn't happen - trigger an error */
         break;
       }
+    } else if (*flags & MULTILINE) {
+      if (*lptr=='`') {
+        stringize=lptr++;
+        instring=0;
+        *flags &= ~MULTILINE;
+        continue;
+      } /* if (*flags & MULTILINE) */
     } else {
       if (*lptr=='\"') {
         stringize=lptr++;
@@ -2142,10 +2166,18 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
     i=(i+sizeof(ucell)-(sCHARBITS/8)) % sizeof(ucell);
   } /* while */
   /* save last code; make sure there is at least one terminating zero character */
-  if (i!=(int)(sizeof(ucell)-(sCHARBITS/8)))
+  if (*flags & MULTILINE) {
+    /* still in the string on the next line */
+    val |= ('\n' << 8*i);
+    litadd(val);
+    return lptr;
+  } else if (i!=(int)(sizeof(ucell)-(sCHARBITS/8)))
     litadd(val);        /* at least one zero character in "val" */
   else
     litadd(0);          /* add full cell of zeros */
+  /* The value of `i` shouldn't need to be checked in the code above */
+  /* if the check fails, then `val` should be `0`, so either branch */
+  /* does the equivalent of `litadd(val)`.  But I've not tested that. */
 
   if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';' ||
       *lptr==':' || *lptr=='\n' || *lptr=='\r')
