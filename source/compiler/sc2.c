@@ -1977,6 +1977,9 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
     if (!instring) {
       if (*lptr=='\"') {
         instring=1;
+      } else if (*lptr=='`') {
+        *flags |= MULTILINE;
+        instring=1;
       } else if (*lptr=='#') {
         while (*++lptr==' ' || *lptr=='\t');
         lptr--;
@@ -2004,14 +2007,17 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
           lptr++;
         continue;
       } else if (*stringize=='\"') { /* new string */
-        lptr = stringize + 1;
+        lptr=stringize + 1;
         *flags &= ~STRINGIZE;
         continue;
       } else if (*stringize=='(') {
         brackets++;
       } else if (*stringize==')') {
-        if (brackets--==0)
+        if (brackets==0) {
+          lptr=stringize;
           break;
+        }
+        brackets--;
       } else if (*stringize==',' || *stringize=='}' || *stringize==';') { /* end */
         if (brackets==0) {
           lptr=stringize;
@@ -2022,17 +2028,30 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
         *flags &= ~STRINGIZE; /* shouldn't happen - trigger an error */
         break;
       }
+    } else if (*flags & MULTILINE) {
+      if (*lptr=='`') {
+        stringize=lptr++;
+        instring=0;
+        *flags &= ~MULTILINE;
+        continue;
+      } /* if (*flags & MULTILINE) */
     } else {
       if (*lptr=='\"') {
         stringize=lptr++;
         instring=0;
         continue;
-      } /* if (*flags & STRINGIZE) */
-    }
+      }
+    } /* if (*flags & STRINGIZE) */
     litadd(litchar(&lptr,*flags | UTF8MODE));  /* litchar() alters "lptr" */
   } /* while */
-  litadd(0);
 
+  if (*flags & MULTILINE) {
+    /* still in the string on the next line */
+    litadd('\n');
+    return lptr;
+  } else {
+    litadd(0);
+  }
   if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';' ||
       *lptr==':' || *lptr=='\n' || *lptr=='\r')
     lptr=stringize;           /* backtrack to end of last string for closing " */
@@ -2329,9 +2348,10 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
     if ((stringflags & RAWMODE)!=0)
       lptr+=1;          /* skip "escape" character too */
     lptr=sc_packstr ? packedstring(lptr,&stringflags) : unpackedstring(lptr,&stringflags);
-    if ((stringflags & MULTILINE) && *lptr == '`')
-      lptr += 1;          /* skip final quote */
-    else if (!(stringflags & MULTILINE) && *lptr == '\"')
+    if (stringflags & MULTILINE) {
+      /* still in the string */
+      /* TODO: continue it on the next line */
+    } else if (*lptr=='`' || *lptr=='\"')
       lptr += 1;          /* skip final quote */
     else if (!(stringflags & STRINGIZE))
       error(37);        /* invalid (non-terminated) string */
@@ -2357,9 +2377,10 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
     if ((stringflags & RAWMODE)!=0)
       lptr+=1;          /* skip "escape" character too */
     lptr=sc_packstr ? unpackedstring(lptr,&stringflags) : packedstring(lptr,&stringflags);
-    if ((stringflags & MULTILINE) && *lptr=='`')
-      lptr+=1;          /* skip final quote */
-    else if (!(stringflags & MULTILINE) && *lptr=='\"')
+    if (stringflags & MULTILINE) {
+      /* still in the string */
+      /* TODO: continue it on the next line */
+    } else if (*lptr == '`' || *lptr == '\"')
       lptr+=1;          /* skip final quote */
     else if (!(stringflags & STRINGIZE))
       error(37);        /* invalid (non-terminated) string */
