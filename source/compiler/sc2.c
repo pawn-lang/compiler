@@ -45,10 +45,10 @@
 #endif
 
 /* flags for litchar() */
-#define RAWMODE         1
 #define UTF8MODE        2
 #define STRINGIZE       4 /* following a # */
 #define MULTILINE       8 /* following a ` */
+#define RAWMODE         16
 static cell litchar(const unsigned char **lptr,int flags);
 static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int automaton,int *cmptag);
 
@@ -62,6 +62,7 @@ static int alpha(char c);
 #define SKIPPING      (skiplevel>0 && (ifstack[skiplevel-1] & SKIPMODE)==SKIPMODE)
 
 static short icomment;  /* currently in multiline comment? */
+static short imlstring;  /* currently in multiline string? */
 static char ifstack[sCOMP_STACK]; /* "#if" stack */
 static short iflevel;   /* nesting level if #if/#else/#endif */
 static short skiplevel; /* level at which we started skipping (including nested #if .. #endif) */
@@ -437,7 +438,8 @@ static void readline(unsigned char *line)
 /*  stripcom
  *
  *  Replaces all comments from the line by space characters. It updates
- *  a global variable ("icomment") for multiline comments.
+ *  a global variable ("icomment") for multiline comments, and a global
+ *  variable ("imlstring") for multiline strings.
  *
  *  This routine also supports the C++ extension for single line comments.
  *  These comments are started with "//" and end at the end of the line.
@@ -446,11 +448,26 @@ static void readline(unsigned char *line)
  *  global variable "icomment" is set to 2 for documentation comments.
  *
  *  Global references: icomment  (private to "stripcom")
+ *  Global references: imlstring (private to "stripcom")
+ *
+ *  Returns 1 if the line started with a multiline string, and 2 if it also
+ *  ends with the same multiline string, so that this won't trigger commands:
+ *
+ *      new x[] = `Hello
+ *      
+ *      #define X 0
+ *      `;
+ *
+ *  Some code might see that as a line starting with `#define` because there
+ *  was no explicit line continuation, merely an implicit string one.
+ *
  */
-static void stripcomment(unsigned char *line)
+static int stripcomment(unsigned char *line)
 {
   char c;
   char* continuation;
+  int startinml=0;
+  int rawmode=0;
   #if !defined SC_LIGHT
     #define COMMENT_LIMIT 100
     #define COMMENT_MARGIN 40   /* length of the longest word */
@@ -462,6 +479,27 @@ static void stripcomment(unsigned char *line)
 
     prev_singleline=FALSE;  /* preset */
   #endif
+
+  /* multiline string continuation at the start */
+  if (imlstring!=0) {
+    startinml=1;
+    if (*line=='\0')
+      return 2;
+    else if (*line=='`') {
+      /* make `-1` below valid everywhere but the string start */
+      imlstring=0;
+      line+=1;
+    } else {
+      do {
+        line+=1;
+      } while ((*line!='`' || *(line-1)==sc_ctrlchar) && *line!='\0');
+      if (*line=='\0')
+        return 2; /* multiline string continues */
+      /* multiline string ended */
+      imlstring=0;
+      line += 1;
+    }
+  }
 
   while (*line) {
     if (icomment!=0) {
@@ -561,13 +599,22 @@ static void stripcomment(unsigned char *line)
         *line++='\n';   /* put "newline" at first slash */
         *line='\0';     /* put "zero-terminator" at second slash */
       } else {
-        if (*line=='\"' || *line=='\''){        /* leave literals unaltered */
+        if (*line=='\\')
+          rawmode=RAWMODE;
+        else if (*line=='\"' || *line=='\'' || *line=='`') {        /* leave literals unaltered */
           c=*line;      /* ending quote, single or double */
+          if (c=='`')
+            imlstring=1|rawmode;
           line+=1;
           while ((*line!=c || *(line-1)==sc_ctrlchar) && *line!='\0')
             line+=1;
-          line+=1;      /* skip final quote */
+          if (*line == c) {
+            imlstring=0;
+            line+=1;      /* skip final quote */
+          }
         } else {
+          if (*line!='!')
+            rawmode=0;
           line+=1;
         } /* if */
       } /* if */
@@ -581,6 +628,8 @@ static void stripcomment(unsigned char *line)
         insert_docstring(comment);
     } /* if */
   #endif
+
+  return startinml;
 }
 
 /*  btoi
@@ -1648,6 +1697,13 @@ static const unsigned char *skipstring(const unsigned char *string)
   return string;
 }
 
+static const unsigned char *skipmlstring(const unsigned char *string)
+{
+  while (*string!='`' && *string!='\0')
+    litchar(&string,imlstring&RAWMODE);
+  return string;
+}
+
 static const unsigned char *skippgroup(const unsigned char *string)
 {
   int nest=0;
@@ -1861,7 +1917,10 @@ static void substallpatterns(unsigned char *line,int buffersize)
   int prefixlen;
   stringpair *subst;
 
-  start=line;
+  if (imlstring==0)
+    start=line;
+  else
+    start=(unsigned char *)skipmlstring(line);
   while (*start!='\0') {
     /* find the start of a prefix (skip all non-alphabetic characters),
      * also skip strings
@@ -1927,15 +1986,18 @@ static void substallpatterns(unsigned char *line,int buffersize)
  */
 SC_FUNC void preprocess(void)
 {
-  int iscommand;
+  int iscommand=CMD_NONE;
 
   if (!freading)
     return;
   do {
     readline(pline);
-    stripcomment(pline);  /* ??? no need for this when reading back from list file (in the second pass) */
-    lptr=pline;           /* set "line pointer" to start of the parsing buffer */
-    iscommand=command();
+    /* ??? no need for this when reading back from list file (in the second pass) */
+    if (stripcomment(pline)==0) {
+      lptr=pline;           /* set "line pointer" to start of the parsing buffer */
+      iscommand=command();
+    } else
+      lptr=pline;           /* started with a multiline string */
     if (iscommand!=CMD_NONE)
       errorset(sRESET,0); /* reset error flag ("panic mode") on empty line or directive */
     #if !defined NO_DEFINE
@@ -1969,94 +2031,97 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
   if (*flags & STRINGIZE)                 /* ignore leading spaces after the # */
     while (*lptr==' ' || *lptr=='\t')     /* this is as defines with parameters may add them */
       lptr++;                             /* when you use a space after , in a match pattern */
-  while (*lptr!='\0') {
-    if (*lptr=='\a') {
-      lptr++;
-      continue;
-    } /* if */
-    if (!instring) {
-      if (*lptr=='\"') {
-        instring=1;
-      } else if (*lptr=='`') {
-        *flags |= MULTILINE;
-        instring=1;
-      } else if (*lptr=='#') {
-        while (*++lptr==' ' || *lptr=='\t');
-        lptr--;
-        instring=1;
-        *flags |= STRINGIZE;
-        brackets=0;
-      } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' ||
-                 *lptr==':' || *lptr=='\r' || *lptr=='\n') {
-        break;
-      } else if (*lptr!=' ' && *lptr!='\t') {
-        error(1,"-string end-","-identifier-");
-        break;
+  for (;;) {
+    while (*lptr!='\0') {
+      if (*lptr=='\a') {
+        lptr++;
+        continue;
+      } /* if */
+      if (!instring) {
+        if (*lptr=='\"') {
+          instring=1;
+        } else if (*lptr=='`') {
+          *flags |= MULTILINE;
+          instring=1;
+        } else if (*lptr=='#') {
+          while (*++lptr==' ' || *lptr=='\t');
+          lptr--;
+          instring=1;
+          *flags |= STRINGIZE;
+          brackets=0;
+        } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' ||
+                   *lptr==':' || *lptr=='\r' || *lptr=='\n') {
+          break;
+        } else if (*lptr!=' ' && *lptr!='\t') {
+          error(1,"-string end-","-identifier-");
+          break;
+        }
+        lptr++;
+        continue;
       }
-      lptr++;
-      continue;
+      if (*flags & STRINGIZE) {
+        stringize=lptr; /* check we're still in a valid stringize string */
+        while (*stringize==' ' || *stringize=='\t')
+          stringize++; /* find next non space */
+        if (*stringize=='#') { /* new stringize string */
+          lptr=stringize+1;
+          brackets=0;
+          while (*lptr==' ' || *lptr=='\t')
+            lptr++;
+          continue;
+        } else if (*stringize=='\"') { /* new string */
+          lptr=stringize + 1;
+          *flags &= ~STRINGIZE;
+          continue;
+        } else if (*stringize=='`') { /* new string */
+          lptr=stringize + 1;
+          *flags &= ~STRINGIZE;
+          *flags |= MULTILINE;
+          continue;
+        } else if (*stringize=='(') {
+          brackets++;
+        } else if (*stringize==')') {
+          if (brackets==0) {
+            lptr=stringize;
+            break;
+          }
+          brackets--;
+        } else if (*stringize==',' || *stringize=='}' || *stringize==';') { /* end */
+          if (brackets==0) {
+            lptr=stringize;
+            break;
+          }
+        } else if (*stringize=='\0') {
+          lptr=stringize;
+          *flags &= ~STRINGIZE; /* shouldn't happen - trigger an error */
+          break;
+        }
+      } else if (*flags & MULTILINE) {
+        if (*lptr=='`') {
+          stringize=lptr++;
+          instring=0;
+          *flags &= ~MULTILINE;
+          continue;
+        } /* if (*flags & MULTILINE) */
+      } else {
+        if (*lptr=='\"') {
+          stringize=lptr++;
+          instring=0;
+          continue;
+        }
+      } /* if (*flags & STRINGIZE) */
+      litadd(litchar(&lptr,*flags | UTF8MODE));  /* litchar() alters "lptr" */
+    } /* while */
+    /* keep going if we're still in a multi-line string */
+    if (!(*flags & MULTILINE)) {
+      imlstring=0;
+      break;
     }
-    if (*flags & STRINGIZE) {
-      stringize=lptr; /* check we're still in a valid stringize string */
-      while (*stringize==' ' || *stringize=='\t')
-        stringize++; /* find next non space */
-      if (*stringize=='#') { /* new stringize string */
-        lptr=stringize+1;
-        brackets=0;
-        while (*lptr==' ' || *lptr=='\t')
-          lptr++;
-        continue;
-      } else if (*stringize=='\"') { /* new string */
-        lptr=stringize + 1;
-        *flags &= ~STRINGIZE;
-        continue;
-      } else if (*stringize=='`') { /* new string */
-        lptr=stringize + 1;
-        *flags &= ~STRINGIZE;
-        *flags |= MULTILINE;
-        continue;
-      } else if (*stringize=='(') {
-        brackets++;
-      } else if (*stringize==')') {
-        if (brackets==0) {
-          lptr=stringize;
-          break;
-        }
-        brackets--;
-      } else if (*stringize==',' || *stringize=='}' || *stringize==';') { /* end */
-        if (brackets==0) {
-          lptr=stringize;
-          break;
-        }
-      } else if (*stringize=='\0') {
-        lptr=stringize;
-        *flags &= ~STRINGIZE; /* shouldn't happen - trigger an error */
-        break;
-      }
-    } else if (*flags & MULTILINE) {
-      if (*lptr=='`') {
-        stringize=lptr++;
-        instring=0;
-        *flags &= ~MULTILINE;
-        continue;
-      } /* if (*flags & MULTILINE) */
-    } else {
-      if (*lptr=='\"') {
-        stringize=lptr++;
-        instring=0;
-        continue;
-      }
-    } /* if (*flags & STRINGIZE) */
-    litadd(litchar(&lptr,*flags | UTF8MODE));  /* litchar() alters "lptr" */
-  } /* while */
-
-  if (*flags & MULTILINE) {
-    /* still in the string on the next line */
     litadd('\n');
-    return lptr;
-  } else {
-    litadd(0);
-  }
+    imlstring=1|(*flags & RAWMODE);
+    preprocess();
+  } /* for */
+  litadd(0);
 
   if (*lptr==',' || *lptr==')' || *lptr=='}' || *lptr==';' ||
       *lptr==':' || *lptr=='\n' || *lptr=='\r')
@@ -2077,101 +2142,111 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
 
   i=sizeof(ucell)-(sCHARBITS/8); /* start at most significant byte */
   val=0;
-  while (*lptr!='\0') {
-    if (*lptr=='\a') {          /* ignore '\a' (which was inserted at a line concatenation) */
-      lptr++;
-      continue;
-    } /* if */
-    if (!instring) {
-      if (*lptr=='\"') {
-        instring=1;
-      } else if (*lptr=='`') {
-        *flags |= MULTILINE;
-        instring=1;
-      } else if (*lptr=='#') {
-        while (*++lptr==' ' || *lptr=='\t');
-        lptr--;
-        instring=1;
-        brackets=0;
-        *flags |= STRINGIZE;
-      } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' ||
-                 *lptr==':' || *lptr=='\r' || *lptr=='\n') {
-        break;
-      } else if (*lptr!=' ' && *lptr!='\t') {
-        error(1,"-string end-","-identifier-");
-        break;
-      }
-      lptr++;
-      continue;
-    }
-    if (*flags & STRINGIZE) {
-      stringize=lptr; /* check we're still in a valid stringize string */
-      while (*stringize==' ' || *stringize=='\t')
-        stringize++; /* find next non space */
-      if (*stringize=='#') { /* new stringize string */
-        lptr=stringize+1;
-        brackets=0;
-        while (*lptr==' ' || *lptr=='\t')
-          lptr++;
+  for (;;) {
+    while (*lptr!='\0') {
+      if (*lptr=='\a') {          /* ignore '\a' (which was inserted at a line concatenation) */
+        lptr++;
         continue;
-      } else if (*stringize=='\"') { /* new string */
-        lptr=stringize+1;
-        *flags &= ~STRINGIZE;
-        continue;
-      } else if (*stringize=='`') { /* new string */
-        lptr=stringize + 1;
-        *flags &= ~STRINGIZE;
-        *flags |= MULTILINE;
-        continue;
-      } else if (*stringize=='(') {
-        brackets++;
-      } else if (*stringize==')') {
-        if (brackets==0) {
-          lptr=stringize;
+      } /* if */
+      if (!instring) {
+        if (*lptr=='\"') {
+          instring=1;
+        } else if (*lptr=='`') {
+          *flags |= MULTILINE;
+          instring=1;
+        } else if (*lptr=='#') {
+          while (*++lptr==' ' || *lptr=='\t');
+          lptr--;
+          instring=1;
+          brackets=0;
+          *flags |= STRINGIZE;
+        } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' ||
+                   *lptr==':' || *lptr=='\r' || *lptr=='\n') {
+          break;
+        } else if (*lptr!=' ' && *lptr!='\t') {
+          error(1,"-string end-","-identifier-");
           break;
         }
-        brackets--;
-      } else if (*stringize==',' || *stringize=='}' || *stringize==';') { /* end */
-        if (brackets==0) {
+        lptr++;
+        continue;
+      }
+      if (*flags & STRINGIZE) {
+        stringize=lptr; /* check we're still in a valid stringize string */
+        while (*stringize==' ' || *stringize=='\t')
+          stringize++; /* find next non space */
+        if (*stringize=='#') { /* new stringize string */
+          lptr=stringize+1;
+          brackets=0;
+          while (*lptr==' ' || *lptr=='\t')
+            lptr++;
+          continue;
+        } else if (*stringize=='\"') { /* new string */
+          lptr=stringize+1;
+          *flags &= ~STRINGIZE;
+          continue;
+        } else if (*stringize=='`') { /* new string */
+          lptr=stringize + 1;
+          *flags &= ~STRINGIZE;
+          *flags |= MULTILINE;
+          continue;
+        } else if (*stringize=='(') {
+          brackets++;
+        } else if (*stringize==')') {
+          if (brackets==0) {
+            lptr=stringize;
+            break;
+          }
+          brackets--;
+        } else if (*stringize==',' || *stringize=='}' || *stringize==';') { /* end */
+          if (brackets==0) {
+            lptr=stringize;
+            break;
+          }
+        } else if (*stringize=='\0') {
           lptr=stringize;
+          *flags &= ~STRINGIZE; /* shouldn't happen - trigger an error */
           break;
         }
-      } else if (*stringize=='\0') {
-        lptr=stringize;
-        *flags &= ~STRINGIZE; /* shouldn't happen - trigger an error */
-        break;
+      } else if (*flags & MULTILINE) {
+        if (*lptr=='`') {
+          stringize=lptr++;
+          instring=0;
+          *flags &= ~MULTILINE;
+          continue;
+        } /* if (*flags & MULTILINE) */
+      } else {
+        if (*lptr=='\"') {
+          stringize=lptr++;
+          instring=0;
+          continue;
+        } /* if (*flags & STRINGIZE) */
       }
-    } else if (*flags & MULTILINE) {
-      if (*lptr=='`') {
-        stringize=lptr++;
-        instring=0;
-        *flags &= ~MULTILINE;
-        continue;
-      } /* if (*flags & MULTILINE) */
-    } else {
-      if (*lptr=='\"') {
-        stringize=lptr++;
-        instring=0;
-        continue;
-      } /* if (*flags & STRINGIZE) */
+      c=litchar(&lptr,*flags);     /* litchar() alters "lptr" */
+      if (c>=(ucell)(1 << sCHARBITS))
+        error(43);                /* character constant exceeds range */
+      val |= (c << 8*i);
+      if (i==0) {
+        litadd(val);
+        val=0;
+      } /* if */
+      i=(i+sizeof(ucell)-(sCHARBITS/8)) % sizeof(ucell);
+    } /* while */
+    /* keep going if we're still in a multi-line string */
+    if (!(*flags & MULTILINE)) {
+      imlstring=0;
+      break;
     }
-    c=litchar(&lptr,*flags);     /* litchar() alters "lptr" */
-    if (c>=(ucell)(1 << sCHARBITS))
-      error(43);                /* character constant exceeds range */
-    val |= (c << 8*i);
+    val |= ('\n' << 8*i);
     if (i==0) {
       litadd(val);
       val=0;
     } /* if */
     i=(i+sizeof(ucell)-(sCHARBITS/8)) % sizeof(ucell);
-  } /* while */
+    imlstring=1|(*flags & RAWMODE);
+    preprocess();
+  } /* for */
   /* save last code; make sure there is at least one terminating zero character */
-  if (*flags & MULTILINE) {
-    /* still in the string on the next line */
-    val |= ('\n' << 8*i);
-    litadd(val);
-    return lptr;
-  } else if (i!=(int)(sizeof(ucell)-(sCHARBITS/8)))
+  if (i!=(int)(sizeof(ucell)-(sCHARBITS/8)))
     litadd(val);        /* at least one zero character in "val" */
   else
     litadd(0);          /* add full cell of zeros */
