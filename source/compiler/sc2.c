@@ -47,7 +47,8 @@
 /* flags for litchar() */
 #define RAWMODE         1
 #define UTF8MODE        2
-#define STRINGIZE       4
+#define STRINGIZE       4 /* following a # */
+#define MULTILINE       8 /* following a ` */
 static cell litchar(const unsigned char **lptr,int flags);
 static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int automaton,int *cmptag);
 
@@ -2316,23 +2317,27 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
         error(220);
       } /* if */
     } /* if */
-    } else if (*lptr=='\"' || *lptr=='#' || (*lptr==sc_ctrlchar && (*(lptr+1)=='\"' || *(lptr+1)=='#')))
+  } else if (*lptr=='\"' || *lptr=='#' || *lptr=='`'
+             || (*lptr==sc_ctrlchar && (*(lptr+1)=='\"' || *(lptr+1)=='#' || *(lptr+1)=='`')))
   {                                     /* unpacked string literal */
     _lextok=tSTRING;
     stringflags=(*lptr==sc_ctrlchar) ? RAWMODE : 0;
     stringflags|=(*lptr=='#' || (*lptr==sc_ctrlchar && *(lptr+1)=='#')) ? STRINGIZE : 0;
+    stringflags|=(*lptr=='`' || (*lptr==sc_ctrlchar && *(lptr+1)=='`')) ? MULTILINE : 0;
     *lexvalue=_lexval=litidx;
     lptr+=1;            /* skip double quote */
     if ((stringflags & RAWMODE)!=0)
       lptr+=1;          /* skip "escape" character too */
     lptr=sc_packstr ? packedstring(lptr,&stringflags) : unpackedstring(lptr,&stringflags);
-    if (*lptr=='\"')
-      lptr+=1;          /* skip final quote */
+    if ((stringflags & MULTILINE) && *lptr == '`')
+      lptr += 1;          /* skip final quote */
+    else if (!(stringflags & MULTILINE) && *lptr == '\"')
+      lptr += 1;          /* skip final quote */
     else if (!(stringflags & STRINGIZE))
       error(37);        /* invalid (non-terminated) string */
-  } else if ((*lptr=='!' && (*(lptr+1)=='\"' || *(lptr+1)=='#'))
-             || (*lptr=='!' && *(lptr+1)==sc_ctrlchar && (*(lptr+2)=='\"'  || *(lptr+2)=='#'))
-             || (*lptr==sc_ctrlchar && *(lptr+1)=='!' && (*(lptr+2)=='\"'  || *(lptr+2)=='#')))
+  } else if ((*lptr=='!' && (*(lptr+1)=='\"' || *(lptr+1)=='#' || *(lptr+1)=='`'))
+             || (*lptr=='!' && *(lptr+1)==sc_ctrlchar && (*(lptr+2)=='\"' || *(lptr+2)=='#' || *(lptr+2)=='`'))
+             || (*lptr==sc_ctrlchar && *(lptr+1)=='!' && (*(lptr+2)=='\"' || *(lptr+2)=='#' || *(lptr+2)=='`')))
   {                                     /* packed string literal */
     _lextok=tSTRING;
     stringflags=0;
@@ -2340,15 +2345,21 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
       stringflags=RAWMODE;
       if (*(lptr+2)=='#')
         stringflags |= STRINGIZE;
+      if (*(lptr+2)=='`')
+        stringflags |= MULTILINE;
     } else if (*(lptr+1)=='#') {
       stringflags = STRINGIZE;
+    } else if (*(lptr+1)=='`') {
+      stringflags = MULTILINE;
     }
     *lexvalue=_lexval=litidx;
     lptr+=2;            /* skip exclamation point and double quote */
     if ((stringflags & RAWMODE)!=0)
       lptr+=1;          /* skip "escape" character too */
     lptr=sc_packstr ? unpackedstring(lptr,&stringflags) : packedstring(lptr,&stringflags);
-    if (*lptr=='\"')
+    if ((stringflags & MULTILINE) && *lptr=='`')
+      lptr+=1;          /* skip final quote */
+    else if (!(stringflags & MULTILINE) && *lptr=='\"')
       lptr+=1;          /* skip final quote */
     else if (!(stringflags & STRINGIZE))
       error(37);        /* invalid (non-terminated) string */
@@ -2662,6 +2673,7 @@ static cell litchar(const unsigned char **lptr,int flags)
       case '\'':        /* \' == ' (single quote) */
       case '"':         /* \" == " (single quote) */
       case '%':         /* \% == % (percent) */
+      case '`':         /* \` == ` (backtick) */
         c=*cptr;
         cptr+=1;
         break;
