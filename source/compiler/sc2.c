@@ -1602,25 +1602,25 @@ static int command(void)
 #if !defined NO_DEFINE
 static int is_startstring(const unsigned char *string)
 {
-  if (*string=='\"' || *string=='\'')
+  if (*string=='\"' || *string=='\'' || *string == '`')
     return TRUE;                        /* "..." */
 
   if (*string=='!') {
     string++;
-    if (*string=='\"' || *string=='\'')
+    if (*string=='\"' || *string=='\'' || *string == '`')
       return TRUE;                      /* !"..." */
     if (*string==sc_ctrlchar) {
       string++;
-      if (*string=='\"' || *string=='\'')
+      if (*string=='\"' || *string=='\'' || *string == '`')
         return TRUE;                    /* !\"..." */
     } /* if */
   } else if (*string==sc_ctrlchar) {
     string++;
-    if (*string=='\"' || *string=='\'')
+    if (*string=='\"' || *string=='\'' || *string == '`')
       return TRUE;                      /* \"..." */
     if (*string=='!') {
       string++;
-      if (*string=='\"' || *string=='\'')
+      if (*string=='\"' || *string=='\'' || *string=='`')
         return TRUE;                    /* \!"..." */
     } /* if */
   } /* if */
@@ -1640,7 +1640,7 @@ static const unsigned char *skipstring(const unsigned char *string)
   } /* while */
 
   endquote=*string;
-  assert(endquote=='"' || endquote=='\'');
+  assert(endquote=='"' || endquote=='\'' || endquote == '`');
   string++;             /* skip open quote */
   while (*string!=endquote && *string!='\0')
     litchar(&string,flags);
