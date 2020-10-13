@@ -1,5 +1,3 @@
-#include <console>
-
 main()
 {
     // One line.
@@ -24,7 +22,7 @@ world
 `;
     // Check replacements are skipped.
 	#define A(%0) `%0`
-	new str8[3] = A(a);
+	new str8[3] = A(long_thing);
     // Check line concatenation
 	new str9[4] = `01\
 2`;

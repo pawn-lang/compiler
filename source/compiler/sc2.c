@@ -1873,8 +1873,14 @@ static int substpattern(unsigned char *line,size_t buffersize,char *pattern,char
           len+=2;     /* copy '%' plus digit */
         e++;          /* skip %, digit is skipped later */
       } else {
-        if (*e=='"')
-          instring=!instring;
+        if (instring==0 && *e=='"')
+          instring=1;
+        else if (instring==0 && *e=='`')
+          instring=2;
+        else if (instring==1 && *e=='"')
+          instring=0;
+        else if (instring==2 && *e=='`')
+          instring=0;
         len++;
       } /* if */
     } /* for */
@@ -1899,8 +1905,14 @@ static int substpattern(unsigned char *line,size_t buffersize,char *pattern,char
           } /* if */
           e++;          /* skip %, digit is skipped later */
         } else {
-          if (*e=='"')
-            instring=!instring;
+          if (instring==0 && *e=='"')
+            instring=1;
+          else if (instring==0 && *e=='`')
+            instring=2;
+          else if (instring==1 && *e=='"')
+            instring=0;
+          else if (instring==2 && *e=='`')
+            instring=0;
           strins((char*)s,(char*)e,1);
           s++;
         } /* if */
