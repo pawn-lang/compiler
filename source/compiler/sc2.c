@@ -2493,10 +2493,7 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
     if ((stringflags & RAWMODE)!=0)
       lptr+=1;          /* skip "escape" character too */
     lptr=sc_packstr ? unpackedstring(lptr,&stringflags) : packedstring(lptr,&stringflags);
-    if (stringflags & MULTILINE) {
-      /* still in the string */
-      /* TODO: continue it on the next line */
-    } else if (*lptr == '`' || *lptr == '\"')
+    if (*lptr == '`' || *lptr == '\"')
       lptr+=1;          /* skip final quote */
     else if (!(stringflags & STRINGIZE))
       error(37);        /* invalid (non-terminated) string */
