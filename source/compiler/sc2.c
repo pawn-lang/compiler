@@ -2680,7 +2680,9 @@ static void chk_grow_litq(void)
   if (litidx>=litmax) {
     cell *p;
 
-    litmax+=sDEF_LITMAX;
+    /* fibonacci growth */
+    litmax=litmax+litgrow;
+    litgrow=litmax-litgrow;
     p=(cell *)realloc(litq,litmax*sizeof(cell));
     if (p==NULL)
       error(102,"literal table");   /* literal table overflow (fatal error) */

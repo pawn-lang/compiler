@@ -1254,17 +1254,19 @@ static void stgopt(char *start,char *end,int (*outputfunc)(char *str));
 #define sSTG_MAX    20480
 
 static char *stgbuf=NULL;
-static int stgmax=0;    /* current size of the staging buffer */
-static int stglen=0;    /* current length of the staging buffer */
+static int stgmax=0;           /* current size of the staging buffer */
+static int stglen=0;           /* current length of the staging buffer */
+static int stggrow=sSTG_GROW;  /* amount to increase the staging buffer by */
 
 static char *stgpipe=NULL;
-static int pipemax=0;   /* current size of the stage pipe, a second staging buffer */
+static int pipemax=0;          /* current size of the stage pipe, a second staging buffer */
 static int pipeidx=0;
+static int pipegrow=sSTG_GROW; /* amount to increase the staging pipe by */
 
-#define CHECK_STGBUFFER(index) if ((int)(index)>=stgmax)  grow_stgbuffer(&stgbuf, &stgmax, (index)+1)
-#define CHECK_STGPIPE(index)   if ((int)(index)>=pipemax) grow_stgbuffer(&stgpipe, &pipemax, (index)+1)
+#define CHECK_STGBUFFER(index) if ((int)(index)>=stgmax)  grow_stgbuffer(&stgbuf, &stgmax, &stggrow, (index)+1)
+#define CHECK_STGPIPE(index)   if ((int)(index)>=pipemax) grow_stgbuffer(&stgpipe, &pipemax, &pipegrow, (index)+1)
 
-static void grow_stgbuffer(char **buffer, int *curmax, int requiredsize)
+static void grow_stgbuffer(char **buffer, int *curmax, int *growth, int requiredsize)
 {
   char *p;
   int clear= (*buffer==NULL); /* if previously none, empty buffer explicitly */
@@ -1275,7 +1277,8 @@ static void grow_stgbuffer(char **buffer, int *curmax, int requiredsize)
    */
   if (requiredsize>sSTG_MAX)
     error(102,"staging buffer");    /* staging buffer overflow (fatal error) */
-  *curmax=requiredsize+sSTG_GROW;
+  *curmax=requiredsize+*growth;
+  *growth*=2; /* not as easy to grow this one by fibonacci, just double it */
   p=(char *)realloc(*buffer,*curmax*sizeof(char));
   if (p==NULL)
     error(102,"staging buffer");    /* staging buffer overflow (fatal error) */
