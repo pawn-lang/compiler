@@ -539,7 +539,8 @@ static int stripcomment(unsigned char *line)
         line+=1;
       } /* if */
     } else {
-      if (*line=='/' && *(line+1)=='*'){
+      if (*line=='/' && *(line+1)=='*') {
+        rawmode=0;
         icomment=1;     /* start comment */
         #if !defined SC_LIGHT
           /* there must be two "*" behind the slash and then white space */
@@ -559,7 +560,8 @@ static int stripcomment(unsigned char *line)
         line+=2;
         if (icomment==2)
           *line++=' ';
-      } else if (*line=='/' && *(line+1)=='/'){  /* comment to end of line */
+      } else if (*line=='/' && *(line+1)=='/') {  /* comment to end of line */
+        rawmode=0;
         continuation=(char*)line;
         while ((continuation=strchr(continuation,'\a'))!=NULL){
           /* don't give the error if the next line is also commented out.
@@ -599,9 +601,10 @@ static int stripcomment(unsigned char *line)
         *line++='\n';   /* put "newline" at first slash */
         *line='\0';     /* put "zero-terminator" at second slash */
       } else {
-        if (*line=='\\')
+        if (*line == '\\') {
           rawmode=RAWMODE;
-        else if (*line=='\"' || *line=='\'' || *line=='`') {        /* leave literals unaltered */
+          line+=1;
+        } else if (*line=='\"' || *line=='\'' || *line=='`') {        /* leave literals unaltered */
           c=*line;      /* ending quote, single or double */
           if (c=='`')
             imlstring=1|rawmode;
@@ -2117,9 +2120,9 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
       imlstring=0;
       break;
     }
-    litadd('\n');
     imlstring=1|(*flags & RAWMODE);
     preprocess();
+    lptr=pline;
   } /* for */
   litadd(0);
 
@@ -2236,14 +2239,9 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
       imlstring=0;
       break;
     }
-    val |= ('\n' << 8*i);
-    if (i==0) {
-      litadd(val);
-      val=0;
-    } /* if */
-    i=(i+sizeof(ucell)-(sCHARBITS/8)) % sizeof(ucell);
     imlstring=1|(*flags & RAWMODE);
     preprocess();
+    lptr=pline;
   } /* for */
   /* save last code; make sure there is at least one terminating zero character */
   if (i!=(int)(sizeof(ucell)-(sCHARBITS/8)))
@@ -2450,15 +2448,14 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
     stringflags=(*lptr==sc_ctrlchar) ? RAWMODE : 0;
     stringflags|=(*lptr=='#' || (*lptr==sc_ctrlchar && *(lptr+1)=='#')) ? STRINGIZE : 0;
     stringflags|=(*lptr=='`' || (*lptr==sc_ctrlchar && *(lptr+1)=='`')) ? MULTILINE : 0;
+    if (stringflags & MULTILINE)
+      (void)0;
     *lexvalue=_lexval=litidx;
     lptr+=1;            /* skip double quote */
     if ((stringflags & RAWMODE)!=0)
       lptr+=1;          /* skip "escape" character too */
     lptr=sc_packstr ? packedstring(lptr,&stringflags) : unpackedstring(lptr,&stringflags);
-    if (stringflags & MULTILINE) {
-      /* still in the string */
-      /* TODO: continue it on the next line */
-    } else if (*lptr=='`' || *lptr=='\"')
+    if (*lptr=='`' || *lptr=='\"')
       lptr += 1;          /* skip final quote */
     else if (!(stringflags & STRINGIZE))
       error(37);        /* invalid (non-terminated) string */
