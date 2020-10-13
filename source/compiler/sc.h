@@ -420,6 +420,8 @@ enum {
   tSLEEP,
   tSTATE,
   tSTATIC,
+  t__STATIC_ASSERT,
+  t__STATIC_CHECK,
   tSTOCK,
   tSWITCH,
   tTAGOF,
@@ -704,6 +706,7 @@ SC_FUNC void emit_parse_line(void);
 SC_FUNC void pragma_deprecated(symbol *sym);
 SC_FUNC void pragma_unused(symbol *sym,int unread,int unwritten);
 SC_FUNC void pragma_nodestruct(symbol *sym);
+SC_FUNC cell do_static_check(int use_warning);
 
 /* function prototypes in SC2.C */
 #define PUSHSTK_P(v)  { stkitem s_; s_.pv=(v); pushstk(s_); }
