@@ -539,6 +539,12 @@ typedef enum s_optmark {
 
 #define MAX_INSTR_LEN   30
 
+typedef enum s_warnmode {
+  warnDISABLE,
+  warnENABLE,
+  warnTOGGLE
+} warnmode;
+
 #define eotNUMBER       0
 #define eotFUNCTION     1
 #define eotLABEL        2
@@ -607,7 +613,7 @@ enum { /* attribute flags for "__pragma" */
 int pc_compile(int argc, char **argv);
 int pc_addconstant(char *name,cell value,int tag);
 int pc_addtag(char *name);
-int pc_enablewarning(int number,int enable);
+int pc_enablewarning(int number,warnmode enable);
 int pc_pushwarnings();
 int pc_popwarnings();
 void pc_seterrorwarnings(int enable);

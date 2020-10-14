@@ -1212,11 +1212,11 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
       case 'w':
         i=(int)strtol(option_value(ptr),(char **)&ptr,10);
         if (*ptr=='-')
-          pc_enablewarning(i,0);
+          pc_enablewarning(i,warnDISABLE);
         else if (*ptr=='+')
-          pc_enablewarning(i,1);
+          pc_enablewarning(i,warnENABLE);
         else if (*ptr=='\0')
-          pc_enablewarning(i,2);
+          pc_enablewarning(i,warnTOGGLE);
         break;
       case 'X':
         if (*(ptr+1)=='D') {

@@ -1309,7 +1309,7 @@ static int command(void)
               cell val;
               do {
                 preproc_expr(&val,NULL);
-                pc_enablewarning(val,(str[0]=='e') ? 1 : 0);
+                pc_enablewarning(val,(str[0]=='e') ? warnENABLE : warnDISABLE);
               } while (*lptr!='\0');
             } else if (strcmp(str,"push")==0) {
               pc_pushwarnings();
