@@ -843,7 +843,7 @@ static int ftoi(cell *val,const unsigned char *curptr)
  *        for at "hier2()" (in fact, it is viewed as an operator, not as a
  *        sign) and the + is invalid (as in K&R C, and unlike ANSI C).
  */
-static int number(cell *val,const unsigned char *curptr)
+SC_FUNC int number(cell *val,const unsigned char *curptr)
 {
   int i;
   cell value;

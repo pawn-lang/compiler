@@ -704,6 +704,7 @@ SC_FUNC stkitem popstk(void);
 SC_FUNC void clearstk(void);
 SC_FUNC int plungequalifiedfile(char *name);  /* explicit path included */
 SC_FUNC int plungefile(char *name,int try_currentpath,int try_includepaths);   /* search through "include" paths */
+SC_FUNC int number(cell *val,const unsigned char *curptr);
 SC_FUNC void preprocess(void);
 SC_FUNC void lexinit(void);
 SC_FUNC int lex(cell *lexvalue,char **lexsym);

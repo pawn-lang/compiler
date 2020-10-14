@@ -8252,6 +8252,33 @@ static void dopragma(void)
     } else if (!strcmp(str,"naked")) {
       pc_attributes |= (1U << attrNAKED);
       if (str[i]!='\0') goto unknown_pragma;
+    } else if (!strcmp(str,"warning")) {
+      str += i;
+      while (*str==' ') str++;
+      for (i=0; str[i]!='\0' && str[i]!=' '; i++)
+        /* nothing */;
+      if (str[i]!='\0') {
+        str[i]='\0';
+        while (str[++i]==' ')
+          /* nothing */;
+      } /* if */
+      if (strcmp(str,"enable")==0 || strcmp(str,"disable")==0) {
+        int len=number(&val,&str[i]);
+        if (len==0)
+          goto unknown_pragma;
+        pc_enablewarning((int)val,(str[0]=='e') ? warnENABLE : warnDISABLE);
+        /* warn if there are extra characters after the warning number */
+        for (i += len; str[i]==' '; i++)
+          /* nothing */;
+        if (str[i]!='\0')
+          goto unknown_pragma;
+      } else if (strcmp(str,"push")==0 && str[i]=='\0') {
+        pc_pushwarnings();
+      } else if (strcmp(str,"pop")==0 && str[i]=='\0') {
+        pc_popwarnings();
+      } else {
+        goto unknown_pragma;
+      } /* if */
     } else {
 unknown_pragma:
       error(207);       /* unknown #pragma */
