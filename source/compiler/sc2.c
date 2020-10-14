@@ -1305,17 +1305,11 @@ static int command(void)
         } else if (strcmp(str,"warning")==0) {
           int ok=lex(&val,&str)==tSYMBOL;
           if (ok) {
-            if (strcmp(str,"enable")==0) {
+            if (strcmp(str,"enable")==0 || strcmp(str,"disable")==0) {
               cell val;
               do {
                 preproc_expr(&val,NULL);
-                pc_enablewarning(val,1);
-              } while (*lptr!='\0');
-            } else if (strcmp(str,"disable")==0) {
-              cell val;
-              do {
-                preproc_expr(&val,NULL);
-                pc_enablewarning(val,0);
+                pc_enablewarning(val,(str[0]=='e') ? 1 : 0);
               } while (*lptr!='\0');
             } else if (strcmp(str,"push")==0) {
               pc_pushwarnings();
@@ -1323,11 +1317,11 @@ static int command(void)
               pc_popwarnings();
             } else {
               ok=FALSE;
-            }
+            } /* if */
           }
           if (!ok) {
             error(207);         /* unknown #pragma */
-          }
+          } /* if */
         } else if (strcmp(str,"compat")==0) {
           cell val;
           symbol *sym;
