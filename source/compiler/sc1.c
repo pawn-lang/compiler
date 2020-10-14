@@ -8191,7 +8191,7 @@ static void dopragma(void)
     assert(litidx>bck_litidx);
 
     /* the user shouldn't prepend "!" to the option string */
-    if (litq[val]<=UNPACKEDMAX) {
+    if (litq[val]<=UNPACKEDMAX && litq[val]!=0) {
       error(1,sc_tokens[tSTRING-tFIRST],"!");
       goto next;
     } /* if */
