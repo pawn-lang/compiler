@@ -8157,7 +8157,6 @@ static void dopragma(void)
   int tok;
   int bck_litidx,bck_packstr;
   int i;
-  int hasparams;
   cell val;
   char *str;
 
@@ -8222,11 +8221,13 @@ static void dopragma(void)
 
     /* split the option name from parameters */
     str=(char*)&litq[val];
-    for (i=0; str[i]!='\0' && str[i]!=' '; i++) {}
-    hasparams=(str[i]!='\0');
-    str[i]='\0';
-    if (hasparams)
-      while (str[++i]==' ') {}
+    for (i=0; str[i]!='\0' && str[i]!=' '; i++)
+      /* nothing */;
+    if (str[i]!='\0') {
+      str[i]='\0';
+      while (str[++i]==' ')
+        /* nothing */;
+    } /* if */
 
     /* check the option name, set the corresponding attribute flag
      * and parse the argument(s), if needed */
@@ -8238,15 +8239,21 @@ static void dopragma(void)
       pc_attributes |= (1U << attrDEPRECATED);
     } else if (!strcmp(str,"unused")) {
       pc_attributes |= (1U << attrUNUSED);
+      if (str[i]!='\0') goto unknown_pragma;
     } else if (!strcmp(str,"unread")) {
       pc_attributes |= (1U << attrUNREAD);
+      if (str[i]!='\0') goto unknown_pragma;
     } else if (!strcmp(str,"unwritten")) {
       pc_attributes |= (1U << attrUNWRITTEN);
+      if (str[i]!='\0') goto unknown_pragma;
     } else if (!strcmp(str,"nodestruct")) {
       pc_attributes |= (1U << attrNODESTRUCT);
+      if (str[i]!='\0') goto unknown_pragma;
     } else if (!strcmp(str,"naked")) {
       pc_attributes |= (1U << attrNAKED);
+      if (str[i]!='\0') goto unknown_pragma;
     } else {
+unknown_pragma:
       error(207);       /* unknown #pragma */
     } /* if */
 
