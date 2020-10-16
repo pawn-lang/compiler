@@ -925,6 +925,7 @@ static void initglobals(void)
   skipinput=0;           /* number of lines to skip from the first input file */
   sc_ctrlchar=CTRL_CHAR; /* the escape character */
   litmax=sDEF_LITMAX;    /* current size of the literal table */
+  litgrow=sDEF_LITMAX;   /* amount to increase the literal table by */
   errnum=0;              /* number of errors */
   warnnum=0;             /* number of warnings */
   optproccall=TRUE;      /* support "procedure call" */

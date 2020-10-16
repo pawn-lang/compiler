@@ -51,6 +51,7 @@ SC_VDEFINE char sc_ctrlchar=CTRL_CHAR;      /* the control character (or escape 
 SC_VDEFINE char sc_ctrlchar_org=CTRL_CHAR;  /* the default control character */
 SC_VDEFINE int litidx=0;                    /* index to literal table */
 SC_VDEFINE int litmax=sDEF_LITMAX;          /* current size of the literal table */
+SC_VDEFINE int litgrow=sDEF_LITMAX;         /* amount to increase the literal table by */
 SC_VDEFINE int stgidx=0;                    /* index to the staging buffer */
 SC_VDEFINE int sc_labnum=0;                 /* number of (internal) labels */
 SC_VDEFINE int staging=FALSE;               /* true if staging output */
