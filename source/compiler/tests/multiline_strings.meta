@@ -1,0 +1,21 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+multiline_strings.pwn(48) : warning 204: symbol is assigned a value that is never used: "str17"
+multiline_strings.pwn(44) : warning 204: symbol is assigned a value that is never used: "str16"
+multiline_strings.pwn(43) : warning 204: symbol is assigned a value that is never used: "str15"
+multiline_strings.pwn(41) : warning 204: symbol is assigned a value that is never used: "str14"
+multiline_strings.pwn(39) : warning 204: symbol is assigned a value that is never used: "str13"
+multiline_strings.pwn(35) : warning 204: symbol is assigned a value that is never used: "str12"
+multiline_strings.pwn(33) : warning 204: symbol is assigned a value that is never used: "str11"
+multiline_strings.pwn(30) : warning 204: symbol is assigned a value that is never used: "str10"
+multiline_strings.pwn(28) : warning 204: symbol is assigned a value that is never used: "str9"
+multiline_strings.pwn(25) : warning 204: symbol is assigned a value that is never used: "str8"
+multiline_strings.pwn(22) : warning 204: symbol is assigned a value that is never used: "str6"
+multiline_strings.pwn(18) : warning 204: symbol is assigned a value that is never used: "str5"
+multiline_strings.pwn(15) : warning 204: symbol is assigned a value that is never used: "str4"
+multiline_strings.pwn(11) : warning 204: symbol is assigned a value that is never used: "str3"
+multiline_strings.pwn(9) : warning 204: symbol is assigned a value that is never used: "str2"
+multiline_strings.pwn(4) : warning 204: symbol is assigned a value that is never used: "str1"
+"""
+}
