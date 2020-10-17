@@ -3350,7 +3350,7 @@ SC_FUNC void clearassignments(int fromlevel)
 }
 
 /* memoizes all assignments done on the specified compound level and higher */
-SC_FUNC void memoizeassignments(int fromlevel,assigninfo **assignments)
+SC_FUNC void memoizeassignments(int fromlevel,symstate **assignments)
 {
   symbol *sym;
   int num;
@@ -3370,7 +3370,7 @@ SC_FUNC void memoizeassignments(int fromlevel,assigninfo **assignments)
     /* if there are no variables, then we have an early exit */
     if (num==0)
       return;
-    *assignments=(assigninfo *)calloc((size_t)num,sizeof(assigninfo));
+    *assignments=(symstate *)calloc((size_t)num,sizeof(symstate));
     if (*assignments==NULL)
       error(103); /* insufficient memory */
   } /* if */
@@ -3385,16 +3385,17 @@ SC_FUNC void memoizeassignments(int fromlevel,assigninfo **assignments)
       sym->usage &= ~uASSIGNED;
       /* memoize the assignment only if there was no other unused assignment
        * in any other "if" or "switch" branch */
-      if ((*assignments)[num].unused==FALSE) {
-        (*assignments)[num].unused=TRUE;
+      assert_static(sizeof(sym->usage)==sizeof((*assignments)->usage));
+      if (((*assignments)[num].usage & uASSIGNED)==0) {
         (*assignments)[num].lnumber=sym->lnumber;
+        (*assignments)[num].usage |= uASSIGNED;
       } /* if */
     } /* if */
   } /* for */
 }
 
 /* restores all memoized assignments */
-SC_FUNC void restoreassignments(int fromlevel,assigninfo *assignments)
+SC_FUNC void restoreassignments(int fromlevel,symstate *assignments)
 {
   symbol *sym;
   int num;
@@ -3402,7 +3403,7 @@ SC_FUNC void restoreassignments(int fromlevel,assigninfo *assignments)
   sym=&loctab;
   while ((sym=sym->next)!=NULL && sym->ident==iLABEL) {}    /* skip labels */
   for (num=0; sym!=NULL; num++,sym=sym->next) {
-    if (assignments!=NULL && assignments[num].unused) {
+    if (assignments!=NULL && (assignments[num].usage & uASSIGNED)!=0) {
       sym->usage |= uASSIGNED;
       sym->lnumber=assignments[num].lnumber;
     } /* if */

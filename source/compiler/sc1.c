@@ -5884,7 +5884,7 @@ static int doif(void)
   int ifindent;
   int lastst_true;
   int returnst=tIF;
-  assigninfo *assignments=NULL;
+  symstate *assignments=NULL;
 
   lastst=0;                     /* reset the last statement */
   ifindent=stmtindent;          /* save the indent of the "if" instruction */
@@ -6104,7 +6104,7 @@ static int doswitch(void)
   constvalue_root caselist = { NULL, NULL};   /* case list starts empty */
   constvalue *cse,*csp,*newval;
   char labelname[sNAMEMAX+1];
-  assigninfo *assignments=NULL;
+  symstate *assignments=NULL;
 
   endtok= matchtoken('(') ? ')' : tDO;
   ident=doexpr(TRUE,FALSE,FALSE,FALSE,&swtag,NULL,TRUE,NULL);   /* evaluate switch expression */
