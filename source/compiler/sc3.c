@@ -1770,6 +1770,12 @@ restart:
         error(51);      /* invalid subscript, must use [ ] */
         invsubscript=TRUE;
       } /* if */
+      if (pc_loopcond) {
+        /* stop counting variables that were used in loop condition,
+         * otherwise warnings 250 and 251 may be inaccurate */
+        pc_loopcond=FALSE;
+        pc_numloopvars=0;
+      } /* if */
       if (invsubscript) {
         if (sym!=NULL && sym->ident!=iFUNCTN)
           sym->usage |= uREAD;  /* avoid the "symbol is never used" warning */
@@ -2177,7 +2183,6 @@ static int nesting=0;
   int nargs=0;      /* number of arguments */
   int heapalloc=0;
   int namedparams=FALSE;
-  int save_loopcond;
   value lval = {0};
   arginfo *arg;
   char arglist[sMAXARGS];
@@ -2197,10 +2202,12 @@ static int nesting=0;
     error(29); /* invalid expression, assumed zero */
     return;
   } /* if */
-  /* make the compiler not count variables passed as function arguments
-   * as being used inside a loop condition */
-  save_loopcond=pc_loopcond;
-  pc_loopcond=FALSE;
+  if (pc_loopcond) {
+    /* stop counting variables that were used in loop condition,
+     * otherwise warnings 249 and 250 may be inaccurate */
+    pc_loopcond=FALSE;
+    pc_numloopvars=0;
+  } /* if */
   /* check whether this is a function that returns an array */
   symret=finddepend(sym);
   assert(symret==NULL || symret->ident==iREFARRAY);
@@ -2614,7 +2621,6 @@ static int nesting=0;
   if (symret!=NULL)
     popreg(sPRI);               /* pop hidden parameter as function result */
   pc_sideeffect=TRUE;           /* assume functions carry out a side-effect */
-  pc_loopcond=save_loopcond;
   delete_consttable(&arrayszlst);     /* clear list of array sizes */
   delete_consttable(&taglst);   /* clear list of parameter tags */
 

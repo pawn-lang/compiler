@@ -3309,10 +3309,8 @@ SC_FUNC void markusage(symbol *sym,int usage)
     sym->lnumber=fline;
   if ((usage & uREAD)!=0 && (sym->ident==iVARIABLE || sym->ident==iREFERENCE))
     sym->usage &= ~uASSIGNED;
-  if ((usage & (uREAD | uWRITTEN))!=0
-      && (sym->vclass==sLOCAL || sym->vclass==sSTATIC)
-      && (sym->ident==iVARIABLE || sym->ident==iREFERENCE
-          || sym->ident==iARRAY || sym->ident==iREFARRAY))
+  if ((usage & (uREAD | uWRITTEN))!=0 && (sym->vclass==sLOCAL || sym->vclass==sSTATIC)
+      && (sym->ident==iVARIABLE || sym->ident==iREFERENCE))
     markloopvariable(sym,usage);
   /* check if (global) reference must be added to the symbol */
   if ((usage & (uREAD | uWRITTEN))!=0) {

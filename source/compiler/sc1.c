@@ -5214,8 +5214,7 @@ static void scanloopvariables(symstate **loopvars)
     /* if the variable already has the uLOOPVAR flag set (from being used
      * in an enclosing loop), we have to set the uNOLOOPVAR to exclude it
      * from checks in the current loop */
-    if ((sym->ident==iVARIABLE || sym->ident==iREFERENCE || sym->ident==iARRAY
-        || sym->ident==iREFARRAY) && (sym->usage & uLOOPVAR)!=0) {
+    if ((sym->ident==iVARIABLE || sym->ident==iREFERENCE) && (sym->usage & uLOOPVAR)!=0) {
       /* ... but it might be already set from an enclosing loop,
        * so we need to temporarily store it in "loopvars[num]" first */
       (*loopvars)[num].usage |= (sym->usage & uNOLOOPVAR);
@@ -5245,8 +5244,8 @@ static void testloopvariables(symstate *loopvars,int line)
   if (pc_numloopvars!=0) {
     warnnum=(pc_numloopvars==1) ? 250 : 251;
     for (sym=start; sym!=NULL; sym=sym->next)
-      if ((sym->ident==iVARIABLE || sym->ident==iREFERENCE || sym->ident==iARRAY
-          || sym->ident==iREFARRAY) && (sym->usage & (uLOOPVAR | uNOLOOPVAR))==uLOOPVAR)
+      if ((sym->ident==iVARIABLE || sym->ident==iREFERENCE)
+          && (sym->usage & (uLOOPVAR | uNOLOOPVAR))==uLOOPVAR)
         pc_numloopvars--;
     if (pc_numloopvars==0 && warnnum==251) {
       errorset(sSETPOS,line);
@@ -5256,8 +5255,7 @@ static void testloopvariables(symstate *loopvars,int line)
   } /* if */
 
   for (num=0,sym=start; sym!=NULL; num++,sym=sym->next) {
-    if (sym->ident==iVARIABLE || sym->ident==iREFERENCE
-        || sym->ident==iARRAY || sym->ident==iREFARRAY) {
+    if (sym->ident==iVARIABLE || sym->ident==iREFERENCE) {
       if ((sym->usage & (uLOOPVAR | uNOLOOPVAR))==uLOOPVAR) {
         sym->usage &= ~uLOOPVAR;
         /* warn only if none of the variables used inside the loop condition
