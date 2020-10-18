@@ -1,0 +1,11 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+warning_250_251.pwn(12) : warning 250: variable "n" used in loop condition not modified in loop body
+warning_250_251.pwn(13) : warning 250: variable "i" used in loop condition not modified in loop body
+warning_250_251.pwn(31) : warning 250: variable "n" used in loop condition not modified in loop body
+warning_250_251.pwn(32) : warning 250: variable "i" used in loop condition not modified in loop body
+warning_250_251.pwn(46) : warning 251: none of the variables used in loop condition are modified in loop body
+warning_250_251.pwn(47) : warning 251: none of the variables used in loop condition are modified in loop body
+"""
+}
