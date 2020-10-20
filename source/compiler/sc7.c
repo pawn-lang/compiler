@@ -1365,23 +1365,23 @@ static int filewrite(char *str)
  *                     staging (referred to only)
  *                     stglen  (altered)
  */
-SC_FUNC void stgwrite(const char *st)
+SC_FUNC void stgwrite(const char *str)
 {
   int len;
-  int st_len=strlen(st);
+  int st_len=strlen(str);
 
   if (staging) {
     assert(stgidx==0 || stgbuf!=NULL);  /* staging buffer must be valid if there is (apparently) something in it */
     if (stgidx>=2 && stgbuf[stgidx-1]=='\0' && stgbuf[stgidx-2]!='\n')
       stgidx-=1;                        /* overwrite last '\0' */
     CHECK_STGBUFFER(stgidx+st_len+1);
-    memcpy(stgbuf+stgidx,st,st_len+1);  /* copy to staging buffer */
+    memcpy(stgbuf+stgidx,str,st_len+1); /* copy to staging buffer */
     stgidx+=st_len+1;
     stglen+=st_len;
   } else {
     len=(stgbuf!=NULL) ? stglen : 0;
     CHECK_STGBUFFER(len+st_len+1);
-    memcpy(stgbuf+len,st,st_len+1);
+    memcpy(stgbuf+len,str,st_len+1);
     len=len+st_len;
     stglen=len;
     if (len>0 && stgbuf[len-1]=='\n') {
@@ -1465,7 +1465,7 @@ static int stgstring(char *start,char *end)
   char *ptr;
   int nest,argc,arg;
   argstack *stack;
-  int reordered=0;
+  int reordered=FALSE;
 
   while (start<end) {
     if (*start==sSTARTREORDER) {
@@ -1474,7 +1474,7 @@ static int stgstring(char *start,char *end)
       stack=(argstack *)malloc(sMAXARGS*sizeof(argstack));
       if (stack==NULL)
         error(103);     /* insufficient memory */
-      reordered=1;      /* mark that the expression is reordered */
+      reordered=TRUE;   /* mark that the expression is reordered */
       nest=1;           /* nesting counter */
       argc=0;           /* argument counter */
       arg=-1;           /* argument index; no valid argument yet */

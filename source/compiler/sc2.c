@@ -226,7 +226,7 @@ SC_FUNC int plungefile(char *name,int try_currentpath,int try_includepaths)
        * there is a (relative) path for the current file
        */
       char *ptr;
-      if ((ptr=strrchr(inpfname,dirsep))!=0) {
+      if ((ptr=strrchr(inpfname,dirsep))!=NULL) {
         int len=(int)(ptr-inpfname)+1;
         if (len+strlen(name)<_MAX_PATH) {
           char path[_MAX_PATH];
@@ -787,7 +787,7 @@ static int ftoi(cell *val,const unsigned char *curptr)
     /* floating point */
     #if PAWN_CELL_SIZE==32
       float value=(float)fnum;
-      assert_static(sizeof(val)==sizeof(value));
+      assert_static(sizeof(*val)==sizeof(value));
       *val=*((cell *)&value);
       #if !defined NDEBUG
         /* I assume that the C/C++ compiler stores "float" values in IEEE 754
@@ -806,7 +806,7 @@ static int ftoi(cell *val,const unsigned char *curptr)
         }
       #endif
     #elif PAWN_CELL_SIZE==64
-      assert_static(sizeof(val)==sizeof(fnum));
+      assert_static(sizeof(*val)==sizeof(fnum));
       *val=*((cell *)&fnum);
       #if !defined NDEBUG
         /* I assume that the C/C++ compiler stores "double" values in IEEE 754
@@ -1957,7 +1957,7 @@ SC_FUNC void preprocess(void)
 static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
 {
   const unsigned char *stringize;
-  int instring=1;
+  int instring=TRUE;
   int brackets=0;
   if (*flags & STRINGIZE)                 /* ignore leading spaces after the # */
     while (*lptr==' ' || *lptr=='\t')     /* this is as defines with parameters may add them */
@@ -1969,11 +1969,11 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
     } /* if */
     if (!instring) {
       if (*lptr=='\"') {
-        instring=1;
+        instring=TRUE;
       } else if (*lptr=='#') {
         while (*++lptr==' ' || *lptr=='\t');
         lptr--;
-        instring=1;
+        instring=TRUE;
         *flags |= STRINGIZE;
         brackets=0;
       } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' ||
@@ -2018,7 +2018,7 @@ static const unsigned char *unpackedstring(const unsigned char *lptr,int *flags)
     } else {
       if (*lptr=='\"') {
         stringize=lptr++;
-        instring=0;
+        instring=FALSE;
         continue;
       } /* if (*flags & STRINGIZE) */
     }
@@ -2037,7 +2037,7 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
   int i;
   ucell val,c;
   const unsigned char *stringize;
-  int instring=1;
+  int instring=TRUE;
   int brackets=0;
   if (*flags & STRINGIZE)
     while (*lptr==' ' || *lptr=='\t')
@@ -2052,11 +2052,11 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
     } /* if */
     if (!instring) {
       if (*lptr=='\"') {
-        instring=1;
+        instring=TRUE;
       } else if (*lptr=='#') {
         while (*++lptr==' ' || *lptr=='\t');
         lptr--;
-        instring=1;
+        instring=TRUE;
         brackets=0;
         *flags |= STRINGIZE;
       } else if (*lptr==')' || *lptr==',' || *lptr=='}' || *lptr==';' ||
@@ -2101,7 +2101,7 @@ static const unsigned char *packedstring(const unsigned char *lptr,int *flags)
     } else {
       if (*lptr=='\"') {
         stringize=lptr++;
-        instring=0;
+        instring=FALSE;
         continue;
       } /* if (*flags & STRINGIZE) */
     }
@@ -2281,14 +2281,14 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
      */
     _lextok=tSYMBOL;
     i=0;
-    toolong=0;
+    toolong=FALSE;
     while (alphanum(*lptr)){
       _lexstr[i]=*lptr;
       lptr+=1;
       if (i<sNAMEMAX)
         i+=1;
       else
-        toolong=1;
+        toolong=TRUE;
     } /* while */
     _lexstr[i]='\0';
     if (toolong)
@@ -3178,7 +3178,7 @@ SC_FUNC int refer_symbol(symbol *entry,symbol *bywhom)
 SC_FUNC void markusage(symbol *sym,int usage)
 {
   assert(sym!=NULL);
-  sym->usage |= (char)usage;
+  sym->usage |= (short)(unsigned short)usage;
   if ((usage & uWRITTEN)!=0)
     sym->lnumber=fline;
   if ((usage & uREAD)!=0 && (sym->ident==iVARIABLE || sym->ident==iREFERENCE))
@@ -3382,7 +3382,7 @@ SC_FUNC symbol *addsym(const char *name,cell addr,int ident,int vclass,int tag,i
   entry.vclass=(char)vclass;
   entry.ident=(char)ident;
   entry.tag=tag;
-  entry.usage=(char)usage;
+  entry.usage=(short)(unsigned short)usage;
   entry.assignlevel=0;
   entry.fnumber=-1;     /* assume global visibility (ignored for local symbols) */
   entry.lnumber=fline;

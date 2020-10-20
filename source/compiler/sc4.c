@@ -836,7 +836,7 @@ SC_FUNC void defstorage(void)
  *  Same as defstorage() but for repeating values.
  */
 
-SC_FUNC void defcompactstorage()
+SC_FUNC void defcompactstorage(void)
 {
   stgwrite("dumpn ");
 }
