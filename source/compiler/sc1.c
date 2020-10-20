@@ -166,6 +166,7 @@ static int sc_reparse = 0;      /* needs 3th parse because of changed prototypes
 static int sc_parsenum = 0;     /* number of the extra parses */
 static int wq[wqTABSZ];         /* "while queue", internal stack for nested loops */
 static int *wqptr;              /* pointer to next entry */
+static time_t now;              /* current timestamp, for built-in constants "__time" and "__timestamp" */
 #if !defined SC_LIGHT
   static char sc_rootpath[_MAX_PATH];
   static char *sc_documentation=NULL;/* main documentation */
@@ -1554,6 +1555,8 @@ static void usage(void)
 static void setconstants(void)
 {
   int debug;
+  time_t loctime;
+  struct tm loctm,utctm;
 
   assert(sc_status==statIDLE);
   append_constval(&tagname_tab,"_",0,0);/* "untagged" */
@@ -1601,6 +1604,13 @@ static void setconstants(void)
   line_sym=add_builtin_constant("__line",0,sGLOBAL,0);
   add_builtin_constant("__compat",pc_compat,sGLOBAL,0);
 
+  now=time(NULL);
+  loctm=*localtime(&now);
+  utctm=*gmtime(&now);
+  loctime=now+(loctm.tm_sec-utctm.tm_sec)+(loctm.tm_min-utctm.tm_min)*60
+          +(loctm.tm_hour-utctm.tm_hour)*60*60+(loctm.tm_mday-utctm.tm_mday)*60*60*24;
+  add_builtin_constant("__timestamp",(cell)loctime,sGLOBAL,0);
+
   debug=0;
   if ((sc_debug & (sCHKBOUNDS | sSYMBOLIC))==(sCHKBOUNDS | sSYMBOLIC))
     debug=2;
@@ -1613,14 +1623,12 @@ static void setconstants(void)
 
 static void setstringconstants()
 {
-  time_t now;
   char timebuf[arraysize("11:22:33")];
   char datebuf[arraysize("10 Jan 2017")];
 
   assert(sc_status!=statIDLE);
   add_builtin_string_constant("__file","",sGLOBAL);
 
-  now = time(NULL);
   strftime(timebuf,arraysize(timebuf),"%H:%M:%S",localtime(&now));
   add_builtin_string_constant("__time",timebuf,sGLOBAL);
   strftime(datebuf,arraysize(datebuf),"%d %b %Y",localtime(&now));
