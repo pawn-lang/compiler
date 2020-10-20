@@ -1213,11 +1213,11 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
       case 'w':
         i=(int)strtol(option_value(ptr),(char **)&ptr,10);
         if (*ptr=='-')
-          pc_enablewarning(i,0);
+          pc_enablewarning(i,warnDISABLE);
         else if (*ptr=='+')
-          pc_enablewarning(i,1);
+          pc_enablewarning(i,warnENABLE);
         else if (*ptr=='\0')
-          pc_enablewarning(i,2);
+          pc_enablewarning(i,warnTOGGLE);
         break;
       case 'X':
         if (*(ptr+1)=='D') {
@@ -8165,7 +8165,6 @@ static void dopragma(void)
   int tok;
   int bck_litidx,bck_packstr;
   int i;
-  int hasparams;
   cell val;
   char *str;
 
@@ -8200,7 +8199,7 @@ static void dopragma(void)
     assert(litidx>bck_litidx);
 
     /* the user shouldn't prepend "!" to the option string */
-    if (litq[val]<=UNPACKEDMAX) {
+    if (litq[val]<=UNPACKEDMAX && litq[val]!=0) {
       error(1,sc_tokens[tSTRING-tFIRST],"!");
       goto next;
     } /* if */
@@ -8230,11 +8229,13 @@ static void dopragma(void)
 
     /* split the option name from parameters */
     str=(char*)&litq[val];
-    for (i=0; str[i]!='\0' && str[i]!=' '; i++) {}
-    hasparams=(str[i]!='\0');
-    str[i]='\0';
-    if (hasparams)
-      while (str[++i]==' ') {}
+    for (i=0; str[i]!='\0' && str[i]!=' '; i++)
+      /* nothing */;
+    if (str[i]!='\0') {
+      str[i]='\0';
+      while (str[++i]==' ')
+        /* nothing */;
+    } /* if */
 
     /* check the option name, set the corresponding attribute flag
      * and parse the argument(s), if needed */
@@ -8246,15 +8247,48 @@ static void dopragma(void)
       pc_attributes |= (1U << attrDEPRECATED);
     } else if (!strcmp(str,"unused")) {
       pc_attributes |= (1U << attrUNUSED);
+      if (str[i]!='\0') goto unknown_pragma;
     } else if (!strcmp(str,"unread")) {
       pc_attributes |= (1U << attrUNREAD);
+      if (str[i]!='\0') goto unknown_pragma;
     } else if (!strcmp(str,"unwritten")) {
       pc_attributes |= (1U << attrUNWRITTEN);
+      if (str[i]!='\0') goto unknown_pragma;
     } else if (!strcmp(str,"nodestruct")) {
       pc_attributes |= (1U << attrNODESTRUCT);
+      if (str[i]!='\0') goto unknown_pragma;
     } else if (!strcmp(str,"naked")) {
       pc_attributes |= (1U << attrNAKED);
+      if (str[i]!='\0') goto unknown_pragma;
+    } else if (!strcmp(str,"warning")) {
+      str += i;
+      while (*str==' ') str++;
+      for (i=0; str[i]!='\0' && str[i]!=' '; i++)
+        /* nothing */;
+      if (str[i]!='\0') {
+        str[i]='\0';
+        while (str[++i]==' ')
+          /* nothing */;
+      } /* if */
+      if (strcmp(str,"enable")==0 || strcmp(str,"disable")==0) {
+        int len=number(&val,&str[i]);
+        if (len==0)
+          goto unknown_pragma;
+        pc_enablewarning((int)val,(str[0]=='e') ? warnENABLE : warnDISABLE);
+        /* warn if there are extra characters after the warning number */
+        for (i += len; str[i]==' '; i++)
+          /* nothing */;
+        if (str[i]!='\0')
+          goto unknown_pragma;
+      } else if (strcmp(str,"push")==0 && str[i]=='\0') {
+        pc_pushwarnings();
+      } else if (strcmp(str,"pop")==0 && str[i]=='\0') {
+        pc_popwarnings();
+      } else {
+        goto unknown_pragma;
+      } /* if */
     } else {
+unknown_pragma:
       error(207);       /* unknown #pragma */
     } /* if */
 

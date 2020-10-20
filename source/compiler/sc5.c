@@ -385,7 +385,7 @@ SC_FUNC void errorset(int code,int line)
  *  o  1 for enable
  *  o  2 for toggle
  */
-int pc_enablewarning(int number,int enable)
+int pc_enablewarning(int number,warnmode enable)
 {
   int index;
   unsigned char mask;
@@ -399,13 +399,13 @@ int pc_enablewarning(int number,int enable)
   index=number/8;
   mask=(unsigned char)(1 << (number%8));
   switch (enable) {
-  case 0:
+  case warnDISABLE:
     warnstack.disable[index] |= mask;
     break;
-  case 1:
+  case warnENABLE:
     warnstack.disable[index] &= (unsigned char)~mask;
     break;
-  case 2:
+  case warnTOGGLE:
     warnstack.disable[index] ^= mask;
     break;
   } /* switch */
