@@ -176,6 +176,7 @@ if(BUILD_TESTING)
     ../amx/amxaux.h
     ../amx/amxcons.c
     ../amx/amxcore.c
+    ../amx/amxstring.c
   )
   if(UNIX)
     set(PAWNRUNS_SRCS
