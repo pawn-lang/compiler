@@ -12,7 +12,6 @@ warning_240.pwn(97) : warning 240: previously assigned value is never used (symb
 warning_240.pwn(109) : warning 240: previously assigned value is never used (symbol "local_var")
 warning_240.pwn(120) : warning 240: previously assigned value is never used (symbol "local_var")
 warning_240.pwn(139) : warning 240: previously assigned value is never used (symbol "local_var")
-warning_240.pwn(148) : warning 240: previously assigned value is never used (symbol "local_static_var")
 warning_240.pwn(174) : warning 240: previously assigned value is never used (symbol "arg")
 warning_240.pwn(178) : warning 240: previously assigned value is never used (symbol "arg")
 warning_240.pwn(183) : warning 240: previously assigned value is never used (symbol "refarg")
