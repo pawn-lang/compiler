@@ -3135,7 +3135,8 @@ static void decl_enum(int vclass,int fstatic)
         warn_overflow=TRUE;
       value*=(size*increment);
     } else { // taSHL
-      if ((ucell)value>=((ucell)1 << (PAWN_CELL_SIZE-increment)))
+      if (increment>0 && increment<PAWN_CELL_SIZE
+          && ((ucell)value>=((ucell)1 << (PAWN_CELL_SIZE-increment))))
         warn_overflow=TRUE;
       value*=(size << increment);
     } /* if */
