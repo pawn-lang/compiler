@@ -471,7 +471,7 @@ static int stripcomment(unsigned char *line)
   char* continuation;
   int startinml=0;
   int rawmode=0;
-  int rawmodereset=MULTILINE;
+  int incommand=2; /* 0 - not `#error` etc, 1 - command, 2 - undetermined */
   #if !defined SC_LIGHT
     #define COMMENT_LIMIT 100
     #define COMMENT_MARGIN 40   /* length of the longest word */
@@ -487,7 +487,7 @@ static int stripcomment(unsigned char *line)
   /* multiline string continuation at the start */
   if (imlstring!=0) {
     startinml=1;
-    rawmodereset=0;
+    incommand=0;
     if (*line=='\0')
       return 2;
     else if (*line=='"') {
@@ -544,20 +544,8 @@ static int stripcomment(unsigned char *line)
         line+=1;
       } /* if */
     } else {
-      if (*line>' ' && rawmodereset==MULTILINE) {
-        /* line starting a command, may need raw strings */
-        if (strncmp(line, "#error", 6)==0 ||
-            strncmp(line, "#warning", 8)==0 ||
-            strncmp(line, "#pragma", 7)==0) {
-          /* is one of the pre-processor commands with pure raw strings */
-          rawmodereset=RAWMODE;
-          rawmode=RAWMODE;
-        } else {
-          rawmodereset=0;
-        } /* if */
-      } /* if */
       if (*line=='/' && *(line+1)=='*') {
-        rawmode=rawmodereset;
+        rawmode=0;
         icomment=1;     /* start comment */
         #if !defined SC_LIGHT
           /* there must be two "*" behind the slash and then white space */
@@ -578,7 +566,7 @@ static int stripcomment(unsigned char *line)
         if (icomment==2)
           *line++=' ';
       } else if (*line=='/' && *(line+1)=='/'){  /* comment to end of line */
-        rawmode=rawmodereset;
+        rawmode=0;
         continuation=(char*)line;
         while ((continuation=strchr(continuation,'\a'))!=NULL){
           /* don't give the error if the next line is also commented out.
@@ -618,7 +606,21 @@ static int stripcomment(unsigned char *line)
         *line++='\n';   /* put "newline" at first slash */
         *line='\0';     /* put "zero-terminator" at second slash */
       } else {
-        if (*line == '\\') {
+        if (incommand==2 && *line>' ') {
+          /* line starting a command, may need raw strings */
+          if (strncmp(line, "#error", 6)==0 ||
+              strncmp(line, "#warning", 8)==0 ||
+              strncmp(line, "#pragma", 7)==0) {
+            /* is one of the pre-processor commands with pure raw strings */
+            incommand=1;
+          } else {
+            incommand=0;
+          } /* if */
+        } /* if */
+        if (incommand==1) {
+          /* ignore ""s in certain pre-processor commands */
+          line+=1;
+        } else if (*line == '\\') {
           rawmode=RAWMODE;
           line+=1;
         } else if (*line=='\"' || *line=='\''){        /* leave literals unaltered */
@@ -634,7 +636,7 @@ static int stripcomment(unsigned char *line)
           }
         } else {
           if (*line!='!')
-            rawmode=rawmodereset;
+            rawmode=0;
           line+=1;
         } /* if */
       } /* if */

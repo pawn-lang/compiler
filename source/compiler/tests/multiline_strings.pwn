@@ -48,5 +48,3 @@ world
 four";
 }
 
-#error "raw error\"
-
