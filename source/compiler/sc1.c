@@ -4092,9 +4092,8 @@ static int argcompare(arginfo *a1,arginfo *a2)
         result= a1->defvalue.array.size==a2->defvalue.array.size;
       if (result)
         result= a1->defvalue.array.arraysize==a2->defvalue.array.arraysize;
-      /* ??? should also check contents of the default array (these troubles
-       * go away in a 2-pass compiler that forbids double declarations, but
-       * Pawn currently does not forbid them) */
+      if (result)
+        result=(memcmp(a1->defvalue.array.data,a2->defvalue.array.data,a1->defvalue.array.size*sizeof(cell))==0);
     } else {
       if (result) {
         if ((a1->hasdefault & uSIZEOF)!=0 || (a1->hasdefault & uTAGOF)!=0)
