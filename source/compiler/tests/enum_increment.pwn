@@ -1,5 +1,3 @@
-#pragma option -d1 // TODO: Remove this line when #544 is merged
-
 main()
 {
 	enum e1
@@ -45,8 +43,8 @@ main()
 	#assert sizeof arr3[e3Elem3] == 1
 	#assert _:e3Elem1 == 1
 	#assert _:e3Elem2 == 2  // 1 * (1 * 2); the first "1" is the value of the previous
-	                        // enum item, the second "1" is the size of the previous
-	                        // item, and "2" is the increment (multiplier)
+	                        // enum element, the second "1" is the size of the previous
+	                        // element, and "2" is the increment (multiplier)
 	#assert _:e3Elem3 == 12 // 2 * (3 * 2)
 
 	enum e4 (<<= 2)
@@ -76,11 +74,11 @@ main()
 
 	enum (*= 1)
 	{
-		e5Elem1,
-		e5Elem2,
-		e5Elem3
+		e6Elem1 = 1,
+		e6Elem2,
+		e6Elem3
 	};
-	#assert _:e5Elem1 == 0
-	#assert _:e5Elem2 == 0
-	#assert _:e5Elem3 == 0
+	#assert _:e6Elem1 == 1
+	#assert _:e6Elem2 == 1
+	#assert _:e6Elem3 == 1
 }

@@ -3,9 +3,9 @@
   'errors': """
 warning_241_242.pwn(3) : warning 241: negative or too big shift count
 warning_241_242.pwn(8) : warning 241: negative or too big shift count
-warning_241_242.pwn(56) : warning 242: shift overflow in enum item declaration (symbol "e32")
-warning_241_242.pwn(96) : warning 242: shift overflow in enum item declaration (symbol "f34")
-warning_241_242.pwn(97) : warning 242: shift overflow in enum item declaration (symbol "f35")
+warning_241_242.pwn(56) : warning 242: shift overflow in enum element declaration (symbol "e32")
+warning_241_242.pwn(96) : warning 242: shift overflow in enum element declaration (symbol "f34")
+warning_241_242.pwn(97) : warning 242: shift overflow in enum element declaration (symbol "f35")
 warning_241_242.pwn(105) : warning 241: negative or too big shift count
 warning_241_242.pwn(106) : warning 241: negative or too big shift count
 warning_241_242.pwn(107) : warning 241: negative or too big shift count

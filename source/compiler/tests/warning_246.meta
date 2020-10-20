@@ -1,0 +1,16 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+warning_246.pwn(34) : warning 246: multiplication overflow in enum element declaration (symbol "e0Elem31")
+warning_246.pwn(35) : warning 246: multiplication overflow in enum element declaration (symbol "e0Elem32")
+warning_246.pwn(73) : warning 246: multiplication overflow in enum element declaration (symbol "e1Elem32")
+warning_246.pwn(80) : warning 246: multiplication overflow in enum element declaration (symbol "e2Elem1")
+warning_246.pwn(86) : warning 246: multiplication overflow in enum element declaration (symbol "e3Elem1")
+warning_246.pwn(93) : warning 246: multiplication overflow in enum element declaration (symbol "e4Elem2")
+warning_246.pwn(100) : warning 246: multiplication overflow in enum element declaration (symbol "e5Elem2")
+warning_246.pwn(106) : warning 246: multiplication overflow in enum element declaration (symbol "e6Elem1")
+warning_246.pwn(112) : warning 246: multiplication overflow in enum element declaration (symbol "e7Elem1")
+warning_246.pwn(119) : warning 246: multiplication overflow in enum element declaration (symbol "e8Elem2")
+warning_246.pwn(126) : warning 246: multiplication overflow in enum element declaration (symbol "e9Elem2")
+"""
+}

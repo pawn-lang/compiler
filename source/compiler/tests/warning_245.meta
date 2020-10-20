@@ -1,0 +1,7 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+warning_245.pwn(3) : warning 245: enum increment "<<= 1" has no effect on zero value (symbol "e1Elem1")
+warning_245.pwn(9) : warning 245: enum increment "*= 1" has no effect on zero value (symbol "e2Elem1")
+"""
+}

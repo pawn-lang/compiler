@@ -400,7 +400,7 @@ static int skim(int *opstr,void (*testfunc)(int),int dropval,int endval,
       ldconst(dropval,sPRI);
       setlabel(endlab);
       lval->sym=NULL;
-      lval->tag=pc_addtag("bool");  /* force tag to be "bool" */
+      lval->tag=BOOLTAG;            /* force tag to be "bool" */
       if (allconst) {
         lval->ident=iCONSTEXPR;
         lval->constval=constval;
@@ -524,7 +524,7 @@ static int plnge_rel(int *opstr,int opoff,int (*hier)(value *lval),value *lval)
       relop_suffix();
   } while (nextop(&opidx,opstr)); /* enddo */
   lval->constval=lval->boolresult;
-  lval->tag=pc_addtag("bool");    /* force tag to be "bool" */
+  lval->tag=BOOLTAG;    /* force tag to be "bool" */
   return FALSE;         /* result of expression is not an lvalue */
 }
 
@@ -1290,6 +1290,8 @@ static int hier2(value *lval)
     lval->constval=~lval->constval;
     if (lval->ident==iVARIABLE || lval->ident==iARRAYCELL)
       lval->ident=iEXPRESSION;
+    if (lval->tag==BOOLTAG)
+      error(makelong(247,3),"!"); /* use of operator "~" on a "bool:" value always results in "true" */
     return FALSE;
   case '!':                     /* ! (logical negate) */
     if (hier2(lval))
@@ -1300,7 +1302,7 @@ static int hier2(value *lval)
     } else {
       lneg();                   /* 0 -> 1,  !0 -> 0 */
       lval->constval=!lval->constval;
-      lval->tag=pc_addtag("bool");
+      lval->tag=BOOLTAG;
       if (lval->ident==iVARIABLE || lval->ident==iARRAYCELL)
         lval->ident=iEXPRESSION;
     } /* if */
@@ -1457,7 +1459,7 @@ static int hier2(value *lval)
     clear_value(lval);
     lval->ident=iCONSTEXPR;
     lval->constval= val;
-    lval->tag=pc_addtag("bool");
+    lval->tag=BOOLTAG;
     ldconst(lval->constval,sPRI);
     while (paranthese--)
       needtoken(')');
@@ -1606,7 +1608,7 @@ static int hier2(value *lval)
       ob_eq();
       clear_value(lval);
       lval->ident=iEXPRESSION;
-      lval->tag=pc_addtag("bool");
+      lval->tag=BOOLTAG;
     } /* if */
     return FALSE;
   } /* case */

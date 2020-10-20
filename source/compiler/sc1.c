@@ -1560,10 +1560,10 @@ static void setconstants(void)
 
   assert(sc_status==statIDLE);
   append_constval(&tagname_tab,"_",0,0);/* "untagged" */
-  append_constval(&tagname_tab,"bool",1,0);
+  append_constval(&tagname_tab,"bool",BOOLTAG,0);
 
-  add_builtin_constant("true",1,sGLOBAL,1);     /* boolean flags */
-  add_builtin_constant("false",0,sGLOBAL,1);
+  add_builtin_constant("true",1,sGLOBAL,BOOLTAG);/* boolean flags */
+  add_builtin_constant("false",0,sGLOBAL,BOOLTAG);
   add_builtin_constant("EOS",0,sGLOBAL,0);      /* End Of String, or '\0' */
   #if PAWN_CELL_SIZE==16
   add_builtin_constant("cellbits",16,sGLOBAL,0);
@@ -2288,7 +2288,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
       dopragma();
     pragma_apply(sym);
   } while (matchtoken(',')); /* enddo */   /* more? */
-  needtoken(tTERM);    /* if not comma, must be semicolumn */
+  needtoken(tTERM);    /* if not comma, must be semicolon */
 }
 
 /*  declloc     - declare local symbols
@@ -2480,7 +2480,7 @@ static int declloc(int fstatic)
     if (matchtoken(t__PRAGMA))
       dopragma();
     pragma_apply(sym);  } while (matchtoken(',')); /* enddo */   /* more? */
-  needtoken(tTERM);    /* if not comma, must be semicolumn */
+  needtoken(tTERM);    /* if not comma, must be semicolon */
   return ident;
 }
 
@@ -2960,16 +2960,18 @@ static void decl_const(int vclass)
  */
 static void decl_enum(int vclass,int fstatic)
 {
+  extern const char *sc_tokens[];
   char enumname[sNAMEMAX+1],constname[sNAMEMAX+1];
   cell val,value,size;
   char *str;
   int tag,explicittag;
   int unique;
   int inctok;
-  int warn_overflow;
+  int warn_overflow,warn_noeffect;
   cell increment;
   constvalue_root *enumroot=NULL;
   symbol *enumsym=NULL;
+  symbol *noeffect_sym=NULL;
   short filenum;
 
   filenum=fcurrent;
@@ -3035,7 +3037,7 @@ static void decl_enum(int vclass,int fstatic)
   needtoken('{');
   /* go through all constants */
   value=0;                              /* default starting value */
-  warn_overflow=FALSE;
+  warn_overflow=warn_noeffect=FALSE;
   do {
     int idxtag,fieldtag;
     int symline;
@@ -3060,12 +3062,23 @@ static void decl_enum(int vclass,int fstatic)
     } /* if */
     if (matchtoken('=')) {
       constexpr(&value,NULL,NULL);      /* get value */
-      warn_overflow=FALSE;
-    } else if (warn_overflow) {
-      errorset(sSETPOS,symline);
-      error(242,constname);             /* shift overflow for enum item */
-      errorset(sSETPOS,-1);
-      warn_overflow=FALSE;
+      warn_overflow=warn_noeffect=FALSE;
+    } else {
+      if (warn_overflow) {
+        int num=(inctok==taSHL) ? 242   /* shift overflow in enum element declaration */
+                                : 246;  /* multiplication overflow in enum element declaration */
+        errorset(sSETPOS,symline);
+        error(num,constname);
+        errorset(sSETPOS,-1);
+        /* don't reset "warn_overflow" yet, we'll need to use it later */
+      } /* if */
+      if (warn_noeffect) {
+        const char *str=sc_tokens[inctok-tFIRST],*name=noeffect_sym->name;
+        errorset(sSETPOS,noeffect_sym->lnumber);
+        error(245,str,increment,name);  /* enum increment has no effect on zero value */
+        errorset(sSETPOS,-1);
+        warn_noeffect=FALSE;
+      } /* if */
     } /* if */
     /* add_constant() checks whether a variable (global or local) or
      * a constant with the same name already exists
@@ -3095,9 +3108,26 @@ static void decl_enum(int vclass,int fstatic)
       sym->usage |= uENUMFIELD;
       append_constval(enumroot,constname,value,tag);
     } /* if */
+    if (inctok!=taADD && value==0 && increment!=0
+        && noeffect_sym==NULL && warn_overflow==FALSE) {
+      warn_noeffect=TRUE;
+      noeffect_sym=sym;
+    } /* if */
+    warn_overflow=FALSE;
     if (inctok==taADD) {
       value+=size;
     } else if (inctok==taMULT) {
+#if PAWN_CELL_SIZE<64
+      /* use a bigger type to detect overflow */
+      int64_t t=(int64_t)value*(int64_t)size*(int64_t)increment;
+      if (t>(int64_t)CELL_MAX || t<(~(int64_t)CELL_MAX))
+#else
+      /* casting to a bigger type isn't possible as we don't have int128_t,
+       * so we'll have to use slower division */
+      cell t=size*increment;
+      if (value!=0 && (value*t)/value!=t)
+#endif
+        warn_overflow=TRUE;
       value*=(size*increment);
     } else { // taSHL
       if ((ucell)value>=((ucell)1 << (PAWN_CELL_SIZE-increment)))
@@ -3431,7 +3461,7 @@ static int check_operatortag(int opertok,int resulttag,char *opername)
   case tlNE:
   case tlLE:
   case tlGE:
-    if (resulttag!=pc_addtag("bool")) {
+    if (resulttag!=BOOLTAG) {
       error(63,opername,"bool:"); /* operator X requires a "bool:" result tag */
       return FALSE;
     } /* if */
@@ -3903,7 +3933,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   if (matchtoken(';')) {
     sym->usage|=uFORWARD;
     if (!sc_needsemicolon)
-      error(218);       /* old style prototypes used with optional semicolumns */
+      error(218);       /* old style prototypes used with optional semicolons */
     delete_symbols(&loctab,0,TRUE,TRUE);  /* prototype is done; forget everything */
     return TRUE;
   } /* if */
@@ -5761,10 +5791,14 @@ static int test(int label,int parens,int invert)
   do {
     stgget(&index,&cidx);       /* mark position (of last expression) in
                                  * code generator */
+    pc_sideeffect=FALSE;
     ident=expression(&constval,&tag,&sym,TRUE);
     tok=matchtoken(',');
-    if (tok)
+    if (tok) {
+      if (!pc_sideeffect)
+        error(248);
       markexpr(sEXPR,NULL,0);
+    } /* if */
   } while (tok); /* do */
   if (endtok!=0)
     needtoken(endtok);
@@ -5789,7 +5823,7 @@ static int test(int label,int parens,int invert)
     } /* if */
     return testtype;
   } /* if */
-  if (tag!=0 && tag!=pc_addtag("bool"))
+  if (tag!=0 && tag!=BOOLTAG)
     if (check_userop(lneg,tag,0,1,NULL,&tag))
       invert= !invert;          /* user-defined ! operator inverted result */
   if (invert)
@@ -6117,7 +6151,7 @@ static void doswitch(void)
           if (end<=val)
             error(50);                  /* invalid range */
           check_tagmismatch(swtag,csetag,TRUE,-1);
-          enumsym=NULL; /* stop counting the number of covered enum items */
+          enumsym=NULL; /* stop counting the number of covered enum elements */
           while (++val<=end) {
             casecount++;
             /* find the new insertion point */
@@ -6168,7 +6202,7 @@ static void doswitch(void)
     constvalue_root *enumlist=enumsym->dim.enumlist;
     constvalue *val,*prev=NULL,*save_next=NULL;
     for (val=enumlist->first; val!=NULL; prev=val,val=val->next) {
-      /* if multiple enum items share the same value, we only want to pick the first one */
+      /* if multiple enum elements share the same value, we only want to count the first one */
       if (prev!=NULL) {
         /* see if there's another constvalue before the current one that has the same value */
         constvalue *save_next=prev->next;
@@ -6182,7 +6216,7 @@ static void doswitch(void)
       /* check if the value of this constant is handled in switch, if so - continue */
       if (find_constval_byval(&caselist,val->value)!=NULL)
         continue;
-      error(244,val->name); /* enum item not handled in switch */
+      error(244,val->name); /* enum element not handled in switch */
       /*  */
     } /* while */
   } /* if */

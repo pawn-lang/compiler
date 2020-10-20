@@ -176,7 +176,7 @@ static char *warnmsg[] = {
 /*215*/  "expression has no effect\n",
 /*216*/  "nested comment\n",
 /*217*/  "loose indentation\n",
-/*218*/  "old style prototypes used with optional semicolumns\n",
+/*218*/  "old style prototypes used with optional semicolons\n",
 /*219*/  "local variable \"%s\" shadows a variable at a preceding level\n",
 /*220*/  "expression with tag override must appear between parentheses\n",
 /*221*/  "label name \"%s\" shadows tag name\n",
@@ -200,14 +200,19 @@ static char *warnmsg[] = {
 /*239*/  "literal array/string passed to a non-const parameter\n",
 /*240*/  "previously assigned value is never used (symbol \"%s\")\n",
 /*241*/  "negative or too big shift count\n",
-/*242*/  "shift overflow in enum item declaration (symbol \"%s\")\n",
+/*242*/  "shift overflow in enum element declaration (symbol \"%s\")\n",
 /*243*/  "redundant code: switch control expression is constant\n",
-/*244*/  "enum item \"%s\" not handled in switch\n"
+/*244*/  "enum element \"%s\" not handled in switch\n",
+/*245*/  "enum increment \"%s %d\" has no effect on zero value (symbol \"%s\")\n",
+/*246*/  "multiplication overflow in enum element declaration (symbol \"%s\")\n",
+/*247*/  "use of operator \"~\" on a \"bool:\" value always results in \"true\"\n",
+/*248*/  "possible misuse of comma operator\n"
 };
 
 static char *noticemsg[] = {
 /*001*/  "; did you mean \"%s\"?\n",
-/*002*/  "; state variable out of scope\n"
+/*002*/  "; state variable out of scope\n",
+/*003*/  "; did you mean operator \"%s\"?\n"
 };
 
 #define NUM_WARNINGS    arraysize(warnmsg)
@@ -225,7 +230,7 @@ static int errwarn;
  *
  *  Outputs an error message (note: msg is passed optionally).
  *  If an error is found, the variable "errflag" is set and subsequent
- *  errors are ignored until lex() finds a semicolumn or a keyword
+ *  errors are ignored until lex() finds a semicolon or a keyword
  *  (lex() resets "errflag" in that case).
  *
  *  Global references: inpfname   (reffered to only)
