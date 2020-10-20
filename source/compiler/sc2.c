@@ -456,10 +456,10 @@ static void readline(unsigned char *line)
  *  Returns 1 if the line started with a multiline string, and 2 if it also
  *  ends with the same multiline string, so that this won't trigger commands:
  *
- *      new x[] = `Hello
+ *      new x[] = "Hello
  *      
  *      #define X 0
- *      `;
+ *      ";
  *
  *  Some code might see that as a line starting with `#define` because there
  *  was no explicit line continuation, merely an implicit string one.
@@ -471,6 +471,7 @@ static int stripcomment(unsigned char *line)
   char* continuation;
   int startinml=0;
   int rawmode=0;
+  int rawmodereset=MULTILINE;
   #if !defined SC_LIGHT
     #define COMMENT_LIMIT 100
     #define COMMENT_MARGIN 40   /* length of the longest word */
@@ -486,6 +487,7 @@ static int stripcomment(unsigned char *line)
   /* multiline string continuation at the start */
   if (imlstring!=0) {
     startinml=1;
+    rawmodereset=0;
     if (*line=='\0')
       return 2;
     else if (*line=='"') {
@@ -542,8 +544,20 @@ static int stripcomment(unsigned char *line)
         line+=1;
       } /* if */
     } else {
-      if (*line=='/' && *(line+1)=='*'){
-        rawmode=0;
+      if (*line>' ' && rawmodereset==MULTILINE) {
+        /* line starting a command, may need raw strings */
+        if (strncmp(line, "#error", 6)==0 ||
+            strncmp(line, "#warning", 8)==0 ||
+            strncmp(line, "#pragma", 7)==0) {
+          /* is one of the pre-processor commands with pure raw strings */
+          rawmodereset=RAWMODE;
+          rawmode=RAWMODE;
+        } else {
+          rawmodereset=0;
+        } /* if */
+      } /* if */
+      if (*line=='/' && *(line+1)=='*') {
+        rawmode=rawmodereset;
         icomment=1;     /* start comment */
         #if !defined SC_LIGHT
           /* there must be two "*" behind the slash and then white space */
@@ -564,7 +578,7 @@ static int stripcomment(unsigned char *line)
         if (icomment==2)
           *line++=' ';
       } else if (*line=='/' && *(line+1)=='/'){  /* comment to end of line */
-        rawmode=0;
+        rawmode=rawmodereset;
         continuation=(char*)line;
         while ((continuation=strchr(continuation,'\a'))!=NULL){
           /* don't give the error if the next line is also commented out.
@@ -612,15 +626,15 @@ static int stripcomment(unsigned char *line)
           if (c=='"')
             imlstring=MULTILINE|rawmode;
           line+=1;
-          while ((*line!=c || *(line-1)==sc_ctrlchar) && *line!='\0')
+          while ((*line!=c || (rawmode==0 && *(line-1)==sc_ctrlchar)) && *line!='\0')
             line+=1;
-          if (*line == c) {
+          if (*line==c) {
             imlstring=0;
             line+=1;      /* skip final quote */
           }
         } else {
           if (*line!='!')
-            rawmode=0;
+            rawmode=rawmodereset;
           line+=1;
         } /* if */
       } /* if */
