@@ -1,0 +1,8 @@
+{
+  'test_type': 'runtime',
+  'output': """
+result: 0
+__timestamp.amx returns 0
+  """,
+  'should_fail': False
+}
