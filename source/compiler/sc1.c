@@ -5623,8 +5623,8 @@ static void compound(int stmt_sameline,int starttok)
           tokeninfo(&val,&name);
           lexpush();            /* push the token so it can be analyzed later */
           sym=findloc(name);
-          assert(sym!=NULL);
-          if ((sym->usage & uREAD)==0)  /* label wasn't previously used via 'goto' */
+          /* before issuing a warning, check if the label was previously used (via 'goto') */
+          if (sym!=NULL && sym->ident==iLABEL && (sym->usage & uREAD)==0)
             error(225);         /* unreachable code */
         } else if (lastst==tTERMSWITCH && matchtoken(tRETURN)) {
           lexpush();            /* push the token so it can be analyzed later */
