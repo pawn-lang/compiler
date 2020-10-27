@@ -2081,7 +2081,7 @@ static int primary(value *lval)
     return FALSE;       /* return 0 for function (not an lvalue) */
   } /* if */
   lexpush();            /* push the token, it is analyzed by constant() */
-  if (constant(lval)==0) {
+  if (!constant(lval)) {
     error(29);          /* expression error, assumed 0 */
     ldconst(0,sPRI);    /* load 0 */
   } /* if */
