@@ -2850,9 +2850,8 @@ static void symbol_cache_add(symbol *sym)
     return;
   } /* if */
   cache_sym=*pcache_sym;
-  while (cache_sym->htnext!=NULL)
-    cache_sym=cache_sym->htnext;
-  cache_sym->htnext=sym;
+  *pcache_sym=sym;
+  sym->htnext=cache_sym;
 }
 
 static void symbol_cache_remove(symbol *sym)
