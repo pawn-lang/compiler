@@ -2972,7 +2972,6 @@ static void decl_const(int vclass)
  */
 static void decl_enum(int vclass,int fstatic)
 {
-  extern const char *sc_tokens[];
   char enumname[sNAMEMAX+1],constname[sNAMEMAX+1];
   cell val,value,size;
   char *str;
@@ -4139,7 +4138,6 @@ static int argcompare(arginfo *a1,arginfo *a2)
 static int declargs(symbol *sym,int chkshadow)
 {
   #define MAXTAGS 16
-  extern char* sc_tokens[];
   char *ptr;
   int argcnt,oldargcnt,tok,tags[MAXTAGS],numtags;
   cell val;
@@ -5615,7 +5613,6 @@ static void statement(int *lastindent,int allow_decl)
     pragma_apply(curfunc);
     break;
   case t__EMIT: {
-    extern char *sc_tokens[];
     const unsigned char *bck_lptr=lptr-strlen(sc_tokens[tok-tFIRST]);
     if (matchtoken('{')) {
       emit_flags |= efBLOCK;
@@ -6429,7 +6426,6 @@ static symbol *fetchlab(char *name)
 
 static void SC_FASTCALL emit_invalid_token(int expected_token,int found_token)
 {
-  extern char *sc_tokens[];
   char s[2];
 
   assert(expected_token>=tFIRST);
@@ -6797,7 +6793,6 @@ fetchtok:
       negate=TRUE;
       goto fetchtok;
     } else {
-      extern char *sc_tokens[];
       char ival[sNAMEMAX+2];
     invalid_token_neg:
       if (tok<tFIRST)
@@ -6851,7 +6846,6 @@ static void SC_FASTCALL emit_param_nonneg(emit_outval *p)
   if (!emit_param_any_internal(p,teNONNEG,FALSE,TRUE))
     return;
   if ((cell)p->value.ucell<(cell)0) {
-    extern char *sc_tokens[];
 #if PAWN_CELL_SIZE==16
     char ival[7];
 #elif PAWN_CELL_SIZE==32
@@ -6983,7 +6977,6 @@ fetchtok:
       negate=TRUE;
       goto fetchtok;
     } else {
-      extern char *sc_tokens[];
       char ival[sNAMEMAX+2];
     invalid_token_neg:
       if (tok<tFIRST)
@@ -7828,7 +7821,6 @@ static int emit_findopcode(const char *instr)
 
 SC_FUNC void emit_parse_line(void)
 {
-  extern char *sc_tokens[];
   cell val;
   char* st;
   int tok,len,i;
@@ -8296,7 +8288,6 @@ static int *readwhile(void)
 
 static void dopragma(void)
 {
-  extern char *sc_tokens[];
   int tok;
   int bck_litidx,bck_packstr;
   int i;

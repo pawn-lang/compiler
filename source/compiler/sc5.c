@@ -700,7 +700,6 @@ SC_FUNC int error_suggest(int number,const char *name,const char *name2,int type
     } /* if */
   } else if (type==estNONSYMBOL) {
     if (tMIDDLE<subtype && subtype<=tLAST) {
-      extern char *sc_tokens[];
       name=sc_tokens[subtype-tFIRST];
       subtype=esfVARCONST;
       goto find_symbol;

@@ -103,6 +103,24 @@ SC_VDEFINE int pc_retheap=0;                /* heap space (in bytes) to be manua
 SC_VDEFINE int pc_nestlevel=0;              /* number of active (open) compound statements */
 SC_VDEFINE unsigned int pc_attributes=0;    /* currently set attribute flags (for the "__pragma" operator) */
 
+SC_VDEFINE char *sc_tokens[] = {
+  "*=", "/=", "%=", "+=", "-=", "<<=", ">>>=", ">>=", "&=", "^=", "|=",
+  "||", "&&", "==", "!=", "<=", ">=", "<<", ">>>", ">>", "++", "--",
+  "...", "..",
+  "__addressof", "assert", "*begin", "break", "case", "char", "const", "continue",
+  "default", "defined", "do", "else", "__emit", "*end", "enum", "exit", "for",
+  "forward", "goto", "if", "__nameof", "native", "new", "operator", "__pragma",
+  "public", "return", "sizeof", "sleep", "state", "static", "stock", "switch",
+  "tagof", "*then", "while",
+  "#assert", "#define", "#else", "#elseif", "#emit", "#endif", "#endinput",
+  "#endscript", "#error", "#file", "#if", "#include", "#line", "#pragma",
+  "#tryinclude", "#undef", "#warning",
+  ";", ";", "-integer value-", "-rational value-", "-identifier-",
+  "-label-", "-string-",
+  "-any value-", "-numeric value-", "-data offset-", "-local variable-",
+  "-reference-", "-function-", "-native function-", "-nonnegative integer-"
+};
+
 SC_VDEFINE constvalue_root sc_automaton_tab = { NULL, NULL}; /* automaton table */
 SC_VDEFINE constvalue_root sc_state_tab = { NULL, NULL};   /* state table */
 

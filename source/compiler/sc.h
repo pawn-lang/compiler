@@ -1012,6 +1012,8 @@ SC_VDECL int pc_retheap;      /* heap space (in bytes) to be manually freed when
 SC_VDECL int pc_nestlevel;    /* number of active (open) compound statements */
 SC_VDECL unsigned int pc_attributes;/* currently set attribute flags (for the "__pragma" operator) */
 
+SC_VDECL char *sc_tokens[];
+
 SC_VDECL constvalue_root sc_automaton_tab; /* automaton table */
 SC_VDECL constvalue_root sc_state_tab;     /* state table */
 

@@ -1495,7 +1495,6 @@ static int command(void)
           } /* if */
           break;
         default: {
-          extern char *sc_tokens[];/* forward declaration */
           char s2[33]="-";
           if ((char)tok=='-') {
             int current_token=lex(&val,&str);
@@ -2297,24 +2296,6 @@ SC_FUNC void lexinit(void)
   _pushed=FALSE;        /* no token pushed back into lex */
   _lexnewline=FALSE;
 }
-
-char *sc_tokens[] = {
-         "*=", "/=", "%=", "+=", "-=", "<<=", ">>>=", ">>=", "&=", "^=", "|=",
-         "||", "&&", "==", "!=", "<=", ">=", "<<", ">>>", ">>", "++", "--",
-         "...", "..",
-         "__addressof", "assert", "*begin", "break", "case", "char", "const", "continue",
-         "default", "defined", "do", "else", "__emit", "*end", "enum", "exit", "for",
-         "forward", "goto", "if", "__nameof", "native", "new", "operator", "__pragma",
-         "public", "return", "sizeof", "sleep", "state", "static", "stock", "switch",
-         "tagof", "*then", "while",
-         "#assert", "#define", "#else", "#elseif", "#emit", "#endif", "#endinput",
-         "#endscript", "#error", "#file", "#if", "#include", "#line", "#pragma",
-         "#tryinclude", "#undef", "#warning",
-         ";", ";", "-integer value-", "-rational value-", "-identifier-",
-         "-label-", "-string-",
-         "-any value-", "-numeric value-", "-data offset-", "-local variable-",
-         "-reference-", "-function-", "-native function-", "-nonnegative integer-"
-       };
 
 SC_FUNC int lex(cell *lexvalue,char **lexsym)
 {

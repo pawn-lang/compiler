@@ -1362,7 +1362,6 @@ static int hier2(value *lval)
     lval->tag=tag;
     return lvalue;
   case t__ADDRESSOF: {
-    extern char *sc_tokens[];
     static const char allowed_sym_types[]="-variable, array, array cell, label or function-";
     paranthese=0;
     while (matchtoken('('))
