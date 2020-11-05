@@ -8317,7 +8317,7 @@ static void dopragma(void)
         sprintf(tokstr,"%c",tok);
         str=tokstr;
       } else {
-        str=sc_tokens[tok-tBEGIN];
+        str=sc_tokens[tok-tFIRST];
       } /* if */
       error(1,sc_tokens[tSTRING-tFIRST],str);
       goto next;
