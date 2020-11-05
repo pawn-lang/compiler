@@ -5510,6 +5510,9 @@ static void statement(int *lastindent,int allow_decl)
   case 0:
     /* nothing */
     break;
+  case tSTOCK:
+    error(10);                  /* invalid function or declaration */
+    /* fallthrough */
   case tNEW:
     if (allow_decl) {
       declloc(FALSE);
