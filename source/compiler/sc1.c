@@ -8397,7 +8397,7 @@ static void dopragma(void)
           /* nothing */;
       } /* if */
       if (strcmp(str,"enable")==0 || strcmp(str,"disable")==0) {
-        int len=number(&val,&str[i]);
+        int len=number(&val,(unsigned char *)&str[i]);
         if (len==0)
           goto unknown_pragma;
         pc_enablewarning((int)val,(str[0]=='e') ? warnENABLE : warnDISABLE);
