@@ -1055,7 +1055,6 @@ static int hier14(value *lval1)
       /* check the sizes of all sublevels too */
       symbol *sym1 = lval3.sym;
       symbol *sym2 = lval2.sym;
-      int i;
       assert(sym1!=NULL && sym2!=NULL);
       /* ^^^ sym2 must be valid, because only variables can be
        *     multi-dimensional (there are no multi-dimensional literals),

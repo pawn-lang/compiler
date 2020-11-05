@@ -404,7 +404,7 @@ static void readline(unsigned char *line)
     } else {
       /* check whether to erase leading spaces */
       if (cont) {
-        unsigned char *ptr=line;
+        ptr=line;
         while (*ptr<=' ' && *ptr!='\0')
           ptr++;
         if (ptr!=line)
@@ -1220,7 +1220,6 @@ static int command(void)
           if (!cp_set(name))
             error(108);         /* codepage mapping file not found */
         } else if (strcmp(str,"compress")==0) {
-          cell val;
           preproc_expr(&val,NULL);
           sc_compress=(int)val; /* switch code packing on/off */
         } else if (strcmp(str,"ctrlchar")==0) {
@@ -1272,7 +1271,6 @@ static int command(void)
               curlibrary=append_constval(&libname_tab,name,0,0);
           } /* if */
         } else if (strcmp(str,"pack")==0) {
-          cell val;
           preproc_expr(&val,NULL);      /* default = packed/unpacked */
           sc_packstr=(int)val;
         } else if (strcmp(str,"rational")==0) {
@@ -1307,11 +1305,9 @@ static int command(void)
             error(69);          /* rational number format already set, can only be set once */
           } /* if */
         } else if (strcmp(str,"semicolon")==0) {
-          cell val;
           preproc_expr(&val,NULL);
           sc_needsemicolon=(int)val;
         } else if (strcmp(str,"tabsize")==0) {
-          cell val;
           preproc_expr(&val,NULL);
           if (val>0)
             sc_tabsize=(int)val;
@@ -1379,7 +1375,6 @@ static int command(void)
           int ok=lex(&val,&str)==tSYMBOL;
           if (ok) {
             if (strcmp(str,"enable")==0 || strcmp(str,"disable")==0) {
-              cell val;
               enum s_warnmode enable=(str[0]=='e') ? warnENABLE : warnDISABLE;
               do {
                 preproc_expr(&val,NULL);
@@ -1397,7 +1392,6 @@ static int command(void)
             error(207);         /* unknown #pragma */
           } /* if */
         } else if (strcmp(str,"compat")==0) {
-          cell val;
           symbol *sym;
           preproc_expr(&val,NULL);
           pc_compat=(int)val;   /* switch compatibility mode on/off */

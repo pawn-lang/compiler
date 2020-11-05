@@ -3088,7 +3088,8 @@ static void decl_enum(int vclass,int fstatic)
         /* don't reset "warn_overflow" yet, we'll need to use it later */
       } /* if */
       if (warn_noeffect) {
-        const char *str=sc_tokens[inctok-tFIRST],*name=noeffect_sym->name;
+        const char *name=noeffect_sym->name;
+        str=sc_tokens[inctok-tFIRST];
         errorset(sSETPOS,noeffect_sym->lnumber);
         error(245,str,increment,name);  /* enum increment has no effect on zero value */
         errorset(sSETPOS,-1);
@@ -6247,24 +6248,23 @@ static int doswitch(void)
 
   if (enumsym!=NULL && swdefault==FALSE && enumsym->x.tags.unique-enumsymcount<=2) {
     constvalue_root *enumlist=enumsym->dim.enumlist;
-    constvalue *val,*prev=NULL,*save_next=NULL;
-    for (val=enumlist->first; val!=NULL; prev=val,val=val->next) {
+    constvalue *cur,*found,*prev=NULL,*save_next=NULL;
+    for (cur=enumlist->first; cur!=NULL; prev=cur,cur=cur->next) {
       /* if multiple enum elements share the same value, we only want to count the first one */
       if (prev!=NULL) {
         /* see if there's another constvalue before the current one that has the same value */
-        constvalue *save_next=prev->next;
-        constvalue *found;
+        save_next=prev->next;
         prev->next=NULL;
-        found=find_constval_byval(enumlist,val->value);
+        found=find_constval_byval(enumlist,cur->value);
         prev->next=save_next;
         if (found!=NULL)
           continue;
       } /* if */
       /* check if the value of this constant is handled in switch, if so - continue */
-      if (find_constval_byval(&caselist,val->value)!=NULL)
+      if (find_constval_byval(&caselist,cur->value)!=NULL)
         continue;
       errorset(sSETPOS,save_fline);
-      error(244,val->name); /* enum element not handled in switch */
+      error(244,cur->name); /* enum element not handled in switch */
       errorset(sSETPOS,-1);
     } /* while */
   } /* if */
