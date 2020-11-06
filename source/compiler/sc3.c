@@ -587,7 +587,7 @@ static void plnge2(void (*oper)(void),
       rvalue(lval2);
     if (lval2->ident==iCONSTEXPR) { /* constant on right side */
       if (commutative(oper)) {      /* test for commutative operators */
-        value lvaltmp = {0};
+        value lvaltmp;
         stgdel(lval_stgidx,lval_cidx);  /* scratch pushreg() and constant fetch (then
                                          * fetch the constant again */
         ldconst(lval2->constval<<dbltest(oper,lval1,lval2),sALT);
