@@ -3120,8 +3120,8 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
         mustdelete=TRUE;
       break;
     case iCONSTEXPR:
-      /* delete constants, except predefined constants */
-      mustdelete=delete_functions || (sym->usage & uPREDEF)==0;
+      /* delete constants (predefined constants are checked later) */
+      mustdelete=TRUE;
       break;
     case iFUNCTN:
       /* optionally preserve globals (variables & functions), but

@@ -213,7 +213,6 @@ typedef struct s_symbol {
 #define uRETVALUE   0x004 /* function returns (or should return) a value */
 #define uCONST      0x008
 #define uPROTOTYPED 0x008
-#define uPREDEF     0x008 /* constant is pre-defined */
 #define uPUBLIC     0x010
 #define uNATIVE     0x020
 #define uENUMROOT   0x020
