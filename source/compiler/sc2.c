@@ -980,6 +980,7 @@ void parsesingleoption(char *argv);
 
 static int command(void)
 {
+  static const char str_if[]="#if...";
   int tok,ret;
   cell val;
   char *str;
@@ -1024,7 +1025,7 @@ static int command(void)
     ret=CMD_IF;
     assert(iflevel>=0);
     if (iflevel==0) {
-      error(26);                /* no matching #if */
+      error(26,str_if);         /* no matching #if */
       errorset(sRESET,0);
     } else {
       /* check for earlier #else */
@@ -1077,7 +1078,7 @@ static int command(void)
   case tpENDIF:
     ret=CMD_IF;
     if (iflevel==0){
-      error(26);        /* no matching "#if" */
+      error(26,str_if);         /* no matching "#if" */
       errorset(sRESET,0);
     } else {
       clearassignments(1);

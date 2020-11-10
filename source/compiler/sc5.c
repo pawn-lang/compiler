@@ -65,7 +65,7 @@ static char *errmsg[] = {
 /*023*/  "array assignment must be simple assignment\n",
 /*024*/  "\"break\" or \"continue\" is out of context\n",
 /*025*/  "function heading differs from prototype\n",
-/*026*/  "no matching \"#if...\"\n",
+/*026*/  "no matching \"%s\"\n",
 /*027*/  "invalid character constant\n",
 /*028*/  "invalid subscript (not an array or too many subscripts): \"%s\"\n",
 /*029*/  "invalid expression, assumed zero\n",
@@ -437,8 +437,10 @@ void pc_pushwarnings(void)
 void pc_popwarnings(void)
 {
   void *p;
-  if (warnstack.next==NULL)
-    return;     /* nothing to do */
+  if (warnstack.next==NULL) {
+    error(26,"#pragma warning push");   /* no matching "#pragma warning push" */
+    return;                             /* nothing to do */
+  } /* if */
   p=warnstack.next;
   memmove(&warnstack,p,sizeof(struct s_warnstack));
   free(p);
