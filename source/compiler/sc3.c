@@ -817,7 +817,7 @@ SC_FUNC cell array_totalsize(symbol *sym)
   assert(sym->ident==iARRAY || sym->ident==iREFARRAY);
   length=sym->dim.array.length;
   if (sym->dim.array.level > 0) {
-    cell sublength=array_totalsize(finddepend(sym));
+    cell sublength=array_totalsize(sym->child);
     if (sublength>0)
       length=length+length*sublength;
     else
@@ -832,7 +832,7 @@ static cell array_levelsize(symbol *sym,int level)
   assert(sym->ident==iARRAY || sym->ident==iREFARRAY);
   assert(level <= sym->dim.array.level);
   while (level-- > 0) {
-    sym=finddepend(sym);
+    sym=sym->child;
     assert(sym!=NULL);
   } /* if */
   return sym->dim.array.length;
@@ -1062,8 +1062,8 @@ static int hier14(value *lval1)
        */
       assert(exactmatch);
       for (i=0; i<level; i++) {
-        sym1=finddepend(sym1);
-        sym2=finddepend(sym2);
+        sym1=sym1->child;
+        sym2=sym2->child;
         assert(sym1!=NULL && sym2!=NULL);
         /* ^^^ both arrays have the same dimensions (this was checked
          *     earlier) so the dependend should always be found
@@ -1428,7 +1428,7 @@ static int hier2(value *lval)
             numoffsets+=offsmul;
             offsmul*=subsym->dim.array.length;
             arrayidx=(arrayidx*subsym->dim.array.length)+val;
-            subsym=finddepend(subsym);
+            subsym=subsym->child;
           }
           needtoken(']');
         } /* for */
@@ -1438,7 +1438,7 @@ static int hier2(value *lval)
           numoffsets+=offsmul;
           offsmul*=subsym->dim.array.length;
           arrayidx*=arrayidx*subsym->dim.array.length;
-          subsym=finddepend(subsym);
+          subsym=subsym->child;
         } /* if */
         lval->constval+=(numoffsets-1+arrayidx)*(cell)sizeof(cell);
         ldconst(lval->constval,sPRI);
@@ -1541,7 +1541,7 @@ static int hier2(value *lval)
         } /* if */
         needtoken(']');
         if (subsym!=NULL)
-          subsym=finddepend(subsym);
+          subsym=subsym->child;
       } /* for */
       if (level>sym->dim.array.level+1)
         error(28,sym->name);  /* invalid subscript */
@@ -1593,7 +1593,7 @@ static int hier2(value *lval)
         } /* if */
         needtoken(']');
         if (subsym!=NULL)
-          subsym=finddepend(subsym);
+          subsym=subsym->child;
       } /* for */
       if (level>sym->dim.array.level+1)
         error(28,sym->name);  /* invalid subscript */
@@ -1788,7 +1788,7 @@ restart:
         /* parse the next index if this is not the lowest array dimension */
         if (sym!=NULL && (sym->ident==iARRAY || sym->ident==iREFARRAY) && sym->dim.array.level>0) {
           lval1->ident=iREFARRAY;
-          lval1->sym=finddepend(sym);
+          lval1->sym=sym->child;
           assert(lval1->sym!=NULL);
           assert(lval1->sym->dim.array.level==sym->dim.array.level-1);
           cursym=lval1->sym;
@@ -1875,7 +1875,7 @@ restart:
         ob_add();
         /* adjust the "value" structure and find the referenced array */
         lval1->ident=iREFARRAY;
-        lval1->sym=finddepend(sym);
+        lval1->sym=sym->child;
         assert(lval1->sym!=NULL);
         assert(lval1->sym->dim.array.level==sym->dim.array.level-1);
         cursym=lval1->sym;
@@ -2195,7 +2195,7 @@ static int nesting=0;
     return;
   }
   /* check whether this is a function that returns an array */
-  symret=finddepend(sym);
+  symret=sym->child;
   assert(symret==NULL || symret->ident==iREFARRAY);
   if (symret!=NULL) {
     int retsize;
@@ -2451,7 +2451,7 @@ static int nesting=0;
               else
                 check_index_tagmismatch(sym->name,arg[argidx].idxtag[level],sym->x.tags.index,TRUE,0);
               append_constval(&arrayszlst,arg[argidx].name,sym->dim.array.length,level);
-              sym=finddepend(sym);
+              sym=sym->child;
               assert(sym!=NULL);
               level++;
             } /* if */

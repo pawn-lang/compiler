@@ -4058,14 +4058,12 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
         && (lvar=findloc(sym->dim.arglist[i].name))!=NULL) {
       if ((sym->dim.arglist[i].usage & uWRITTEN)==0) {
         /* check if the argument was written in this definition */
-        depend=lvar;
-        while (depend!=NULL) {
+        for (depend=lvar; depend!=NULL; depend=depend->child) {
           if ((depend->usage & uWRITTEN)!=0) {
             sym->dim.arglist[i].usage|=depend->usage & uWRITTEN;
             break;
-          }
-          depend=finddepend(depend);
-        } /* while */
+          } /* if */
+        } /* for */
       } /* if */
       /* mark argument as written if it was written in another definition */
       lvar->usage|=sym->dim.arglist[i].usage & uWRITTEN;
@@ -5149,14 +5147,13 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
         errorset(sSETPOS,-1);
       } else if ((sym->usage & (uWRITTEN | uPUBLIC | uCONST))==0 && sym->ident==iREFARRAY) {
         int warn = TRUE;
-        symbol* depend = finddepend(sym);
-        while (depend != NULL) {
-          if ((depend->usage & (uWRITTEN | uPUBLIC | uCONST)) != 0) {
-            warn = FALSE;
+        symbol *depend;
+        for (depend=sym->child; depend!=NULL; depend=depend->child) {
+          if ((depend->usage & (uWRITTEN | uPUBLIC | uCONST))!=0) {
+            warn=FALSE;
             break;
-          }
-          depend = finddepend(depend);
-        } /* while */
+          } /* if */
+        } /* for */
         if (warn) {
           errorset(sSETPOS, sym->lnumber);
           error(214, sym->name);       /* make array argument "const" */
@@ -5181,7 +5178,7 @@ static cell calc_array_datasize(symbol *sym, cell *offset)
   assert(sym->ident==iARRAY || sym->ident==iREFARRAY);
   length=sym->dim.array.length;
   if (sym->dim.array.level > 0) {
-    cell sublength=calc_array_datasize(finddepend(sym),offset);
+    cell sublength=calc_array_datasize(sym->child,offset);
     if (offset!=NULL)
       *offset=length*(*offset+sizeof(cell));
     if (sublength>0)
@@ -7942,7 +7939,7 @@ static void doreturn(void)
       error(225); /* unreachable code */
     /* see if this function already has a sub type (an array attached) */
     assert(curfunc!=NULL);
-    sub=finddepend(curfunc);
+    sub=curfunc->child;
     assert(sub==NULL || sub->ident==iREFARRAY);
     if ((rettype & uRETVALUE)!=0) {
       int retarray=(ident==iARRAY || ident==iREFARRAY);
@@ -7974,8 +7971,8 @@ static void doreturn(void)
               if (sym->dim.array.length!=dim[numdim])
                 error(47);    /* array sizes must match */
               if (numdim<level) {
-                sym=finddepend(sym);
-                sub=finddepend(sub);
+                sym=sym->child;
+                sub=sub->child;
                 assert(sym!=NULL && sub!=NULL);
                 /* ^^^ both arrays have the same dimensions (this was checked
                  *     earlier) so the dependend should always be found
@@ -7996,7 +7993,7 @@ static void doreturn(void)
             dim[numdim]=(int)sub->dim.array.length;
             idxtag[numdim]=sub->x.tags.index;
             if (numdim<level) {
-              sub=finddepend(sub);
+              sub=sub->child;
               assert(sub!=NULL);
             } /* if */
             /* check that all dimensions are known */

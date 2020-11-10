@@ -740,7 +740,6 @@ SC_FUNC void rename_symbol(symbol *sym,const char *newname);
 SC_FUNC symbol *findglb(const char *name,int filter);
 SC_FUNC symbol *findloc(const char *name);
 SC_FUNC symbol *findconst(const char *name,int *cmptag);
-SC_FUNC symbol *finddepend(const symbol *parent);
 SC_FUNC symbol *addsym(const char *name,cell addr,int ident,int vclass,int tag,
                        int usage);
 SC_FUNC symbol *addvariable(const char *name,cell addr,int ident,int vclass,int tag,
