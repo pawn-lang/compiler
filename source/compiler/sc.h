@@ -615,8 +615,8 @@ int pc_compile(int argc, char **argv);
 int pc_addconstant(char *name,cell value,int tag);
 int pc_addtag(char *name);
 int pc_enablewarning(int number,warnmode enable);
-int pc_pushwarnings(void);
-int pc_popwarnings(void);
+void pc_pushwarnings(void);
+void pc_popwarnings(void);
 void pc_seterrorwarnings(int enable);
 int pc_geterrorwarnings(void);
 
