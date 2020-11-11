@@ -613,8 +613,10 @@ int pc_compile(int argc, char *argv[])
           error(100,incfname);          /* cannot read from ... (fatal error) */
       } /* if */
     } /* if */
+    warnstack_init();
     preprocess();                       /* fetch first line */
     parse();                            /* process all input */
+    warnstack_cleanup();
     sc_parsenum++;
   } while (sc_reparse);
 
@@ -700,8 +702,10 @@ int pc_compile(int argc, char *argv[])
     else
       plungequalifiedfile(incfname);    /* parse implicit include file (again) */
   } /* if */
+  warnstack_init();
   preprocess();                         /* fetch first line */
   parse();                              /* process all input */
+  warnstack_cleanup();
   if (sc_listing)
     goto cleanup;
   /* inpf is already closed when readline() attempts to pop of a file */

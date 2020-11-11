@@ -446,6 +446,21 @@ void pc_popwarnings(void)
   free(p);
 }
 
+SC_FUNC void warnstack_init(void)
+{
+  memset(&warnstack,0,sizeof(warnstack));
+}
+
+SC_FUNC void warnstack_cleanup(void)
+{
+  struct s_warnstack *cur,*next;
+  for (cur=warnstack.next; cur!=NULL; cur=next) {
+    next=cur->next;
+    free(cur);
+  } /* for */
+  warnstack.next=NULL;
+}
+
 /* pc_seterrorwarnings()
  * Make warnings errors (or not).
  */
