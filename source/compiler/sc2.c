@@ -1308,9 +1308,10 @@ static int command(void)
           if (ok) {
             if (strcmp(str,"enable")==0 || strcmp(str,"disable")==0) {
               cell val;
+              enum s_warnmode enable=(str[0]=='e') ? warnENABLE : warnDISABLE;
               do {
                 preproc_expr(&val,NULL);
-                pc_enablewarning(val,(str[0]=='e') ? warnENABLE : warnDISABLE);
+                pc_enablewarning(val,enable);
               } while (*lptr!='\0');
             } else if (strcmp(str,"push")==0) {
               pc_pushwarnings();
