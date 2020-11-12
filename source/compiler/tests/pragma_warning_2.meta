@@ -1,0 +1,6 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+pragma_warning_2.pwn(5) : error 001: expected token: "#pragma warning pop", but found "-end of file-"
+"""
+}

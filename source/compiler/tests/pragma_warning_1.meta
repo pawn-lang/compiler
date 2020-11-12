@@ -1,0 +1,7 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+pragma_warning_1.pwn(1) : warning 238: meaningless combination of class specifiers (const reference)
+pragma_warning_1.pwn(8) : warning 238: meaningless combination of class specifiers (const reference)
+"""
+}
