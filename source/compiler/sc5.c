@@ -454,6 +454,8 @@ SC_FUNC void warnstack_init(void)
 SC_FUNC void warnstack_cleanup(void)
 {
   struct s_warnstack *cur,*next;
+  if (warnstack.next!=NULL)
+    error(1,"#pragma warning pop","-end of file-");
   for (cur=warnstack.next; cur!=NULL; cur=next) {
     next=cur->next;
     free(cur);
