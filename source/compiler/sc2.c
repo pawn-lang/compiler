@@ -2415,6 +2415,7 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
     if ((stringflags & RAWMODE)!=0)
       lptr+=1;          /* skip "escape" character too */
     lptr=sc_packstr ? packedstring(lptr,&stringflags) : unpackedstring(lptr,&stringflags);
+    pc_ispackedstr=sc_packstr;
     if (*lptr=='\"')
       lptr+=1;          /* skip final quote */
     else if (!(stringflags & STRINGIZE))
@@ -2441,6 +2442,7 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
     if ((stringflags & RAWMODE)!=0)
       lptr+=1;          /* skip "escape" character too */
     lptr=sc_packstr ? unpackedstring(lptr,&stringflags) : packedstring(lptr,&stringflags);
+    pc_ispackedstr=!sc_packstr;
     if (*lptr=='\"')
       lptr+=1;          /* skip final quote */
     else if (!(stringflags & STRINGIZE))

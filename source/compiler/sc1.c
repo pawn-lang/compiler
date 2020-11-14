@@ -8308,8 +8308,11 @@ static void dopragma(void)
   do {
     /* read the option string */
     tok=lex(&val,&str);
-    if (tok!=tSTRING) {
+    if (tok!=tSTRING || !pc_ispackedstr) {
+      /* either not a string, or the user prepended "!" to the option string */
       char tokstr[2];
+      if (tok==tSTRING)
+        tok='!';
       if (tok<tFIRST) {
         sprintf(tokstr,"%c",tok);
         str=tokstr;
@@ -8320,12 +8323,6 @@ static void dopragma(void)
       goto next;
     } /* if */
     assert(litidx>bck_litidx);
-
-    /* the user shouldn't prepend "!" to the option string */
-    if (litq[val]<=UNPACKEDMAX && litq[val]!=0) {
-      error(1,sc_tokens[tSTRING-tFIRST],"!");
-      goto next;
-    } /* if */
 
     /* swap the cell bytes if we're on a Little Endian platform */
 #if BYTE_ORDER==LITTLE_ENDIAN

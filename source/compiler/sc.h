@@ -1009,6 +1009,7 @@ SC_VDECL int pc_retexpr;      /* true if the current expression is a part of a "
 SC_VDECL int pc_retheap;      /* heap space (in bytes) to be manually freed when returning an array returned by another function */
 SC_VDECL int pc_nestlevel;    /* number of active (open) compound statements */
 SC_VDECL unsigned int pc_attributes;/* currently set attribute flags (for the "__pragma" operator) */
+SC_VDECL int pc_ispackedstr;  /* true if the last tokenized string is packed */
 
 SC_VDECL char *sc_tokens[];
 
