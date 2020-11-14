@@ -1010,7 +1010,7 @@ static const unsigned char *getstring(unsigned char *dest,int max,const unsigned
  */
 static char* strdupwithouta(const char* sourcestring)
 {
-  char* result=strdup(sourcestring);
+  char* result=duplicatestring(sourcestring);
   char* a=result;
   if (result==NULL) {
     return NULL;

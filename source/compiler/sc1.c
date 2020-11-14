@@ -8365,7 +8365,7 @@ static void dopragma(void)
      * and parse the argument(s), if needed */
     if (!strcmp(str,"deprecated")) {
       free(pc_deprecate);
-      pc_deprecate=strdup(&str[i]);
+      pc_deprecate=duplicatestring(&str[i]);
       if (pc_deprecate==NULL)
         error(103);     /* insufficient memory */
       pc_attributes |= (1U << attrDEPRECATED);
