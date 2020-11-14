@@ -8331,22 +8331,26 @@ static void dopragma(void)
 #if BYTE_ORDER==LITTLE_ENDIAN
     { /* local */
       char *bytes;
-      i=0;
+      i=(int)val;
       do {
         char t;
-        bytes=(char *)&litq[val+i];
-        i++;
-        #if PAWN_CELL_SIZE>=16
-          t=bytes[0], bytes[0]=bytes[sizeof(cell)-1], bytes[sizeof(cell)-1]=t;
-        #if PAWN_CELL_SIZE>=32
+        bytes=(char *)&litq[i++];
+        t=bytes[0], bytes[0]=bytes[sizeof(cell)-1], bytes[sizeof(cell)-1]=t;
+#if PAWN_CELL_SIZE>=32
           t=bytes[1], bytes[1]=bytes[sizeof(cell)-2], bytes[sizeof(cell)-2]=t;
-        #if PAWN_CELL_SIZE==64
+#if PAWN_CELL_SIZE==64
           t=bytes[2], bytes[2]=bytes[sizeof(cell)-3], bytes[sizeof(cell)-3]=t;
           t=bytes[3], bytes[3]=bytes[sizeof(cell)-4], bytes[sizeof(cell)-4]=t;
-        #endif // PAWN_CELL_SIZE==64
-        #endif // PAWN_CELL_SIZE==32
-        #endif // PAWN_CELL_SIZE==16
-      } while (bytes[0]!='\0' && bytes[1]!='\0' && bytes[2]!='\0' && bytes[3]!='\0');
+#endif // PAWN_CELL_SIZE==64
+#endif // PAWN_CELL_SIZE>=32
+      } while (bytes[0]!='\0' && bytes[1]!='\0'
+#if PAWN_CELL_SIZE>=32
+               && bytes[2]!='\0' && bytes[3]!='\0'
+#if PAWN_CELL_SIZE==64
+               && bytes[4]!='\0' && bytes[5]!='\0' && bytes[6]!='\0' && bytes[7]!='\0'
+#endif // PAWN_CELL_SIZE==64
+#endif // PAWN_CELL_SIZE>=32
+      ); /* do */
     } /* local */
 #endif
 
