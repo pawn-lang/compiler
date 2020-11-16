@@ -1,7 +1,24 @@
 {
   'test_type': 'output_check',
   'errors': """
-warning_247.pwn(9) : warning 247: use of operator "~" on a "bool:" value always results in "true"; did you mean operator "!"?
-warning_247.pwn(11) : warning 247: use of operator "~" on a "bool:" value always results in "true"; did you mean operator "!"?
+warning_247.pwn(35) : warning 247: use of operator "<=" on "bool:" values
+warning_247.pwn(36) : warning 247: use of operator ">=" on "bool:" values
+warning_247.pwn(37) : warning 247: use of operator "<" on "bool:" values
+warning_247.pwn(38) : warning 247: use of operator ">" on "bool:" values
+warning_247.pwn(39) : warning 247: use of operator "~" on a "bool:" value; did you mean to use operator "!"?
+warning_247.pwn(40) : warning 247: use of operator "-" on a "bool:" value; did you mean to use operator "!"?
+warning_247.pwn(41) : warning 247: use of operator "++" on a "bool:" value
+warning_247.pwn(42) : warning 247: use of operator "++" on a "bool:" value
+warning_247.pwn(43) : warning 247: use of operator "--" on a "bool:" value
+warning_247.pwn(44) : warning 247: use of operator "--" on a "bool:" value
+warning_247.pwn(45) : warning 247: use of operator "*" on "bool:" values
+warning_247.pwn(46) : warning 247: use of operator "/" on "bool:" values
+warning_247.pwn(47) : warning 247: use of operator "%" on "bool:" values
+warning_247.pwn(48) : warning 247: use of operator "+" on "bool:" values
+warning_247.pwn(49) : warning 247: use of operator "-" on "bool:" values
+warning_247.pwn(50) : warning 247: use of operator "<<" on "bool:" values
+warning_247.pwn(51) : warning 247: use of operator ">>" on "bool:" values
+warning_247.pwn(52) : warning 247: use of operator ">>>" on "bool:" values
+warning_247.pwn(55) : warning 247: use of operator "~" on a "bool:" value; did you mean to use operator "!"?
 """
 }
