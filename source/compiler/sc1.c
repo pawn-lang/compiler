@@ -130,9 +130,10 @@ static int doif(void);
 static int dowhile(void);
 static int dodo(void);
 static int dofor(void);
-static void doswitch(void);
-static void dogoto(void);
+static int doswitch(void);
+static int dogoto(void);
 static void dolabel(void);
+static int isterminal(int tok);
 static void doreturn(void);
 static void dobreak(void);
 static void docont(void);
@@ -4031,7 +4032,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     modstk((int)declared*sizeof(cell)); /* remove all local variables */
     declared=0;
   } /* if */
-  if ((lastst!=tRETURN) && (lastst!=tGOTO) && (sym->flags & flagNAKED)==0) {
+  if (!isterminal(lastst) && lastst!=tGOTO && (sym->flags & flagNAKED)==0) {
     destructsymbols(&loctab,0);
     ldconst(0,sPRI);
     ffret(strcmp(sym->name,uENTRYFUNC)!=0);
@@ -5558,16 +5559,14 @@ static void statement(int *lastindent,int allow_decl)
     lastst=dofor();
     break;
   case tSWITCH:
-    doswitch();
-    lastst=tSWITCH;
+    lastst=doswitch();
     break;
   case tCASE:
   case tDEFAULT:
     error(14);     /* not in switch */
     break;
   case tGOTO:
-    dogoto();
-    lastst=tGOTO;
+    lastst=dogoto();
     break;
   case tLABEL:
     dolabel();
@@ -5678,8 +5677,22 @@ static void compound(int stmt_sameline,int starttok)
       error(30,block_start);    /* compound block not closed at end of file */
       break;
     } else {
-      if (count_stmt>0 && (lastst==tRETURN || lastst==tBREAK || lastst==tCONTINUE || lastst==tENDLESS))
+      if (count_stmt>0 && isterminal(lastst))
+        if (matchtoken(tLABEL)) {
+          cell val;
+          char *name;
+          symbol *sym;
+          tokeninfo(&val,&name);
+          lexpush();            /* push the token so it can be analyzed later */
+          sym=findloc(name);
+          /* before issuing a warning, check if the label was previously used (via 'goto') */
+          if (sym!=NULL && sym->ident==iLABEL && (sym->usage & uREAD)==0)
         error(225);             /* unreachable code */
+        } else if (lastst==tTERMSWITCH && matchtoken(tRETURN)) {
+          lexpush();            /* push the token so it can be analyzed later */
+        } else {
+          error(225);           /* unreachable code */
+        } /* if */
       statement(&indent,TRUE);  /* do a statement */
       count_stmt++;
     } /* if */
@@ -5687,8 +5700,7 @@ static void compound(int stmt_sameline,int starttok)
   if (lastst!=tRETURN)
     if (pc_nestlevel >= 1 || (curfunc->flags & flagNAKED)==0)
       destructsymbols(&loctab,pc_nestlevel);
-  if (lastst!=tRETURN && lastst!=tGOTO)
-    if (pc_nestlevel >= 1 || (curfunc->flags & flagNAKED)==0)
+  if (!isterminal(lastst) && (pc_nestlevel>=1 || (curfunc->flags & flagNAKED)==0))
       modstk((int)(declared-save_decl)*sizeof(cell)); /* delete local variable space */
   testsymbols(&loctab,pc_nestlevel,FALSE,TRUE);     /* look for unused block locals */
   declared=save_decl;
@@ -5872,6 +5884,7 @@ static int doif(void)
   int returnst=tIF;
   assigninfo *assignments=NULL;
 
+  lastst=0;                     /* reset the last statement */
   ifindent=stmtindent;          /* save the indent of the "if" instruction */
   flab1=getlabel();             /* get label number for false branch */
   test(flab1,TEST_THEN,FALSE);  /* get expression, branch to flab1 if false */
@@ -5880,13 +5893,14 @@ static int doif(void)
     setlabel(flab1);            /* no, simple if..., print false label */
   } else {
     lastst_true=lastst;         /* save last statement of the "true" branch */
+    lastst=0;                   /* reset the last statement */
     /* to avoid the "dangling else" error, we want a warning if the "else"
      * has a lower indent than the matching "if" */
     if (stmtindent<ifindent && sc_tabsize>0)
       error(217);               /* loose indentation */
     memoizeassignments(pc_nestlevel+1,&assignments);
     flab2=getlabel();
-    if ((lastst!=tRETURN) && (lastst!=tGOTO))
+    if (!isterminal(lastst))
       jumplabel(flab2);         /* "true" branch jumps around "else" clause, unless the "true" branch statement already jumped */
     setlabel(flab1);            /* print false label */
     statement(NULL,FALSE);      /* do "else" clause */
@@ -5895,8 +5909,12 @@ static int doif(void)
      * kind of statement, set the last statement id to that kind, rather than
      * to the generic tIF; this allows for better "unreachable code" checking
      */
-    if (lastst==lastst_true)
+    if (lastst==lastst_true && lastst!=0)
       returnst=lastst;
+    /* otherwise, if both branches end with terminal statements (not necessary
+     * of the same kind), set the last statement ID to tTERMINAL */
+    else if (isterminal(lastst_true) && isterminal(lastst))
+      returnst=tTERMINAL;
   } /* if */
   restoreassignments(pc_nestlevel+1,assignments);
   return returnst;
@@ -6068,12 +6086,13 @@ static int dofor(void)
  *   param = table offset (code segment)
  *
  */
-static void doswitch(void)
+static int doswitch(void)
 {
   int lbl_table,lbl_exit,lbl_case;
   int swdefault,casecount;
   int tok,endtok;
   int swtag,csetag;
+  int allterminal;
   int enumsymcount;
   int save_fline;
   symbol *enumsym,*csesym;
@@ -6116,11 +6135,13 @@ static void doswitch(void)
   } /* if */
   lbl_exit=getlabel();          /* get label number for jumping out of switch */
   swdefault=FALSE;
+  allterminal=TRUE;             /* assume that all cases end with terminal statements */
   casecount=0;
   do {
     tok=lex(&val,&str);         /* read in (new) token */
     switch (tok) {
     case tCASE:
+      lastst=0;
       if (casecount!=0)
         memoizeassignments(pc_nestlevel+1,&assignments);
       if (swdefault!=FALSE)
@@ -6195,8 +6216,10 @@ static void doswitch(void)
       setlabel(lbl_case);
       statement(NULL,FALSE);
       jumplabel(lbl_exit);
+      allterminal &= isterminal(lastst);
       break;
     case tDEFAULT:
+      lastst=0;
       if (casecount!=0)
         memoizeassignments(pc_nestlevel+1,&assignments);
       if (swdefault!=FALSE)
@@ -6211,6 +6234,7 @@ static void doswitch(void)
        * clause of the switch and the exit label.
        */
       jumplabel(lbl_exit);
+      allterminal &= isterminal(lastst);
       break;
     default:
       if (tok!=endtok) {
@@ -6270,6 +6294,8 @@ static void doswitch(void)
 
   setlabel(lbl_exit);
   delete_consttable(&caselist); /* clear list of case labels */
+
+  return (swdefault && allterminal) ? tTERMSWITCH : tSWITCH;
 }
 
 static void doassert(void)
@@ -6295,11 +6321,12 @@ static void doassert(void)
   needtoken(tTERM);
 }
 
-static void dogoto(void)
+static int dogoto(void)
 {
   char *st;
   cell val;
   symbol *sym;
+  int returnst=tGOTO;
 
   /* if we were inside an endless loop, assume that we jump out of it */
   endlessloop=0;
@@ -6310,6 +6337,15 @@ static void dogoto(void)
       clearassignments(1);
     jumplabel((int)sym->addr);
     sym->usage|=uREAD;  /* set "uREAD" bit */
+    if ((sym->usage & uDEFINE)!=0) {
+      /* if there are no unimplemented labels, then the subsequent code is unreachable */
+      symbol *cur;
+      for (cur=&loctab; (cur=cur->next)!=NULL; )
+        if (cur->ident==iLABEL && (cur->usage & uDEFINE)==0)
+          break;
+      if (cur==NULL)
+        returnst=tTERMINAL;
+    } /* if */
     // ??? if the label is defined (check sym->usage & uDEFINE), check
     //     sym->compound (nesting level of the label) against pc_nestlevel;
     //     if sym->compound < pc_nestlevel, call the destructor operator
@@ -6317,6 +6353,7 @@ static void dogoto(void)
     error_suggest(20,st,NULL,estSYMBOL,esfLABEL);   /* illegal symbol name */
   } /* if */
   needtoken(tTERM);
+  return returnst;
 }
 
 static void dolabel(void)
@@ -7852,6 +7889,16 @@ static int isvariadic(symbol *sym)
   return FALSE;
 }
 
+/* isterminal
+ *
+ * Checks if the token represents one of the terminal kinds of statements.
+ */
+static int isterminal(int tok)
+{
+  return (tok==tRETURN || tok==tBREAK || tok==tCONTINUE || tok==tENDLESS
+          || tok==tEXIT || tok==tTERMINAL || tok==tTERMSWITCH);
+}
+
 /*  doreturn
  *
  *  Global references: rettype  (altered)
@@ -7872,6 +7919,9 @@ static void doreturn(void)
     ident=doexpr(TRUE,FALSE,TRUE,FALSE,&tag,&sym,TRUE,NULL);
     pc_retexpr=FALSE;
     needtoken(tTERM);
+    /* only warn about unreachable code if the return value is not constant */
+    if (ident!=iCONSTEXPR && lastst==tTERMSWITCH)
+      error(225); /* unreachable code */
     /* see if this function already has a sub type (an array attached) */
     assert(curfunc!=NULL);
     sub=finddepend(curfunc);

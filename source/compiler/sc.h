@@ -469,6 +469,17 @@ enum {
   /* for assigment to "lastst" only (see SC1.C) */
   tEXPR,
   tENDLESS, /* endless loop */
+  tTERMINAL, /* signalizes that the code after this statement is unreachable,
+              * which can happen when:
+              *  * both 'if' branches end with different kinds of "terminal"
+              *    statements, such as 'return', 'break', 'continue' or endless
+              *    loop;
+              *  * a 'goto' is used on an already implemented label (which has
+              *    the 'uDEFINE' flag set) and there are no undefined labels
+              *    ("declared" through 'goto', but not implemented yet)
+              */
+  tTERMSWITCH, /* signalizes that all 'switch' cases (including 'default') end
+                * with terminal statements; */
 };
 
 /* (reversed) evaluation of staging buffer */
