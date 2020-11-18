@@ -131,6 +131,7 @@ static int dowhile(void);
 static int dodo(void);
 static int dofor(void);
 static int doswitch(void);
+static void docase(int isdefault);
 static int dogoto(void);
 static void dolabel(void);
 static int isterminal(int tok);
@@ -5563,7 +5564,7 @@ static void statement(int *lastindent,int allow_decl)
     break;
   case tCASE:
   case tDEFAULT:
-    error(14);     /* not in switch */
+    docase(tok==tDEFAULT);
     break;
   case tGOTO:
     lastst=dogoto();
@@ -6296,6 +6297,30 @@ static int doswitch(void)
   delete_consttable(&caselist); /* clear list of case labels */
 
   return (swdefault && allterminal) ? tTERMSWITCH : tSWITCH;
+}
+
+/* docase() is only called in erroneous situations when there's a case
+ * outside of switch.
+ */
+static void docase(int isdefault)
+{
+  error(14);                        /* invalid statement; not in switch */
+  if (!isdefault) {
+    /* try to skim through the case values, so they won't be
+     * misinterpreted as a separate statement later */
+    PUSHSTK_I(sc_allowtags);
+    sc_allowtags=FALSE;             /* do not allow tagnames here */
+    do {
+      /* no need to verify the values, as the error output is blocked
+       * for the rest of the statement anyway (by "error(14)" above);
+       * simply eat the values by calling constexpr() */
+      constexpr(NULL,NULL,NULL);
+      if (matchtoken(tDBLDOT))
+        constexpr(NULL,NULL,NULL);
+    } while (matchtoken(','));
+    sc_allowtags=(short)POPSTK_I(); /* reset */
+  } /* if */
+  needtoken(':');                   /* ':' ends the case */
 }
 
 static void doassert(void)

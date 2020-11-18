@@ -1,0 +1,7 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+gh_574.pwn(5) : error 014: invalid statement; not in switch
+gh_574.pwn(6) : error 014: invalid statement; not in switch
+  """
+}
