@@ -6071,7 +6071,7 @@ static void doswitch(void)
   int swdefault,casecount;
   int tok,endtok;
   int swtag,csetag;
-  int enumsymcount,diff;
+  int enumsymcount;
   int save_fline;
   symbol *enumsym,*csesym;
   int ident;
@@ -6219,7 +6219,7 @@ static void doswitch(void)
   } while (tok!=endtok);
   restoreassignments(pc_nestlevel+1,assignments);
 
-  if (enumsym!=NULL && swdefault==FALSE && (diff=enumsym->x.tags.unique-enumsymcount)<=2) {
+  if (enumsym!=NULL && swdefault==FALSE && enumsym->x.tags.unique-enumsymcount<=2) {
     constvalue_root *enumlist=enumsym->dim.enumlist;
     constvalue *val,*prev=NULL,*save_next=NULL;
     for (val=enumlist->first; val!=NULL; prev=val,val=val->next) {
@@ -6237,8 +6237,9 @@ static void doswitch(void)
       /* check if the value of this constant is handled in switch, if so - continue */
       if (find_constval_byval(&caselist,val->value)!=NULL)
         continue;
+      errorset(sSETPOS,save_fline);
       error(244,val->name); /* enum element not handled in switch */
-      /*  */
+      errorset(sSETPOS,-1);
     } /* while */
   } /* if */
 
