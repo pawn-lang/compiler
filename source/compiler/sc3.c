@@ -64,6 +64,8 @@ static int constant(value *lval);
 static char lastsymbol[sNAMEMAX+1]; /* name of last function/variable */
 static int bitwise_opercount;   /* count of bitwise operators in an expression */
 static int decl_heap=0;
+static int lval_stgidx=0;
+static cell lval_cidx=0;
 
 /* Function addresses of binary operators for signed operations */
 static void (*op1[17])(void) = {
@@ -359,10 +361,12 @@ static int skim(int *opstr,void (*testfunc)(int),int dropval,int endval,
   int lvalue,hits,droplab,endlab,opidx;
   int allconst,foundop;
   cell constval;
-  int index;
-  cell cidx;
+  int org_index;
+  cell org_cidx;
 
-  stgget(&index,&cidx);         /* mark position in code generator */
+  org_index=lval_stgidx;
+  org_cidx=lval_cidx;
+  stgget(&lval_stgidx,&lval_cidx);/* mark position in code generator */
   hits=FALSE;                   /* no logical operators "hit" yet */
   allconst=TRUE;                /* assume all values "const" */
   constval=0;
@@ -404,17 +408,22 @@ static int skim(int *opstr,void (*testfunc)(int),int dropval,int endval,
       if (allconst) {
         lval->ident=iCONSTEXPR;
         lval->constval=constval;
-        stgdel(index,cidx);         /* scratch generated code and calculate */
+        stgdel(lval_stgidx,lval_cidx);/* scratch generated code and calculate */
       } else {
         lval->ident=iEXPRESSION;
         lval->constval=0;
       } /* if */
-      return FALSE;
+      lvalue=FALSE;
+      break;
     } else {
-      return lvalue;            /* none of the operators in "opstr" were found */
+      break;                    /* none of the operators in "opstr" were found */
     } /* if */
 
   } /* while */
+
+  lval_stgidx=org_index;
+  lval_cidx=org_cidx;
+  return lvalue;
 }
 
 /*
@@ -535,13 +544,17 @@ static int plnge_rel(int *opstr,int opoff,int (*hier)(value *lval),value *lval)
  */
 static int plnge1(int (*hier)(value *lval),value *lval)
 {
-  int lvalue,index;
-  cell cidx;
-
-  stgget(&index,&cidx); /* mark position in code generator */
+  int lvalue,org_index;
+  cell org_cidx;
+  
+  org_index=lval_stgidx;
+  org_cidx=lval_cidx;
+  stgget(&lval_stgidx,&lval_cidx);  /* mark position in code generator */
   lvalue=(*hier)(lval);
   if (lval->ident==iCONSTEXPR)
-    stgdel(index,cidx); /* load constant later */
+    stgdel(lval_stgidx,lval_cidx);  /* load constant later */
+  lval_stgidx=org_index;
+  lval_cidx=org_cidx;
   return lvalue;
 }
 
@@ -554,10 +567,12 @@ static void plnge2(void (*oper)(void),
                    int (*hier)(value *lval),
                    value *lval1,value *lval2)
 {
-  int index;
-  cell cidx;
-
-  stgget(&index,&cidx);             /* mark position in code generator */
+  int org_index;
+  cell org_cidx;
+  
+  org_index=lval_stgidx;
+  org_cidx=lval_cidx;
+  stgget(&lval_stgidx,&lval_cidx);  /* mark position in code generator */
   if (lval1->ident==iCONSTEXPR) {   /* constant on left side; it is not yet loaded */
     if (plnge1(hier,lval2))
       rvalue(lval2);                /* load lvalue now */
@@ -573,8 +588,8 @@ static void plnge2(void (*oper)(void),
     if (lval2->ident==iCONSTEXPR) { /* constant on right side */
       if (commutative(oper)) {      /* test for commutative operators */
         value lvaltmp = {0};
-        stgdel(index,cidx);         /* scratch pushreg() and constant fetch (then
-                                     * fetch the constant again */
+        stgdel(lval_stgidx,lval_cidx);  /* scratch pushreg() and constant fetch (then
+                                         * fetch the constant again */
         ldconst(lval2->constval<<dbltest(oper,lval1,lval2),sALT);
         /* now, the primary register has the left operand and the secondary
          * register the right operand; swap the "lval" variables so that lval1
@@ -636,7 +651,7 @@ static void plnge2(void (*oper)(void),
         error(241);             /* negative or too big shift count */
       if (lval1->ident==iCONSTEXPR && lval2->ident==iCONSTEXPR) {
         /* only constant expression if both constant */
-        stgdel(index,cidx);       /* scratch generated code and calculate */
+        stgdel(lval_stgidx,lval_cidx);  /* scratch generated code and calculate */
         check_tagmismatch(lval1->tag,lval2->tag,FALSE,-1);
         lval1->constval=calc(lval1->constval,oper,lval2->constval,&lval1->boolresult);
       } else {
@@ -646,6 +661,8 @@ static void plnge2(void (*oper)(void),
       } /* if */
     } /* if */
   } /* if */
+  lval_stgidx=org_index;
+  lval_cidx=org_cidx;
 }
 
 static cell flooreddiv(cell a,cell b,int return_remainder)
@@ -1946,16 +1963,30 @@ static int primary(value *lval)
   cell val;
   symbol *sym;
 
-  if (matchtoken('(')){         /* sub-expression - (expression,...) */
+  if (matchtoken('(')) {        /* sub-expression - (expression,...) */
+    int first=TRUE;
     PUSHSTK_I(sc_intest);
     PUSHSTK_I(sc_allowtags);
 
     sc_intest=FALSE;            /* no longer in "test" expression */
     sc_allowtags=TRUE;          /* allow tagnames to be used in parenthesized expressions */
     sc_allowproccall=FALSE;
-    do
+    do {
+      int org_ident=lval->ident;
+      /* overwrite current position in the staging buffer, so if the current
+       * sub-expression has a constant result, only the code for this
+       * sub-expression would get scrapped, not for the whole expression */
+      if (!first && org_ident!=iCONSTEXPR)
+        stgget(&lval_stgidx,&lval_cidx);
       lvalue=hier14(lval);
-    while (matchtoken(','));
+      /* if this in not the first sub-expression, the result of this sub-expression
+       * is a constant value, and the previous sub-expression wasn't constant,
+       * mark the result as iEXPRESSION, so the code for the whole expression
+       * won't get scrapped later */
+      if (!first && lval->ident==iCONSTEXPR && org_ident!=iCONSTEXPR)
+        lval->ident=iEXPRESSION;
+      first=FALSE;
+    } while (matchtoken(','));
     needtoken(')');
     lexclr(FALSE);              /* clear lex() push-back, it should have been
                                  * cleared already by needtoken() */

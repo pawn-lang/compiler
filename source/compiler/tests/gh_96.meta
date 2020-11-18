@@ -1,0 +1,25 @@
+{
+  'test_type': 'pcode_check',
+  'code_pattern': r"""
+[0-9a-f]+  nop
+[0-9a-f]+  load.pri 00000000
+[0-9a-f]+  switch [0-9a-f]+
+[0-9a-f]+  push.c 00000000
+[0-9a-f]+  call [0-9a-f]+
+[0-9a-f]+  zero.pri
+[0-9a-f]+  stor.pri 00000004
+[0-9a-f]+  jump [0-9a-f]+
+[0-9a-f]+  load.pri 00000000
+[0-9a-f]+  inc 00000000
+[0-9a-f]+  zero.pri
+[0-9a-f]+  stor.pri 00000004
+[0-9a-f]+  jump [0-9a-f]+
+[0-9a-f]+  zero.pri
+[0-9a-f]+  stor.pri 00000004
+[0-9a-f]+  jump [0-9a-f]+
+[0-9a-f]+  casetbl 00000002 [0-9a-f]+
+                  00000000 [0-9a-f]+
+                  00000001 [0-9a-f]+
+[0-9a-f]+  nop
+"""
+}
