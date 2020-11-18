@@ -1758,22 +1758,27 @@ restart:
       return FALSE;
     } /* if */
     if (tok=='[' || tok=='{') { /* subscript */
+      int invsubscript=FALSE;
       close = (char)((tok=='[') ? ']' : '}');
       if (sym==NULL) {  /* sym==NULL if lval is a constant or a literal */
         error(28,"<no variable>");  /* cannot subscript */
-        needtoken(close);
-        return FALSE;
-      } else if (sym->ident!=iARRAY && sym->ident!=iREFARRAY){
+        invsubscript=TRUE;
+      } else if (sym->ident!=iARRAY && sym->ident!=iREFARRAY) {
         error_suggest(28,sym->name,NULL,estSYMBOL,esfARRAY);/* cannot subscript, variable is not an array */
-        needtoken(close);
-        return FALSE;
+        invsubscript=TRUE;
       } else if (sym->dim.array.level>0 && close!=']') {
         error(51);      /* invalid subscript, must use [ ] */
-        needtoken(close);
-        return FALSE;
+        invsubscript=TRUE;
       } /* if */
-      /* set the tag to match (enumeration fields as indices) */
-      lval2.cmptag=sym->x.tags.index;
+      if (invsubscript) {
+        if (sym!=NULL && sym->ident!=iFUNCTN)
+          sym->usage |= uREAD;  /* avoid the "symbol is never used" warning */
+        if (matchtoken(close))
+          return FALSE;         /* return if there's no index sub-expression */
+      } else {
+        /* set the tag to match (enumeration fields as indices) */
+        lval2.cmptag=sym->x.tags.index;
+      } /* if */
       stgget(&index,&cidx);     /* mark position in code generator */
       pushreg(sPRI);            /* save base address of the array */
       if (hier14(&lval2))       /* create expression for the array index */
@@ -1781,6 +1786,18 @@ restart:
       if (lval2.ident==iARRAY || lval2.ident==iREFARRAY)
         error(33,lval2.sym->name);      /* array must be indexed */
       needtoken(close);
+      if (invsubscript) {
+        /* parse the next index if this is not the lowest array dimension */
+        if (sym!=NULL && (sym->ident==iARRAY || sym->ident==iREFARRAY) && sym->dim.array.level>0) {
+          lval1->ident=iREFARRAY;
+          lval1->sym=finddepend(sym);
+          assert(lval1->sym!=NULL);
+          assert(lval1->sym->dim.array.level==sym->dim.array.level-1);
+          cursym=lval1->sym;
+          goto restart;
+        } /* if */
+        return FALSE;
+      } /* if */
       check_tagmismatch(sym->x.tags.index,lval2.tag,TRUE,-1);
       if (lval2.ident==iCONSTEXPR) {    /* constant expression */
         stgdel(index,cidx);             /* scratch generated code */

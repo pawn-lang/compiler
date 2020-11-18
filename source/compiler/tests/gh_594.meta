@@ -1,0 +1,8 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+gh_594.pwn(11) : error 017: undefined symbol "undefined"
+gh_594.pwn(14) : error 028: invalid subscript (not an array or too many subscripts): "var"
+gh_594.pwn(17) : error 051: invalid subscript, use "[ ]" operators on major dimensions
+  """
+}
