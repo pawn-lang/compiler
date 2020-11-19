@@ -457,7 +457,7 @@ static void readline(unsigned char *line)
  *  ends with the same multiline string, so that this won't trigger commands:
  *
  *      new x[] = "Hello
- *      
+ *
  *      #define X 0
  *      ";
  *
@@ -608,9 +608,9 @@ static int stripcomment(unsigned char *line)
       } else {
         if (incommand==2 && *line>' ') {
           /* line starting a command, may need raw strings */
-          if (strncmp(line, "#error", 6)==0 ||
-              strncmp(line, "#warning", 8)==0 ||
-              strncmp(line, "#pragma", 7)==0) {
+          if (strncmp((char*)line,"#error",6)==0 ||
+              strncmp((char*)line,"#warning",8)==0 ||
+              strncmp((char*)line,"#pragma",7)==0) {
             /* is one of the pre-processor commands with pure raw strings */
             incommand=1;
           } else {

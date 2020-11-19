@@ -5674,7 +5674,7 @@ static void compound(int stmt_sameline,int starttok)
       error(30,block_start);    /* compound block not closed at end of file */
       break;
     } else {
-      if (count_stmt>0 && isterminal(lastst))
+      if (count_stmt>0 && isterminal(lastst)) {
         if (matchtoken(tLABEL)) {
           cell val;
           char *name;
@@ -5684,12 +5684,13 @@ static void compound(int stmt_sameline,int starttok)
           sym=findloc(name);
           /* before issuing a warning, check if the label was previously used (via 'goto') */
           if (sym!=NULL && sym->ident==iLABEL && (sym->usage & uREAD)==0)
-        error(225);             /* unreachable code */
+            error(225);         /* unreachable code */
         } else if (lastst==tTERMSWITCH && matchtoken(tRETURN)) {
           lexpush();            /* push the token so it can be analyzed later */
         } else {
           error(225);           /* unreachable code */
         } /* if */
+      } /* if */
       statement(&indent,TRUE);  /* do a statement */
       count_stmt++;
     } /* if */
