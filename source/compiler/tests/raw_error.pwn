@@ -1,0 +1,6 @@
+#error "raw error\"
+
+main()
+{
+}
+

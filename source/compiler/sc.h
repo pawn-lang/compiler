@@ -961,6 +961,7 @@ SC_VDECL char sc_ctrlchar;    /* the control character (or escape character) */
 SC_VDECL char sc_ctrlchar_org;/* the default control character */
 SC_VDECL int litidx;          /* index to literal table */
 SC_VDECL int litmax;          /* current size of the literal table */
+SC_VDECL int litgrow;         /* amount to increase the literal table by */
 SC_VDECL int stgidx;          /* index to the staging buffer */
 SC_VDECL int sc_labnum;       /* number of (internal) labels */
 SC_VDECL int staging;         /* true if staging output */
