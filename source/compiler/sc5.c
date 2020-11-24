@@ -206,7 +206,8 @@ static char *warnmsg[] = {
 /*245*/  "enum increment \"%s %d\" has no effect on zero value (symbol \"%s\")\n",
 /*246*/  "multiplication overflow in enum element declaration (symbol \"%s\")\n",
 /*247*/  "use of operator \"~\" on a \"bool:\" value always results in \"true\"\n",
-/*248*/  "possible misuse of comma operator\n"
+/*248*/  "possible misuse of comma operator\n",
+/*249*/  "detected %s with no corresponding %s\n"
 };
 
 static char *noticemsg[] = {
@@ -436,12 +437,12 @@ void pc_pushwarnings(void)
  */
 void pc_popwarnings(void)
 {
-  void *p;
-  if (warnstack.next==NULL) {
-    error(26,"#pragma warning push");   /* no matching "#pragma warning push" */
+  void *p=warnstack.next;
+  if (p==NULL) {
+    error(249,"#pragma warning pop","#pragma warning push"); /* detected #pragma warning pop with no corresponding #pragma warning push */
     return;                             /* nothing to do */
   } /* if */
-  p=warnstack.next;
+
   memmove(&warnstack,p,sizeof(struct s_warnstack));
   free(p);
 }
@@ -453,10 +454,11 @@ SC_FUNC void warnstack_init(void)
 
 SC_FUNC void warnstack_cleanup(void)
 {
-  struct s_warnstack *cur,*next;
-  if (warnstack.next!=NULL)
+  struct s_warnstack *cur=warnstack.next,*next;
+  if (cur!=NULL)
     error(1,"#pragma warning pop","-end of file-");
-  for (cur=warnstack.next; cur!=NULL; cur=next) {
+
+  for (;cur!=NULL; cur=next) {
     next=cur->next;
     free(cur);
   } /* for */

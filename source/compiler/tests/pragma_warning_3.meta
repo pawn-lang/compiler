@@ -1,6 +1,6 @@
 {
   'test_type': 'output_check',
   'errors': """
-pragma_warning_3.pwn(1) : error 026: no matching "#pragma warning push"
+pragma_warning_3.pwn(1) : warning 249: detected #pragma warning pop with no corresponding #pragma warning push
 """
 }

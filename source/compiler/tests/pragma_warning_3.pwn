@@ -1,2 +1,2 @@
-#pragma warning pop // error 026: no matching "#pragma warning push"
+#pragma warning pop // warning 249: detected #pragma warning pop with no corresponding #pragma warning push
 main(){}
