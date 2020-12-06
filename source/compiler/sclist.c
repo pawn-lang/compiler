@@ -44,7 +44,8 @@
 SC_FUNC char* duplicatestring(const char* sourcestring)
 {
   char* result=(char*)malloc(strlen(sourcestring)+1);
-  strcpy(result,sourcestring);
+  if (result!=NULL)
+    strcpy(result,sourcestring);
   return result;
 }
 

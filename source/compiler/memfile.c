@@ -32,6 +32,11 @@ memfile_t *memfile_creat(const char *name, size_t init)
 	mf.offs = 0;
 
 	pmf = (memfile_t *)malloc(sizeof(memfile_t));
+	if (!pmf)
+	{
+		free(mf.base);
+		return NULL;
+	}
 	memcpy(pmf, &mf, sizeof(memfile_t));
 
 	pmf->name = strdup(name);
