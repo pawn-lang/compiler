@@ -724,6 +724,8 @@ SC_FUNC void lexinit(void);
 SC_FUNC int lex(cell *lexvalue,char **lexsym);
 SC_FUNC void lexpush(void);
 SC_FUNC void lexclr(int clreol);
+SC_FUNC void recstart(void);
+SC_FUNC void recstop(void);
 SC_FUNC int matchtoken(int token);
 SC_FUNC int tokeninfo(cell *val,char **str);
 SC_FUNC int needtoken(int token);
@@ -1013,6 +1015,8 @@ SC_VDECL int pc_retheap;      /* heap space (in bytes) to be manually freed when
 SC_VDECL int pc_nestlevel;    /* number of active (open) compound statements */
 SC_VDECL unsigned int pc_attributes;/* currently set attribute flags (for the "__pragma" operator) */
 SC_VDECL int pc_ispackedstr;  /* true if the last tokenized string is packed */
+SC_VDECL int pc_isrecording;  /* true if recording input */
+SC_VDECL char *pc_recstr;     /* recorded input */
 
 SC_VDECL char *sc_tokens[];
 

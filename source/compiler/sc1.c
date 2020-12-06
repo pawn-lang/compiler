@@ -791,6 +791,8 @@ cleanup:
   line_sym=NULL;
   free(pc_deprecate);
   pc_deprecate=NULL;
+  free(pc_recstr);
+  pc_recstr=NULL;
   hashtable_term(&symbol_cache_ht);
   delete_consttable(&tagname_tab);
   delete_consttable(&libname_tab);
