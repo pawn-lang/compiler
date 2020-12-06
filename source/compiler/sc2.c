@@ -2405,7 +2405,7 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
         error(220);
       } /* if */
     } /* if */
-    } else if (*lptr=='\"' || *lptr=='#' || (*lptr==sc_ctrlchar && (*(lptr+1)=='\"' || *(lptr+1)=='#')))
+  } else if (*lptr=='\"' || *lptr=='#' || (*lptr==sc_ctrlchar && (*(lptr+1)=='\"' || *(lptr+1)=='#')))
   {                                     /* unpacked string literal */
     _lextok=tSTRING;
     stringflags=(*lptr==sc_ctrlchar) ? RAWMODE : 0;
