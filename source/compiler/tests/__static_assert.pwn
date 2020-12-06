@@ -31,11 +31,11 @@ main()
 	__static_check(1 && __static_check(cval == cval) || false);
 	__static_check(1 && __static_check(cval != cval) && false); // warning 249: check failed: cval != cval
 	                                                            // warning 249: check failed: 1 && __static_check(cval != cval) && false
-	__static_check(__static_check(cval != cval, "inside fail") || true, "outside fail");  // warning 249: check failed: inside fail
-	__static_check(__static_check(cval == cval, "inside fail") && false, "outside fail"); // warning 249: check failed: outside fail
+	__static_check(__static_check(cval != cval, "inner check") || true, "outer check");  // warning 249: check failed: inner check
+	__static_check(__static_check(cval == cval, "inner check") && false, "outer check"); // warning 249: check failed: outer check
 
 	__static_check((0 + 1 + 2 + 3 + 4
-	               + 5 + 6 + 7 + 8 + 9) * 0); // warning 249: check failed: -expression-
+	               + 5 + 6 + 7 + 8 + 9) * 0); // warning 249: check failed: (0 + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9) * 0
 
 	__static_check(var); // error 008: must be a constant expression; assumed zero
 	__static_check(cval, var); // error 001: expected token: "-string-", but found "-identifier-"
