@@ -1699,10 +1699,8 @@ static char *replacesequence(char *pattern,char symbols[MAX_OPT_VARS][MAX_ALIAS+
   } /* while */
 
   /* allocate a buffer to replace the sequence in */
-  if ((buffer=(char*)malloc(*repl_length))==NULL) {
+  if ((buffer=(char*)malloc(*repl_length))==NULL)
     error(103);
-    return NULL;
-  } /* if */
 
   /* replace the pattern into this temporary buffer */
   lptr=buffer;

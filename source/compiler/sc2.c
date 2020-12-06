@@ -3000,10 +3000,8 @@ static symbol *add_symbol(symbol *root,symbol *entry,int sort)
     while (root->next!=NULL && strcmp(entry->name,root->next->name)>0)
       root=root->next;
 
-  if ((newsym=(symbol *)malloc(sizeof(symbol)))==NULL) {
+  if ((newsym=(symbol *)malloc(sizeof(symbol)))==NULL)
     error(103);
-    return NULL;
-  } /* if */
   memcpy(newsym,entry,sizeof(symbol));
   newsym->next=root->next;
   root->next=newsym;
@@ -3453,10 +3451,8 @@ SC_FUNC symbol *addsym(const char *name,cell addr,int ident,int vclass,int tag,i
   assert(ident!=iLABEL || findloc(name)==NULL);
 
   /* create an empty referrer list */
-  if ((refer=(symbol**)malloc(sizeof(symbol*)))==NULL) {
+  if ((refer=(symbol**)malloc(sizeof(symbol*)))==NULL)
     error(103);         /* insufficient memory */
-    return NULL;
-  } /* if */
   *refer=NULL;
 
   /* first fill in the entry */
