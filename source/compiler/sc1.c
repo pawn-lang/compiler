@@ -8548,16 +8548,13 @@ SC_FUNC void pragma_nodestruct(symbol *sym)
  */
 SC_FUNC cell do_static_check(int use_warning)
 {
-  int already_staging,didalloc,optmsg;
+  int already_staging,already_recording,optmsg;
   int ident,index;
-  int bck_litidx;
-  int exprstartfline,exprendfline;
+  int bck_litidx,recstartpos;
   cell cidx,val;
   char *str;
-  const unsigned char *exprstart,*exprend;
 
-  str=NULL;
-  didalloc=optmsg=FALSE;
+  optmsg=FALSE;
   index=0;
   cidx=0;
 
@@ -8567,53 +8564,34 @@ SC_FUNC cell do_static_check(int use_warning)
     stgset(TRUE);       /* start stage-buffering */
     errorset(sEXPRMARK,0);
   } /* if */
-  exprstart=lptr;
-  exprstartfline=fline;
+  already_recording=pc_isrecording;
+  if (!already_recording) {
+    recstart();
+    recstartpos=0;
+  } else {
+    recstop();  /* trim out the part of the current line that hasn't been read by lex() yet */
+    recstartpos=strlen(pc_recstr);
+    recstart(); /* restart recording */
+  } /* if */
   ident=expression(&val,NULL,NULL,FALSE);
+  if (!already_recording || val==0)
+    recstop();
+  str=&pc_recstr[recstartpos];
+  if (recstartpos!=0 && pc_recstr[recstartpos]==' ')
+    str++;      /* skip leading whitespace */
   if (ident!=iCONSTEXPR)
     error(8);           /* must be constant expression */
-  exprend=lptr;
-  exprendfline=fline;
   stgdel(index,cidx);   /* scratch generated code */
   if (!already_staging) {
     errorset(sEXPRRELEASE,0);
     stgset(FALSE);      /* stop stage-buffering */
   } /* if */
 
-  /* don't bother allocating space and copying the message
-   * if the expression is true */
-  if (val==0) {
-    if (exprstartfline==exprendfline) {
-      /* skip leading whitespaces */
-      while (*exprstart==' ')
-        exprstart++;
-      /* strip the trailing ',' or ')'. as well as the whitespaces */
-      exprend--;
-      if (*exprend==')' || *exprend==',') {
-        while (*(exprend-1)==' ')
-          exprend--;
-      } /* if */
-      /* copy the expression string */
-      str=malloc((exprend-exprstart+1)*sizeof(char));
-      if (str==NULL)
-        error(103);       /* insufficient memory */
-      memcpy(str,exprstart,exprend-exprstart);
-      str[exprend-exprstart]='\0';
-      didalloc=TRUE;
-    } else {
-      /* Currently there's no reliable way to capture multiline expressions,
-       * as the lexer would only keep the contents of the line the expression
-       * ends at, so try to print "-epression-" instead. Not the prefect
-       * solution, but at least it's better than not printing anything. */
-      str="-expression-";
-    } /* if */
-  } /* if */
-
   /* read the optional message */
   if (matchtoken(',')) {
-    if (didalloc) {
-      free(str);
-      didalloc=FALSE;
+    if (!already_recording) {
+      free(pc_recstr);
+      pc_recstr=NULL;
     } /* if */
     optmsg=TRUE;
     str=parsestringparam(val!=0,&bck_litidx);
@@ -8623,12 +8601,15 @@ SC_FUNC cell do_static_check(int use_warning)
     int errnum=use_warning ? 249    /* check failed */
                            : 110;   /* assertion failed */
     error(errnum,(str!=NULL) ? str : "");
-    if (didalloc)
-      free(str);
-    else if (optmsg && str!=NULL)
+    if (optmsg)
       litidx=bck_litidx;        /* remove the string from the literal queue */
+    if (already_recording)
+      recstart();               /* restart recording */
   } /* if */
-
+  if (!optmsg && !already_recording) {
+    free(pc_recstr);
+    pc_recstr=NULL;
+  } /* if */
   needtoken(')');
   return !!val;
 }
