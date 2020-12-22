@@ -3748,7 +3748,7 @@ static void check_reparse(symbol *sym)
 
 static void funcstub(int fnative)
 {
-  int tok,tag,fpublic;
+  int tok,tag,fpublic,fstatic,fstock,fconst;
   char *str;
   cell val,size;
   char symbolname[sNAMEMAX+1];
@@ -3786,15 +3786,13 @@ static void funcstub(int fnative)
     dim[numdim++]=(int)size;
   } /* while */
 
+  getclassspec(0,&fpublic,&fstatic,&fstock,&fconst);
+  /* a combination of 'public' and 'stock' is already checked in getclassspec() */
+  if (fnative && (fpublic || fstatic || fstock) || (fpublic && fstock))
+    error(42);                  /* invalid combination of class specifiers */
+  else if (fconst)
+    error(10);                  /* illegal function or declaration */
   tok=lex(&val,&str);
-  fpublic=(tok==tPUBLIC) || (tok==tSYMBOL && str[0]==PUBLIC_CHAR);
-  if (fnative) {
-    if (fpublic || tok==tSTOCK || tok==tSTATIC || (tok==tSYMBOL && *str==PUBLIC_CHAR))
-      error(42);                /* invalid combination of class specifiers */
-  } else {
-    if (tok==tPUBLIC || tok==tSTOCK || tok==tSTATIC)
-      tok=lex(&val,&str);
-  } /* if */
 
   if (tok==t__PRAGMA) {
     dopragma();
@@ -3810,6 +3808,12 @@ static void funcstub(int fnative)
     if (tok!=tSYMBOL && freading) {
       error(10);                /* illegal function or declaration */
       return;
+    } /* if */
+    if (str[0]==PUBLIC_CHAR) {
+      if (fnative)
+        error(42);              /* invalid combination of class specifiers */
+      else
+        fpublic=TRUE;
     } /* if */
     strcpy(symbolname,str);
   } /* if */
