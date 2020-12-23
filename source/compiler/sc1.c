@@ -2136,7 +2136,8 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
     ispublic=fpublic;
     if (name[0]==PUBLIC_CHAR) {
       ispublic=TRUE;                    /* implicitly public variable */
-      assert(!fstatic);
+      if (fstatic || fstock)
+        error(42);                      /* invalid combination of class specifiers */
     } /* if */
     while (matchtoken('[')) {
       ident=iARRAY;
@@ -3810,9 +3811,9 @@ static void funcstub(int fnative)
       return;
     } /* if */
     if (str[0]==PUBLIC_CHAR) {
-      if (fnative)
+      if (fnative || fstatic || fstock)
         error(42);              /* invalid combination of class specifiers */
-      else
+      if (!fnative)
         fpublic=TRUE;
     } /* if */
     strcpy(symbolname,str);
@@ -3967,7 +3968,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   funcline=fline;               /* save line at which the function is defined */
   if (symbolname[0]==PUBLIC_CHAR) {
     fpublic=TRUE;               /* implicitly public function */
-    if (stock)
+    if (stock || fstatic)
       error(42);                /* invalid combination of class specifiers */
   } /* if */
   sym=fetchfunc(symbolname,tag);/* get a pointer to the function entry */
