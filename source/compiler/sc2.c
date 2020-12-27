@@ -3155,11 +3155,18 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
       if (sym->states!=NULL)
         for (stateptr=sym->states->first; stateptr!=NULL; stateptr=stateptr->next)
           stateptr->value=0;
-      /* for user defined operators, also remove the "prototyped" flag, as
-       * user-defined operators *must* be declared before use
-       */
-      if (sym->ident==iFUNCTN && !alpha(*sym->name))
-        sym->usage &= ~uPROTOTYPED;
+      if (sym->ident==iFUNCTN) {
+        /* for user defined operators, also remove the "prototyped" flag, as
+         * user-defined operators *must* be declared before use
+         */
+        if (!alpha(*sym->name))
+          sym->usage &= ~uPROTOTYPED;
+        /* unset the class specifier flags, so on the next compilation pass
+         * the declaration(s) for this function won't be required to have all
+         * specifiers the function has been defined with on the previous pass
+         */
+        sym->usage &= ~(uPUBLIC | uSTATIC | uSTOCK);
+      } /* if */
       root=sym;                 /* skip the symbol */
     } /* if */
   } /* while */

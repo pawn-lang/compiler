@@ -229,6 +229,11 @@ typedef struct s_symbol {
 #define uRETNONE    0x010
 /* uASSIGNED indicates that a value assigned to the variable is not used yet */
 #define uASSIGNED   0x080
+/* function is declared/defined with the "static" specifier; this flag is being
+ * reset before the next compilation pass so "forward" declarations won't be
+ * required to have this specifier if the function was defined/re-declared with
+ * it only later */
+#define uSTATIC     0x200
 /* uLOOPVAR is set when a variable is read inside of a loop condition. This is
  * used to detect situations when a variable is used in a loop condition, but
  * not modified inside of a loop body. */

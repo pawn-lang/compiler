@@ -3829,13 +3829,15 @@ static void funcstub(int fnative)
     sym->usage=(short)(uNATIVE | uRETVALUE | uDEFINE | (sym->usage & uPROTOTYPED));
     sym->x.lib=curlibrary;
   } else {
-    if (((sym->usage & uPUBLIC)!=0 && !fpublic) || (sym->fnumber!=-1 && !fstatic)
+    if (((sym->usage & uPUBLIC)!=0 && !fpublic) || ((sym->usage & uSTATIC)!=0 && !fstatic)
         || ((sym->usage & uSTOCK)!=0 && !fstock))
       error(25);                /* function heading differs from prototype */
     if (fpublic && opertok==0)
       sym->usage|=uPUBLIC;
-    if (fstatic)
+    if (fstatic) {
+      sym->usage |= uSTATIC;
       sym->fnumber=filenum;
+    } /* if */
     if (fstock)
       sym->usage|=uSTOCK;
   } /* if */
@@ -3984,13 +3986,15 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   sym=fetchfunc(symbolname,tag);/* get a pointer to the function entry */
   if (sym==NULL || (sym->usage & uNATIVE)!=0)
     return TRUE;                /* it was recognized as a function declaration, but not as a valid one */
-  if (((sym->usage & uPUBLIC)!=0 && !fpublic) || (sym->fnumber!=-1 && !fstatic)
+  if (((sym->usage & uPUBLIC)!=0 && !fpublic) || ((sym->usage & uSTATIC)!=0 && !fstatic)
       || ((sym->usage & uSTOCK)!=0 && !stock))
     error(25);                  /* function heading differs from prototype */
   if (fpublic && opertok==0)
     sym->usage|=uPUBLIC;
-  if (fstatic)
+  if (fstatic) {
+    sym->usage |= uSTATIC;
     sym->fnumber=filenum;
+  } /* if */
   if (stock)
     sym->usage|=uSTOCK;
   check_reparse(sym);
