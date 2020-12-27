@@ -3832,14 +3832,22 @@ static void funcstub(int fnative)
     if (((sym->usage & uPUBLIC)!=0 && !fpublic) || ((sym->usage & uSTATIC)!=0 && !fstatic)
         || ((sym->usage & uSTOCK)!=0 && !fstock))
       error(25);                /* function heading differs from prototype */
-    if (fpublic && opertok==0)
-      sym->usage|=uPUBLIC;
-    if (fstatic) {
-      sym->usage |= uSTATIC;
-      sym->fnumber=filenum;
+    if ((sym->usage & uDEFINE)!=0) {
+      /* if the function has already been defined ("finalized"), we can't accept
+       * any new class specifiers */
+      if ((fpublic && (sym->usage & uPUBLIC)==0) || (fstatic && (sym->usage & uSTATIC)==0)
+          || (fstock && (sym->usage & uSTOCK)==0))
+        error(25);                /* function heading differs from prototype */
+    } else {
+      if (fpublic && opertok==0)
+        sym->usage|=uPUBLIC;
+      if (fstatic) {
+        sym->usage |= uSTATIC;
+        sym->fnumber=filenum;
+      } /* if */
+      if (fstock)
+        sym->usage|=uSTOCK;
     } /* if */
-    if (fstock)
-      sym->usage|=uSTOCK;
   } /* if */
   sym->usage|=uFORWARD;
   check_reparse(sym);
