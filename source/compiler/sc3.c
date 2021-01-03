@@ -146,7 +146,7 @@ static void (*unopers[])(void) = { lneg, neg, user_inc, user_dec };
       if (lval!=NULL && (lval->ident==iARRAYCELL || lval->ident==iARRAYCHAR))
         savealt=TRUE;
     } else {
-      assert( arraysize(binoperstr) == arraysize(op1) );
+      assert_static( arraysize(binoperstr) == arraysize(op1) );
       for (i=0; i<arraysize(op1); i++) {
         if (oper==op1[i]) {
           strcpy(opername,binoperstr[i]);
@@ -159,7 +159,7 @@ static void (*unopers[])(void) = { lneg, neg, user_inc, user_dec };
     assert(oper!=NULL);
     assert(numparam==1);
     /* try a select group of unary operators */
-    assert( arraysize(unoperstr) == arraysize(unopers) );
+    assert_static( arraysize(unoperstr) == arraysize(unopers) );
     if (opername[0]=='\0') {
       for (i=0; i<arraysize(unopers); i++) {
         if (oper==unopers[i]) {
