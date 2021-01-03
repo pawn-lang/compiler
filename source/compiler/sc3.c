@@ -80,15 +80,15 @@ static void (*op1[17])(void) = {
   os_le,os_ge,os_lt,os_gt,      /* hier9, index 11 */
   ob_eq,ob_ne,                  /* hier10, index 15 */
 };
-/* These two functions are defined because the functions inc() and dec() in
- * SC4.C have a different prototype than the other code generation functions.
+/* These two macros are defined because the functions inc() and dec() in SC4.C
+ * have a different prototype than the other code generation functions.
  * The arrays for user-defined functions use the function pointers for
  * identifying what kind of operation is requested; these functions must all
  * have the same prototype. As inc() and dec() are special cases already, it
- * is simplest to add two "do-nothing" functions.
+ * is simplest to cast them into "void (*)(void)".
  */
-static void user_inc(void) {}
-static void user_dec(void) {}
+#define user_inc ((void (*)(void))inc)
+#define user_dec ((void (*)(void))dec)
 
 /*
  *  Searches for a binary operator a list of operators. The list is stored in
