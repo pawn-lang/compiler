@@ -5044,7 +5044,7 @@ static long max_stacksize(symbol *root,int *recursion)
 
   maxsize=0;
   maxparams=0;
-  *recursion=0;         /* assume no recursion */
+  *recursion=FALSE;     /* assume no recursion */
   for (sym=root->next; sym!=NULL; sym=sym->next) {
     int recursion_detected;
     /* drop out if this is not a user-implemented function */
