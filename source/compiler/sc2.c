@@ -3165,7 +3165,7 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
          * the declaration(s) for this function won't be required to have all
          * specifiers the function has been defined with on the previous pass
          */
-        sym->usage &= ~(uPUBLIC | uSTATIC | uSTOCK);
+        sym->usage &= ~(uDECLPUBLIC | uDECLSTATIC | uSTOCK);
       } /* if */
       root=sym;                 /* skip the symbol */
     } /* if */

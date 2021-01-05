@@ -3829,20 +3829,20 @@ static void funcstub(int fnative)
     sym->usage=(short)(uNATIVE | uRETVALUE | uDEFINE | (sym->usage & uPROTOTYPED));
     sym->x.lib=curlibrary;
   } else {
-    if (((sym->usage & uPUBLIC)!=0 && !fpublic) || ((sym->usage & uSTATIC)!=0 && !fstatic)
+    if (((sym->usage & uDECLPUBLIC)!=0 && !fpublic) || ((sym->usage & uDECLSTATIC)!=0 && !fstatic)
         || ((sym->usage & uSTOCK)!=0 && !fstock))
       error(25);                /* function heading differs from prototype */
     if ((sym->usage & uDEFINE)!=0) {
       /* if the function has already been defined ("finalized"), we can't accept
        * any new class specifiers */
-      if ((fpublic && (sym->usage & uPUBLIC)==0) || (fstatic && (sym->usage & uSTATIC)==0)
+      if ((fpublic && (sym->usage & uDECLPUBLIC)==0) || (fstatic && (sym->usage & uDECLSTATIC)==0)
           || (fstock && (sym->usage & uSTOCK)==0))
         error(25);                /* function heading differs from prototype */
     } else {
       if (fpublic && opertok==0)
-        sym->usage|=uPUBLIC;
+        sym->usage |= (uPUBLIC | uDECLPUBLIC);
       if (fstatic) {
-        sym->usage |= uSTATIC;
+        sym->usage |= uDECLSTATIC;
         sym->fnumber=filenum;
       } /* if */
       if (fstock)
@@ -3994,13 +3994,13 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   sym=fetchfunc(symbolname,tag);/* get a pointer to the function entry */
   if (sym==NULL || (sym->usage & uNATIVE)!=0)
     return TRUE;                /* it was recognized as a function declaration, but not as a valid one */
-  if (((sym->usage & uPUBLIC)!=0 && !fpublic) || ((sym->usage & uSTATIC)!=0 && !fstatic)
+  if (((sym->usage & uDECLPUBLIC)!=0 && !fpublic) || ((sym->usage & uDECLSTATIC)!=0 && !fstatic)
       || ((sym->usage & uSTOCK)!=0 && !stock))
     error(25);                  /* function heading differs from prototype */
   if (fpublic && opertok==0)
-    sym->usage|=uPUBLIC;
+    sym->usage |= (uPUBLIC | uDECLPUBLIC);
   if (fstatic) {
-    sym->usage |= uSTATIC;
+    sym->usage |= uDECLSTATIC;
     sym->fnumber=filenum;
   } /* if */
   if (stock)
