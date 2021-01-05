@@ -203,7 +203,6 @@ typedef struct s_symbol {
  *  bits: 0     (uDEFINE) the symbol is defined in the source file
  *        1     (uREAD) the constant is "read" (accessed) in the source file
  *        2     (uWRITTEN) redundant, but may be set for constants passed by reference
- *        3     (uPREDEF) the constant is pre-defined and should be kept between passes
  *        5     (uENUMROOT) the constant is the "root" of an enumeration
  *        6     (uENUMFIELD) the constant is a field in a named enumeration
  */
