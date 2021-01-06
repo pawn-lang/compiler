@@ -5123,7 +5123,8 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
         if (!strempty(symname))
           error(203,symname);       /* symbol isn't used ... (and not public/native/stock) */
       } /* if */
-      if ((sym->usage & uPUBLIC)!=0 || strcmp(sym->name,uMAINFUNC)==0)
+      if (((sym->usage & uPUBLIC)!=0 || strcmp(sym->name,uMAINFUNC)==0)
+          && (sym->usage & uDEFINE)!=0)
         entry=TRUE;                 /* there is an entry point */
       /* also mark the function to the debug information */
       if (((sym->usage & uREAD)!=0 || (sym->usage & uPUBLIC)!=0) && (sym->usage & uNATIVE)==0)
