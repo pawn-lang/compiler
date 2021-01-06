@@ -1,0 +1,6 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+error_013_3.pwn(2) : error 013: no entry point (no public functions)
+  """
+}
