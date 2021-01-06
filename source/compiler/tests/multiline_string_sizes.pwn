@@ -21,3 +21,4 @@ new str5[] = "hello
 
 #pragma unused str1, str2, str3, str4, str5
 
+main(){}
