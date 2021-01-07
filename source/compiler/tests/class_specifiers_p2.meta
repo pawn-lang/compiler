@@ -1,0 +1,7 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+class_specifiers_p2.pwn(4) : error 042: invalid combination of class specifiers
+class_specifiers_p2.pwn(7) : error 042: invalid combination of class specifiers
+"""
+}
