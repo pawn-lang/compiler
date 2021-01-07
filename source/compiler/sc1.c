@@ -108,7 +108,7 @@ static cell init(int ident,int *tag,int *errorfound);
 static int getstates(const char *funcname);
 static void attachstatelist(symbol *sym, int state_id);
 static void funcstub(int fnative);
-static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stock);
+static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int fstock);
 static int declargs(symbol *sym,int chkshadow);
 static void doarg(char *name,int ident,int offset,int tags[],int numtags,
                   int fpublic,int fconst,int written,int chkshadow,arginfo *arg);
@@ -3931,7 +3931,7 @@ static void funcstub(int fnative)
  *                     glb_declared (altered)
  *                     sc_alignnext (altered)
  */
-static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stock)
+static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int fstock)
 {
   symbol *sym,*lvar,*depend;
   int argcnt,tok,tag,funcline,i;
@@ -3961,7 +3961,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   } else {
     tag= (firsttag>=0) ? firsttag : pc_addtag(NULL);
     tok=lex(&val,&str);
-    if (tok==tNATIVE || (tok==tPUBLIC && stock))
+    if (tok==tNATIVE || (tok==tPUBLIC && fstock))
       error(42);                /* invalid combination of class specifiers */
     if (tok==t__PRAGMA) {
       dopragma();
@@ -3988,14 +3988,14 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   funcline=fline;               /* save line at which the function is defined */
   if (symbolname[0]==PUBLIC_CHAR) {
     fpublic=TRUE;               /* implicitly public function */
-    if (stock || fstatic)
+    if (fstock || fstatic)
       error(42);                /* invalid combination of class specifiers */
   } /* if */
   sym=fetchfunc(symbolname,tag);/* get a pointer to the function entry */
   if (sym==NULL || (sym->usage & uNATIVE)!=0)
     return TRUE;                /* it was recognized as a function declaration, but not as a valid one */
   if (((sym->usage & uDECLPUBLIC)!=0 && !fpublic) || ((sym->usage & uDECLSTATIC)!=0 && !fstatic)
-      || ((sym->usage & uSTOCK)!=0 && !stock))
+      || ((sym->usage & uSTOCK)!=0 && !fstock))
     error(25);                  /* function heading differs from prototype */
   if (fpublic && opertok==0)
     sym->usage |= (uPUBLIC | uDECLPUBLIC);
@@ -4003,7 +4003,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
     sym->usage |= uDECLSTATIC;
     sym->fnumber=filenum;
   } /* if */
-  if (stock)
+  if (fstock)
     sym->usage|=uSTOCK;
   check_reparse(sym);
   /* we want public functions to be explicitly prototyped, as they are called
