@@ -97,7 +97,7 @@ typedef struct s_constvalue {
   char name[sNAMEMAX+1];
   cell value;
   int index;            /* index level, for constants referring to array sizes/tags
-                         * automaton id. for states and automatons
+                         * automaton id, for states and automatons
                          * tag for enumeration lists */
 } constvalue;
 
