@@ -85,8 +85,11 @@ main()
 	while(fread(f,line,sizeof(line),false) < m) {} // shouldn't warn about "f" or "m" not being modified
 	fclose(f);
 
-	// Case 12: Warnings 250 and 251 don't work for global variables (yet?)
-	while (glbvar < 10) {}
-	for (glbvar = 0; glbvar < 10; ) {}
+	// Case 12: Warnings 250 and 251 shouldn't trigger when at least one global
+	// variable is used inside the loop condition, as globals can be modified
+	// from a function called from the loop body and currently there's no easy
+	// way to track this.
+	while (n < glbvar) {}
+	for (new i = 0; i < glbvar; ) {}
 }
 
