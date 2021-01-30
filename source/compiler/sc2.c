@@ -3309,8 +3309,7 @@ SC_FUNC void markusage(symbol *sym,int usage)
     sym->lnumber=fline;
   if ((usage & uREAD)!=0 && (sym->ident==iVARIABLE || sym->ident==iREFERENCE))
     sym->usage &= ~uASSIGNED;
-  if ((usage & (uREAD | uWRITTEN))!=0 && (sym->vclass==sLOCAL || sym->vclass==sSTATIC)
-      && (sym->ident==iVARIABLE || sym->ident==iREFERENCE))
+  if ((usage & (uREAD | uWRITTEN))!=0 && (sym->ident==iVARIABLE || sym->ident==iREFERENCE))
     markloopvariable(sym,usage);
   /* check if (global) reference must be added to the symbol */
   if ((usage & (uREAD | uWRITTEN))!=0) {
@@ -3421,11 +3420,20 @@ SC_FUNC void restoreassignments(int fromlevel,symstate *assignments)
 
 static void markloopvariable(symbol *sym,int usage)
 {
+  if (sc_status!=statWRITE)
+    return;
   while (sym->parent!=NULL)
     sym=sym->parent;
   /* check if the variable used inside a loop condition */
   if (pc_loopcond) {
-    if ((usage & uWRITTEN)!=0) {
+    if (sym->vclass==sGLOBAL) {
+      /* stop counting variables that were used in loop condition, otherwise
+       * warnings 250 and 251 may be inaccurate (global variables can be
+       * modified from another function(s) called from the loop body, and
+       * currently there's no reasonable way to track this) */
+      pc_loopcond=FALSE;
+      pc_numloopvars=0;
+    } else if ((usage & uWRITTEN)!=0) {
       /* the symbol is being modified inside a loop condition before being read;
        * set the uNOLOOPVAR flag, so later we'll know we shouldn't mark the symbol
        * with the uLOOPVAR flag */
