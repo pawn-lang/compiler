@@ -1770,10 +1770,10 @@ restart:
         error(51);      /* invalid subscript, must use [ ] */
         invsubscript=TRUE;
       } /* if */
-      if (pc_loopcond) {
+      if (pc_loopcond!=0) {
         /* stop counting variables that were used in loop condition,
          * otherwise warnings 250 and 251 may be inaccurate */
-        pc_loopcond=FALSE;
+        pc_loopcond=0;
         pc_numloopvars=0;
       } /* if */
       if (invsubscript) {
@@ -2202,10 +2202,10 @@ static int nesting=0;
     error(29); /* invalid expression, assumed zero */
     return;
   } /* if */
-  if (pc_loopcond) {
+  if (pc_loopcond!=0) {
     /* stop counting variables that were used in loop condition,
      * otherwise warnings 249 and 250 may be inaccurate */
-    pc_loopcond=FALSE;
+    pc_loopcond=0;
     pc_numloopvars=0;
   } /* if */
   /* check whether this is a function that returns an array */

@@ -3425,13 +3425,13 @@ static void markloopvariable(symbol *sym,int usage)
   while (sym->parent!=NULL)
     sym=sym->parent;
   /* check if the variable used inside a loop condition */
-  if (pc_loopcond) {
+  if (pc_loopcond!=0) {
     if (sym->vclass==sGLOBAL) {
       /* stop counting variables that were used in loop condition, otherwise
        * warnings 250 and 251 may be inaccurate (global variables can be
        * modified from another function(s) called from the loop body, and
        * currently there's no reasonable way to track this) */
-      pc_loopcond=FALSE;
+      pc_loopcond=0;
       pc_numloopvars=0;
     } else if ((usage & uWRITTEN)!=0) {
       /* the symbol is being modified inside a loop condition before being read;
