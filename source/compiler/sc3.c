@@ -2402,9 +2402,9 @@ static int nesting=0;
           check_tagmismatch_multiple(arg[argidx].tags,arg[argidx].numtags,lval.tag,-1);
           if (lval.tag!=0)
             append_constval(&taglst,arg[argidx].name,lval.tag,0);
-          argidx++;               /* argument done */
-          if (lval.sym!=NULL)
+          if (lval.sym!=NULL && (arg[argidx].usage & uCONST)==0)
             markusage(lval.sym,uWRITTEN);
+          argidx++;               /* argument done */
           break;
         case iREFARRAY:
           if (lval.ident!=iARRAY && lval.ident!=iREFARRAY
