@@ -3,14 +3,21 @@
 
 new glbvar = 0;
 
+stock UseVarByRef(&arg)
+	return arg;
+
+#pragma warning disable 238 // "meaningless combination of class specifiers (const reference)"
+stock UseVarByConstRef(const &arg)
+	return arg;
+
 main()
 {
 	new n = 0, m = 10;
 	static st = 0;
 
 	// Case 1: Variable is used inside a loop condition without being modified.
-	while (n < 10) {}                      // warning 250: variable used in loop condition not modified in loop body (symbol "n")
-	for (new i = 0, j = 0; i < 10; ++j) {} // warning 250: variable used in loop condition not modified in loop body (symbol "i")
+	while (n < 10) {}                      // warning 250: variable "n" used in loop condition not modified in loop body
+	for (new i = 0, j = 0; i < 10; ++j) {} // warning 250: variable "i" used in loop condition not modified in loop body
 
 	// Case 2: Variable is used inside a loop condition and modified in the loop body.
 	while (n != 0) { n++; }
@@ -28,8 +35,8 @@ main()
 
 	// Case 5: Same variable is used inside a loop condition more than once
 	// and it's not modified.
-	while (n == 0 || n < 10) {}            // warning 250: variable used in loop condition not modified in loop body (symbol "n")
-	for (new i = 0; i == 0 || i < 10; ) {} // warning 250: variable used in loop condition not modified in loop body (symbol "i")
+	while (n == 0 || n < 10) {}            // warning 250: variable "n" used in loop condition not modified in loop body
+	for (new i = 0; i == 0 || i < 10; ) {} // warning 250: variable "i" used in loop condition not modified in loop body
 
 	// Case 6: Same variable is used inside a loop condition more than once,
 	// but it's modified.
@@ -91,5 +98,17 @@ main()
 	// way to track this.
 	while (n < glbvar) {}
 	for (new i = 0; i < glbvar; ) {}
+
+	// Case 13: Warnings 250 and 251 shouldn't trigger when the loop counter
+	// variable is passed to a function by reference.
+	while (n < 10) UseVarByRef(n);
+	while (n < m) UseVarByRef(n);
+
+	// Case 14: While const references for single function arguments are
+	// meaningless and there's warning 238 for this, such references still
+	// shouldn't affect warnings 250 and 251, as variables passed by const
+	// references aren't counted as modified.
+	while (n < 10) UseVarByConstRef(n); // warning 250: variable "n" used in loop condition not modified in loop body
+	while (n < m) UseVarByConstRef(n);  // warning 251: none of the variables used in loop condition are modified in loop body
 }
 
