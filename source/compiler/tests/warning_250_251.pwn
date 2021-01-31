@@ -17,10 +17,12 @@ main()
 
 	// Case 1: Variable is used inside a loop condition without being modified.
 	while (n < 10) {}                      // warning 250: variable "n" used in loop condition not modified in loop body
+	do {} while (n < 10);                  // warning 250: variable "n" used in loop condition not modified in loop body
 	for (new i = 0, j = 0; i < 10; ++j) {} // warning 250: variable "i" used in loop condition not modified in loop body
 
 	// Case 2: Variable is used inside a loop condition and modified in the loop body.
 	while (n != 0) { n++; }
+	do { n++; } while (n < 10);
 	for (new i = 0; i < 10; ) { i++; }
 
 	// Case 3: Variable is used inside a loop condition and modified in the
@@ -30,17 +32,21 @@ main()
 	// Case 4: Variable is used and modified inside a loop condition.
 	while (n++ != 0) {}
 	while (++n != 0) {}
+	do {} while (n++ != 0);
+	do {} while (++n != 0);
 	for (new i = 0; i++ < 10; ) {}
 	for (new i = 0; ++i < 10; ) {}
 
 	// Case 5: Same variable is used inside a loop condition more than once
 	// and it's not modified.
 	while (n == 0 || n < 10) {}            // warning 250: variable "n" used in loop condition not modified in loop body
+	do {} while (n == 0 || n < 10);        // warning 250: variable "n" used in loop condition not modified in loop body
 	for (new i = 0; i == 0 || i < 10; ) {} // warning 250: variable "i" used in loop condition not modified in loop body
 
 	// Case 6: Same variable is used inside a loop condition more than once,
 	// but it's modified.
 	while (n == 0 || n < 10) { n++; }
+	do { n++; } while (n == 0 || n < 10);
 	for (new i = 0; i == 0 || i < 10; i++) {}
 
 	// Case 7: Two variables are used inside a loop condition, both aren't modified.
@@ -51,18 +57,21 @@ main()
 	// Solution: introduce a warning that simply says that none of the variables
 	// were modified, and let the user decide which variable should be modified.
 	while (n < m) {}            // warning 251: none of the variables used in loop condition are modified in loop body
+	do {} while (n < m);        // warning 251: none of the variables used in loop condition are modified in loop body
 	for (new i = 0; i < m; ) {} // warning 251: none of the variables used in loop condition are modified in loop body
 
 	// Case 7: Two variables are used in a loop condition, but one of them
 	// is modified inside the loop body (or the loop counter increment/decrement
 	// section of a "for" loop), and the other one is not modified.
 	while (n < m) { ++n; }
+	do { --m; } while (n < m);
 	for (new i = 0; i < m; ) { i++; }
 	for (new i = 0; i < m; i++) {}
 
 	// Case 8: Two variables are used in a loop condition, but one of them
 	// is being modified prior to being used, and the other one is not modified.
 	while (++n < m) {}
+	do {} while (++n < m);
 	for (new i = 0; ++i < m; ) {}
 
 	// Case 9: Two variables are used in a loop condition, but one of them
@@ -89,7 +98,8 @@ main()
 	// may be inaccurate otherwise.
 	new File:f = fopen("test.txt", io_read);
 	new line[128];
-	while(fread(f,line,sizeof(line),false) < m) {} // shouldn't warn about "f" or "m" not being modified
+	while (fread(f,line,sizeof(line),false) < m) {}     // shouldn't warn about "f" or "m" not being modified
+	do {} while (fread(f,line,sizeof(line),false) < m); // shouldn't warn about "f" or "m" not being modified
 	fclose(f);
 
 	// Case 12: Warnings 250 and 251 shouldn't trigger when at least one global
@@ -97,6 +107,7 @@ main()
 	// from a function called from the loop body and currently there's no easy
 	// way to track this.
 	while (n < glbvar) {}
+	do {} while (n < glbvar);
 	for (new i = 0; i < glbvar; ) {}
 
 	// Case 13: Warnings 250 and 251 shouldn't trigger when the loop counter
@@ -111,4 +122,3 @@ main()
 	while (n < 10) UseVarByConstRef(n); // warning 250: variable "n" used in loop condition not modified in loop body
 	while (n < m) UseVarByConstRef(n);  // warning 251: none of the variables used in loop condition are modified in loop body
 }
-
