@@ -3795,13 +3795,11 @@ static void funcstub(int fnative)
     error(42);                  /* invalid combination of class specifiers */
   else if (fconst)
     error(10);                  /* illegal function or declaration */
-  tok=lex(&val,&str);
 
-  if (tok==t__PRAGMA) {
+  if (matchtoken(t__PRAGMA))
     dopragma();
-    tok=lex(&val,&str);
-  } /* if */
-
+  
+  tok=lex(&val,&str);
   if (tok==tOPERATOR) {
     opertok=operatorname(symbolname);
     if (opertok==0)
