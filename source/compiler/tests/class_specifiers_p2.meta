@@ -3,5 +3,6 @@
   'errors': """
 class_specifiers_p2.pwn(4) : error 042: invalid combination of class specifiers
 class_specifiers_p2.pwn(7) : error 042: invalid combination of class specifiers
+class_specifiers_p2.pwn(11) : error 010: invalid function or declaration
 """
 }
