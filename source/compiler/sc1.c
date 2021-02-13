@@ -2047,6 +2047,9 @@ static void declfuncvar(int fpublic,int fstatic,int fstock,int fconst)
   cell val;
   int invalidfunc;
 
+  if (matchtoken(t__PRAGMA))
+    dopragma();
+
   tag=pc_addtag(NULL);
   tok=lex(&val,&str);
   /* if we arrived here, this may not be a declaration of a native function
@@ -2055,11 +2058,6 @@ static void declfuncvar(int fpublic,int fstatic,int fstock,int fconst)
   if (tok==tNATIVE) {
     error(42);          /* invalid combination of class specifiers */
     return;
-  } /* if */
-
-  if (tok==t__PRAGMA) {
-    dopragma();
-    tok=lex(&val,&str);
   } /* if */
 
   if (tok!=tSYMBOL && tok!=tOPERATOR) {
