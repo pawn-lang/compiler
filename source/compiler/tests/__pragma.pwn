@@ -9,7 +9,18 @@ stock Func3(__pragma("unread") const arg) {}
 // "__pragma" can't be used between the tag and the symbol name
 stock Func4(Tag: __pragma("unread") arg) {}
 
+// The compiler should expect "__pragma" before the tag
+forward stock __pragma("unused") Tag:Func5();
+stock __pragma("unused") Tag:Func5(){}
+__pragma("unused") Tag:Func6(){}
+stock __pragma("unused") Tag:global_var1 = 0;
+
 operator~(Tag:val[],count) {}
+
+// The compiler shouldn't expect "__pragma" in prefix form twice in declarations
+// starting with keywords "public", "static" or "stock"
+static __pragma("unread") __pragma("unwritten") Func7();         // error 001: expected token: "-identifier-", but found "__pragma"
+public __pragma("unread") __pragma("unwritten") global_var2 = 0; // error 001: expected token: "-identifier-", but found "__pragma"
 
 NakedFunc()
 {
