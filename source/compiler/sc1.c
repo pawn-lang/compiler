@@ -1842,7 +1842,10 @@ static void parse(void)
     case tLABEL:
     case tSYMBOL:
     case tOPERATOR:
-      lexpush();
+      if (tok==t__PRAGMA)
+        dopragma();
+      else
+        lexpush();
       if (!newfunc(NULL,-1,FALSE,FALSE,FALSE)) {
         error(10);              /* illegal function or declaration */
         lexclr(TRUE);           /* drop the rest of the line */
@@ -3961,10 +3964,6 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int fsto
     tok=lex(&val,&str);
     if (tok==tNATIVE || (tok==tPUBLIC && fstock))
       error(42);                /* invalid combination of class specifiers */
-    if (tok==t__PRAGMA) {
-      dopragma();
-      tok=lex(&val,&str);
-    } /* if */
     if (tok==tOPERATOR) {
       opertok=operatorname(symbolname);
       if (opertok==0)
