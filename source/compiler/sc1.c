@@ -1795,8 +1795,11 @@ static void parse(void)
       emit_flags &= ~efGLOBAL;
       break;
     case tNEW:
-      if (getclassspec(tok,&fpublic,&fstatic,&fstock,&fconst))
+      if (getclassspec(tok,&fpublic,&fstatic,&fstock,&fconst)) {
+        if (matchtoken(t__PRAGMA))
+          dopragma();
         declglb(NULL,0,fpublic,fstatic,fstock,fconst);
+      } /* if */
       break;
     case tSTATIC:
       if (matchtoken(tENUM)) {
@@ -2127,8 +2130,6 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
       firstname=NULL;
     } else {
       tag=pc_addtag(NULL);
-      if (matchtoken(t__PRAGMA))
-        dopragma();
       if (lex(&val,&str)!=tSYMBOL)      /* read in (new) token */
         error_suggest(20,str,NULL,estSYMBOL,esfFUNCTION);   /* invalid symbol name */
       assert(strlen(str)<=sNAMEMAX);
