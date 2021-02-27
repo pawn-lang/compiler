@@ -6671,7 +6671,8 @@ static int SC_FASTCALL emit_getrval(int *identptr,emit_outval *p,int *islocal)
   case iVARIABLE:
   case iREFERENCE:
     *islocal=((sym->vclass & sLOCAL)!=0);
-    /* fallthrough */
+    p->value.ucell=(ucell)sym->addr;
+    break;
   case iCONSTEXPR:
     /* If the expression result is a constant value or a variable - erase the code
      * for this expression so the caller would be able to generate more optimal
@@ -6679,7 +6680,7 @@ static int SC_FASTCALL emit_getrval(int *identptr,emit_outval *p,int *islocal)
      */
     if (staging)
       stgdel(index,cidx);
-    p->value.ucell=*(ucell *)((*identptr==iCONSTEXPR) ? &val : &sym->addr);
+    p->value.ucell=(ucell)val;
     break;
   case iARRAY:
   case iREFARRAY:
@@ -7442,15 +7443,6 @@ static void SC_FASTCALL emit_do_load_u_pri_alt(char *name)
     else
       outinstr((reg==sPRI) ? "const.pri" : "const.alt",p,1);
     break;
-  case iVARIABLE:
-    if (islocal)
-      outinstr((reg==sPRI) ? "load.s.pri" : "load.s.alt",p,1);
-    else
-      outinstr((reg==sPRI) ? "load.pri" : "load.alt",p,1);
-    break;
-  case iREFERENCE:
-    outinstr((reg==sPRI) ? "lref.s.pri" : "lref.s.alt",p,1);
-    break;
   default:
     if (reg==sALT)
       outinstr("move.alt",NULL,0);
@@ -7535,12 +7527,6 @@ static void SC_FASTCALL emit_do_push_u(char *name)
   case iCONSTEXPR:
     outinstr("push.c",&p[0],1);
     break;
-  case iVARIABLE:
-    outinstr(islocal ? "push.s" : "push",p,1);
-    break;
-  case iREFERENCE:
-    outinstr("lref.s.pri",&p[0],1);
-    /* fallthrough */
   default:
     outinstr("push.pri",NULL,0);
     break;
