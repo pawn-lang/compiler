@@ -146,7 +146,7 @@ static int *readwhile(void);
 static void dopragma(void);
 static void pragma_apply(symbol *sym);
 
-typedef void (SC_FASTCALL *OPCODE_PROC)(char *name);
+typedef void (*OPCODE_PROC)(char *name);
 typedef struct {
   char *name;
   OPCODE_PROC func;
@@ -6427,7 +6427,7 @@ static symbol *fetchlab(char *name)
   return sym;
 }
 
-static void SC_FASTCALL emit_invalid_token(int expected_token,int found_token)
+static void emit_invalid_token(int expected_token,int found_token)
 {
   extern char *sc_tokens[];
   char s[2];
@@ -6441,7 +6441,7 @@ static void SC_FASTCALL emit_invalid_token(int expected_token,int found_token)
   } /* if */
 }
 
-static regid SC_FASTCALL emit_findreg(char *opname)
+static regid emit_findreg(char *opname)
 {
   const char *regname=strrchr(opname,'.');
   assert(regname!=NULL);
@@ -6455,9 +6455,9 @@ static regid SC_FASTCALL emit_findreg(char *opname)
  * Looks for an lvalue and generates code to get cell address in PRI
  * if the lvalue is an array element (iARRAYCELL or iARRAYCHAR).
  */
-static int SC_FASTCALL emit_getlval(int *identptr,emit_outval *p,int *islocal,
-                                    regid reg,int allow_char,int allow_const,
-                                    int store_pri,int store_alt,int *ispushed)
+static int emit_getlval(int *identptr,emit_outval *p,int *islocal,
+                        regid reg,int allow_char,int allow_const,
+                        int store_pri,int store_alt,int *ispushed)
 {
   int tok,index,ident,close;
   cell cidx,val,length;
@@ -6645,7 +6645,7 @@ invalid_lvalue:
  *
  * Looks for an rvalue and generates code to handle expressions.
  */
-static int SC_FASTCALL emit_getrval(int *identptr,cell *val)
+static int emit_getrval(int *identptr,cell *val)
 {
   int index,result=TRUE;
   cell cidx;
@@ -6688,8 +6688,8 @@ static int SC_FASTCALL emit_getrval(int *identptr,cell *val)
   return result;
 }
 
-static int SC_FASTCALL emit_param_any_internal(emit_outval *p,int expected_tok,
-                                               int allow_nonint,int allow_expr)
+static int emit_param_any_internal(emit_outval *p,int expected_tok,
+                                   int allow_nonint,int allow_expr)
 {
   char *str;
   cell val,cidx;
@@ -6811,18 +6811,18 @@ fetchtok:
   return TRUE;
 }
 
-static void SC_FASTCALL emit_param_any(emit_outval *p)
+static void emit_param_any(emit_outval *p)
 {
   emit_param_any_internal(p,teANY,TRUE,TRUE);
 }
 
-static void SC_FASTCALL emit_param_integer(emit_outval *p)
+static void emit_param_integer(emit_outval *p)
 {
   emit_param_any_internal(p,tNUMBER,FALSE,TRUE);
 }
 
-static void SC_FASTCALL emit_param_index(emit_outval *p,int isrange,
-                                         const cell *valid_values,int numvalues)
+static void emit_param_index(emit_outval *p,int isrange,
+                             const cell *valid_values,int numvalues)
 {
   int i;
   cell val;
@@ -6842,7 +6842,7 @@ static void SC_FASTCALL emit_param_index(emit_outval *p,int isrange,
   error(241);    /* negative or too big shift count */
 }
 
-static void SC_FASTCALL emit_param_nonneg(emit_outval *p)
+static void emit_param_nonneg(emit_outval *p)
 {
   if (!emit_param_any_internal(p,teNONNEG,FALSE,TRUE))
     return;
@@ -6862,14 +6862,14 @@ static void SC_FASTCALL emit_param_nonneg(emit_outval *p)
   } /* if */
 }
 
-static void SC_FASTCALL emit_param_shift(emit_outval *p)
+static void emit_param_shift(emit_outval *p)
 {
   if (emit_param_any_internal(p,tNUMBER,FALSE,TRUE))
     if (p->value.ucell>=(sizeof(cell)*8))
       error(50);    /* invalid range */
 }
 
-static void SC_FASTCALL emit_param_data(emit_outval *p)
+static void emit_param_data(emit_outval *p)
 {
   cell val;
   char *str;
@@ -6923,7 +6923,7 @@ static void SC_FASTCALL emit_param_data(emit_outval *p)
     error(11);  /* must be a multiple of cell size */
 }
 
-static void SC_FASTCALL emit_param_local(emit_outval *p,int allow_ref)
+static void emit_param_local(emit_outval *p,int allow_ref)
 {
   cell val;
   char *str;
@@ -7003,7 +7003,7 @@ fetchtok:
   p->value.ucell=(ucell)(negate ? -val : val);
 }
 
-static void SC_FASTCALL emit_param_label(emit_outval *p)
+static void emit_param_label(emit_outval *p)
 {
   cell val;
   char *str;
@@ -7050,7 +7050,7 @@ static void SC_FASTCALL emit_param_label(emit_outval *p)
   }
 }
 
-static void SC_FASTCALL emit_param_function(emit_outval *p,int isnative)
+static void emit_param_function(emit_outval *p,int isnative)
 {
   cell val;
   char *str;
@@ -7104,17 +7104,17 @@ static void SC_FASTCALL emit_param_function(emit_outval *p,int isnative)
   } /* if */
 }
 
-static void SC_FASTCALL emit_noop(char *name)
+static void emit_noop(char *name)
 {
   (void)name;
 }
 
-static void SC_FASTCALL emit_parm0(char *name)
+static void emit_parm0(char *name)
 {
   outinstr(name,NULL,0);
 }
 
-static void SC_FASTCALL emit_parm1_any(char *name)
+static void emit_parm1_any(char *name)
 {
   emit_outval p[1];
 
@@ -7122,7 +7122,7 @@ static void SC_FASTCALL emit_parm1_any(char *name)
   outinstr(name,p,arraysize(p));
 }
 
-static void SC_FASTCALL emit_parm1_integer(char *name)
+static void emit_parm1_integer(char *name)
 {
   emit_outval p[1];
 
@@ -7130,7 +7130,7 @@ static void SC_FASTCALL emit_parm1_integer(char *name)
   outinstr(name,p,arraysize(p));
 }
 
-static void SC_FASTCALL emit_parm1_nonneg(char *name)
+static void emit_parm1_nonneg(char *name)
 {
   emit_outval p[1];
 
@@ -7138,7 +7138,7 @@ static void SC_FASTCALL emit_parm1_nonneg(char *name)
   outinstr(name,p,arraysize(p));
 }
 
-static void SC_FASTCALL emit_parm1_shift(char *name)
+static void emit_parm1_shift(char *name)
 {
   emit_outval p[1];
 
@@ -7146,7 +7146,7 @@ static void SC_FASTCALL emit_parm1_shift(char *name)
   outinstr(name,p,arraysize(p));
 }
 
-static void SC_FASTCALL emit_parm1_data(char *name)
+static void emit_parm1_data(char *name)
 {
   emit_outval p[1];
 
@@ -7154,7 +7154,7 @@ static void SC_FASTCALL emit_parm1_data(char *name)
   outinstr(name,p,arraysize(p));
 }
 
-static void SC_FASTCALL emit_parm1_local(char *name)
+static void emit_parm1_local(char *name)
 {
   emit_outval p[1];
 
@@ -7162,7 +7162,7 @@ static void SC_FASTCALL emit_parm1_local(char *name)
   outinstr(name,p,arraysize(p));
 }
 
-static void SC_FASTCALL emit_parm1_local_noref(char *name)
+static void emit_parm1_local_noref(char *name)
 {
   emit_outval p[1];
 
@@ -7170,7 +7170,7 @@ static void SC_FASTCALL emit_parm1_local_noref(char *name)
   outinstr(name,p,arraysize(p));
 }
 
-static void SC_FASTCALL emit_parm1_label(char *name)
+static void emit_parm1_label(char *name)
 {
   emit_outval p[1];
 
@@ -7178,7 +7178,7 @@ static void SC_FASTCALL emit_parm1_label(char *name)
   outinstr(name,p,arraysize(p));
 }
 
-static void SC_FASTCALL emit_do_casetbl(char *name)
+static void emit_do_casetbl(char *name)
 {
   emit_outval p[2];
 
@@ -7189,7 +7189,7 @@ static void SC_FASTCALL emit_do_casetbl(char *name)
   outinstr("case",p,arraysize(p));
 }
 
-static void SC_FASTCALL emit_do_case(char *name)
+static void emit_do_case(char *name)
 {
   emit_outval p[2];
 
@@ -7199,7 +7199,7 @@ static void SC_FASTCALL emit_do_case(char *name)
   code_idx-=opcodes(1);
 }
 
-static void SC_FASTCALL emit_do_lodb_strb(char *name)
+static void emit_do_lodb_strb(char *name)
 {
   static const cell valid_values[] = { 1,2,4 };
   emit_outval p[1];
@@ -7208,7 +7208,7 @@ static void SC_FASTCALL emit_do_lodb_strb(char *name)
   outinstr(name,p,arraysize(p));
 }
 
-static void SC_FASTCALL emit_do_align(char *name)
+static void emit_do_align(char *name)
 {
   static const cell valid_values[] = { 0,sizeof(cell)-1 };
   emit_outval p[1];
@@ -7217,7 +7217,7 @@ static void SC_FASTCALL emit_do_align(char *name)
   outinstr(name,p,arraysize(p));
 }
 
-static void SC_FASTCALL emit_do_call(char *name)
+static void emit_do_call(char *name)
 {
   emit_outval p[1];
 
@@ -7225,7 +7225,7 @@ static void SC_FASTCALL emit_do_call(char *name)
   outinstr(name,p,arraysize(p));
 }
 
-static void SC_FASTCALL emit_do_sysreq_c(char *name)
+static void emit_do_sysreq_c(char *name)
 {
   emit_outval p[1];
 
@@ -7244,7 +7244,7 @@ static void SC_FASTCALL emit_do_sysreq_c(char *name)
   } /* if */
 }
 
-static void SC_FASTCALL emit_do_sysreq_n(char *name)
+static void emit_do_sysreq_n(char *name)
 {
   emit_outval p[2];
 
@@ -7267,7 +7267,7 @@ static void SC_FASTCALL emit_do_sysreq_n(char *name)
   } /* if */
 }
 
-static void SC_FASTCALL emit_do_const(char *name)
+static void emit_do_const(char *name)
 {
   emit_outval p[2];
 
@@ -7291,7 +7291,7 @@ static void SC_FASTCALL emit_do_const(char *name)
   } /* if */
 }
 
-static void SC_FASTCALL emit_do_const_s(char *name)
+static void emit_do_const_s(char *name)
 {
   emit_outval p[2];
 
@@ -7315,7 +7315,7 @@ static void SC_FASTCALL emit_do_const_s(char *name)
   } /* if */
 }
 
-static void SC_FASTCALL emit_do_load_both(char *name)
+static void emit_do_load_both(char *name)
 {
   emit_outval p[2];
 
@@ -7335,7 +7335,7 @@ static void SC_FASTCALL emit_do_load_both(char *name)
   } /* if */
 }
 
-static void SC_FASTCALL emit_do_load_s_both(char *name)
+static void emit_do_load_s_both(char *name)
 {
   emit_outval p[2];
 
@@ -7355,7 +7355,7 @@ static void SC_FASTCALL emit_do_load_s_both(char *name)
   } /* if */
 }
 
-static void SC_FASTCALL emit_do_pushn_c(char *name)
+static void emit_do_pushn_c(char *name)
 {
   emit_outval p[5];
   int i,numargs;
@@ -7377,7 +7377,7 @@ static void SC_FASTCALL emit_do_pushn_c(char *name)
   } /* if */
 }
 
-static void SC_FASTCALL emit_do_pushn(char *name)
+static void emit_do_pushn(char *name)
 {
   emit_outval p[5];
   int i,numargs;
@@ -7399,7 +7399,7 @@ static void SC_FASTCALL emit_do_pushn(char *name)
   } /* if */
 }
 
-static void SC_FASTCALL emit_do_pushn_s_adr(char *name)
+static void emit_do_pushn_s_adr(char *name)
 {
   emit_outval p[5];
   int i,numargs;
@@ -7422,7 +7422,7 @@ static void SC_FASTCALL emit_do_pushn_s_adr(char *name)
   } /* if */
 }
 
-static void SC_FASTCALL emit_do_load_u_pri_alt(char *name)
+static void emit_do_load_u_pri_alt(char *name)
 {
   cell val;
   regid reg;
@@ -7437,7 +7437,7 @@ static void SC_FASTCALL emit_do_load_u_pri_alt(char *name)
     outinstr("move.alt",NULL,0);
 }
 
-static void SC_FASTCALL emit_do_stor_u_pri_alt(char *name)
+static void emit_do_stor_u_pri_alt(char *name)
 {
   emit_outval p[1];
   regid reg;
@@ -7473,7 +7473,7 @@ static void SC_FASTCALL emit_do_stor_u_pri_alt(char *name)
   } /* switch */
 }
 
-static void SC_FASTCALL emit_do_addr_u_pri_alt(char *name)
+static void emit_do_addr_u_pri_alt(char *name)
 {
   emit_outval p[1];
   regid reg;
@@ -7503,7 +7503,7 @@ static void SC_FASTCALL emit_do_addr_u_pri_alt(char *name)
   } /* switch */
 }
 
-static void SC_FASTCALL emit_do_push_u(char *name)
+static void emit_do_push_u(char *name)
 {
   cell val;
   int ident;
@@ -7516,7 +7516,7 @@ static void SC_FASTCALL emit_do_push_u(char *name)
     outinstr("push.pri",NULL,0);
 }
 
-static void SC_FASTCALL emit_do_push_u_adr(char *name)
+static void emit_do_push_u_adr(char *name)
 {
   emit_outval p[1];
   int ident,islocal;
@@ -7540,7 +7540,7 @@ static void SC_FASTCALL emit_do_push_u_adr(char *name)
   } /* switch */
 }
 
-static void SC_FASTCALL emit_do_zero_u(char *name)
+static void emit_do_zero_u(char *name)
 {
   emit_outval p[1];
   int ident,islocal;
@@ -7570,7 +7570,7 @@ static void SC_FASTCALL emit_do_zero_u(char *name)
   } /* switch */
 }
 
-static void SC_FASTCALL emit_do_inc_dec_u(char *name)
+static void emit_do_inc_dec_u(char *name)
 {
   emit_outval p[1];
   int ident,islocal;
