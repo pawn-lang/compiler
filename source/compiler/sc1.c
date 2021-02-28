@@ -6645,16 +6645,14 @@ invalid_lvalue:
  *
  * Looks for an rvalue and generates code to handle expressions.
  */
-static int SC_FASTCALL emit_getrval(int *identptr,emit_outval *p,int *islocal)
+static int SC_FASTCALL emit_getrval(int *identptr,cell *val)
 {
   int index,result=TRUE;
   cell cidx;
-  cell val;
   symbol *sym;
 
   assert(identptr!=NULL);
-  assert(p!=NULL);
-  assert(islocal!=NULL);
+  assert(val!=NULL);
 
   if (staging) {
     assert((emit_flags & efEXPR)!=0);
@@ -6665,13 +6663,11 @@ static int SC_FASTCALL emit_getrval(int *identptr,emit_outval *p,int *islocal)
   } /* if */
 
   errorset(sEXPRMARK,0);
-  *identptr=expression(&val,NULL,&sym,TRUE);
-  p->type=eotNUMBER;
+  *identptr=expression(val,NULL,&sym,TRUE);
   switch (*identptr) {
   case iVARIABLE:
   case iREFERENCE:
-    *islocal=((sym->vclass & sLOCAL)!=0);
-    p->value.ucell=(ucell)sym->addr;
+    *val=sym->addr;
     break;
   case iCONSTEXPR:
     /* If the expression result is a constant value or a variable - erase the code
@@ -6680,7 +6676,6 @@ static int SC_FASTCALL emit_getrval(int *identptr,emit_outval *p,int *islocal)
      */
     if (staging)
       stgdel(index,cidx);
-    p->value.ucell=(ucell)val;
     break;
   case iARRAY:
   case iREFARRAY:
@@ -7429,25 +7424,17 @@ static void SC_FASTCALL emit_do_pushn_s_adr(char *name)
 
 static void SC_FASTCALL emit_do_load_u_pri_alt(char *name)
 {
-  emit_outval p[1];
+  cell val;
   regid reg;
-  int ident,islocal;
+  int ident;
 
-  if (!emit_getrval(&ident,&p[0],&islocal))
+  if (!emit_getrval(&ident,&val))
     return;
   reg=emit_findreg(name);
-  switch (ident) {
-  case iCONSTEXPR:
-    if (p[0].value.ucell==(ucell)0)
-      outinstr((reg==sPRI) ? "zero.pri" : "zero.alt",NULL,0);
-    else
-      outinstr((reg==sPRI) ? "const.pri" : "const.alt",p,1);
-    break;
-  default:
-    if (reg==sALT)
-      outinstr("move.alt",NULL,0);
-    break;
-  } /* switch */
+  if (ident==iCONSTEXPR)
+    ldconst(val,reg);
+  else if (reg==sALT)
+    outinstr("move.alt",NULL,0);
 }
 
 static void SC_FASTCALL emit_do_stor_u_pri_alt(char *name)
@@ -7518,19 +7505,15 @@ static void SC_FASTCALL emit_do_addr_u_pri_alt(char *name)
 
 static void SC_FASTCALL emit_do_push_u(char *name)
 {
-  emit_outval p[1];
-  int ident,islocal;
+  cell val;
+  int ident;
 
-  if (!emit_getrval(&ident,&p[0],&islocal))
+  if (!emit_getrval(&ident,&val))
     return;
-  switch (ident) {
-  case iCONSTEXPR:
-    outinstr("push.c",&p[0],1);
-    break;
-  default:
+  if (ident==iCONSTEXPR)
+    pushval(val);
+  else
     outinstr("push.pri",NULL,0);
-    break;
-  } /* switch */
 }
 
 static void SC_FASTCALL emit_do_push_u_adr(char *name)
