@@ -409,12 +409,15 @@
 [0-9a-f]+  strb.i 00000001
 [0-9a-f]+  push.r 00000028
 [0-9a-f]+  push.c 00001234
-[0-9a-f]+  push 00000000
+[0-9a-f]+  load.pri 00000000
+[0-9a-f]+  push.pri
 [0-9a-f]+  lref.s.pri 0000000c
 [0-9a-f]+  push.pri
 [0-9a-f]+  push.c 00005678
-[0-9a-f]+  push.s fffffffc
-[0-9a-f]+  push 0000000c
+[0-9a-f]+  load.s.pri fffffffc
+[0-9a-f]+  push.pri
+[0-9a-f]+  load.pri 0000000c
+[0-9a-f]+  push.pri
 [0-9a-f]+  push.c 00009abc
 [0-9a-f]+  push.r 00000029
 [0-9a-f]+  push.c 000068ac
