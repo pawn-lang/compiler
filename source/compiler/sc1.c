@@ -6567,9 +6567,7 @@ invalid_lvalue:
       pushreg(store_pri ? sPRI : sALT);
       *ispushed=TRUE;
     } /* if */
-    errorset(sEXPRMARK,0);
     ident=expression(&val,NULL,NULL,TRUE);
-    errorset(sEXPRRELEASE,0);
     needtoken(close);
 
     /* check if the index isn't out of bounds */
@@ -6712,7 +6710,6 @@ static int emit_getrval(int *identptr,cell *val)
     result=FALSE;
   } /* if */
 
-  errorset(sEXPRMARK,0);
   *identptr=expression(val,NULL,&sym,TRUE);
   switch (*identptr) {
   case iVARIABLE:
@@ -6733,7 +6730,6 @@ static int emit_getrval(int *identptr,cell *val)
     result=FALSE;
     break;
   } /* switch */
-  errorset(sEXPRRELEASE,0);
 
   return result;
 }
@@ -6812,9 +6808,7 @@ fetchtok:
     if ((emit_flags & efEXPR)==0)
       stgset(TRUE);
     stgget(&index,&cidx);
-    errorset(sEXPRMARK,0);
     ident=expression(&val,NULL,NULL,FALSE);
-    errorset(sEXPRRELEASE,0);
     stgdel(index,cidx);
     if ((emit_flags & efEXPR)==0)
       stgset(FALSE);
