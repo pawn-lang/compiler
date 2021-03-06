@@ -14,6 +14,6 @@ __pragma.pwn(67) : warning 207: unknown #pragma
 __pragma.pwn(68) : warning 207: unknown #pragma
 __pragma.pwn(33) : warning 203: symbol is never used: "f"
 __pragma.pwn(29) : warning 204: symbol is assigned a value that is never used: "e"
-__pragma.pwn(29 -- 70) : warning 203: symbol is never used: "operator~(Tag:)"
+__pragma.pwn(70) : warning 203: symbol is never used: "operator~(Tag:)"
 """
 }
