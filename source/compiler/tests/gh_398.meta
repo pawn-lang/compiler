@@ -1,0 +1,7 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+gh_398.pwn(4) : warning 203: symbol is never used: "a"
+gh_398.pwn(4) : warning 203: symbol is never used: "b"
+  """
+}
