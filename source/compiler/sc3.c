@@ -419,7 +419,7 @@ static int skim(int *opstr,void (*testfunc)(int),int dropval,int endval,
       break;                    /* none of the operators in "opstr" were found */
     } /* if */
 
-  } /* while */
+  } /* for */
 
   lval_stgidx=org_index;
   lval_cidx=org_cidx;
@@ -834,7 +834,7 @@ static cell array_levelsize(symbol *sym,int level)
   while (level-- > 0) {
     sym=sym->child;
     assert(sym!=NULL);
-  } /* if */
+  } /* while */
   return sym->dim.array.length;
 }
 
@@ -1439,7 +1439,7 @@ static int hier2(value *lval)
           offsmul*=subsym->dim.array.length;
           arrayidx*=arrayidx*subsym->dim.array.length;
           subsym=subsym->child;
-        } /* if */
+        } /* while */
         lval->constval+=(numoffsets-1+arrayidx)*(cell)sizeof(cell);
         ldconst(lval->constval,sPRI);
       } /* if */

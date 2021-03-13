@@ -2812,7 +2812,7 @@ static cell initvector(int ident,int tag,cell size,int startlit,int fillzero,
         if (!matchtoken(',')) {
           needtoken('}');
           break;
-        } /* for */
+        } /* if */
       } /* for */
       /* if this array is based on an enumeration, fill the "field" up with
        * zeros, and toggle the tag
@@ -4202,7 +4202,7 @@ static int declargs(symbol *sym,int chkshadow)
           if (matchtoken('}'))
             break;
           needtoken(',');
-        } /* for */
+        } /* while */
         needtoken(':');
         tok=tLABEL;     /* for outer loop: flag that we have seen a tagname */
         break;
@@ -5033,7 +5033,7 @@ static long max_stacksize(symbol *root,int *recursion)
       if ((sym->usage & uNATIVE)==0)
         numfunctions++;
     } /* if */
-  } /* if */
+  } /* for */
   /* allocate function symbol stack */
   symstack=(symbol **)malloc((numfunctions+1)*sizeof(symbol*));
   rsymstack=(symbol **)malloc((numfunctions+1)*sizeof(symbol*));
@@ -5163,7 +5163,7 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
       /* also mark the variable (local or global) to the debug information */
       if ((sym->usage & (uWRITTEN | uREAD))!=0 && (sym->usage & uNATIVE)==0)
         insert_dbgsymbol(sym);
-    } /* if */
+    } /* switch */
     sym=sym->next;
   } /* while */
 
@@ -6206,7 +6206,7 @@ static int doswitch(void)
               error(40,val);            /* duplicate "case" label */
             assert(csp==NULL || csp->next==cse);
             insert_constval(csp,cse,itoh(lbl_case),val,0);
-          } /* if */
+          } /* while */
         } /* if */
       } while (matchtoken(','));
       needtoken(':');                   /* ':' ends the case */
@@ -6264,7 +6264,7 @@ static int doswitch(void)
       errorset(sSETPOS,save_fline);
       error(244,cur->name); /* enum element not handled in switch */
       errorset(sSETPOS,-1);
-    } /* while */
+    } /* for */
   } /* if */
 
   #if !defined NDEBUG

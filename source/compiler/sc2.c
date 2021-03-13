@@ -250,7 +250,7 @@ SC_FUNC int plungefile(char *name,int try_currentpath,int try_includepaths)
       strlcpy(path,ptr,arraysize(path));
       strlcat(path,name,arraysize(path));
       result=plungequalifiedfile(path);
-    } /* while */
+    } /* for */
   } /* if */
   return result;
 }
@@ -992,7 +992,7 @@ static const unsigned char *getstring(unsigned char *dest,int max,const unsigned
       if (len<max-1)
         dest[len++]=*line;
       line++;
-    } /* if */
+    } /* while */
     dest[len]='\0';
     if (*line=='"')
       line++;           /* skip closing " */
