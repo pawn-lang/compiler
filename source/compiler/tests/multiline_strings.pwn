@@ -2,7 +2,7 @@ main()
 {
     // One line.
 	new str1[64] = "hello";
-    // Mutli line.
+    // Multi line.
 	new str2[64] = "
 hello
 world

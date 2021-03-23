@@ -37,7 +37,7 @@ static int fcurseg;     /* the file number (fcurrent) for the active segment */
 /* When a subroutine returns to address 0, the AMX must halt. In earlier
  * releases, the RET and RETN opcodes checked for the special case 0 address.
  * Today, the compiler simply generates a HALT instruction at address 0. So
- * a subroutine can savely return to 0, and then encounter a HALT.
+ * a subroutine can safely return to 0, and then encounter a HALT.
  */
 SC_FUNC void writeleader(symbol *root)
 {

@@ -1,4 +1,4 @@
-/*  Pawn compiler - Recursive descend expresion parser
+/*  Pawn compiler - Recursive descend expression parser
  *
  *  Copyright (c) ITB CompuPhase, 1997-2005
  *
@@ -96,7 +96,7 @@ static void user_dec(void) {}
  *  no operator is found, nextop() returns 0.
  *
  *  If an operator is found in the expression, it cannot be used in a function
- *  call with omitted parantheses. Mark this...
+ *  call with omitted parentheses. Mark this...
  *
  *  Global references: sc_allowproccall   (modified)
  */
@@ -195,7 +195,7 @@ static void (*unopers[])(void) = { lneg, neg, user_inc, user_dec };
   if (oper==NULL)
     pc_ovlassignment=TRUE;
 
-  /* check existance and the proper declaration of this function */
+  /* check existence and the proper declaration of this function */
   if ((sym->usage & uMISSING)!=0 || (sym->usage & uPROTOTYPED)==0) {
     char symname[2*sNAMEMAX+16];  /* allow space for user defined operators */
     funcdisplayname(symname,sym->name);
@@ -234,8 +234,7 @@ static void (*unopers[])(void) = { lneg, neg, user_inc, user_dec };
     pushreg(sPRI);              /* right-hand operand is in PRI */
   } else if (savealt) {
     /* for the assignment operator, ALT may contain an address at which the
-     * result must be stored; this address must be preserved accross the
-     * call
+     * result must be stored; this address must be preserved across the call
      */
     assert(lval!=NULL);         /* this was checked earlier */
     assert(lval->ident==iARRAYCELL || lval->ident==iARRAYCHAR); /* checked earlier */
@@ -842,7 +841,7 @@ static cell array_levelsize(symbol *sym,int level)
  *
  *  Lowest hierarchy level (except for the , operator).
  *
- *  Global references: sc_intest        (reffered to only)
+ *  Global references: sc_intest        (referred to only)
  *                     sc_allowproccall (modified)
  */
 static int hier14(value *lval1)
@@ -929,7 +928,7 @@ static int hier14(value *lval1)
   } else if (lval1->ident==iARRAY || lval1->ident==iREFARRAY) {
     /* array assignment is permitted too (with restrictions) */
     if (oper)
-      return error(23); /* array assignment must be simple assigment */
+      return error(23); /* array assignment must be simple assignment */
     assert(lval1->sym!=NULL);
     if (array_totalsize(lval1->sym)==0)
       return error(46,lval1->sym->name);        /* unknown array size */
@@ -945,7 +944,7 @@ static int hier14(value *lval1)
     return error(22);           /* assignment to const argument */
   sc_allowproccall=FALSE;       /* may no longer use "procedure call" syntax */
 
-  lval3=*lval1;         /* save symbol to enable storage of expresion result */
+  lval3=*lval1;         /* save symbol to enable storage of expression result */
   lval1->arrayidx=org_arrayidx; /* restore array index pointer */
   if (lval1->ident==iARRAYCELL || lval1->ident==iARRAYCHAR
       || lval1->ident==iARRAY || lval1->ident==iREFARRAY)
@@ -1067,7 +1066,7 @@ static int hier14(value *lval1)
         sym2=finddepend(sym2);
         assert(sym1!=NULL && sym2!=NULL);
         /* ^^^ both arrays have the same dimensions (this was checked
-         *     earlier) so the dependend should always be found
+         *     earlier) so the dependent should always be found
          */
         if (sym1->dim.array.length!=sym2->dim.array.length)
           error(47);    /* array sizes must match */
@@ -2490,7 +2489,7 @@ static int nesting=0;
         close=!matchtoken(',');
         if (close) {              /* if not comma... */
           if (needtoken(tTERM)==1)/* ...must be end of statement */
-            lexpush();            /* push again, because end of statement is analised later */
+            lexpush();            /* push again, because end of statement is analyzed later */
         } /* if */
       } /* if */
     } while (!close && freading && !matchtoken(tENDEXPR)); /* do */
