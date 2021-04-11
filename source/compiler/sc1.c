@@ -6116,8 +6116,8 @@ static int dowhile(void)
   pc_loopcond=tWHILE;
   endlessloop=test(wq[wqEXIT],TEST_DO,FALSE);/* branch to wq[wqEXIT] if false */
   pc_loopcond=0;
-  pc_nestlevel--;
   statement(NULL,FALSE);        /* if so, do a statement */
+  pc_nestlevel--;
   clearassignments(pc_nestlevel+1);
   testloopvariables(loopvars,FALSE,loopline);
   jumplabel(wq[wqLOOP]);        /* and loop to "while" start */
