@@ -1118,14 +1118,16 @@ static int hier14(value *lval1)
   pc_sideeffect=TRUE;
   bitwise_opercount=bwcount;
   lval1->ident=iEXPRESSION;
+  /* register assignment/modification */
+  assert(lval3.sym!=NULL);
   if (oper==NULL) {
-    symbol *sym=lval3.sym;
-    assert(sym!=NULL);
-    if ((sym->usage & uASSIGNED)!=0 && sym->assignlevel>=pc_nestlevel && sym->vclass==sLOCAL)
-      error(240,sym->name); /* previously assigned value is unused */
-    markinitialized(sym,TRUE);
-    if (pc_ovlassignment)
-      markusage(sym,uREAD);
+    if (lval3.sym->vclass==sLOCAL && (lval3.sym->usage & uASSIGNED)!=0
+        && lval3.sym->assignlevel>=pc_nestlevel)
+      error(240,lval3.sym->name);   /* previously assigned value is unused */
+    if (!pc_ovlassignment)
+      markinitialized(lval3.sym,TRUE,FALSE);
+  } else if (!pc_ovlassignment) {
+    markinitialized(lval3.sym,FALSE,TRUE);
   } /* if */
   return FALSE;         /* expression result is never an lvalue */
 }
@@ -1312,6 +1314,7 @@ static int hier2(value *lval)
     } /* if */
     rvalue(lval);               /* and read the result into PRI */
     pc_sideeffect=TRUE;
+    markinitialized(lval->sym,FALSE,TRUE);
     return FALSE;               /* result is no longer lvalue */
   case tDEC:                    /* --lval */
     if (!hier2(lval))
@@ -1326,6 +1329,7 @@ static int hier2(value *lval)
     } /* if */
     rvalue(lval);               /* and read the result into PRI */
     pc_sideeffect=TRUE;
+    markinitialized(lval->sym,FALSE,TRUE);
     return FALSE;               /* result is no longer lvalue */
   case '~':                     /* ~ (one's complement) */
     if (hier2(lval))
@@ -1724,6 +1728,7 @@ static int hier2(value *lval)
         if (saveresult)
           popreg(sPRI);         /* restore PRI (result of rvalue()) */
         pc_sideeffect=TRUE;
+        markinitialized(lval->sym,FALSE,TRUE);
         return FALSE;           /* result is no longer lvalue */
       case tDEC:                /* lval-- */
         if (!lvalue)
@@ -1745,6 +1750,7 @@ static int hier2(value *lval)
         if (saveresult)
           popreg(sPRI);         /* restore PRI (result of rvalue()) */
         pc_sideeffect=TRUE;
+        markinitialized(lval->sym,FALSE,TRUE);
         return FALSE;
       case tCHAR:               /* char (compute required # of cells */
         if (lval->ident==iCONSTEXPR) {

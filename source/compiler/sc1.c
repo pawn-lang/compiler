@@ -2350,7 +2350,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
     if (fstatic)
       sym->fnumber=filenum;
     if (explicit_init)
-      markinitialized(sym,TRUE);
+      markinitialized(sym,TRUE,FALSE);
     sc_attachdocumentation(sym);/* attach any documentation to the variable */
     if (sc_status==statSKIP) {
       sc_status=statWRITE;
@@ -2549,7 +2549,7 @@ static int declloc(int fstatic)
       } /* if */
     } /* if */
     if (explicit_init)
-      markinitialized(sym,!suppress_w240);
+      markinitialized(sym,!suppress_w240,FALSE);
     if (pc_ovlassignment)
       sym->usage |= uREAD;
     if (matchtoken(t__PRAGMA))
