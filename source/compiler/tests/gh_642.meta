@@ -1,0 +1,47 @@
+{
+  'test_type': 'pcode_check',
+  'code_pattern': r"""
+[0-9a-f]+  const.pri 00000000
+[0-9a-f]+  const.alt 00000004
+[0-9a-f]+  add
+[0-9a-f]+  push.pri
+[0-9a-f]+  const.pri [0-9a-f]+
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000008
+[0-9a-f]+  sysreq.c [0-9a-f]+
+[0-9a-f]+  stack 0000000c
+[0-9a-f]+  const.pri 00000000
+[0-9a-f]+  const.alt 00000004
+[0-9a-f]+  add
+[0-9a-f]+  inc.i
+[0-9a-f]+  load.i
+[0-9a-f]+  heap 00000004
+[0-9a-f]+  stor.i
+[0-9a-f]+  move.pri
+[0-9a-f]+  push.pri
+[0-9a-f]+  const.pri [0-9a-f]+
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000008
+[0-9a-f]+  sysreq.c [0-9a-f]+
+[0-9a-f]+  stack 0000000c
+[0-9a-f]+  heap fffffffc
+[0-9a-f]+  const.pri 00000000
+[0-9a-f]+  const.alt 00000004
+[0-9a-f]+  add
+[0-9a-f]+  push.pri
+[0-9a-f]+  load.i
+[0-9a-f]+  swap.pri
+[0-9a-f]+  dec.i
+[0-9a-f]+  pop.pri
+[0-9a-f]+  heap 00000004
+[0-9a-f]+  stor.i
+[0-9a-f]+  move.pri
+[0-9a-f]+  push.pri
+[0-9a-f]+  const.pri [0-9a-f]+
+[0-9a-f]+  push.pri
+[0-9a-f]+  push.c 00000008
+[0-9a-f]+  sysreq.c [0-9a-f]+
+[0-9a-f]+  stack 0000000c
+[0-9a-f]+  heap fffffffc
+"""
+}
