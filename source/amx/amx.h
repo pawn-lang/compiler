@@ -114,7 +114,7 @@
 #endif
 
 #if !defined assert_static
-  #if (defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112) || GCC_VERSION >= 40600
+  #if (defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112) || GCC_VERSION >= 40600 || __clang__
     #define assert_static(test) _Static_assert(test, "assert")
   #else
     /* see "Compile-Time Assertions" by Greg Miller,
