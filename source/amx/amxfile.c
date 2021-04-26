@@ -209,7 +209,7 @@ static size_t fgets_cell(FILE *fp,cell *string,size_t max,int utf8mode)
           /* the code positions 0xd800--0xdfff and 0xfffe & 0xffff do not
            * exist in UCS-4 (and hence, they do not exist in Unicode)
            */
-          if (string[index]>=0xd800 && string[index]<=0xdfff
+          if ((string[index]>=0xd800 && string[index]<=0xdfff)
               || string[index]==0xfffe || string[index]==0xffff)
             utf8mode=0;
           index++;
@@ -295,34 +295,34 @@ static size_t fputs_cell(FILE *fp,cell *string,int utf8mode)
         fputc((unsigned char)c,fp);
       } else if (c<0x800) {
         /* 110xxxxx 10xxxxxx */
-        fputc((unsigned char)((c>>6) & 0x1f | 0xc0),fp);
-        fputc((unsigned char)(c & 0x3f | 0x80),fp);
+        fputc((unsigned char)(((c>>6) & 0x1f) | 0xc0),fp);
+        fputc((unsigned char)((c & 0x3f) | 0x80),fp);
       } else if (c<0x10000) {
         /* 1110xxxx 10xxxxxx 10xxxxxx (16 bits, BMP plane) */
-        fputc((unsigned char)((c>>12) & 0x0f | 0xe0),fp);
-        fputc((unsigned char)((c>>6) & 0x3f | 0x80),fp);
-        fputc((unsigned char)(c & 0x3f | 0x80),fp);
+        fputc((unsigned char)(((c>>12) & 0x0f) | 0xe0),fp);
+        fputc((unsigned char)(((c>>6) & 0x3f) | 0x80),fp);
+        fputc((unsigned char)((c & 0x3f) | 0x80),fp);
       } else if (c<0x200000) {
         /* 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx */
-        fputc((unsigned char)((c>>18) & 0x07 | 0xf0),fp);
-        fputc((unsigned char)((c>>12) & 0x3f | 0x80),fp);
-        fputc((unsigned char)((c>>6) & 0x3f | 0x80),fp);
-        fputc((unsigned char)(c & 0x3f | 0x80),fp);
+        fputc((unsigned char)(((c>>18) & 0x07) | 0xf0),fp);
+        fputc((unsigned char)(((c>>12) & 0x3f) | 0x80),fp);
+        fputc((unsigned char)(((c>>6) & 0x3f) | 0x80),fp);
+        fputc((unsigned char)((c & 0x3f) | 0x80),fp);
       } else if (c<0x4000000) {
         /* 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
-        fputc((unsigned char)((c>>24) & 0x03 | 0xf8),fp);
-        fputc((unsigned char)((c>>18) & 0x3f | 0x80),fp);
-        fputc((unsigned char)((c>>12) & 0x3f | 0x80),fp);
-        fputc((unsigned char)((c>>6) & 0x3f | 0x80),fp);
-        fputc((unsigned char)(c & 0x3f | 0x80),fp);
+        fputc((unsigned char)(((c>>24) & 0x03) | 0xf8),fp);
+        fputc((unsigned char)(((c>>18) & 0x3f) | 0x80),fp);
+        fputc((unsigned char)(((c>>12) & 0x3f) | 0x80),fp);
+        fputc((unsigned char)(((c>>6) & 0x3f) | 0x80),fp);
+        fputc((unsigned char)((c & 0x3f) | 0x80),fp);
       } else {
         /* 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx (31 bits) */
-        fputc((unsigned char)((c>>30) & 0x01 | 0xfc),fp);
-        fputc((unsigned char)((c>>24) & 0x3f | 0x80),fp);
-        fputc((unsigned char)((c>>18) & 0x3f | 0x80),fp);
-        fputc((unsigned char)((c>>12) & 0x3f | 0x80),fp);
-        fputc((unsigned char)((c>>6) & 0x3f | 0x80),fp);
-        fputc((unsigned char)(c & 0x3f | 0x80),fp);
+        fputc((unsigned char)(((c>>30) & 0x01) | 0xfc),fp);
+        fputc((unsigned char)(((c>>24) & 0x3f) | 0x80),fp);
+        fputc((unsigned char)(((c>>18) & 0x3f) | 0x80),fp);
+        fputc((unsigned char)(((c>>12) & 0x3f) | 0x80),fp);
+        fputc((unsigned char)(((c>>6) & 0x3f) | 0x80),fp);
+        fputc((unsigned char)((c & 0x3f) | 0x80),fp);
       } /* if */
     } else {
       /* not UTF-8 mode */

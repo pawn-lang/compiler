@@ -221,8 +221,8 @@ static const TCHAR *matcharg(const TCHAR *key, int skip, int *length)
     if (vptr != NULL && (int)(vptr - option) > *length)
       vptr = NULL;
     optlen = (vptr != NULL) ? (int)(vptr - option) : 0;
-    if (keylen == 0 && vptr == NULL
-        || keylen > 0 && keylen == optlen && _tcsncmp(option, key, optlen) == 0)
+    if ((keylen == 0 && vptr == NULL)
+        || (keylen > 0 && keylen == optlen && _tcsncmp(option, key, optlen) == 0))
     {
       if (vptr != NULL)
         optlen++;               /* if ':' or '=' was found, skip it too */
