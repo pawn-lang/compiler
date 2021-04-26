@@ -27,54 +27,63 @@
 #include <stdlib.h>   /* for size_t */
 #include <limits.h>
 
+#if (defined __linux || defined __linux__) && !defined __LINUX__
+  #define __LINUX__
+#endif
 #if defined FREEBSD && !defined __FreeBSD__
   #define __FreeBSD__
 #endif
-#if defined LINUX || defined __FreeBSD__ || defined __OpenBSD__
+#if defined __LINUX__ || defined __FreeBSD__ || defined __OpenBSD__ || defined __APPLE__
   #include <sclinux.h>
 #endif
 
+#if defined __GNUC__
+ #define GCC_VERSION (__GNUC__ * 10000 \
+                               + __GNUC_MINOR__ * 100 \
+                               + __GNUC_PATCHLEVEL__)
+#endif
+
+#if !defined HAVE_STDINT_H
+  #if (defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L) \
+      || defined __GNUC__ || defined __LCC__ || defined __DMC__ \
+      || (defined __WATCOMC__ && __WATCOMC__ >= 1200)
+    #define HAVE_STDINT_H 1
+  #endif
+#endif
+#if !defined HAVE_INTTYPES_H
+  #if defined __FreeBSD__ || defined __APPLE__
+    #define HAVE_INTTYPES_H 1
+  #endif
+#endif
 #if defined HAVE_STDINT_H
   #include <stdint.h>
+#elif defined HAVE_INTTYPES_H
+  #include <inttypes.h>
 #else
-  #if defined __LCC__ || defined __DMC__ || defined LINUX || (defined __WATCOMC__ && __WATCOMC__ >= 1200)
-    #if defined HAVE_INTTYPES_H
-      #include <inttypes.h>
+  #if defined __MACH__
+    #include <ppc/types.h>
+  #endif
+  typedef short int           int16_t;
+  typedef unsigned short int  uint16_t;
+  #if defined SN_TARGET_PS2
+    typedef int               int32_t;
+    typedef unsigned int      uint32_t;
+  #else
+    typedef long int          int32_t;
+    typedef unsigned long int uint32_t;
+  #endif
+  #if defined __WIN32__ || defined _WIN32 || defined WIN32
+    typedef __int64	          int64_t;
+    typedef unsigned __int64  uint64_t;
+    #define HAVE_I64
+  #endif
+  #if !defined _INTPTR_T_DEFINED
+    #if defined _LP64 || defined WIN64 || defined _WIN64
+      typedef __int64         intptr_t;
     #else
-      #include <stdint.h>
-    #endif
-  #elif !defined __STDC_VERSION__ || __STDC_VERSION__ < 199901L
-    /* The ISO C99 defines the int16_t and int_32t types. If the compiler got
-     * here, these types are probably undefined.
-     */
-    #if defined __MACH__
-      #include <ppc/types.h>
-      typedef unsigned short int  uint16_t;
-      typedef unsigned long int   uint32_t;
-    #elif defined __FreeBSD__
-      #include <inttypes.h>
-    #else
-      typedef short int           int16_t;
-      typedef unsigned short int  uint16_t;
-      #if defined SN_TARGET_PS2
-        typedef int               int32_t;
-        typedef unsigned int      uint32_t;
-      #else
-        typedef long int          int32_t;
-        typedef unsigned long int uint32_t;
-      #endif
-      #if defined __WIN32__ || defined _WIN32 || defined WIN32
-        typedef __int64	          int64_t;
-        typedef unsigned __int64  uint64_t;
-        #define HAVE_I64
-      #elif defined __GNUC__
-        typedef long long         int64_t;
-        typedef unsigned long long uint64_t;
-        #define HAVE_I64
-      #endif
+      typedef int32_t         intptr_t;
     #endif
   #endif
-  #define HAVE_STDINT_H
 #endif
 #if defined _LP64 || defined WIN64 || defined _WIN64
   #if !defined __64BIT__
@@ -82,8 +91,17 @@
   #endif
 #endif
 
-#if HAVE_ALLOCA_H
+#if !defined HAVE_ALLOCA_H
+  #if defined __GNUC__ || defined __LCC__ || defined __DMC__ || defined __ARMCC_VERSION
+    #define HAVE_ALLOCA_H 1
+  #elif defined __WATCOMC__ && __WATCOMC__ >= 1200
+    #define HAVE_ALLOCA_H 1
+  #endif
+#endif
+#if defined HAVE_ALLOCA_H && HAVE_ALLOCA_H
   #include <alloca.h>
+#elif defined __BORLANDC__
+  #include <malloc.h>
 #endif
 #if defined __WIN32__ || defined _WIN32 || defined WIN32 /* || defined __MSDOS__ */
   #if !defined alloca
@@ -94,14 +112,21 @@
 #if !defined arraysize
   #define arraysize(array)  (sizeof(array) / sizeof((array)[0]))
 #endif
+
 #if !defined assert_static
-  /* see "Compile-Time Assertions" by Ralf Holly,
-   * C/C++ Users Journal, November 2004
-   */
-  #define assert_static(e) \
-    do { \
-      enum { assert_static__ = 1/(e) }; \
-    } while (0)
+  #if (defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112) || GCC_VERSION >= 40600 || __clang__
+    #define assert_static(test) _Static_assert(test, "assert")
+  #else
+    /* see "Compile-Time Assertions" by Greg Miller,
+     * (with modifications to port it to C)
+     */
+    #define _ASSERT_STATIC_SYMBOL_INNER(line) __ASSERT_STATIC_ ## line
+    #define _ASSERT_STATIC_SYMBOL(line) _ASSERT_STATIC_SYMBOL_INNER(line)
+    #define assert_static(test) \
+      do { \
+        typedef char _ASSERT_STATIC_SYMBOL(__LINE__)[ ((test) ? 1 : -1) ]; \
+      } while (0)
+  #endif
 #endif
 
 #ifdef  __cplusplus
@@ -192,9 +217,14 @@ typedef int (AMXAPI *AMX_IDLE)(struct tagAMX *amx, int AMXAPI Exec(struct tagAMX
 #endif
 
 #if defined _MSC_VER
-  #pragma warning(disable:4103)  /* disable warning message 4103 that complains
-                                  * about pragma pack in a header file */
   #pragma warning(disable:4100)  /* "'%$S' : unreferenced formal parameter" */
+  #pragma warning(disable:4103)  /* disable warning message 4103 that complains about pragma pack in a header file */
+  #pragma warning(disable:4127)  /* "conditional expression is constant" (needed for static_assert) */
+  #pragma warning(disable:4996)  /* POSIX name is deprecated */
+#elif defined __GNUC__
+#elif defined __clang__
+  #pragma GCC diagnostic ignored "-Wlogical-op-parentheses"
+  #pragma GCC diagnostic ignored "-Wbitwise-op-parentheses"
 #endif
 
 /* Some compilers do not support the #pragma align, which should be fine. Some
@@ -307,12 +337,15 @@ typedef struct tagAMX_HEADER {
   int32_t nametable     PACKED; /* name table */
 } AMX_HEADER;
 
+#define AMX_MAGIC_16    0xf1e2
+#define AMX_MAGIC_32    0xf1e0
+#define AMX_MAGIC_64    0xf1e1
 #if PAWN_CELL_SIZE==16
-  #define AMX_MAGIC     0xf1e2
+  #define AMX_MAGIC     AMX_MAGIC_16
 #elif PAWN_CELL_SIZE==32
-  #define AMX_MAGIC     0xf1e0
+  #define AMX_MAGIC     AMX_MAGIC_32
 #elif PAWN_CELL_SIZE==64
-  #define AMX_MAGIC     0xf1e1
+  #define AMX_MAGIC     AMX_MAGIC_64
 #endif
 
 enum {
@@ -377,19 +410,51 @@ enum {
   #define amx_ftoc(f)   ( * ((cell*)&f) )   /* float to cell */
   #define amx_ctof(c)   ( * ((double*)&c) ) /* cell to float */
 #else
-  #error Unsupported cell size
+  // amx_ftoc() and amx_ctof() cannot be used
 #endif
 
-#define amx_StrParam(amx,param,result)                                      \
+/* when a pointer cannot be stored in a cell, cells that hold relocated
+ * addresses need to be expanded
+ */
+#if defined __64BIT__ && PAWN_CELL_SIZE<64
+  #define CELLMASK      (((int64_t)1 << PAWN_CELL_SIZE) - 1)
+  #define amx_Address(amx,addr) \
+                        (cell*)(((int64_t)((amx)->data ? (amx)->data : (amx)->code) & ~CELLMASK) | ((int64_t)(addr) & CELLMASK))
+#elif defined __32BIT__ && PAWN_CELL_SIZE<32
+  #define CELLMASK      ((1L << PAWN_CELL_SIZE) - 1)
+  #define amx_Address(amx,addr) \
+                        (cell*)(((int32_t)((amx)->data ? (amx)->data : (amx)->code) & ~CELLMASK) | ((int32_t)(addr) & CELLMASK))
+#else
+  #define amx_Address(amx,addr) \
+                        (cell*)(((int32_t)((amx)->data ? (amx)->data : (amx)->base+(int)((AMX_HEADER *)(amx)->base)->dat)) + ((int32_t)(addr)))
+#endif
+
+#if defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L
+  /* C99: use variable-length arrays */
+  #define amx_StrParam_Type(amx,param,result,type)                          \
+    int result##_length_;                                                   \
+    amx_StrLen(amx_Address(amx,param),&result##_length_);                   \
+    char result##_vla_[(result##_length_+1)*sizeof(*(result))];             \
+    (result)=(type)result##_vla_;                                           \
+    amx_GetString((char*)(result),amx_Address(amx,param),                   \
+                  sizeof(*(result))>1,result##_length_+1)
+  #define amx_StrParam(amx,param,result) \
+    amx_StrParam_Type(amx,param,result,void*)
+#else
+  /* macro using alloca() */
+  #define amx_StrParam_Type(amx,param,result,type)                          \
     do {                                                                    \
-      cell *amx_cstr_; int amx_length_;                                     \
-      amx_GetAddr((amx), (param), &amx_cstr_);                              \
-      amx_StrLen(amx_cstr_, &amx_length_);                                  \
-      if (amx_length_ > 0 &&                                                \
-          ((result) = (void*)alloca((amx_length_ + 1) * sizeof(*(result)))) != NULL) \
-        amx_GetString((char*)(result), amx_cstr_, sizeof(*(result))>1, amx_length_ + 1); \
+      int result##_length_;                                                 \
+      amx_StrLen(amx_Address(amx,param),&result##_length_);                 \
+      if (result##_length_>0 &&                                             \
+          ((result)=(type)alloca((result##_length_+1)*sizeof(*(result))))!=NULL) \
+        amx_GetString((char*)(result),amx_Address(amx,param),               \
+                      sizeof(*(result))>1,result##_length_+1);              \
       else (result) = NULL;                                                 \
     } while (0)
+  #define amx_StrParam(amx,param,result) \
+    amx_StrParam_Type(amx,param,result,void*)
+#endif
 
 uint16_t * AMXAPI amx_Align16(uint16_t *v);
 uint32_t * AMXAPI amx_Align32(uint32_t *v);
@@ -439,11 +504,24 @@ int AMXAPI amx_UTF8Len(const cell *cstr, int *length);
 int AMXAPI amx_UTF8Put(char *string, char **endptr, int maxchars, cell value);
 
 #if PAWN_CELL_SIZE==16
-  #define amx_AlignCell(v) amx_Align16(v)
+  void amx_Swap16(uint16_t *v);
+#endif
+#if PAWN_CELL_SIZE==32
+  void amx_Swap32(uint32_t *v);
+#endif
+#if PAWN_CELL_SIZE==64 && (defined _I64_MAX || defined INT64_MAX || defined HAVE_I64)
+  void amx_Swap64(uint64_t *v);
+#endif
+
+#if PAWN_CELL_SIZE==16
+  #define amx_AlignCell(v) amx_Align16((uint16_t*)(v))
+  #define amx_SwapCell(v)  amx_Swap16((uint16_t*)(v))
 #elif PAWN_CELL_SIZE==32
-  #define amx_AlignCell(v) amx_Align32(v)
-#elif PAWN_CELL_SIZE==64 && (defined _I64_MAX || defined HAVE_I64)
-  #define amx_AlignCell(v) amx_Align64(v)
+  #define amx_AlignCell(v) amx_Align32((uint32_t*)(v))
+  #define amx_SwapCell(v)  amx_Swap32((uint32_t*)(v))
+#elif PAWN_CELL_SIZE==64 && (defined _I64_MAX || defined INT64_MAX || defined HAVE_I64)
+  #define amx_AlignCell(v) amx_Align64((uint64_t*)(v))
+  #define amx_SwapCell(v)  amx_Swap64((uint64_t*)(v))
 #else
   #error Unsupported cell size
 #endif
@@ -452,7 +530,7 @@ int AMXAPI amx_UTF8Put(char *string, char **endptr, int maxchars, cell value);
   amx_Register((amx), amx_NativeInfo((name),(func)), 1);
 
 #if !defined AMX_NO_ALIGN
-  #if defined LINUX || defined __FreeBSD__
+  #if defined __LINUX__ || defined __FreeBSD__ || defined __APPLE__
     #pragma pack()    /* reset default packing */
   #elif defined MACOS && defined __MWERKS__
     #pragma options align=reset

@@ -1,24 +1,20 @@
 /*  Core module for the Pawn AMX
  *
- *  Copyright (c) ITB CompuPhase, 1997-2006
+ *  Copyright (c) ITB CompuPhase, 1997-2016
  *
- *  This software is provided "as-is", without any express or implied warranty.
- *  In no event will the authors be held liable for any damages arising from
- *  the use of this software.
+ *  Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ *  use this file except in compliance with the License. You may obtain a copy
+ *  of the License at
  *
- *  Permission is granted to anyone to use this software for any purpose,
- *  including commercial applications, and to alter it and redistribute it
- *  freely, subject to the following restrictions:
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *  1.  The origin of this software must not be misrepresented; you must not
- *      claim that you wrote the original software. If you use this software in
- *      a product, an acknowledgment in the product documentation would be
- *      appreciated but is not required.
- *  2.  Altered source versions must be plainly marked as such, and must not be
- *      misrepresented as being the original software.
- *  3.  This notice may not be removed or altered from any source distribution.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ *  License for the specific language governing permissions and limitations
+ *  under the License.
  *
- *  Version: $Id: amxcore.c 3657 2006-10-24 20:09:50Z thiadmer $
+ *  Version: $Id: amxcore.c 5504 2016-05-15 13:42:30Z  $
  */
 
 #if defined _UNICODE || defined __UNICODE__ || defined UNICODE
@@ -34,7 +30,14 @@
 #include <string.h>
 #include <limits.h>
 #include <assert.h>
-#include "amx.h"
+#include "osdefs.h"
+#if defined __ECOS__
+  /* eCos puts include files in cyg/package_name */
+  #include <cyg/pawn/amx.h>
+  #define  stricmp(a,b) strcasecmp(a,b)
+#else
+  #include "amx.h"
+#endif
 #if defined __WIN32__ || defined _WIN32 || defined WIN32 || defined _Windows
   #include <windows.h>
 #endif
@@ -196,18 +199,10 @@ static cell AMX_NATIVE_CALL funcidx(AMX *amx,const cell *params)
 {
   char name[64];
   cell *cstr;
-  int index,err,len;
+  int index,err;
 
-  amx_GetAddr(amx,params[1],&cstr);
-
-  /* verify string length */
-  amx_StrLen(cstr,&len);
-  if (len>=64) {
-    amx_RaiseError(amx,AMX_ERR_NATIVE);
-    return 0;
-  } /* if */
-
-  amx_GetString(name,cstr,0,UNLIMITED);
+  cstr=amx_Address(amx,params[1]);
+  amx_GetString(name,cstr,0,sizeof name);
   err=amx_FindPublic(amx,name,&index);
   if (err!=AMX_ERR_NONE)
     index=-1;   /* this is not considered a fatal error */
@@ -277,9 +272,9 @@ static cell AMX_NATIVE_CALL swapchars(AMX *amx,const cell *params)
 static cell AMX_NATIVE_CALL core_tolower(AMX *amx,const cell *params)
 {
   (void)amx;
-  #if defined __WIN32__ || defined _WIN32 || defined WIN32
+  #if (defined __WIN32__ || defined _WIN32 || defined WIN32) && !defined _WIN64
     return (cell)CharLower((LPTSTR)params[1]);
-  #elif defined _Windows
+  #elif defined _Windows && !defined _WIN64
     return (cell)AnsiLower((LPSTR)params[1]);
   #else
     if ((unsigned)(params[1]-'A')<26u)
@@ -291,9 +286,9 @@ static cell AMX_NATIVE_CALL core_tolower(AMX *amx,const cell *params)
 static cell AMX_NATIVE_CALL core_toupper(AMX *amx,const cell *params)
 {
   (void)amx;
-  #if defined __WIN32__ || defined _WIN32 || defined WIN32
+  #if (defined __WIN32__ || defined _WIN32 || defined WIN32) && !defined _WIN64
     return (cell)CharUpper((LPTSTR)params[1]);
-  #elif defined _Windows
+  #elif defined _Windows && !defined _WIN64
     return (cell)AnsiUpper((LPSTR)params[1]);
   #else
     if ((unsigned)(params[1]-'a')<26u)
@@ -334,44 +329,31 @@ static char *MakePackedString(cell *cptr)
 
   amx_StrLen(cptr,&len);
   dest=(char *)malloc(len+sizeof(cell));
-  amx_GetString(dest,cptr,0,UNLIMITED);
+  amx_GetString(dest,cptr,0,len+sizeof(cell));
   return dest;
 }
 
-static int verify_addr(AMX *amx,cell addr)
-{
-  int err;
-  cell *cdest;
-
-  err=amx_GetAddr(amx,addr,&cdest);
-  if (err!=AMX_ERR_NONE)
-    amx_RaiseError(amx,err);
-  return err;
-}
-
+/* getproperty(id=0, const name[]="", value=cellmin, string[]="", size=sizeof string) */
 static cell AMX_NATIVE_CALL getproperty(AMX *amx,const cell *params)
 {
   cell *cstr;
   char *name;
   proplist *item;
 
-  amx_GetAddr(amx,params[2],&cstr);
+  (void)amx;
+  cstr=amx_Address(amx,params[2]);
   name=MakePackedString(cstr);
   item=list_finditem(&proproot,params[1],name,params[3],NULL);
   /* if list_finditem() found the value, store the name */
   if (item!=NULL && item->value==params[3] && strlen(name)==0) {
-    int needed=(strlen(item->name)+sizeof(cell)-1)/sizeof(cell);     /* # of cells needed */
-    if (verify_addr(amx,(cell)(params[4]+needed))!=AMX_ERR_NONE) {
-      free(name);
-      return 0;
-    } /* if */
-    amx_GetAddr(amx,params[4],&cstr);
-    amx_SetString(cstr,item->name,1,0,UNLIMITED);
+    cstr=amx_Address(amx,params[4]);
+    amx_SetString(cstr,item->name,1,0,params[5]);
   } /* if */
   free(name);
   return (item!=NULL) ? item->value : 0;
 }
 
+/* setproperty(id=0, const name[]="", value=cellmin, const string[]="") */
 static cell AMX_NATIVE_CALL setproperty(AMX *amx,const cell *params)
 {
   cell prev=0;
@@ -379,7 +361,7 @@ static cell AMX_NATIVE_CALL setproperty(AMX *amx,const cell *params)
   char *name;
   proplist *item;
 
-  amx_GetAddr(amx,params[2],&cstr);
+  cstr=amx_Address(amx,params[2]);
   name=MakePackedString(cstr);
   item=list_finditem(&proproot,params[1],name,params[3],NULL);
   if (item==NULL)
@@ -390,7 +372,7 @@ static cell AMX_NATIVE_CALL setproperty(AMX *amx,const cell *params)
     prev=item->value;
     if (strlen(name)==0) {
       free(name);
-      amx_GetAddr(amx,params[4],&cstr);
+      cstr=amx_Address(amx,params[4]);
       name=MakePackedString(cstr);
     } /* if */
     list_setitem(item,params[1],name,params[3]);
@@ -399,6 +381,7 @@ static cell AMX_NATIVE_CALL setproperty(AMX *amx,const cell *params)
   return prev;
 }
 
+/* deleteproperty(id=0, const name[]="", value=cellmin) */
 static cell AMX_NATIVE_CALL delproperty(AMX *amx,const cell *params)
 {
   cell prev=0;
@@ -406,7 +389,8 @@ static cell AMX_NATIVE_CALL delproperty(AMX *amx,const cell *params)
   char *name;
   proplist *item,*pred;
 
-  amx_GetAddr(amx,params[2],&cstr);
+  (void)amx;
+  cstr=amx_Address(amx,params[2]);
   name=MakePackedString(cstr);
   item=list_finditem(&proproot,params[1],name,params[3],&pred);
   if (item!=NULL) {
@@ -417,13 +401,15 @@ static cell AMX_NATIVE_CALL delproperty(AMX *amx,const cell *params)
   return prev;
 }
 
+/* existproperty(id=0, const name[]="", value=cellmin) */
 static cell AMX_NATIVE_CALL existproperty(AMX *amx,const cell *params)
 {
   cell *cstr;
   char *name;
   proplist *item;
 
-  amx_GetAddr(amx,params[2],&cstr);
+  (void)amx;
+  cstr=amx_Address(amx,params[2]);
   name=MakePackedString(cstr);
   item=list_finditem(&proproot,params[1],name,params[3],NULL);
   free(name);
@@ -499,12 +485,12 @@ const AMX_NATIVE_INFO core_Natives[] = {
   { NULL, NULL }        /* terminator */
 };
 
-int AMXEXPORT amx_CoreInit(AMX *amx)
+int AMXEXPORT AMXAPI amx_CoreInit(AMX *amx)
 {
   return amx_Register(amx, core_Natives, -1);
 }
 
-int AMXEXPORT amx_CoreCleanup(AMX *amx)
+int AMXEXPORT AMXAPI amx_CoreCleanup(AMX *amx)
 {
   (void)amx;
   #if !defined AMX_NOPROPLIST
