@@ -38,8 +38,7 @@
 #endif
 #if defined __WIN32__ || defined _Windows
   #include <windows.h>
-#endif
-#if defined __GNUC__ || defined __clang__
+#elif defined __GNUC__ || defined __clang__
   #include <unistd.h>
 #endif
 #include "amx.h"

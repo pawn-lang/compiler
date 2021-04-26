@@ -23,8 +23,7 @@
 #if defined __WIN32__ || defined _WIN32 || defined _Windows
   #include <windows.h>
   #include <mmsystem.h>
-#endif
-#if defined __GNUC__ || defined __clang__
+#elif defined __GNUC__ || defined __clang__
   #include <sys/time.h>
 #endif
 
