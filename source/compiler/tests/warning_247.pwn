@@ -1,12 +1,56 @@
 main()
 {
-	new a = 0, bool:b = false, c;
+	new bool:a = true, bool:b = false;
+	new u1 = 1, u2 = 0;
+
+	if (u1) {}
+	if (!u1) {}
+	if (~u1) {}
+	if (-u1) {}
+	if (++u1) {}
+	if (u1++) {}
+	if (--u1) {}
+	if (u1--) {}
+	if (u1 || u2) {}
+	if (u1 ^ u2) {}
+	if (u1 && u2) {}
+	if (u1 == u2) {}
+	if (u1 != u2) {}
+	if (u1 * u2) {}
+	if (u1 / u2) {}
+	if (u1 % u2) {}
+	if (u1 + u2) {}
+	if (u1 - u2) {}
+	if (u1 << u2) {}
+	if (u1 >> u2) {}
+	if (u1 >>> u2) {}
+
 	if (a) {}
-	if (b) {}
 	if (!a) {}
-	if (!b) {}
-	if (~a) {} // bitwise inversion on an untagged value is OK
-	if (~b) {} // warning 247: use of operator "~" on a "bool:" value always results in "true"; did you mean operator "!"?
-	if (~(a & c)) {} // bitwise AND, the result is not forced to be "bool:"-tagged
-	if (~(a && c)) {} // warning 247: use of operator "~" on a "bool:" value always results in "true"; did you mean operator "!"?
+	if (a || b) {}
+	if (a ^ b) {}
+	if (a && b) {}
+	if (a == b) {}
+	if (a != b) {}
+	if (a <= b) {} // warning 247: use of operator "<=" on "bool:" values
+	if (a >= b) {} // warning 247: use of operator ">=" on "bool:" values
+	if (a < b) {}  // warning 247: use of operator "<" on "bool:" values
+	if (a > b) {}  // warning 247: use of operator ">" on "bool:" values
+	if (~a) {}     // warning 247: use of operator "~" on a "bool:" value; did you mean to use operator "!"?
+	if (-a) {}     // warning 247: use of operator "-" on a "bool:" value; did you mean to use operator "!"?
+	if (++a) {}    // warning 247: use of operator "++" on a "bool:" value
+	if (a++) {}    // warning 247: use of operator "++" on a "bool:" value
+	if (--a) {}    // warning 247: use of operator "--" on a "bool:" value
+	if (a--) {}    // warning 247: use of operator "--" on a "bool:" value
+	if (a * b) {}  // warning 247: use of operator "*" on "bool:" values
+	if (a / b) {}  // warning 247: use of operator "/" on "bool:" values
+	if (a % b) {}  // warning 247: use of operator "%" on "bool:" values
+	if (a + b) {}  // warning 247: use of operator "+" on "bool:" values
+	if (a - b) {}  // warning 247: use of operator "-" on "bool:" values
+	if (a << b) {} // warning 247: use of operator "<<" on "bool:" values
+	if (a >> b) {} // warning 247: use of operator ">>" on "bool:" values
+	if (a >>> b) {}// warning 247: use of operator ">>>" on "bool:" values
+
+	if (~(u1 & u2)) {} // bitwise AND, the result is not forced to be "bool:"-tagged
+	if (~(u1 && u2)) {} // warning 247: use of operator "~" on a "bool:" value; did you mean operator "!"?
 }

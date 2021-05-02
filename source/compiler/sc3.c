@@ -61,6 +61,8 @@ static int dbltest(void (*oper)(),value *lval1,value *lval2);
 static int commutative(void (*oper)());
 static int constant(value *lval);
 
+static const char str_w247unary[]="a \"bool:\" value";
+static const char str_w247binary[]="\"bool:\" values";
 static char lastsymbol[sNAMEMAX+1]; /* name of last function/variable */
 static int bitwise_opercount;   /* count of bitwise operators in an expression */
 static int decl_heap=0;
@@ -78,15 +80,15 @@ static void (*op1[17])(void) = {
   os_le,os_ge,os_lt,os_gt,      /* hier9, index 11 */
   ob_eq,ob_ne,                  /* hier10, index 15 */
 };
-/* These two functions are defined because the functions inc() and dec() in
- * SC4.C have a different prototype than the other code generation functions.
+/* These two macros are defined because the functions inc() and dec() in SC4.C
+ * have a different prototype than the other code generation functions.
  * The arrays for user-defined functions use the function pointers for
  * identifying what kind of operation is requested; these functions must all
  * have the same prototype. As inc() and dec() are special cases already, it
- * is simplest to add two "do-nothing" functions.
+ * is simplest to cast them into "void (*)(void)".
  */
-static void user_inc(void) {}
-static void user_dec(void) {}
+#define user_inc ((void (*)(void))inc)
+#define user_dec ((void (*)(void))dec)
 
 /*
  *  Searches for a binary operator a list of operators. The list is stored in
@@ -646,9 +648,29 @@ static void plnge2(void (*oper)(void),
       lval1->ident=iEXPRESSION;
       lval1->constval=0;
     } else {
-      if ((oper==ob_sal || oper==os_sar || oper==ou_sar)
-          && (lval2->ident==iCONSTEXPR && (lval2->constval<0 || lval2->constval>=PAWN_CELL_SIZE)))
+      if (lval1->tag==BOOLTAG && lval2->tag==BOOLTAG
+          && oper!=ob_or && oper!=ob_xor && oper!=ob_and && oper!=ob_eq && oper!=ob_ne) {
+        static const void (*opers[])(void) = {
+          os_mult,os_div,os_mod,ob_add,ob_sub,ob_sal,
+          os_sar,ou_sar,os_le,os_ge,os_lt,os_gt
+        };
+        static const char* opnames[] = {
+          "*","/","%","+","-","<<",
+          ">>",">>>","<=",">=","<",">"
+        };
+        int i;
+        assert_static(arraysize(opers)==arraysize(opnames));  /* make sure the array sizes match */
+        assert_static(arraysize(op1)==17);  /* in case a new operator is added into the compiler,
+                                             * arrays "opers" and "opnames" might need to be updated */
+        for (i=0; i<arraysize(opers); i++)
+          if (oper==opers[i])
+            break;
+        assert(i<arraysize(opers));
+        error(247,opnames[i],str_w247binary);   /* use of operator on \"bool:\" values */
+      } else if ((oper==ob_sal || oper==os_sar || oper==ou_sar)
+          && (lval2->ident==iCONSTEXPR && (lval2->constval<0 || lval2->constval>=PAWN_CELL_SIZE))) {
         error(241);             /* negative or too big shift count */
+      } /* if */
       if (lval1->ident==iCONSTEXPR && lval2->ident==iCONSTEXPR) {
         /* only constant expression if both constant */
         stgdel(lval_stgidx,lval_cidx);  /* scratch generated code and calculate */
@@ -1283,8 +1305,11 @@ static int hier2(value *lval)
     assert(lval->sym!=NULL);
     if ((lval->sym->usage & uCONST)!=0)
       return error(22);         /* assignment to const argument */
-    if (!check_userop(user_inc,lval->tag,0,1,lval,&lval->tag))
+    if (!check_userop(user_inc,lval->tag,0,1,lval,&lval->tag)) {
+      if (lval->tag==BOOLTAG)
+        error(247,"++",str_w247unary);  /* use of operator "++" on a "bool:" value */
       inc(lval);                /* increase variable first */
+    } /* if */
     rvalue(lval);               /* and read the result into PRI */
     pc_sideeffect=TRUE;
     return FALSE;               /* result is no longer lvalue */
@@ -1294,8 +1319,11 @@ static int hier2(value *lval)
     assert(lval->sym!=NULL);
     if ((lval->sym->usage & uCONST)!=0)
       return error(22);         /* assignment to const argument */
-    if (!check_userop(user_dec,lval->tag,0,1,lval,&lval->tag))
+    if (!check_userop(user_dec,lval->tag,0,1,lval,&lval->tag)) {
+      if (lval->tag==BOOLTAG)
+        error(247,"--",str_w247unary);  /* use of operator "--" on a "bool:" value */
       dec(lval);                /* decrease variable first */
+    } /* if */
     rvalue(lval);               /* and read the result into PRI */
     pc_sideeffect=TRUE;
     return FALSE;               /* result is no longer lvalue */
@@ -1307,7 +1335,7 @@ static int hier2(value *lval)
     if (lval->ident==iVARIABLE || lval->ident==iARRAYCELL)
       lval->ident=iEXPRESSION;
     if (lval->tag==BOOLTAG)
-      error(makelong(247,3),"!"); /* use of operator "~" on a "bool:" value always results in "true" */
+      error(makelong(247,3),"~",str_w247unary,"!"); /* use of operator "~" on a "bool:" value; did you mean to use operator "!"? */
     return FALSE;
   case '!':                     /* ! (logical negate) */
     if (hier2(lval))
@@ -1352,6 +1380,8 @@ static int hier2(value *lval)
       lval->constval=-lval->constval;
       if (lval->ident==iVARIABLE || lval->ident==iARRAYCELL)
         lval->ident=iEXPRESSION;
+      if (lval->tag==BOOLTAG)
+        error(makelong(247,3),"-",str_w247unary,"!"); /* use of operator "-" on a "bool:" value; did you mean to use operator "!"? */
     } /* if */
     return FALSE;
   case tLABEL:                  /* tagname override */
@@ -1676,8 +1706,11 @@ static int hier2(value *lval)
         rvalue(lval);           /* read current value into PRI */
         if (saveresult)
           swap1();              /* save PRI on the stack, restore address in PRI */
-        if (!check_userop(user_inc,lval->tag,0,1,lval,&lval->tag))
+        if (!check_userop(user_inc,lval->tag,0,1,lval,&lval->tag)) {
+          if (lval->tag==BOOLTAG)
+            error(247,"++",str_w247unary);  /* use of operator "++" on a "bool:" value */
           inc(lval);            /* increase variable afterwards */
+        } /* if */
         if (saveresult)
           popreg(sPRI);         /* restore PRI (result of rvalue()) */
         pc_sideeffect=TRUE;
@@ -1694,8 +1727,11 @@ static int hier2(value *lval)
         rvalue(lval);           /* read current value into PRI */
         if (saveresult)
           swap1();              /* save PRI on the stack, restore address in PRI */
-        if (!check_userop(user_dec,lval->tag,0,1,lval,&lval->tag))
+        if (!check_userop(user_dec,lval->tag,0,1,lval,&lval->tag)) {
+          if (lval->tag==BOOLTAG)
+            error(247,"--",str_w247unary);  /* use of operator "--" on a "bool:" value */
           dec(lval);            /* decrease variable afterwards */
+        } /* if */
         if (saveresult)
           popreg(sPRI);         /* restore PRI (result of rvalue()) */
         pc_sideeffect=TRUE;
