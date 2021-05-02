@@ -200,9 +200,10 @@ static void (*unopers[])(void) = { lneg, neg, user_inc, user_dec };
   /* check existence and the proper declaration of this function */
   if ((sym->usage & uMISSING)!=0 || (sym->usage & uPROTOTYPED)==0) {
     char symname[2*sNAMEMAX+16];  /* allow space for user defined operators */
+    char *ptr= (sym->documentation!=NULL) ? sym->documentation : "";
     funcdisplayname(symname,sym->name);
     if ((sym->usage & uMISSING)!=0)
-      error(4,symname);           /* function not defined */
+      error(4,symname,ptr);       /* function not defined */
     if ((sym->usage & uPROTOTYPED)==0)
       error(71,symname);          /* operator must be declared before use */
   } /* if */
@@ -1979,8 +1980,9 @@ restart:
         } /* if */
       } else if ((sym->usage & uMISSING)!=0) {
         char symname[2*sNAMEMAX+16];  /* allow space for user defined operators */
+        char *ptr= (sym->documentation!=NULL) ? sym->documentation : "";
         funcdisplayname(symname,sym->name);
-        error(4,symname);             /* function not defined */
+        error(4,symname,ptr);         /* function not defined */
       } /* if */
       callfunction(sym,lval1,TRUE);
       return FALSE;             /* result of function call is no lvalue */
