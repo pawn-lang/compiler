@@ -19,11 +19,18 @@ static Func4();  // class specifier "static" is introduced
 forward Func4(); // OK (class specifiers are only mandatory in function definitions, not declarations)
 static Func4(){} // OK (class specifier "static" is in place)
 
-static Func5(){} // Func5() is "finalized"; subsequent forward declarations
-                 // for this function can't introduce any new class specifiers
-forward static Func5(); // OK (no new class specifiers)
+stock Func5(){} // Func5() is "finalized"; subsequent forward declarations
+                // for this function can't introduce specifiers "static" and "public"
+forward stock Func5(); // OK (no new class specifiers)
 forward static stock Func5(); // error 025: function heading differs from prototype
 
-#pragma unused Func4, Func5
+Func6(){}
+forward stock Func6(); // OK (specifier "stock" can be introduced after the definition)
+
+forward stock Func7(); // specifier "stock" is introduced, but it's not mandatory to use it
+                       // in the function definition
+Func7(){} // OK
+
+#pragma unused Func4, Func5, Func6, Func7
 
 main(){}
