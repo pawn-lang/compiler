@@ -246,7 +246,7 @@ static short lastfile;
   char *msg,*pre;
   va_list argptr;
   char string[128];
-  int notice;
+  int notice,start;
 
   /* split the error field between the real error/warning number and an optional
    * "notice" number
@@ -303,15 +303,15 @@ static short lastfile;
   } /* if */
 
   assert(errstart<=fline);
+  start=errstart;
   if (errline>0)
-    errstart=errline;
+    start=errline;
   else
     errline=fline;
-  assert(errstart<=errline);
+  assert(start<=errline);
   va_start(argptr,number);
   if (errfname[0]=='\0') {
-    int start=(errstart==errline) ? -1 : errstart;
-    if (pc_error((int)number,msg,inpfname,start,errline,argptr)) {
+    if (pc_error((int)number,msg,inpfname,((start==errline) ? -1 : start),errline,argptr)) {
       if (outf!=NULL) {
         pc_closeasm(outf,TRUE);
         outf=NULL;
@@ -321,8 +321,8 @@ static short lastfile;
   } else {
     FILE *fp=fopen(errfname,"a");
     if (fp!=NULL) {
-      if (errstart>=0 && errstart!=errline)
-        fprintf(fp,"%s(%d -- %d) : %s %03d: ",inpfname,errstart,errline,pre,(int)number);
+      if (start>=0 && start!=errline)
+        fprintf(fp,"%s(%d -- %d) : %s %03d: ",inpfname,start,errline,pre,(int)number);
       else
         fprintf(fp,"%s(%d) : %s %03d: ",inpfname,errline,pre,(int)number);
       vfprintf(fp,msg,argptr);
@@ -346,7 +346,7 @@ static short lastfile;
 
   errline=-1;
   /* check whether we are seeing many errors on the same line */
-  if ((errstart<0 && lastline!=fline) || lastline<errstart || lastline>fline || fcurrent!=lastfile)
+  if ((start<0 && lastline!=fline) || lastline<start || lastline>fline || fcurrent!=lastfile)
     errorcount=0;
   lastline=fline;
   lastfile=fcurrent;
