@@ -97,7 +97,7 @@ typedef struct s_constvalue {
   char name[sNAMEMAX+1];
   cell value;
   int index;            /* index level, for constants referring to array sizes/tags
-                         * automaton id. for states and automatons
+                         * automaton id, for states and automatons
                          * tag for enumeration lists */
 } constvalue;
 
@@ -203,7 +203,6 @@ typedef struct s_symbol {
  *  bits: 0     (uDEFINE) the symbol is defined in the source file
  *        1     (uREAD) the constant is "read" (accessed) in the source file
  *        2     (uWRITTEN) redundant, but may be set for constants passed by reference
- *        3     (uPREDEF) the constant is pre-defined and should be kept between passes
  *        5     (uENUMROOT) the constant is the "root" of an enumeration
  *        6     (uENUMFIELD) the constant is a field in a named enumeration
  */
@@ -213,7 +212,6 @@ typedef struct s_symbol {
 #define uRETVALUE   0x004 /* function returns (or should return) a value */
 #define uCONST      0x008
 #define uPROTOTYPED 0x008
-#define uPREDEF     0x008 /* constant is pre-defined */
 #define uPUBLIC     0x010
 #define uNATIVE     0x020
 #define uENUMROOT   0x020
@@ -741,7 +739,6 @@ SC_FUNC void rename_symbol(symbol *sym,const char *newname);
 SC_FUNC symbol *findglb(const char *name,int filter);
 SC_FUNC symbol *findloc(const char *name);
 SC_FUNC symbol *findconst(const char *name,int *cmptag);
-SC_FUNC symbol *finddepend(const symbol *parent);
 SC_FUNC symbol *addsym(const char *name,cell addr,int ident,int vclass,int tag,
                        int usage);
 SC_FUNC symbol *addvariable(const char *name,cell addr,int ident,int vclass,int tag,
@@ -1011,6 +1008,9 @@ SC_VDECL int pc_retexpr;      /* true if the current expression is a part of a "
 SC_VDECL int pc_retheap;      /* heap space (in bytes) to be manually freed when returning an array returned by another function */
 SC_VDECL int pc_nestlevel;    /* number of active (open) compound statements */
 SC_VDECL unsigned int pc_attributes;/* currently set attribute flags (for the "__pragma" operator) */
+SC_VDECL int pc_ispackedstr;  /* true if the last tokenized string is packed */
+
+SC_VDECL char *sc_tokens[];
 
 SC_VDECL constvalue_root sc_automaton_tab; /* automaton table */
 SC_VDECL constvalue_root sc_state_tab;     /* state table */

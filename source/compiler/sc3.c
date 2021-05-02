@@ -146,7 +146,7 @@ static void (*unopers[])(void) = { lneg, neg, user_inc, user_dec };
       if (lval!=NULL && (lval->ident==iARRAYCELL || lval->ident==iARRAYCHAR))
         savealt=TRUE;
     } else {
-      assert( arraysize(binoperstr) == arraysize(op1) );
+      assert_static( arraysize(binoperstr) == arraysize(op1) );
       for (i=0; i<arraysize(op1); i++) {
         if (oper==op1[i]) {
           strcpy(opername,binoperstr[i]);
@@ -159,7 +159,7 @@ static void (*unopers[])(void) = { lneg, neg, user_inc, user_dec };
     assert(oper!=NULL);
     assert(numparam==1);
     /* try a select group of unary operators */
-    assert( arraysize(unoperstr) == arraysize(unopers) );
+    assert_static( arraysize(unoperstr) == arraysize(unopers) );
     if (opername[0]=='\0') {
       for (i=0; i<arraysize(unopers); i++) {
         if (oper==unopers[i]) {
@@ -419,7 +419,7 @@ static int skim(int *opstr,void (*testfunc)(int),int dropval,int endval,
       break;                    /* none of the operators in "opstr" were found */
     } /* if */
 
-  } /* while */
+  } /* for */
 
   lval_stgidx=org_index;
   lval_cidx=org_cidx;
@@ -587,7 +587,7 @@ static void plnge2(void (*oper)(void),
       rvalue(lval2);
     if (lval2->ident==iCONSTEXPR) { /* constant on right side */
       if (commutative(oper)) {      /* test for commutative operators */
-        value lvaltmp = {0};
+        value lvaltmp;
         stgdel(lval_stgidx,lval_cidx);  /* scratch pushreg() and constant fetch (then
                                          * fetch the constant again */
         ldconst(lval2->constval<<dbltest(oper,lval1,lval2),sALT);
@@ -817,7 +817,7 @@ SC_FUNC cell array_totalsize(symbol *sym)
   assert(sym->ident==iARRAY || sym->ident==iREFARRAY);
   length=sym->dim.array.length;
   if (sym->dim.array.level > 0) {
-    cell sublength=array_totalsize(finddepend(sym));
+    cell sublength=array_totalsize(sym->child);
     if (sublength>0)
       length=length+length*sublength;
     else
@@ -832,9 +832,9 @@ static cell array_levelsize(symbol *sym,int level)
   assert(sym->ident==iARRAY || sym->ident==iREFARRAY);
   assert(level <= sym->dim.array.level);
   while (level-- > 0) {
-    sym=finddepend(sym);
+    sym=sym->child;
     assert(sym!=NULL);
-  } /* if */
+  } /* while */
   return sym->dim.array.length;
 }
 
@@ -1055,7 +1055,6 @@ static int hier14(value *lval1)
       /* check the sizes of all sublevels too */
       symbol *sym1 = lval3.sym;
       symbol *sym2 = lval2.sym;
-      int i;
       assert(sym1!=NULL && sym2!=NULL);
       /* ^^^ sym2 must be valid, because only variables can be
        *     multi-dimensional (there are no multi-dimensional literals),
@@ -1063,8 +1062,8 @@ static int hier14(value *lval1)
        */
       assert(exactmatch);
       for (i=0; i<level; i++) {
-        sym1=finddepend(sym1);
-        sym2=finddepend(sym2);
+        sym1=sym1->child;
+        sym2=sym2->child;
         assert(sym1!=NULL && sym2!=NULL);
         /* ^^^ both arrays have the same dimensions (this was checked
          *     earlier) so the dependend should always be found
@@ -1362,7 +1361,6 @@ static int hier2(value *lval)
     lval->tag=tag;
     return lvalue;
   case t__ADDRESSOF: {
-    extern char *sc_tokens[];
     static const char allowed_sym_types[]="-variable, array, array cell, label or function-";
     paranthese=0;
     while (matchtoken('('))
@@ -1430,7 +1428,7 @@ static int hier2(value *lval)
             numoffsets+=offsmul;
             offsmul*=subsym->dim.array.length;
             arrayidx=(arrayidx*subsym->dim.array.length)+val;
-            subsym=finddepend(subsym);
+            subsym=subsym->child;
           }
           needtoken(']');
         } /* for */
@@ -1440,8 +1438,8 @@ static int hier2(value *lval)
           numoffsets+=offsmul;
           offsmul*=subsym->dim.array.length;
           arrayidx*=arrayidx*subsym->dim.array.length;
-          subsym=finddepend(subsym);
-        } /* if */
+          subsym=subsym->child;
+        } /* while */
         lval->constval+=(numoffsets-1+arrayidx)*(cell)sizeof(cell);
         ldconst(lval->constval,sPRI);
       } /* if */
@@ -1543,7 +1541,7 @@ static int hier2(value *lval)
         } /* if */
         needtoken(']');
         if (subsym!=NULL)
-          subsym=finddepend(subsym);
+          subsym=subsym->child;
       } /* for */
       if (level>sym->dim.array.level+1)
         error(28,sym->name);  /* invalid subscript */
@@ -1595,7 +1593,7 @@ static int hier2(value *lval)
         } /* if */
         needtoken(']');
         if (subsym!=NULL)
-          subsym=finddepend(subsym);
+          subsym=subsym->child;
       } /* for */
       if (level>sym->dim.array.level+1)
         error(28,sym->name);  /* invalid subscript */
@@ -1790,7 +1788,7 @@ restart:
         /* parse the next index if this is not the lowest array dimension */
         if (sym!=NULL && (sym->ident==iARRAY || sym->ident==iREFARRAY) && sym->dim.array.level>0) {
           lval1->ident=iREFARRAY;
-          lval1->sym=finddepend(sym);
+          lval1->sym=sym->child;
           assert(lval1->sym!=NULL);
           assert(lval1->sym->dim.array.level==sym->dim.array.level-1);
           cursym=lval1->sym;
@@ -1877,7 +1875,7 @@ restart:
         ob_add();
         /* adjust the "value" structure and find the referenced array */
         lval1->ident=iREFARRAY;
-        lval1->sym=finddepend(sym);
+        lval1->sym=sym->child;
         assert(lval1->sym!=NULL);
         assert(lval1->sym->dim.array.level==sym->dim.array.level-1);
         cursym=lval1->sym;
@@ -2081,7 +2079,7 @@ static int primary(value *lval)
     return FALSE;       /* return 0 for function (not an lvalue) */
   } /* if */
   lexpush();            /* push the token, it is analyzed by constant() */
-  if (constant(lval)==0) {
+  if (!constant(lval)) {
     error(29);          /* expression error, assumed 0 */
     ldconst(0,sPRI);    /* load 0 */
   } /* if */
@@ -2197,7 +2195,7 @@ static int nesting=0;
     return;
   }
   /* check whether this is a function that returns an array */
-  symret=finddepend(sym);
+  symret=sym->child;
   assert(symret==NULL || symret->ident==iREFARRAY);
   if (symret!=NULL) {
     int retsize;
@@ -2453,7 +2451,7 @@ static int nesting=0;
               else
                 check_index_tagmismatch(sym->name,arg[argidx].idxtag[level],sym->x.tags.index,TRUE,0);
               append_constval(&arrayszlst,arg[argidx].name,sym->dim.array.length,level);
-              sym=finddepend(sym);
+              sym=sym->child;
               assert(sym!=NULL);
               level++;
             } /* if */

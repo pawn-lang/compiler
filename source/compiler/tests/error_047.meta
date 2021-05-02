@@ -1,0 +1,6 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+error_047.pwn(8) : error 047: array sizes do not match, or destination array is too small
+"""
+}

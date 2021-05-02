@@ -2812,7 +2812,7 @@ static cell initvector(int ident,int tag,cell size,int startlit,int fillzero,
         if (!matchtoken(',')) {
           needtoken('}');
           break;
-        } /* for */
+        } /* if */
       } /* for */
       /* if this array is based on an enumeration, fill the "field" up with
        * zeros, and toggle the tag
@@ -2972,7 +2972,6 @@ static void decl_const(int vclass)
  */
 static void decl_enum(int vclass,int fstatic)
 {
-  extern const char *sc_tokens[];
   char enumname[sNAMEMAX+1],constname[sNAMEMAX+1];
   cell val,value,size;
   char *str;
@@ -3089,7 +3088,8 @@ static void decl_enum(int vclass,int fstatic)
         /* don't reset "warn_overflow" yet, we'll need to use it later */
       } /* if */
       if (warn_noeffect) {
-        const char *str=sc_tokens[inctok-tFIRST],*name=noeffect_sym->name;
+        const char *name=noeffect_sym->name;
+        str=sc_tokens[inctok-tFIRST];
         errorset(sSETPOS,noeffect_sym->lnumber);
         error(245,str,increment,name);  /* enum increment has no effect on zero value */
         errorset(sSETPOS,-1);
@@ -4058,14 +4058,12 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
         && (lvar=findloc(sym->dim.arglist[i].name))!=NULL) {
       if ((sym->dim.arglist[i].usage & uWRITTEN)==0) {
         /* check if the argument was written in this definition */
-        depend=lvar;
-        while (depend!=NULL) {
+        for (depend=lvar; depend!=NULL; depend=depend->child) {
           if ((depend->usage & uWRITTEN)!=0) {
             sym->dim.arglist[i].usage|=depend->usage & uWRITTEN;
             break;
-          }
-          depend=finddepend(depend);
-        } /* while */
+          } /* if */
+        } /* for */
       } /* if */
       /* mark argument as written if it was written in another definition */
       lvar->usage|=sym->dim.arglist[i].usage & uWRITTEN;
@@ -4139,7 +4137,6 @@ static int argcompare(arginfo *a1,arginfo *a2)
 static int declargs(symbol *sym,int chkshadow)
 {
   #define MAXTAGS 16
-  extern char* sc_tokens[];
   char *ptr;
   int argcnt,oldargcnt,tok,tags[MAXTAGS],numtags;
   cell val;
@@ -4205,7 +4202,7 @@ static int declargs(symbol *sym,int chkshadow)
           if (matchtoken('}'))
             break;
           needtoken(',');
-        } /* for */
+        } /* while */
         needtoken(':');
         tok=tLABEL;     /* for outer loop: flag that we have seen a tagname */
         break;
@@ -5036,7 +5033,7 @@ static long max_stacksize(symbol *root,int *recursion)
       if ((sym->usage & uNATIVE)==0)
         numfunctions++;
     } /* if */
-  } /* if */
+  } /* for */
   /* allocate function symbol stack */
   symstack=(symbol **)malloc((numfunctions+1)*sizeof(symbol*));
   rsymstack=(symbol **)malloc((numfunctions+1)*sizeof(symbol*));
@@ -5047,7 +5044,7 @@ static long max_stacksize(symbol *root,int *recursion)
 
   maxsize=0;
   maxparams=0;
-  *recursion=0;         /* assume no recursion */
+  *recursion=FALSE;     /* assume no recursion */
   for (sym=root->next; sym!=NULL; sym=sym->next) {
     int recursion_detected;
     /* drop out if this is not a user-implemented function */
@@ -5150,14 +5147,13 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
         errorset(sSETPOS,-1);
       } else if ((sym->usage & (uWRITTEN | uPUBLIC | uCONST))==0 && sym->ident==iREFARRAY) {
         int warn = TRUE;
-        symbol* depend = finddepend(sym);
-        while (depend != NULL) {
-          if ((depend->usage & (uWRITTEN | uPUBLIC | uCONST)) != 0) {
-            warn = FALSE;
+        symbol *depend;
+        for (depend=sym->child; depend!=NULL; depend=depend->child) {
+          if ((depend->usage & (uWRITTEN | uPUBLIC | uCONST))!=0) {
+            warn=FALSE;
             break;
-          }
-          depend = finddepend(depend);
-        } /* while */
+          } /* if */
+        } /* for */
         if (warn) {
           errorset(sSETPOS, sym->lnumber);
           error(214, sym->name);       /* make array argument "const" */
@@ -5167,7 +5163,7 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
       /* also mark the variable (local or global) to the debug information */
       if ((sym->usage & (uWRITTEN | uREAD))!=0 && (sym->usage & uNATIVE)==0)
         insert_dbgsymbol(sym);
-    } /* if */
+    } /* switch */
     sym=sym->next;
   } /* while */
 
@@ -5182,7 +5178,7 @@ static cell calc_array_datasize(symbol *sym, cell *offset)
   assert(sym->ident==iARRAY || sym->ident==iREFARRAY);
   length=sym->dim.array.length;
   if (sym->dim.array.level > 0) {
-    cell sublength=calc_array_datasize(finddepend(sym),offset);
+    cell sublength=calc_array_datasize(sym->child,offset);
     if (offset!=NULL)
       *offset=length*(*offset+sizeof(cell));
     if (sublength>0)
@@ -5615,7 +5611,6 @@ static void statement(int *lastindent,int allow_decl)
     pragma_apply(curfunc);
     break;
   case t__EMIT: {
-    extern char *sc_tokens[];
     const unsigned char *bck_lptr=lptr-strlen(sc_tokens[tok-tFIRST]);
     if (matchtoken('{')) {
       emit_flags |= efBLOCK;
@@ -5679,7 +5674,7 @@ static void compound(int stmt_sameline,int starttok)
       error(30,block_start);    /* compound block not closed at end of file */
       break;
     } else {
-      if (count_stmt>0 && isterminal(lastst))
+      if (count_stmt>0 && isterminal(lastst)) {
         if (matchtoken(tLABEL)) {
           cell val;
           char *name;
@@ -5689,12 +5684,13 @@ static void compound(int stmt_sameline,int starttok)
           sym=findloc(name);
           /* before issuing a warning, check if the label was previously used (via 'goto') */
           if (sym!=NULL && sym->ident==iLABEL && (sym->usage & uREAD)==0)
-        error(225);             /* unreachable code */
+            error(225);         /* unreachable code */
         } else if (lastst==tTERMSWITCH && matchtoken(tRETURN)) {
           lexpush();            /* push the token so it can be analyzed later */
         } else {
           error(225);           /* unreachable code */
         } /* if */
+      } /* if */
       statement(&indent,TRUE);  /* do a statement */
       count_stmt++;
     } /* if */
@@ -6210,7 +6206,7 @@ static int doswitch(void)
               error(40,val);            /* duplicate "case" label */
             assert(csp==NULL || csp->next==cse);
             insert_constval(csp,cse,itoh(lbl_case),val,0);
-          } /* if */
+          } /* while */
         } /* if */
       } while (matchtoken(','));
       needtoken(':');                   /* ':' ends the case */
@@ -6250,26 +6246,25 @@ static int doswitch(void)
 
   if (enumsym!=NULL && swdefault==FALSE && enumsym->x.tags.unique-enumsymcount<=2) {
     constvalue_root *enumlist=enumsym->dim.enumlist;
-    constvalue *val,*prev=NULL,*save_next=NULL;
-    for (val=enumlist->first; val!=NULL; prev=val,val=val->next) {
+    constvalue *cur,*found,*prev=NULL,*save_next=NULL;
+    for (cur=enumlist->first; cur!=NULL; prev=cur,cur=cur->next) {
       /* if multiple enum elements share the same value, we only want to count the first one */
       if (prev!=NULL) {
         /* see if there's another constvalue before the current one that has the same value */
-        constvalue *save_next=prev->next;
-        constvalue *found;
+        save_next=prev->next;
         prev->next=NULL;
-        found=find_constval_byval(enumlist,val->value);
+        found=find_constval_byval(enumlist,cur->value);
         prev->next=save_next;
         if (found!=NULL)
           continue;
       } /* if */
       /* check if the value of this constant is handled in switch, if so - continue */
-      if (find_constval_byval(&caselist,val->value)!=NULL)
+      if (find_constval_byval(&caselist,cur->value)!=NULL)
         continue;
       errorset(sSETPOS,save_fline);
-      error(244,val->name); /* enum element not handled in switch */
+      error(244,cur->name); /* enum element not handled in switch */
       errorset(sSETPOS,-1);
-    } /* while */
+    } /* for */
   } /* if */
 
   #if !defined NDEBUG
@@ -6429,7 +6424,6 @@ static symbol *fetchlab(char *name)
 
 static void SC_FASTCALL emit_invalid_token(int expected_token,int found_token)
 {
-  extern char *sc_tokens[];
   char s[2];
 
   assert(expected_token>=tFIRST);
@@ -6797,7 +6791,6 @@ fetchtok:
       negate=TRUE;
       goto fetchtok;
     } else {
-      extern char *sc_tokens[];
       char ival[sNAMEMAX+2];
     invalid_token_neg:
       if (tok<tFIRST)
@@ -6851,7 +6844,6 @@ static void SC_FASTCALL emit_param_nonneg(emit_outval *p)
   if (!emit_param_any_internal(p,teNONNEG,FALSE,TRUE))
     return;
   if ((cell)p->value.ucell<(cell)0) {
-    extern char *sc_tokens[];
 #if PAWN_CELL_SIZE==16
     char ival[7];
 #elif PAWN_CELL_SIZE==32
@@ -6983,7 +6975,6 @@ fetchtok:
       negate=TRUE;
       goto fetchtok;
     } else {
-      extern char *sc_tokens[];
       char ival[sNAMEMAX+2];
     invalid_token_neg:
       if (tok<tFIRST)
@@ -7828,7 +7819,6 @@ static int emit_findopcode(const char *instr)
 
 SC_FUNC void emit_parse_line(void)
 {
-  extern char *sc_tokens[];
   cell val;
   char* st;
   int tok,len,i;
@@ -7950,7 +7940,7 @@ static void doreturn(void)
       error(225); /* unreachable code */
     /* see if this function already has a sub type (an array attached) */
     assert(curfunc!=NULL);
-    sub=finddepend(curfunc);
+    sub=curfunc->child;
     assert(sub==NULL || sub->ident==iREFARRAY);
     if ((rettype & uRETVALUE)!=0) {
       int retarray=(ident==iARRAY || ident==iREFARRAY);
@@ -7982,8 +7972,8 @@ static void doreturn(void)
               if (sym->dim.array.length!=dim[numdim])
                 error(47);    /* array sizes must match */
               if (numdim<level) {
-                sym=finddepend(sym);
-                sub=finddepend(sub);
+                sym=sym->child;
+                sub=sub->child;
                 assert(sym!=NULL && sub!=NULL);
                 /* ^^^ both arrays have the same dimensions (this was checked
                  *     earlier) so the dependend should always be found
@@ -8004,7 +7994,7 @@ static void doreturn(void)
             dim[numdim]=(int)sub->dim.array.length;
             idxtag[numdim]=sub->x.tags.index;
             if (numdim<level) {
-              sub=finddepend(sub);
+              sub=sub->child;
               assert(sub!=NULL);
             } /* if */
             /* check that all dimensions are known */
@@ -8296,7 +8286,6 @@ static int *readwhile(void)
 
 static void dopragma(void)
 {
-  extern char *sc_tokens[];
   int tok;
   int bck_litidx,bck_packstr;
   int i;
@@ -8320,45 +8309,46 @@ static void dopragma(void)
   do {
     /* read the option string */
     tok=lex(&val,&str);
-    if (tok!=tSTRING) {
+    if (tok!=tSTRING || !pc_ispackedstr) {
+      /* either not a string, or the user prepended "!" to the option string */
       char tokstr[2];
+      if (tok==tSTRING)
+        tok='!';
       if (tok<tFIRST) {
         sprintf(tokstr,"%c",tok);
         str=tokstr;
       } else {
-        str=sc_tokens[tok-tBEGIN];
+        str=sc_tokens[tok-tFIRST];
       } /* if */
       error(1,sc_tokens[tSTRING-tFIRST],str);
       goto next;
     } /* if */
     assert(litidx>bck_litidx);
 
-    /* the user shouldn't prepend "!" to the option string */
-    if (litq[val]<=UNPACKEDMAX && litq[val]!=0) {
-      error(1,sc_tokens[tSTRING-tFIRST],"!");
-      goto next;
-    } /* if */
-
     /* swap the cell bytes if we're on a Little Endian platform */
 #if BYTE_ORDER==LITTLE_ENDIAN
     { /* local */
       char *bytes;
-      i=0;
+      i=(int)val;
       do {
         char t;
-        bytes=(char *)&litq[val+i];
-        i++;
-        #if PAWN_CELL_SIZE>=16
-          t=bytes[0], bytes[0]=bytes[sizeof(cell)-1], bytes[sizeof(cell)-1]=t;
-        #if PAWN_CELL_SIZE>=32
+        bytes=(char *)&litq[i++];
+        t=bytes[0], bytes[0]=bytes[sizeof(cell)-1], bytes[sizeof(cell)-1]=t;
+#if PAWN_CELL_SIZE>=32
           t=bytes[1], bytes[1]=bytes[sizeof(cell)-2], bytes[sizeof(cell)-2]=t;
-        #if PAWN_CELL_SIZE==64
+#if PAWN_CELL_SIZE==64
           t=bytes[2], bytes[2]=bytes[sizeof(cell)-3], bytes[sizeof(cell)-3]=t;
           t=bytes[3], bytes[3]=bytes[sizeof(cell)-4], bytes[sizeof(cell)-4]=t;
-        #endif // PAWN_CELL_SIZE==64
-        #endif // PAWN_CELL_SIZE==32
-        #endif // PAWN_CELL_SIZE==16
-      } while (bytes[0]!='\0' && bytes[1]!='\0' && bytes[2]!='\0' && bytes[3]!='\0');
+#endif // PAWN_CELL_SIZE==64
+#endif // PAWN_CELL_SIZE>=32
+      } while (bytes[0]!='\0' && bytes[1]!='\0'
+#if PAWN_CELL_SIZE>=32
+               && bytes[2]!='\0' && bytes[3]!='\0'
+#if PAWN_CELL_SIZE==64
+               && bytes[4]!='\0' && bytes[5]!='\0' && bytes[6]!='\0' && bytes[7]!='\0'
+#endif // PAWN_CELL_SIZE==64
+#endif // PAWN_CELL_SIZE>=32
+      ); /* do */
     } /* local */
 #endif
 
@@ -8376,7 +8366,7 @@ static void dopragma(void)
      * and parse the argument(s), if needed */
     if (!strcmp(str,"deprecated")) {
       free(pc_deprecate);
-      pc_deprecate=strdup(&str[i]);
+      pc_deprecate=duplicatestring(&str[i]);
       if (pc_deprecate==NULL)
         error(103);     /* insufficient memory */
       pc_attributes |= (1U << attrDEPRECATED);
@@ -8406,7 +8396,7 @@ static void dopragma(void)
           /* nothing */;
       } /* if */
       if (strcmp(str,"enable")==0 || strcmp(str,"disable")==0) {
-        int len=number(&val,&str[i]);
+        int len=number(&val,(unsigned char *)&str[i]);
         if (len==0)
           goto unknown_pragma;
         pc_enablewarning((int)val,(str[0]=='e') ? warnENABLE : warnDISABLE);

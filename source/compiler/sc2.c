@@ -250,7 +250,7 @@ SC_FUNC int plungefile(char *name,int try_currentpath,int try_includepaths)
       strlcpy(path,ptr,arraysize(path));
       strlcat(path,name,arraysize(path));
       result=plungequalifiedfile(path);
-    } /* while */
+    } /* for */
   } /* if */
   return result;
 }
@@ -404,7 +404,7 @@ static void readline(unsigned char *line)
     } else {
       /* check whether to erase leading spaces */
       if (cont) {
-        unsigned char *ptr=line;
+        ptr=line;
         while (*ptr<=' ' && *ptr!='\0')
           ptr++;
         if (ptr!=line)
@@ -457,7 +457,7 @@ static void readline(unsigned char *line)
  *  ends with the same multiline string, so that this won't trigger commands:
  *
  *      new x[] = "Hello
- *      
+ *
  *      #define X 0
  *      ";
  *
@@ -608,9 +608,9 @@ static int stripcomment(unsigned char *line)
       } else {
         if (incommand==2 && *line>' ') {
           /* line starting a command, may need raw strings */
-          if (strncmp(line, "#error", 6)==0 ||
-              strncmp(line, "#warning", 8)==0 ||
-              strncmp(line, "#pragma", 7)==0) {
+          if (strncmp((char*)line,"#error",6)==0 ||
+              strncmp((char*)line,"#warning",8)==0 ||
+              strncmp((char*)line,"#pragma",7)==0) {
             /* is one of the pre-processor commands with pure raw strings */
             incommand=1;
           } else {
@@ -992,7 +992,7 @@ static const unsigned char *getstring(unsigned char *dest,int max,const unsigned
       if (len<max-1)
         dest[len++]=*line;
       line++;
-    } /* if */
+    } /* while */
     dest[len]='\0';
     if (*line=='"')
       line++;           /* skip closing " */
@@ -1010,7 +1010,7 @@ static const unsigned char *getstring(unsigned char *dest,int max,const unsigned
  */
 static char* strdupwithouta(const char* sourcestring)
 {
-  char* result=strdup(sourcestring);
+  char* result=duplicatestring(sourcestring);
   char* a=result;
   if (result==NULL) {
     return NULL;
@@ -1220,7 +1220,6 @@ static int command(void)
           if (!cp_set(name))
             error(108);         /* codepage mapping file not found */
         } else if (strcmp(str,"compress")==0) {
-          cell val;
           preproc_expr(&val,NULL);
           sc_compress=(int)val; /* switch code packing on/off */
         } else if (strcmp(str,"ctrlchar")==0) {
@@ -1272,7 +1271,6 @@ static int command(void)
               curlibrary=append_constval(&libname_tab,name,0,0);
           } /* if */
         } else if (strcmp(str,"pack")==0) {
-          cell val;
           preproc_expr(&val,NULL);      /* default = packed/unpacked */
           sc_packstr=(int)val;
         } else if (strcmp(str,"rational")==0) {
@@ -1307,11 +1305,9 @@ static int command(void)
             error(69);          /* rational number format already set, can only be set once */
           } /* if */
         } else if (strcmp(str,"semicolon")==0) {
-          cell val;
           preproc_expr(&val,NULL);
           sc_needsemicolon=(int)val;
         } else if (strcmp(str,"tabsize")==0) {
-          cell val;
           preproc_expr(&val,NULL);
           if (val>0)
             sc_tabsize=(int)val;
@@ -1379,7 +1375,6 @@ static int command(void)
           int ok=lex(&val,&str)==tSYMBOL;
           if (ok) {
             if (strcmp(str,"enable")==0 || strcmp(str,"disable")==0) {
-              cell val;
               enum s_warnmode enable=(str[0]=='e') ? warnENABLE : warnDISABLE;
               do {
                 preproc_expr(&val,NULL);
@@ -1397,7 +1392,6 @@ static int command(void)
             error(207);         /* unknown #pragma */
           } /* if */
         } else if (strcmp(str,"compat")==0) {
-          cell val;
           symbol *sym;
           preproc_expr(&val,NULL);
           pc_compat=(int)val;   /* switch compatibility mode on/off */
@@ -1495,7 +1489,6 @@ static int command(void)
           } /* if */
           break;
         default: {
-          extern char *sc_tokens[];/* forward declaration */
           char s2[33]="-";
           if ((char)tok=='-') {
             int current_token=lex(&val,&str);
@@ -2298,24 +2291,6 @@ SC_FUNC void lexinit(void)
   _lexnewline=FALSE;
 }
 
-char *sc_tokens[] = {
-         "*=", "/=", "%=", "+=", "-=", "<<=", ">>>=", ">>=", "&=", "^=", "|=",
-         "||", "&&", "==", "!=", "<=", ">=", "<<", ">>>", ">>", "++", "--",
-         "...", "..",
-         "__addressof", "assert", "*begin", "break", "case", "char", "const", "continue",
-         "default", "defined", "do", "else", "__emit", "*end", "enum", "exit", "for",
-         "forward", "goto", "if", "__nameof", "native", "new", "operator", "__pragma",
-         "public", "return", "sizeof", "sleep", "state", "static", "stock", "switch",
-         "tagof", "*then", "while",
-         "#assert", "#define", "#else", "#elseif", "#emit", "#endif", "#endinput",
-         "#endscript", "#error", "#file", "#if", "#include", "#line", "#pragma",
-         "#tryinclude", "#undef", "#warning",
-         ";", ";", "-integer value-", "-rational value-", "-identifier-",
-         "-label-", "-string-",
-         "-any value-", "-numeric value-", "-data offset-", "-local variable-",
-         "-reference-", "-function-", "-native function-", "-nonnegative integer-"
-       };
-
 SC_FUNC int lex(cell *lexvalue,char **lexsym)
 {
   int i,toolong,newline,stringflags;
@@ -2430,7 +2405,7 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
         error(220);
       } /* if */
     } /* if */
-    } else if (*lptr=='\"' || *lptr=='#' || (*lptr==sc_ctrlchar && (*(lptr+1)=='\"' || *(lptr+1)=='#')))
+  } else if (*lptr=='\"' || *lptr=='#' || (*lptr==sc_ctrlchar && (*(lptr+1)=='\"' || *(lptr+1)=='#')))
   {                                     /* unpacked string literal */
     _lextok=tSTRING;
     stringflags=(*lptr==sc_ctrlchar) ? RAWMODE : 0;
@@ -2440,6 +2415,7 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
     if ((stringflags & RAWMODE)!=0)
       lptr+=1;          /* skip "escape" character too */
     lptr=sc_packstr ? packedstring(lptr,&stringflags) : unpackedstring(lptr,&stringflags);
+    pc_ispackedstr=sc_packstr;
     if (*lptr=='\"')
       lptr+=1;          /* skip final quote */
     else if (!(stringflags & STRINGIZE))
@@ -2466,6 +2442,7 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
     if ((stringflags & RAWMODE)!=0)
       lptr+=1;          /* skip "escape" character too */
     lptr=sc_packstr ? unpackedstring(lptr,&stringflags) : packedstring(lptr,&stringflags);
+    pc_ispackedstr=!sc_packstr;
     if (*lptr=='\"')
       lptr+=1;          /* skip final quote */
     else if (!(stringflags & STRINGIZE))
@@ -3023,10 +3000,8 @@ static symbol *add_symbol(symbol *root,symbol *entry,int sort)
     while (root->next!=NULL && strcmp(entry->name,root->next->name)>0)
       root=root->next;
 
-  if ((newsym=(symbol *)malloc(sizeof(symbol)))==NULL) {
+  if ((newsym=(symbol *)malloc(sizeof(symbol)))==NULL)
     error(103);
-    return NULL;
-  } /* if */
   memcpy(newsym,entry,sizeof(symbol));
   newsym->next=root->next;
   root->next=newsym;
@@ -3145,8 +3120,8 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
         mustdelete=TRUE;
       break;
     case iCONSTEXPR:
-      /* delete constants, except predefined constants */
-      mustdelete=delete_functions || (sym->usage & uPREDEF)==0;
+      /* delete constants (predefined constants are checked later) */
+      mustdelete=TRUE;
       break;
     case iFUNCTN:
       /* optionally preserve globals (variables & functions), but
@@ -3245,13 +3220,6 @@ static symbol *find_symbol(const symbol *root,const char *name,int fnumber,int a
       *cmptag=1;          /* set number of matches to 1 */
   } /* if */
   return firstmatch;
-}
-
-static symbol *find_symbol_child(const symbol *root,const symbol *sym)
-{
-  if (sym->child && sym->child->parent==sym)
-    return sym->child;
-  return NULL;
 }
 
 /* Adds "bywhom" to the list of referrers of "entry". Typically,
@@ -3470,16 +3438,6 @@ SC_FUNC symbol *findconst(const char *name,int *cmptag)
   return sym;
 }
 
-SC_FUNC symbol *finddepend(const symbol *parent)
-{
-  symbol *sym;
-
-  sym=find_symbol_child(&loctab,parent);    /* try local symbols first */
-  if (sym==NULL)                            /* not found */
-    sym=find_symbol_child(&glbtab,parent);
-  return sym;
-}
-
 /*  addsym
  *
  *  Adds a symbol to the symbol table (either global or local variables,
@@ -3493,10 +3451,8 @@ SC_FUNC symbol *addsym(const char *name,cell addr,int ident,int vclass,int tag,i
   assert(ident!=iLABEL || findloc(name)==NULL);
 
   /* create an empty referrer list */
-  if ((refer=(symbol**)malloc(sizeof(symbol*)))==NULL) {
+  if ((refer=(symbol**)malloc(sizeof(symbol*)))==NULL)
     error(103);         /* insufficient memory */
-    return NULL;
-  } /* if */
   *refer=NULL;
 
   /* first fill in the entry */
