@@ -1553,7 +1553,7 @@ static void usage(void)
     pc_printf("         -\\       use '\\' for escape characters\n");
     pc_printf("         -^       use '^' for escape characters\n");
     pc_printf("         -;[+/-]  require a semicolon to end each statement (default=%c)\n", sc_needsemicolon ? '+' : '-');
-    pc_printf("         -([+/-]  require parantheses for function invocation (default=%c)\n", optproccall ? '-' : '+');
+    pc_printf("         -([+/-]  require parentheses for function invocation (default=%c)\n", optproccall ? '-' : '+');
     pc_printf("         sym=val  define constant \"sym\" with value \"val\"\n");
     pc_printf("         sym=     define constant \"sym\" with value 0\n");
 #if defined	__WIN32__ || defined _WIN32 || defined _Windows || defined __MSDOS__
@@ -1753,7 +1753,7 @@ static void parse(void)
       } else {
         /* This can be a static function or a static global variable; we know
          * which of the two as soon as we have parsed up to the point where an
-         * opening paranthesis of a function would be expected. To back out after
+         * opening parenthesis of a function would be expected. To back out after
          * deciding it was a declaration of a static variable after all, we have
          * to store the symbol name and tag.
          */
@@ -2290,7 +2290,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
       sym->fnumber=filenum;
     if (explicit_init)
       markinitialized(sym,TRUE);
-    sc_attachdocumentation(sym);/* attach any documenation to the variable */
+    sc_attachdocumentation(sym);/* attach any documentation to the variable */
     if (sc_status==statSKIP) {
       sc_status=statWRITE;
       code_idx=cidx;
@@ -2678,7 +2678,7 @@ static void initials(int ident,int tag,cell *size,int dim[],int numdim,
         if (d==dim[numdim-2])
           dim[numdim-1]=match;
       } /* if */
-      /* after all arrays have been initalized, we know the (major) dimensions
+      /* after all arrays have been initialized, we know the (major) dimensions
        * of the array and we can properly adjust the indirection vectors
        */
       if (err==0)
@@ -2965,7 +2965,7 @@ static void decl_const(int vclass)
     check_tagmismatch(tag,exprtag,FALSE,symbolline);
     sym=add_constant(constname,val,vclass,tag);
     if (sym!=NULL)
-      sc_attachdocumentation(sym);/* attach any documenation to the constant */
+      sc_attachdocumentation(sym);/* attach any documentation to the constant */
   } while (matchtoken(',')); /* enddo */   /* more? */
   needtoken(tTERM);
 }
@@ -3174,7 +3174,7 @@ static void decl_enum(int vclass,int fstatic)
     /* assign the constant list */
     assert(enumroot!=NULL);
     enumsym->dim.enumlist=enumroot;
-    sc_attachdocumentation(enumsym);  /* attach any documenation to the enumeration */
+    sc_attachdocumentation(enumsym);  /* attach any documentation to the enumeration */
   } /* if */
 }
 
@@ -3783,7 +3783,7 @@ static void funcstub(int fnative)
 
   declargs(sym,FALSE);
   /* "declargs()" found the ")" */
-  sc_attachdocumentation(sym);  /* attach any documenation to the function */
+  sc_attachdocumentation(sym);  /* attach any documentation to the function */
   if (!operatoradjust(opertok,sym,symbolname,tag))
     sym->usage &= ~uDEFINE;
   if (fpublic && opertok!=0) {
@@ -4051,7 +4051,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int stoc
   } /* if */
   endfunc();
   sym->codeaddr=code_idx;
-  sc_attachdocumentation(sym);  /* attach collected documenation to the function */
+  sc_attachdocumentation(sym);  /* attach collected documentation to the function */
   if (litidx) {                 /* if there are literals defined */
     glb_declared+=litidx;
     begdseg();                  /* flip to DATA segment */
@@ -4157,12 +4157,12 @@ static int declargs(symbol *sym,int chkshadow)
   if ((sym->usage & uPROTOTYPED)!=0)
     while (sym->dim.arglist[oldargcnt].ident!=0)
       oldargcnt++;
-  argcnt=0;                             /* zero aruments up to now */
+  argcnt=0;                             /* zero arguments up to now */
   ident=iVARIABLE;
   numtags=0;
   fconst=fpragma=FALSE;
   fpublic= (sym->usage & uPUBLIC)!=0;
-  /* the '(' parantheses has already been parsed */
+  /* the '(' parentheses has already been parsed */
   if (!matchtoken(')')){
     do {                                /* there are arguments; process them */
       /* any legal name increases argument count (and stack offset) */
@@ -4385,7 +4385,7 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
         arg->hasdefault=TRUE;   /* argument has default value */
         arg->defvalue.array.size=litidx;
         arg->defvalue.array.addr=-1;
-        /* calulate size to reserve on the heap */
+        /* calculate size to reserve on the heap */
         arg->defvalue.array.arraysize=1;
         for (i=0; i<arg->numdim; i++)
           arg->defvalue.array.arraysize*=arg->dim[i];
@@ -4405,12 +4405,12 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
       if (size_tag_token!=0) {
         char* symname;
         cell val;
-        int paranthese;
+        int parentheses;
         if (ident==iREFERENCE)
           error(66,name);       /* argument may not be a reference */
-        paranthese=0;
+        parentheses=0;
         while (matchtoken('('))
-          paranthese++;
+          parentheses++;
         if (size_tag_token==uTAGOF && matchtoken(tLABEL)) {
           constvalue *tagsym;
           tokeninfo(&val,&symname);
@@ -4436,7 +4436,7 @@ static void doarg(char *name,int ident,int offset,int tags[],int numtags,
            * will trigger a fatal error because of too many error messages on one line */
           lexclr(FALSE);
         } /* if */
-        while (paranthese--)
+        while (parentheses--)
           needtoken(')');
       } else {
         constexpr(&arg->defvalue.val,&arg->defvalue_tag,NULL);
@@ -5325,7 +5325,7 @@ static void destructsymbols(symbol *root,int level)
           if ((opsym->usage & uPROTOTYPED)==0)
             error(71,symname);          /* operator must be declared before use */
         } /* if */
-        /* save PRI, in case of a return statment */
+        /* save PRI, in case of a return statement */
         if (!savepri) {
           pushreg(sPRI);        /* right-hand operand is in PRI */
           savepri=TRUE;
@@ -5480,7 +5480,7 @@ SC_FUNC symbol *add_constant(char *name,cell val,int vclass,int tag)
 
   /* Test whether a global or local symbol with the same name exists. Since
    * constants are stored in the symbols table, this also finds previously
-   * defind constants. */
+   * defined constants. */
   sym=findglb(name,sSTATEVAR);
   if (sym==NULL)
     sym=findloc(name);
@@ -5555,7 +5555,7 @@ SC_FUNC symbol *add_builtin_string_constant(char *name,const char *val,
 
   /* Test whether a global or local symbol with the same name exists. Since
    * constants are stored in the symbols table, this also finds previously
-   * defind constants. */
+   * defined constants. */
   sym=findglb(name,sSTATEVAR);
   if (sym==NULL)
     sym=findloc(name);
@@ -5899,7 +5899,7 @@ SC_FUNC int constexpr(cell *val,int *tag,symbol **symptr)
  *  In the case a "simple assignment" operator ("=") is used within a test,
  *  the warning "possibly unintended assignment" is displayed. This routine
  *  sets the global variable "sc_intest" to true, it is restored upon termination.
- *  In the case the assignment was intended, use parantheses around the
+ *  In the case the assignment was intended, use parentheses around the
  *  expression to avoid the warning; primary() sets "sc_intest" to 0.
  *
  *  Global references: sc_intest (altered, but restored upon termination)
@@ -6160,7 +6160,7 @@ static int dofor(void)
   scanloopvariables(&loopvars,FALSE);
   /* Expressions 2 and 3 are reversed in the generated code: expression 3
    * precedes expression 2. When parsing, the code is buffered and marks for
-   * the start of each expression are insterted in the buffer.
+   * the start of each expression are inserted in the buffer.
    */
   assert(!staging);
   stgset(TRUE);                     /* start staging */
@@ -6407,7 +6407,7 @@ static int doswitch(void)
   } /* if */
 
   #if !defined NDEBUG
-    /* verify that the case table is sorted (unfortunatly, duplicates can
+    /* verify that the case table is sorted (unfortunately, duplicates can
      * occur; there really shouldn't be duplicate cases, but the compiler
      * may not crash or drop into an assertion for a user error). */
     for (cse=caselist.first; cse!=NULL && cse->next!=NULL; cse=cse->next)
@@ -7966,7 +7966,7 @@ SC_FUNC void emit_parse_line(void)
 
   #if !defined NDEBUG
     /* verify that the opcode list is sorted (skip entry 1; it is reserved
-     * for a non-existant opcode)
+     * for a non-existent opcode)
      */
     { /* local */
       static int sorted=FALSE;
@@ -8115,7 +8115,7 @@ static void doreturn(void)
                 sub=sub->child;
                 assert(sym!=NULL && sub!=NULL);
                 /* ^^^ both arrays have the same dimensions (this was checked
-                 *     earlier) so the dependend should always be found
+                 *     earlier) so the dependent should always be found
                  */
               } /* if */
             } /* for */

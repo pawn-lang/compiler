@@ -104,7 +104,7 @@ static int cp_readline(FILE *fp,char *string,size_t size)
 /* cp_path() sets the directory where all codepage files must be found (if
  * the parameter to cp_set() specifies a full path, that is used instead).
  * The path is specified into two parts: root and directory; the full path
- * for the codepage direcory is just the concatenation of the two, with a
+ * for the codepage directory is just the concatenation of the two, with a
  * directory separator in between. The directory is given in two parts,
  * because often a program already retrieves its "home" directory and the
  * codepages are most conveniently stored in a subdirectory of this home
@@ -328,7 +328,7 @@ SC_FUNC cell get_utf8_char(const unsigned char *string,const unsigned char **end
       if (--follow==0) {
         /* encoding a character in more bytes than is strictly needed,
          * is not really valid UTF-8; we are strict here to increase
-         * the chance of heuristic dectection of non-UTF-8 text
+         * the chance of heuristic detection of non-UTF-8 text
          * (JAVA writes zero bytes as a 2-byte code UTF-8, which is invalid)
          */
         if (result<lowmark)

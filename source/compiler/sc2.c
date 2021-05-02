@@ -1814,7 +1814,7 @@ static int substpattern(unsigned char *line,size_t buffersize,char *pattern,char
             e=skippgroup(e);
           if (*e!='\0')
             e++;      /* skip non-alphapetic character (or closing quote of
-                       * a string, or the closing paranthese of a group) */
+                       * a string, or the closing parenthesis of a group) */
         } /* while */
         /* store the parameter (overrule any earlier) */
         free(args[arg]);
@@ -1952,7 +1952,7 @@ static void substallpatterns(unsigned char *line,int buffersize)
     /* if matching the operator "defined", skip it plus the symbol behind it */
     if (strncmp((char*)start,"defined",7)==0 && *(start+7)<=' ') {
       start+=7;         /* skip "defined" */
-      /* skip white space & parantheses */
+      /* skip white space & parentheses */
       while ((*start<=' ' && *start!='\0') || *start=='(')
         start++;
       /* skip the symbol behind it */
@@ -2679,7 +2679,7 @@ SC_FUNC void litinsert(cell value,int pos)
  *  Return current literal character and increase the pointer to point
  *  just behind this literal character.
  *
- *  Note: standard "escape sequences" are suported, but the backslash may be
+ *  Note: standard "escape sequences" are supported, but the backslash may be
  *        replaced by another character; the syntax '\ddd' is supported,
  *        but ddd must be decimal!
  */
@@ -3558,7 +3558,7 @@ SC_FUNC symbol *addvariable(const char *name,cell addr,int ident,int vclass,int 
 
 /*  getlabel
  *
- *  Returns te next internal label number. The global variable sc_labnum is
+ *  Returns the next internal label number. The global variable sc_labnum is
  *  initialized to zero.
  */
 SC_FUNC int getlabel(void)

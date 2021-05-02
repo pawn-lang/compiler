@@ -476,7 +476,7 @@ enum {
   teFUNCTN, /* Pawn function */
   teNATIVE, /* native function */
   teNONNEG, /* nonnegative integer */
-  /* for assigment to "lastst" only (see SC1.C) */
+  /* for assignment to "lastst" only (see SC1.C) */
   tEXPR,
   tENDLESS, /* endless loop */
   tTERMINAL, /* signalizes that the code after this statement is unreachable,
