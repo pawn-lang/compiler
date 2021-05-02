@@ -103,6 +103,8 @@ SC_VDEFINE int pc_retheap=0;                /* heap space (in bytes) to be manua
 SC_VDEFINE int pc_nestlevel=0;              /* number of active (open) compound statements */
 SC_VDEFINE unsigned int pc_attributes=0;    /* currently set attribute flags (for the "__pragma" operator) */
 SC_VDEFINE int pc_ispackedstr=FALSE;        /* true if the last tokenized string is packed */
+SC_VDEFINE int pc_isrecording=FALSE;        /* true if recording input */
+SC_VDEFINE char *pc_recstr=NULL;            /* recorded input */
 SC_VDEFINE int pc_loopcond=FALSE;           /* true if the current expression is a loop condition */
 SC_VDEFINE int pc_numloopvars=0;            /* number of variables used inside a loop condition */
 
@@ -113,8 +115,8 @@ SC_VDEFINE char *sc_tokens[] = {
   "__addressof", "assert", "*begin", "break", "case", "char", "const", "continue",
   "default", "defined", "do", "else", "__emit", "*end", "enum", "exit", "for",
   "forward", "goto", "if", "__nameof", "native", "new", "operator", "__pragma",
-  "public", "return", "sizeof", "sleep", "state", "static", "stock", "switch",
-  "tagof", "*then", "while",
+  "public", "return", "sizeof", "sleep", "state", "static", "__static_assert",
+  "__static_check", "stock", "switch", "tagof", "*then", "while",
   "#assert", "#define", "#else", "#elseif", "#emit", "#endif", "#endinput",
   "#endscript", "#error", "#file", "#if", "#include", "#line", "#pragma",
   "#tryinclude", "#undef", "#warning",

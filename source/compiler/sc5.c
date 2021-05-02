@@ -207,7 +207,7 @@ static char *warnmsg[] = {
 /*246*/  "multiplication overflow in enum element declaration (symbol \"%s\")\n",
 /*247*/  "use of operator \"%s\" on %s\n",
 /*248*/  "possible misuse of comma operator\n",
-/*249*/  "",
+/*249*/  "check failed: %s\n",
 /*250*/  "variable \"%s\" used in loop condition not modified in loop body\n",
 /*251*/  "none of the variables used in loop condition are modified in loop body\n"
 };

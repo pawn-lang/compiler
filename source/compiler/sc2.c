@@ -57,6 +57,8 @@ static int match(char *st,int end);
 static int alpha(char c);
 static void markloopvariable(symbol *sym,int usage);
 
+static void rectok(char *tokptr,int whitespace);
+
 #define SKIPMODE      1 /* bit field in "#if" stack */
 #define PARSEMODE     2 /* bit field in "#if" stack */
 #define HANDLED_ELSE  4 /* bit field in "#if" stack */
@@ -69,6 +71,7 @@ static short iflevel;   /* nesting level if #if/#else/#endif */
 static short skiplevel; /* level at which we started skipping (including nested #if .. #endif) */
 static unsigned char term_expr[] = "";
 static int listline=-1; /* "current line" for the list file */
+static short iskipwspace=FALSE; /* skipped whitespace(s) before the last read token? */
 
 
 /*  pushstk & popstk
@@ -2311,11 +2314,13 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
   *lexvalue=_lexval;
   *lexsym=_lexstr;
   _lexnewline=FALSE;
+  iskipwspace=FALSE;
   if (!freading)
     return 0;
 
   newline= (lptr==pline);       /* does lptr point to start of line buffer */
   while (*lptr<=' ') {          /* delete leading white space */
+    iskipwspace=TRUE;
     if (*lptr=='\0') {
       preprocess();             /* preprocess resets "lptr" */
       if (!freading)
@@ -2345,6 +2350,8 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
       _lextok=i;
       if (pc_docexpr)   /* optionally concatenate to documentation string */
         insert_autolist(*tokptr);
+      if (pc_isrecording)
+        rectok(*tokptr,iskipwspace);
       return _lextok;
     } /* if */
     i+=1;
@@ -2356,6 +2363,8 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
       errorset(sRESET,0); /* reset error flag (clear the "panic mode")*/
       if (pc_docexpr)   /* optionally concatenate to documentation string */
         insert_autolist(*tokptr);
+      if (pc_isrecording)
+        rectok(*tokptr,iskipwspace);
       return _lextok;
     } /* if */
     i+=1;
@@ -2473,6 +2482,28 @@ SC_FUNC int lex(cell *lexvalue,char **lexsym)
       free(docstr);
     } /* if */
   } /* if */
+  if (pc_isrecording) {
+    switch (_lextok) {
+    case tNUMBER:
+    case tRATIONAL:
+      _lexstr[0]='\0',strncat(_lexstr,(char *)starttoken,lptr-starttoken);
+      /* fallthrough */
+    case tSYMBOL:
+    case tLABEL:
+      rectok(_lexstr,iskipwspace);
+      if (_lextok==tLABEL)
+        rectok(":",FALSE);
+      break;
+    default:
+      if (_lextok<tFIRST) {
+        char tmp[2];
+        sprintf(tmp,"%c",_lextok);
+        rectok(tmp,iskipwspace);
+      } else {
+        rectok(sc_tokens[tSTRING-tFIRST],iskipwspace);
+      } /* if */
+    } /* if */
+  } /* if */
   return _lextok;
 }
 
@@ -2506,6 +2537,86 @@ SC_FUNC void lexclr(int clreol)
   if (clreol) {
     lptr=(unsigned char*)strchr((char*)pline,'\0');
     assert(lptr!=NULL);
+  } /* if */
+}
+
+static void rectok(char *tokptr,int whitespace)
+{
+  int toklen=strlen(tokptr);
+
+  if (pc_recstr==NULL) {
+    pc_recstr=(char *)malloc((toklen+1)*sizeof(char));
+    if (pc_recstr==NULL)
+      error(103);       /* insufficient memory */
+    memcpy(pc_recstr,tokptr,toklen*sizeof(char));
+    pc_recstr[toklen]='\0';
+  } else {
+    int oldlen=strlen(pc_recstr);
+    char *newresctr=realloc(pc_recstr,(oldlen+(whitespace ? 1 : 0)+toklen+1)*sizeof(char));
+    if (newresctr==NULL)
+      error(103);       /* insufficient memory */
+    pc_recstr=newresctr;
+    if (whitespace)
+      pc_recstr[oldlen]=' ';
+    memcpy(pc_recstr+(whitespace ? 1 : 0)+oldlen,tokptr,(toklen+1)*sizeof(char));
+  } /* if */
+}
+
+/* recstart
+ *
+ * (Re-)starts recording all tokens that lex() reads.
+ */
+SC_FUNC void recstart(void)
+{
+  pc_isrecording=TRUE;
+  if (_pushed) {
+    /* record the pushed token */
+    char tmp[2];
+    char *tokstr;
+    if (_lextok<tFIRST) {
+      sprintf(tmp,"%c",_lextok);
+      tokstr=tmp;
+    } else {
+      tokstr=sc_tokens[_lextok-tFIRST];
+    } /* if */
+    rectok(tokstr,iskipwspace);
+  } /* if */
+}
+
+/* recstop
+ *
+ * Stops recording tokens.
+ */
+SC_FUNC void recstop(void)
+{ 
+  if (sc_status!=statWRITE)
+    return;
+
+  assert(pc_recstr!=NULL);
+  pc_isrecording=FALSE;
+
+  /* if nothing was recorded, then we have a quick exit */
+  if (strempty(pc_recstr))
+    return;
+
+  /* if the last token was pushed, remove it from the recorded string */
+  if (_pushed && pc_recstr[0]!='\0') {
+    char tmp[2];
+    char *tokstr;
+    int pos;
+    if (_lextok<tFIRST) {
+      sprintf(tmp,"%c",_lextok);
+      tokstr=tmp;
+    } else {
+      tokstr=sc_tokens[_lextok-tFIRST];
+    } /* if */
+    pos=strlen(pc_recstr)-strlen(tokstr);
+    if (strcmp(&pc_recstr[pos],tokstr)==0) {
+      /* remove trailing whitespaces */
+      while (pc_recstr[--pos]<=' ')
+        ; /* nothing */
+      pc_recstr[pos+1]='\0';
+    } /* if */
   } /* if */
 }
 

@@ -195,6 +195,7 @@ static void dostate(void);
 static void addwhile(int *ptr);
 static void delwhile(void);
 static int *readwhile(void);
+static char *parsestringparam(int onlycheck,int *bck_litidx);
 static void dopragma(void);
 static void pragma_apply(symbol *sym);
 
@@ -842,6 +843,8 @@ cleanup:
   line_sym=NULL;
   free(pc_deprecate);
   pc_deprecate=NULL;
+  free(pc_recstr);
+  pc_recstr=NULL;
   hashtable_term(&symbol_cache_ht);
   delete_consttable(&tagname_tab);
   delete_consttable(&libname_tab);
@@ -1855,6 +1858,13 @@ static void parse(void)
     case tFORWARD:
       funcstub(FALSE);
       break;
+    case t__STATIC_ASSERT:
+    case t__STATIC_CHECK: {
+      int use_warning=(tok==t__STATIC_CHECK);
+      do_static_check(use_warning);
+      needtoken(';');
+      break;
+    } /* case */
     case '}':
       error(54);                /* unmatched closing brace */
       break;
@@ -8438,10 +8448,86 @@ static int *readwhile(void)
   } /* if */
 }
 
-static void dopragma(void)
+/* parsestringparam()
+ *
+ * Uses the standard string parsing mechanism to parse string parameters
+ * for operator '__pragma'.
+ */
+static char *parsestringparam(int onlycheck,int *bck_litidx)
 {
   int tok;
-  int bck_litidx,bck_packstr;
+  int bck_packstr;
+  cell val;
+  char *str;
+
+  assert(bck_litidx!=NULL);
+
+  /* back up 'litidx', so we can remove the string from the literal queue later */
+  *bck_litidx=litidx;
+  /* force the string to be packed by default, so it would be easier to process it */
+  bck_packstr=sc_packstr;
+  sc_packstr=TRUE;
+
+  /* read the string parameter */
+  tok=lex(&val,&str);
+  sc_packstr=bck_packstr;
+  if (tok!=tSTRING || !pc_ispackedstr) {
+    /* either not a string, or the user prepended "!" to the option string */
+    char tokstr[2];
+    if (tok==tSTRING) {
+      tok='!';
+      litidx=*bck_litidx;       /* remove the string from the literal queue */
+    } /* if */
+    if (tok<tFIRST) {
+      sprintf(tokstr,"%c",tok);
+      str=tokstr;
+    } else {
+      str=sc_tokens[tok-tFIRST];
+    } /* if */
+    error(1,sc_tokens[tSTRING-tFIRST],str);
+    return NULL;
+  } /* if */
+  assert(litidx>*bck_litidx);
+
+  if (onlycheck) {
+    /* skip the byte swapping and remove the string from the literal queue,
+     * as the caller only needed to check if the string was valid */
+    litidx=*bck_litidx;
+    return NULL;
+  } /* if */
+
+  /* swap the cell bytes if we're on a Little Endian platform */
+#if BYTE_ORDER==LITTLE_ENDIAN
+  { /* local */
+    char *bytes;
+    cell i=val;
+    do {
+      char t;
+      bytes=(char *)&litq[i++];
+      t=bytes[0], bytes[0]=bytes[sizeof(cell)-1], bytes[sizeof(cell)-1]=t;
+#if PAWN_CELL_SIZE>=32
+        t=bytes[1], bytes[1]=bytes[sizeof(cell)-2], bytes[sizeof(cell)-2]=t;
+#if PAWN_CELL_SIZE==64
+        t=bytes[2], bytes[2]=bytes[sizeof(cell)-3], bytes[sizeof(cell)-3]=t;
+        t=bytes[3], bytes[3]=bytes[sizeof(cell)-4], bytes[sizeof(cell)-4]=t;
+#endif // PAWN_CELL_SIZE==64
+#endif // PAWN_CELL_SIZE>=32
+    } while (bytes[0]!='\0' && bytes[1]!='\0'
+#if PAWN_CELL_SIZE>=32
+             && bytes[2]!='\0' && bytes[3]!='\0'
+#if PAWN_CELL_SIZE==64
+             && bytes[4]!='\0' && bytes[5]!='\0' && bytes[6]!='\0' && bytes[7]!='\0'
+#endif // PAWN_CELL_SIZE==64
+#endif // PAWN_CELL_SIZE>=32
+    ); /* do */
+  } /* local */
+#endif
+  return (char*)&litq[val];
+}
+
+static void dopragma(void)
+{
+  int bck_litidx;
   int i;
   cell val;
   char *str;
@@ -8454,60 +8540,13 @@ static void dopragma(void)
    * mechanism. This way, as a bonus, we'll also be able to use multi-line
    * strings and the stringization operator.
    */
-  /* first, back up litidx, so we can remove the string from the literal queue later */
-  bck_litidx=litidx;
-  /* also, force the string to be packed by default, so it would be easier to process it */
-  bck_packstr=sc_packstr;
-  sc_packstr=TRUE;
-
   do {
     /* read the option string */
-    tok=lex(&val,&str);
-    if (tok!=tSTRING || !pc_ispackedstr) {
-      /* either not a string, or the user prepended "!" to the option string */
-      char tokstr[2];
-      if (tok==tSTRING)
-        tok='!';
-      if (tok<tFIRST) {
-        sprintf(tokstr,"%c",tok);
-        str=tokstr;
-      } else {
-        str=sc_tokens[tok-tFIRST];
-      } /* if */
-      error(1,sc_tokens[tSTRING-tFIRST],str);
-      goto next;
-    } /* if */
-    assert(litidx>bck_litidx);
-
-    /* swap the cell bytes if we're on a Little Endian platform */
-#if BYTE_ORDER==LITTLE_ENDIAN
-    { /* local */
-      char *bytes;
-      i=(int)val;
-      do {
-        char t;
-        bytes=(char *)&litq[i++];
-        t=bytes[0], bytes[0]=bytes[sizeof(cell)-1], bytes[sizeof(cell)-1]=t;
-#if PAWN_CELL_SIZE>=32
-          t=bytes[1], bytes[1]=bytes[sizeof(cell)-2], bytes[sizeof(cell)-2]=t;
-#if PAWN_CELL_SIZE==64
-          t=bytes[2], bytes[2]=bytes[sizeof(cell)-3], bytes[sizeof(cell)-3]=t;
-          t=bytes[3], bytes[3]=bytes[sizeof(cell)-4], bytes[sizeof(cell)-4]=t;
-#endif // PAWN_CELL_SIZE==64
-#endif // PAWN_CELL_SIZE>=32
-      } while (bytes[0]!='\0' && bytes[1]!='\0'
-#if PAWN_CELL_SIZE>=32
-               && bytes[2]!='\0' && bytes[3]!='\0'
-#if PAWN_CELL_SIZE==64
-               && bytes[4]!='\0' && bytes[5]!='\0' && bytes[6]!='\0' && bytes[7]!='\0'
-#endif // PAWN_CELL_SIZE==64
-#endif // PAWN_CELL_SIZE>=32
-      ); /* do */
-    } /* local */
-#endif
-
+    str=parsestringparam(FALSE,&bck_litidx);
+    if (str==NULL)
+      continue;
+    
     /* split the option name from parameters */
-    str=(char*)&litq[val];
     for (i=0; str[i]!='\0' && str[i]!=' '; i++)
       /* nothing */;
     if (str[i]!='\0') {
@@ -8571,13 +8610,11 @@ unknown_pragma:
       error(207);       /* unknown #pragma */
     } /* if */
 
-  next:
     /* remove the string from the literal queue */
     litidx=bck_litidx;
   } while (matchtoken(','));
 
   needtoken(')');
-  sc_packstr=bck_packstr;
 }
 
 static void pragma_apply(symbol *sym)
@@ -8655,4 +8692,78 @@ SC_FUNC void pragma_nodestruct(symbol *sym)
 {
   if (sym->ident==iVARIABLE || sym->ident==iARRAY)
     sym->usage |= uNODESTRUCT;
+}
+
+/* do_static_check()
+ * Checks compile-time assertions and triggers an error/warning.
+ *
+ * The 'use_warning' parameter is set to TRUE if warnings are to be
+ * used instead of errors to notify assertion failures.
+ */
+SC_FUNC cell do_static_check(int use_warning)
+{
+  int already_staging,already_recording,optmsg;
+  int ident,index;
+  int bck_litidx,recstartpos;
+  cell cidx,val;
+  char *str;
+
+  optmsg=FALSE;
+  index=0;
+  cidx=0;
+
+  needtoken('(');
+  already_staging=stgget(&index,&cidx);
+  if (!already_staging) {
+    stgset(TRUE);       /* start stage-buffering */
+    errorset(sEXPRMARK,0);
+  } /* if */
+  already_recording=pc_isrecording;
+  if (!already_recording) {
+    recstart();
+    recstartpos=0;
+  } else {
+    recstop();  /* trim out the part of the current line that hasn't been read by lex() yet */
+    recstartpos=strlen(pc_recstr);
+    recstart(); /* restart recording */
+  } /* if */
+  ident=expression(&val,NULL,NULL,FALSE);
+  if (!already_recording || val==0)
+    recstop();
+  str=&pc_recstr[recstartpos];
+  if (recstartpos!=0 && pc_recstr[recstartpos]==' ')
+    str++;      /* skip leading whitespace */
+  if (ident!=iCONSTEXPR)
+    error(8);           /* must be constant expression */
+  stgdel(index,cidx);   /* scratch generated code */
+  if (!already_staging) {
+    errorset(sEXPRRELEASE,0);
+    stgset(FALSE);      /* stop stage-buffering */
+  } /* if */
+
+  /* read the optional message */
+  if (matchtoken(',')) {
+    if (!already_recording) {
+      free(pc_recstr);
+      pc_recstr=NULL;
+    } /* if */
+    optmsg=TRUE;
+    str=parsestringparam(val!=0,&bck_litidx);
+  } /* if */
+
+  if (val==0) {
+    int errnum=use_warning ? 249    /* check failed */
+                           : 110;   /* assertion failed */
+    error(errnum,(str!=NULL) ? str : "");
+    if (optmsg)
+      litidx=bck_litidx;        /* remove the string from the literal queue */
+    if (already_recording)
+      recstart();               /* restart recording */
+  } /* if */
+  if (!optmsg && !already_recording) {
+    free(pc_recstr);
+    pc_recstr=NULL;
+  } /* if */
+  needtoken(')');
+  return !!val;
 }

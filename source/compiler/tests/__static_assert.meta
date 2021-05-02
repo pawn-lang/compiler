@@ -1,0 +1,25 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+__static_assert.pwn(8) : warning 249: check failed: size of "TEST" is not 123
+__static_assert.pwn(14) : warning 249: check failed: size of "Test" array is not 123
+__static_assert.pwn(20) : warning 249: check failed: cval - 1
+__static_assert.pwn(21) : warning 249: check failed: test_string
+__static_assert.pwn(22) : warning 249: check failed: \ test \ " abc "
+__static_assert.pwn(23) : warning 249: check failed: string concatenation test
+__static_assert.pwn(24) : warning 249: check failed: stringization test
+__static_assert.pwn(27) : warning 249: check failed: array size must be even
+__static_assert.pwn(32) : warning 249: check failed: cval != cval
+__static_assert.pwn(32) : warning 249: check failed: 1 && __static_check(cval != cval) && false
+__static_assert.pwn(34) : warning 249: check failed: inner check
+__static_assert.pwn(35) : warning 249: check failed: outer check
+__static_assert.pwn(37 -- 38) : warning 249: check failed: (0 + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9) * 0
+__static_assert.pwn(40) : error 008: must be a constant expression; assumed zero
+__static_assert.pwn(41) : error 001: expected token: "-string-", but found "-identifier-"
+__static_assert.pwn(42) : error 001: expected token: "-string-", but found "!"
+__static_assert.pwn(43) : error 001: expected token: "-string-", but found "!"
+__static_assert.pwn(49) : fatal error 110: assertion failed: this is zero
+
+Compilation aborted.
+"""
+}

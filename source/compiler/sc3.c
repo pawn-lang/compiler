@@ -1657,6 +1657,16 @@ static int hier2(value *lval)
     } /* if */
     return FALSE;
   } /* case */
+  case t__STATIC_ASSERT:
+  case t__STATIC_CHECK: {
+    int use_warning=(tok==t__STATIC_CHECK);
+    clear_value(lval);
+    lval->ident=iCONSTEXPR;
+    lval->constval=do_static_check(use_warning);
+    lval->tag=BOOLTAG;
+    pc_sideeffect=TRUE;
+    return FALSE;
+  } /* case */
   case t__EMIT:
     paranthese=matchtoken('(');
     emit_flags |= efEXPR;
