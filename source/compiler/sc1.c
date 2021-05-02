@@ -4039,8 +4039,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int fsto
   } /* if */
   attachstatelist(sym,state_id);
   /* so it is not a prototype, proceed */
-  if (((sym->usage & uDECLPUBLIC)!=0 && !fpublic) || ((sym->usage & uDECLSTATIC)!=0 && !fstatic)
-      || ((sym->usage & uSTOCK)!=0 && !fstock))
+  if (((sym->usage & uDECLPUBLIC)!=0 && !fpublic) || ((sym->usage & uDECLSTATIC)!=0 && !fstatic))
     error(25);                  /* function heading differs from prototype */
   /* if this is a function that is not referred to (this can only be detected
    * in the second stage), shut code generation off */
