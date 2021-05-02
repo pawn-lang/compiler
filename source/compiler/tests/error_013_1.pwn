@@ -1,0 +1,2 @@
+forward main();
+main(){}
