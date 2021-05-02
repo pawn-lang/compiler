@@ -2383,7 +2383,7 @@ static int nesting=0;
               nest_stkusage++;
             } /* if */
           } else if (lval.ident==iCONSTEXPR || lval.ident==iEXPRESSION
-                     || lval.ident==iARRAYCHAR)
+                     || (lval.ident==iARRAYCELL && !lvalue) || lval.ident==iARRAYCHAR)
           {
             /* fetch value if needed */
             if (lval.ident==iARRAYCHAR)
