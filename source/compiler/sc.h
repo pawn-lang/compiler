@@ -229,6 +229,16 @@ typedef struct s_symbol {
 #define uRETNONE    0x010
 /* uASSIGNED indicates that a value assigned to the variable is not used yet */
 #define uASSIGNED   0x080
+/* uLOOPVAR is set when a variable is read inside of a loop condition. This is
+ * used to detect situations when a variable is used in a loop condition, but
+ * not modified inside of a loop body. */
+#define uLOOPVAR    0x1000
+/* uNOLOOPVAR is set when a variable is
+ *   * modified inside of a loop condition before being read, or
+ *   * used in an enclosing loop and should be excluded from checks in an inner loop,
+ * so the compiler would know it shouldn't set the uLOOPVAR flag when the variable
+ * is read inside a loop condition */
+#define uNOLOOPVAR  0x2000
 
 #define flagDEPRECATED 0x01  /* symbol is deprecated (avoid use) */
 #define flagNAKED     0x10  /* function is naked */
@@ -300,15 +310,17 @@ typedef struct s_valuepair {
   long second;
 } valuepair;
 
-/* struct "assigninfo" is used to synchronize the status of assignments that
- * were made in multiple "if" and "switch" branches, so the compiler could
- * detect unused assignments in all of those branches, not only the last one */
+/* struct "symstate" is used to:
+ * * synchronize the status of assignments between all "if" branches or "switch"
+ *   cases, so the compiler could detect unused assignments in all of those
+ *   branches/cases, not only in the last one;
+ * * back up the "uNOLOOPVAR" flag when scanning for variables that were used
+ *   in a loop exit condition, but weren't modified inside the loop body */
 typedef struct s_assigninfo {
-  int unused;       /* true if the variable has an unused value assigned to it
-                     * in one of the branches" */
   int lnumber;      /* line number of the first unused assignment made in one of
                      * the branches (used for error messages) */
-} assigninfo;
+  short usage;      /* usage flags to memoize (currently only uASSIGNED) */
+} symstate;
 
 /* macros for code generation */
 #define opcodes(n)      ((n)*sizeof(cell))      /* opcode size */
@@ -733,8 +745,8 @@ SC_FUNC int refer_symbol(symbol *entry,symbol *bywhom);
 SC_FUNC void markusage(symbol *sym,int usage);
 SC_FUNC void markinitialized(symbol *sym,int assignment);
 SC_FUNC void clearassignments(int fromlevel);
-SC_FUNC void memoizeassignments(int fromlevel,assigninfo **assignments);
-SC_FUNC void restoreassignments(int fromlevel,assigninfo *assignments);
+SC_FUNC void memoizeassignments(int fromlevel,symstate **assignments);
+SC_FUNC void restoreassignments(int fromlevel,symstate *assignments);
 SC_FUNC void rename_symbol(symbol *sym,const char *newname);
 SC_FUNC symbol *findglb(const char *name,int filter);
 SC_FUNC symbol *findloc(const char *name);
@@ -1009,6 +1021,8 @@ SC_VDECL int pc_retheap;      /* heap space (in bytes) to be manually freed when
 SC_VDECL int pc_nestlevel;    /* number of active (open) compound statements */
 SC_VDECL unsigned int pc_attributes;/* currently set attribute flags (for the "__pragma" operator) */
 SC_VDECL int pc_ispackedstr;  /* true if the last tokenized string is packed */
+SC_VDECL int pc_loopcond;     /* equals to 'tFOR', 'tWHILE' or 'tDO' if the current expression is a loop condition, zero otherwise */
+SC_VDECL int pc_numloopvars;  /* number of variables used inside a loop condition */
 
 SC_VDECL char *sc_tokens[];
 

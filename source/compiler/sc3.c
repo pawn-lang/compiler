@@ -1804,6 +1804,12 @@ restart:
         error(51);      /* invalid subscript, must use [ ] */
         invsubscript=TRUE;
       } /* if */
+      if (pc_loopcond!=0) {
+        /* stop counting variables that were used in loop condition,
+         * otherwise warnings 250 and 251 may be inaccurate */
+        pc_loopcond=0;
+        pc_numloopvars=0;
+      } /* if */
       if (invsubscript) {
         if (sym!=NULL && sym->ident!=iFUNCTN)
           sym->usage |= uREAD;  /* avoid the "symbol is never used" warning */
@@ -2229,7 +2235,13 @@ static int nesting=0;
     /* functions cannot be called at global scope */
     error(29); /* invalid expression, assumed zero */
     return;
-  }
+  } /* if */
+  if (pc_loopcond!=0) {
+    /* stop counting variables that were used in loop condition,
+     * otherwise warnings 249 and 250 may be inaccurate */
+    pc_loopcond=0;
+    pc_numloopvars=0;
+  } /* if */
   /* check whether this is a function that returns an array */
   symret=sym->child;
   assert(symret==NULL || symret->ident==iREFARRAY);
@@ -2424,9 +2436,9 @@ static int nesting=0;
           check_tagmismatch_multiple(arg[argidx].tags,arg[argidx].numtags,lval.tag,-1);
           if (lval.tag!=0)
             append_constval(&taglst,arg[argidx].name,lval.tag,0);
-          argidx++;               /* argument done */
-          if (lval.sym!=NULL)
+          if (lval.sym!=NULL && (arg[argidx].usage & uCONST)==0)
             markusage(lval.sym,uWRITTEN);
+          argidx++;               /* argument done */
           break;
         case iREFARRAY:
           if (lval.ident!=iARRAY && lval.ident!=iREFARRAY

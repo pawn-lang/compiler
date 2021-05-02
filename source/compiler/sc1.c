@@ -116,6 +116,8 @@ static void make_report(symbol *root,FILE *log,char *sourcefile);
 static void reduce_referrers(symbol *root);
 static long max_stacksize(symbol *root,int *recursion);
 static int testsymbols(symbol *root,int level,int testlabs,int testconst);
+static void scanloopvariables(symstate **loopvars,int dowhile);
+static void testloopvariables(symstate *loopvars,int dowhile,int line);
 static void destructsymbols(symbol *root,int level);
 static constvalue *find_constval_byval(constvalue_root *table,cell val);
 static symbol *fetchlab(char *name);
@@ -919,6 +921,7 @@ static void resetglobals(void)
   pc_naked=FALSE;
   pc_retexpr=FALSE;
   pc_attributes=0;
+  pc_loopcond=0;
   emit_flags=0;
   emit_stgbuf_idx=-1;
 }
@@ -5173,6 +5176,112 @@ static int testsymbols(symbol *root,int level,int testlabs,int testconst)
   return entry;
 }
 
+static void scanloopvariables(symstate **loopvars,int dowhile)
+{
+  symbol *start,*sym;
+  int num;
+
+  /* error messages are only printed on the "writing" pass,
+   * so if we are not writing yet, then we have a quick exit */
+  if (sc_status!=statWRITE)
+    return;
+
+  /* if there's no enclosing loop (only one active loop entry, which is the
+   * current loop), and the current loop is not 'do-while', then we don't need
+   * to memoize usage flags for local variables, so we have an early exit */
+  if (wqptr-wqSIZE==wq && !dowhile)
+    return;
+
+  /* skip labels */
+  start=&loctab;
+  while ((start=start->next)!=NULL && start->ident==iLABEL)
+    /* nothing */;
+  /* if there are no other local symbols, we have an early exit */
+  if (start==NULL)
+    return;
+
+  /* count the number of local symbols */
+  for (num=0,sym=start; sym!=NULL; num++,sym=sym->next)
+    /* nothing */;
+
+  assert(*loopvars==NULL);
+  assert(num!=0);
+  *loopvars=(symstate *)calloc((size_t)num,sizeof(symstate));
+  if (*loopvars==NULL)
+    error(103); /* insufficient memory */
+
+  for (num=0,sym=start; sym!=NULL; num++,sym=sym->next) {
+    /* If the variable already has the uLOOPVAR flag set (from being used
+     * in an enclosing loop), we have to set the uNOLOOPVAR to exclude it
+     * from checks in the current loop, ... */
+    if ((sym->ident==iVARIABLE || sym->ident==iREFERENCE)
+        && (dowhile || (sym->usage & uLOOPVAR)!=0)) {
+      /* ... but it might be already set from an enclosing loop as well, so we
+       * have to temporarily store it in "loopvars[num]" first. Also, if this is
+       * a 'do-while' loop, we need to memoize and unset the 'uWRITTEN' flag, so
+       * later when analyzing the loop condition (which comes after the loop
+       * body) we'll be able to determine if the variable was modified inside
+       * the loop body by checking if the 'uWRITTEN' flag is set. */
+      (*loopvars)[num].usage |= (sym->usage & (uNOLOOPVAR | uWRITTEN));
+      sym->usage &= ~uWRITTEN;
+      if (wqptr-wqSIZE!=wq)
+        sym->usage |= uNOLOOPVAR;
+    } /* if */
+  } /* if */
+}
+
+static void testloopvariables(symstate *loopvars,int dowhile,int line)
+{
+  symbol *start,*sym;
+  int num,warnnum=0;
+
+  /* the error messages are only printed on the "writing" pass,
+   * so if we are not writing yet, then we have a quick exit */
+  if (sc_status!=statWRITE)
+    return;
+
+  /* skip labels */
+  start=&loctab;
+  while ((start=start->next)!=NULL && start->ident==iLABEL)
+    /* nothing */;
+
+  /* decrement pc_numloopvars by 1 for each variable that wasn't modified
+   * inside the loop body; if pc_numloopvars gets zeroed after this, it would
+   * mean none of the variables used inside the loop condition were modified */
+  if (pc_numloopvars!=0) {
+    warnnum=(pc_numloopvars==1) ? 250 : 251;
+    for (sym=start; sym!=NULL; sym=sym->next)
+      if ((sym->ident==iVARIABLE || sym->ident==iREFERENCE)
+          && (sym->usage & (uLOOPVAR | uNOLOOPVAR))==uLOOPVAR
+          && (!dowhile || (sym->usage & uWRITTEN)==0))
+        pc_numloopvars--;
+    if (pc_numloopvars==0 && warnnum==251) {
+      errorset(sSETPOS,line);
+      error(251); /* none of the variables used in loop condition are modified in loop body */
+      errorset(sSETPOS,-1);
+    } /* if */
+  } /* if */
+
+  for (num=0,sym=start; sym!=NULL; num++,sym=sym->next) {
+    if (sym->ident==iVARIABLE || sym->ident==iREFERENCE) {
+      if ((sym->usage & (uLOOPVAR | uNOLOOPVAR))==uLOOPVAR) {
+        sym->usage &= ~uLOOPVAR;
+        /* warn only if none of the variables used inside the loop condition
+         * were modified inside the loop body */
+        if (pc_numloopvars==0 && warnnum==250) {
+          errorset(sSETPOS,line);
+          error(250,sym->name); /* variable used in loop condition not modified in loop body */
+          errorset(sSETPOS,-1);
+        } /* if */
+      } /* if */
+      sym->usage &= ~uNOLOOPVAR;
+      if (loopvars!=NULL)
+        sym->usage |= loopvars[num].usage;
+    } /* if */
+  } /* for */
+  free(loopvars);
+}
+
 static cell calc_array_datasize(symbol *sym, cell *offset)
 {
   cell length;
@@ -5883,7 +5992,7 @@ static int doif(void)
   int ifindent;
   int lastst_true;
   int returnst=tIF;
-  assigninfo *assignments=NULL;
+  symstate *assignments=NULL;
 
   lastst=0;                     /* reset the last statement */
   ifindent=stmtindent;          /* save the indent of the "if" instruction */
@@ -5924,9 +6033,13 @@ static int doif(void)
 static int dowhile(void)
 {
   int wq[wqSIZE];               /* allocate local queue */
-  int save_endlessloop,retcode;
+  int save_endlessloop,save_numloopvars,retcode;
+  int loopline=fline;
+  symstate *loopvars=NULL;
 
   save_endlessloop=endlessloop;
+  save_numloopvars=pc_numloopvars;
+  pc_numloopvars=0;
   addwhile(wq);                 /* add entry to queue for "break" */
   setlabel(wq[wqLOOP]);         /* loop label */
   /* The debugger uses the "break" opcode to be able to "break" out of
@@ -5934,18 +6047,23 @@ static int dowhile(void)
    * tiniest loop, set it below the top of the loop
    */
   setline(TRUE);
+  scanloopvariables(&loopvars,FALSE);
   pc_nestlevel++; /* temporarily increase the "compound statement" nesting level,
                    * so any assignments made inside the loop control expression
                    * could be cleaned up later */
+  pc_loopcond=tWHILE;
   endlessloop=test(wq[wqEXIT],TEST_DO,FALSE);/* branch to wq[wqEXIT] if false */
+  pc_loopcond=0;
   pc_nestlevel--;
   statement(NULL,FALSE);        /* if so, do a statement */
   clearassignments(pc_nestlevel+1);
+  testloopvariables(loopvars,FALSE,loopline);
   jumplabel(wq[wqLOOP]);        /* and loop to "while" start */
   setlabel(wq[wqEXIT]);         /* exit label */
   delwhile();                   /* delete queue entry */
 
   retcode=endlessloop ? tENDLESS : tWHILE;
+  pc_numloopvars=save_numloopvars;
   endlessloop=save_endlessloop;
   return retcode;
 }
@@ -5957,12 +6075,17 @@ static int dowhile(void)
 static int dodo(void)
 {
   int wq[wqSIZE],top;
-  int save_endlessloop,retcode;
+  int save_endlessloop,save_numloopvars,retcode;
+  int loopline=fline;
+  symstate *loopvars=NULL;
 
   save_endlessloop=endlessloop;
+  save_numloopvars=pc_numloopvars;
+  pc_numloopvars=0;
   addwhile(wq);           /* see "dowhile" for more info */
   top=getlabel();         /* make a label first */
   setlabel(top);          /* loop label */
+  scanloopvariables(&loopvars,TRUE);
   statement(NULL,FALSE);
   needtoken(tWHILE);
   setlabel(wq[wqLOOP]);   /* "continue" always jumps to WQLOOP. */
@@ -5970,15 +6093,19 @@ static int dodo(void)
   pc_nestlevel++; /* temporarily increase the "compound statement" nesting level,
                    * so any assignments made inside the loop control expression
                    * could be cleaned up later */
+  pc_loopcond=tDO;
   endlessloop=test(wq[wqEXIT],TEST_OPT,FALSE);
+  pc_loopcond=0;
   pc_nestlevel--;
   clearassignments(pc_nestlevel+1);
+  testloopvariables(loopvars,TRUE,loopline);
   jumplabel(top);
   setlabel(wq[wqEXIT]);
   delwhile();
   needtoken(tTERM);
 
   retcode=endlessloop ? tENDLESS : tDO;
+  pc_numloopvars=save_numloopvars;
   endlessloop=save_endlessloop;
   return retcode;
 }
@@ -5987,13 +6114,17 @@ static int dofor(void)
 {
   int wq[wqSIZE],skiplab;
   cell save_decl;
-  int save_nestlevel,save_endlessloop;
+  int save_nestlevel,save_endlessloop,save_numloopvars;
   int index,endtok;
   int *ptr;
+  int loopline=fline;
+  symstate *loopvars=NULL;
 
   save_decl=declared;
   save_nestlevel=pc_nestlevel;
   save_endlessloop=endlessloop;
+  save_numloopvars=pc_numloopvars;
+  pc_numloopvars=0;
 
   addwhile(wq);
   skiplab=getlabel();
@@ -6026,6 +6157,7 @@ static int dofor(void)
   jumplabel(skiplab);               /* skip expression 3 1st time */
   setlabel(wq[wqLOOP]);             /* "continue" goes to this label: expr3 */
   setline(TRUE);
+  scanloopvariables(&loopvars,FALSE);
   /* Expressions 2 and 3 are reversed in the generated code: expression 3
    * precedes expression 2. When parsing, the code is buffered and marks for
    * the start of each expression are insterted in the buffer.
@@ -6040,7 +6172,9 @@ static int dofor(void)
   if (matchtoken(';')) {
     endlessloop=1;
   } else {
+    pc_loopcond=tFOR;
     endlessloop=test(wq[wqEXIT],TEST_PLAIN,FALSE);/* expression 2 (jump to wq[wqEXIT] if false) */
+    pc_loopcond=0;
     needtoken(';');
   } /* if */
   stgmark((char)(sEXPRSTART+1));    /* mark start of 3th expression in stage */
@@ -6053,6 +6187,7 @@ static int dofor(void)
   stgset(FALSE);                    /* stop staging */
   statement(NULL,FALSE);
   clearassignments(save_nestlevel+1);
+  testloopvariables(loopvars,FALSE,loopline);
   jumplabel(wq[wqLOOP]);
   setlabel(wq[wqEXIT]);
   delwhile();
@@ -6071,6 +6206,7 @@ static int dofor(void)
   pc_nestlevel=save_nestlevel;    /* reset 'compound statement' nesting level */
 
   index=endlessloop ? tENDLESS : tFOR;
+  pc_numloopvars=save_numloopvars;
   endlessloop=save_endlessloop;
   return index;
 }
@@ -6103,7 +6239,7 @@ static int doswitch(void)
   constvalue_root caselist = { NULL, NULL};   /* case list starts empty */
   constvalue *cse,*csp,*newval;
   char labelname[sNAMEMAX+1];
-  assigninfo *assignments=NULL;
+  symstate *assignments=NULL;
 
   endtok= matchtoken('(') ? ')' : tDO;
   ident=doexpr(TRUE,FALSE,FALSE,FALSE,&swtag,NULL,TRUE,NULL);   /* evaluate switch expression */
