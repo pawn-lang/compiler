@@ -1768,8 +1768,11 @@ static int hier2(value *lval)
             check_tagmismatch(swtag,csetag,TRUE,-1);
             while (++val<=end) {
               casecount++;
-              csp=newval;
-              cse=newval->next;
+              /* find the new insertion point */
+              for (csp=NULL, cse=caselist.first;
+                   cse!=NULL && cse->value<val;
+                   csp=cse, cse=cse->next)
+                /* nothing */;
               if (cse!=NULL && cse->value==val)
                 error(40,val);          /* duplicate "case" label */
               assert(csp!=NULL && csp->next==cse);
