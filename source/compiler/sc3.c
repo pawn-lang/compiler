@@ -1749,6 +1749,7 @@ static int hier2(value *lval)
               error(8);                 /* must be constant expression */
             if (end<=val)
               error(50);                /* invalid range */
+            check_tagmismatch(swtag,csetag,TRUE,-1);
             while (++val<=end) {
               casecount++;
               csp=newval;
