@@ -1682,6 +1682,7 @@ static int hier2(value *lval)
     swdefault=FALSE;
     firstcase=TRUE;
     do {
+      int got_cseval=FALSE;     /* true if the case value gets misinterpreted by lex() as a label */
       needtoken(tTERM);
       ident=lex(&val,&st);
       if (ident==')')
@@ -1695,15 +1696,29 @@ static int hier2(value *lval)
           error(16);            /* multiple defaults in switch */
         swdefault=TRUE;
       } else {
-        if (ident!=tLABEL)
+        if (ident!=tLABEL) {
           lexpush();
-        else
-          error(220);           /* expression with tag override must appear between parentheses */
+        } else {
+          symbol *csesym=findloc(st);
+          if (csesym==NULL)
+            csesym=findglb(st,sGLOBAL);
+          if (csesym!=NULL) {
+            markusage(csesym,uREAD);
+            ident=csesym->ident;
+            val=csesym->addr;
+            csetag=csesym->tag;
+            got_cseval=TRUE;
+          } else {
+            error(220);         /* expression with tag override must appear between parentheses */
+          } /* if */
+        } /* if */
         if (swdefault!=FALSE)
           error(15);            /* "default" case must be last in switch statement */
         do {
-          stgget(&index,&cidx); /* mark position in code generator */
-          ident=expression(&val,&csetag,NULL,TRUE);
+          if (!got_cseval) {
+            stgget(&index,&cidx);   /* mark position in code generator */
+            ident=expression(&val,&csetag,NULL,TRUE);
+          } /* if */
           /* if the next token is ";" or ")", then this must be an implicit default case */
           if (matchtoken(';') || matchtoken(')')) {
             lexpush();
@@ -1715,7 +1730,8 @@ static int hier2(value *lval)
             goto skip_impl_default;
           } /* if */
           casecount++;
-          stgdel(index,cidx);   /* scratch generated code */
+          if (!got_cseval)
+            stgdel(index,cidx); /* scratch generated code */
           if (ident!=iCONSTEXPR)
             error(8);           /* must be constant expression */
           check_tagmismatch(swtag,csetag,TRUE,-1);
@@ -1740,7 +1756,7 @@ static int hier2(value *lval)
           newval=insert_constval(csp,cse,itoh(lbl_case),val,0);
           if (csp==NULL)
             caselist.first=newval;
-          if (matchtoken(tDBLDOT)) {
+          if (!got_cseval && matchtoken(tDBLDOT)) {
             cell end;
             stgget(&index,&cidx);       /* mark position in code generator */
             ident=expression(&end,&csetag,NULL,TRUE);
@@ -1761,7 +1777,8 @@ static int hier2(value *lval)
             } /* while */
           } /* if */
         } while (matchtoken(','));
-        needtoken(':');                 /* ':' ends the case */
+        if (!got_cseval)
+          needtoken(':');               /* ':' ends the case */
       } /* if */
       sc_allowtags=bck_allowtags;       /* reset */
       ident=expression(NULL,&exprtag,NULL,FALSE);
