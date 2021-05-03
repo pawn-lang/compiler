@@ -1702,9 +1702,19 @@ static int hier2(value *lval)
         if (swdefault!=FALSE)
           error(15);            /* "default" case must be last in switch statement */
         do {
-          casecount++;
           stgget(&index,&cidx); /* mark position in code generator */
           ident=expression(&val,&csetag,NULL,TRUE);
+          /* if the next token is ";" or ")", then this must be an implicit default case */
+          if (matchtoken(';') || matchtoken(')')) {
+            lexpush();
+            if (swdefault!=FALSE)
+              error(16);        /* multiple defaults in switch */
+            swdefault=TRUE;
+            exprtag=csetag;
+            sc_allowtags=bck_allowtags; /* reset */
+            goto skip_impl_default;
+          } /* if */
+          casecount++;
           stgdel(index,cidx);   /* scratch generated code */
           if (ident!=iCONSTEXPR)
             error(8);           /* must be constant expression */
@@ -1754,6 +1764,7 @@ static int hier2(value *lval)
       } /* if */
       sc_allowtags=bck_allowtags;       /* reset */
       ident=expression(NULL,&exprtag,NULL,FALSE);
+    skip_impl_default:
       if (ident==iARRAY || ident==iREFARRAY)
         error(33,"-unknown-");          /* array must be indexed */
       if (firstcase) {
