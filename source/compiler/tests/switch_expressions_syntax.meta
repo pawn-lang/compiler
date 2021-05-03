@@ -1,0 +1,16 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+switch_expressions_syntax.pwn(7 -- 8) : error 008: must be a constant expression; assumed zero
+switch_expressions_syntax.pwn(15 -- 17) : error 015: "default" case must be the last case in switch statement
+switch_expressions_syntax.pwn(23 -- 25) : error 016: multiple defaults in "switch"
+switch_expressions_syntax.pwn(31 -- 32) : error 001: expected token: ";", but found "-integer value-"
+switch_expressions_syntax.pwn(31 -- 34) : error 001: expected token: ";", but found "-label-"
+switch_expressions_syntax.pwn(40 -- 41) : error 001: expected token: ":", but found "-integer value-"
+switch_expressions_syntax.pwn(40 -- 43) : error 029: invalid expression, assumed zero
+switch_expressions_syntax.pwn(49 -- 51) : error 040: duplicate "case" label (value 1)
+switch_expressions_syntax.pwn(58 -- 59) : error 050: invalid range
+switch_expressions_syntax.pwn(66 -- 68) : error 040: duplicate "case" label (value 1)
+switch_expressions_syntax.pwn(66 -- 69) : error 040: duplicate "case" label (value 3)
+"""
+}
