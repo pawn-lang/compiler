@@ -17,7 +17,7 @@ The discount for 10 items is 10%
 The discount for 11 items is 15%
 The discount for 20 items is 15%
 The discount for 50 items is 15%
-switch_expressions.amx returns 0
+switch_expressions_runtime.amx returns 0
   """,
   'should_fail': False
 }
