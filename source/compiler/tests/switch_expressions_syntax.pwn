@@ -71,6 +71,35 @@ test_OverlayingRanges(value)
 	);
 }
 
+test_TagMismatchCase(value)
+{
+	const Tag:TaggedConst = Tag:1;
+	return switch (Tag:value;
+		0:                0; // warning 213: tag mismatch: expected tag "Tag", but found none ("_")
+		TaggedConst:      1;
+		(Tag:2)..3:       2; // warning 213: tag mismatch: expected tag "Tag", but found none ("_")
+		4..(Tag:5):       3; // warning 213: tag mismatch: expected tag "Tag", but found none ("_")
+		(Tag:6)..(Tag:7): 4;
+		_:                5
+	);
+}
+
+Tag:test_TagMismatchExpr(value)
+{
+	return switch (value;
+		0: Tag:0;
+		1: 1; // warning 213: tag mismatch: expected tag "Tag", but found none ("_")
+		_: 2  // warning 213: tag mismatch: expected tag "Tag", but found none ("_")
+	);
+}
+
+test_MissingDefault(value)
+{
+	return switch (value;
+		0: 0
+	); // error 095: switch expression must contain a "default" case
+}
+
 main()
 {
 	test_NonConstCaseValue(0);
@@ -81,4 +110,7 @@ main()
 	test_DuplicateCases(0);
 	test_InvalidRange(0);
 	test_OverlayingRanges(0);
+	test_TagMismatchCase(0);
+	test_TagMismatchExpr(0);
+	test_MissingDefault(0);
 }

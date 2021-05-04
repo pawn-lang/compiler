@@ -12,5 +12,11 @@ switch_expressions_syntax.pwn(49 -- 51) : error 040: duplicate "case" label (val
 switch_expressions_syntax.pwn(58 -- 59) : error 050: invalid range
 switch_expressions_syntax.pwn(66 -- 68) : error 040: duplicate "case" label (value 1)
 switch_expressions_syntax.pwn(66 -- 69) : error 040: duplicate "case" label (value 3)
+switch_expressions_syntax.pwn(77 -- 78) : warning 213: tag mismatch: expected tag "Tag", but found none ("_")
+switch_expressions_syntax.pwn(77 -- 80) : warning 213: tag mismatch: expected tag "Tag", but found none ("_")
+switch_expressions_syntax.pwn(77 -- 81) : warning 213: tag mismatch: expected tag "Tag", but found none ("_")
+switch_expressions_syntax.pwn(89 -- 91) : warning 213: tag mismatch: expected tag "Tag", but found none ("_")
+switch_expressions_syntax.pwn(89 -- 93) : warning 213: tag mismatch: expected tag "Tag", but found none ("_")
+switch_expressions_syntax.pwn(98 -- 100) : error 095: switch expression must contain a "default" case
 """
 }
