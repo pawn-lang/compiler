@@ -8552,7 +8552,7 @@ static void dopragma(void)
     str=parsestringparam(FALSE,&bck_litidx);
     if (str==NULL)
       continue;
-    
+
     /* split the option name from parameters */
     for (i=0; str[i]!='\0' && str[i]!=' '; i++)
       /* nothing */;

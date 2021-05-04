@@ -2588,7 +2588,7 @@ SC_FUNC void recstart(void)
  * Stops recording tokens.
  */
 SC_FUNC void recstop(void)
-{ 
+{
   if (sc_status!=statWRITE)
     return;
 
