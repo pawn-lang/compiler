@@ -548,7 +548,7 @@ static int plnge1(int (*hier)(value *lval),value *lval)
 {
   int lvalue,org_index;
   cell org_cidx;
-  
+
   org_index=lval_stgidx;
   org_cidx=lval_cidx;
   stgget(&lval_stgidx,&lval_cidx);  /* mark position in code generator */
@@ -571,7 +571,7 @@ static void plnge2(void (*oper)(void),
 {
   int org_index;
   cell org_cidx;
-  
+
   org_index=lval_stgidx;
   org_cidx=lval_cidx;
   stgget(&lval_stgidx,&lval_cidx);  /* mark position in code generator */
