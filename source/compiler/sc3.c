@@ -650,11 +650,11 @@ static void plnge2(void (*oper)(void),
     } else {
       if (lval1->tag==BOOLTAG && lval2->tag==BOOLTAG
           && oper!=ob_or && oper!=ob_xor && oper!=ob_and && oper!=ob_eq && oper!=ob_ne) {
-        static const void (*opers[])(void) = {
+        static void (*const opers[])(void) = {
           os_mult,os_div,os_mod,ob_add,ob_sub,ob_sal,
           os_sar,ou_sar,os_le,os_ge,os_lt,os_gt
         };
-        static const char* opnames[] = {
+        static const char *opnames[] = {
           "*","/","%","+","-","<<",
           ">>",">>>","<=",">=","<",">"
         };
