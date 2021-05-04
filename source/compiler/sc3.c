@@ -1807,6 +1807,7 @@ static int hier2(value *lval)
     setlabel(lbl_table);
     assert(swdefault==FALSE || swdefault==TRUE);
     if (swdefault==FALSE) {
+      error(95);    /* switch expression must contain a "default" case */
       /* store lbl_exit as the "none-matched" label in the switch table */
       strcpy(labelname,itoh(lbl_exit));
     } else {

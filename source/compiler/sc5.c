@@ -133,7 +133,8 @@ static char *errmsg[] = {
 /*091*/  "ambiguous constant; tag override is required (symbol \"%s\")\n",
 /*092*/  "functions may not return arrays of unknown size (symbol \"%s\")\n",
 /*093*/  "\"__addressof\" operator is invalid in preprocessor expressions\n",
-/*094*/  "division by zero\n"
+/*094*/  "division by zero\n",
+/*095*/  "switch expression must contain a \"default\" case\n"
 };
 
 static char *fatalmsg[] = {
