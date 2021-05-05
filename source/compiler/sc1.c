@@ -3891,13 +3891,37 @@ static void funcstub(int fnative)
 
   needtoken(tTERM);
 
-  /* attach the array to the function symbol */
   if (numdim>0) {
-    assert(sym!=NULL);
-    sub=addvariable(symbolname,0,iARRAY,sGLOBAL,tag,dim,numdim,idxtag,0);
-    sub->parent=sym;
-    if (sym)
-      sym->child=sub;
+    if (sym->child==NULL) {
+      /* attach the array to the function symbol */
+      assert(sym!=NULL);
+      assert(curfunc==NULL);
+      curfunc=sym;
+      sub=addvariable(symbolname,0,iREFARRAY,sGLOBAL,tag,dim,numdim,idxtag,0);
+      curfunc=NULL;
+      sub->parent=sym;
+      if (sym!=NULL)
+        sym->child=sub;
+    } else {
+      /* the array is already created and attached to the function (which means
+       * this is not the first compilation pass), but we need to make sure the
+       * current dimensions match the dimensions declared at the first pass, as
+       * we can't rely on the code being the same on all passes (mainly because
+       * of conditional compilation, e.g. '#if defined <function name>') */
+      if (numdim!=sym->child->dim.array.level+1) {
+        error(25);              /* function heading differs from prototype */
+      } else {
+        unsigned int i=0;
+        sub=sym->child;
+        do {
+          if (dim[i]!=sub->dim.array.length) {
+            error(25);          /* function heading differs from prototype */
+            break;
+          } /* if */
+          sub=sub->child;
+        } while (++i<numdim);
+      } /* if */
+    } /* if */
   } /* if */
 
   litidx=0;                     /* clear the literal pool */

@@ -3224,12 +3224,18 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
        * this only if "globals" must be deleted; other iREFARRAY instances
        * (locals) are also deleted
        */
-      mustdelete=delete_functions;
+      mustdelete=(sym->vclass==sGLOBAL) ? delete_functions : TRUE;
       for (parent_sym=sym->parent; parent_sym!=NULL && parent_sym->ident!=iFUNCTN; parent_sym=parent_sym->parent)
         assert(parent_sym->ident==iREFARRAY);
       assert(parent_sym==NULL || (parent_sym->ident==iFUNCTN && parent_sym->parent==NULL));
-      if (parent_sym==NULL || parent_sym->ident!=iFUNCTN)
-        mustdelete=TRUE;
+      if (sym->vclass==sGLOBAL) {
+        assert(parent_sym!=NULL && parent_sym->ident==iFUNCTN);
+        if ((parent_sym->usage & uNATIVE)!=0) {
+          /* native functions aren't preserved (see the comment under the
+           * 'iFUNCTN' case below), so the array must be deleted as well */
+          mustdelete=TRUE;
+        } /* if */
+      } /* if */
       break;
     case iCONSTEXPR:
       /* delete constants (predefined constants are checked later) */
