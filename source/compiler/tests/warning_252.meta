@@ -1,0 +1,10 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+warning_252.pwn(13) : warning 252: variable has its value modified but never used: "e"
+warning_252.pwn(7) : warning 252: variable has its value modified but never used: "d"
+warning_252.pwn(6) : warning 252: variable has its value modified but never used: "c"
+warning_252.pwn(5) : warning 252: variable has its value modified but never used: "b"
+warning_252.pwn(4) : warning 252: variable has its value modified but never used: "a"
+"""
+}
