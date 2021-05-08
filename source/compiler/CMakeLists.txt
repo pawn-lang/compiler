@@ -12,6 +12,8 @@ set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD})
 set(VERSION_STR ${VERSION})
 math(EXPR VERSION_INT "${VERSION_MAJOR} << 8 | ${VERSION_MINOR}")
 
+option(FORCE_STATIC_VCRT "Force static VC runtime" ON)
+
 # check for optional include files
 include(CheckIncludeFile)
 check_include_file("unistd.h" HAVE_UNISTD_H)
@@ -163,6 +165,15 @@ if(MSVC)
           ${PROJECT_BINARY_DIR}/\${CMAKE_INSTALL_CONFIG_NAME}/pawncc.pdb
           ${PROJECT_BINARY_DIR}/\${CMAKE_INSTALL_CONFIG_NAME}/pawndisasm.pdb
     DESTINATION bin)
+  # Force static runtime library
+  if(FORCE_STATIC_VCRT)
+    target_compile_options(pawnc PRIVATE
+                           $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:/MT>
+                           $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:/MTd>)
+    target_compile_options(pawncc PRIVATE
+                           $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:/MT>
+                           $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:/MTd>)
+  endif()
 endif()
 
 # Generate targets for running compiler tests
