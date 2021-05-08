@@ -79,7 +79,7 @@ static void resetglobals(void);
 static void initglobals(void);
 static char *get_extension(char *filename);
 static void setopt(int argc,char **argv,char *oname,char *ename,char *pname,
-                   char *rname,char *codepage);
+                   char *codepage);
 static void setconfig(char *root);
 static void setcaption(void);
 static void about(void);
@@ -222,6 +222,7 @@ static int sc_parsenum = 0;     /* number of the extra parses */
 static int wq[wqTABSZ];         /* "while queue", internal stack for nested loops */
 static int *wqptr;              /* pointer to next entry */
 static time_t now;              /* current timestamp, for built-in constants "__time" and "__timestamp" */
+static char reportname[_MAX_PATH];/* report file name */
 #if !defined SC_LIGHT
   static char sc_rootpath[_MAX_PATH];
   static char *sc_documentation=NULL;/* main documentation */
@@ -523,7 +524,6 @@ int pc_compile(int argc, char *argv[])
   int entry,i,jmpcode;
   int retcode;
   char incfname[_MAX_PATH];
-  char reportname[_MAX_PATH];
   char codepage[MAXCODEPAGE+1];
   FILE *binf;
   void *inpfmark;
@@ -557,7 +557,7 @@ int pc_compile(int argc, char *argv[])
   /* inptfname may be used in error(), fill it with zeros */
   memset(inpfname,0,_MAX_PATH);
 
-  setopt(argc,argv,outfname,errfname,incfname,reportname,codepage);
+  setopt(argc,argv,outfname,errfname,incfname,codepage);
   strcpy(binfname,outfname);
   ptr=get_extension(binfname);
   if (ptr!=NULL && stricmp(ptr,".asm")==0)
@@ -1028,6 +1028,7 @@ static void initglobals(void)
   inpf_org=NULL;         /* main source file */
 
   wqptr=wq;              /* initialize while queue pointer */
+  reportname[0]='\0';    /* report file name */
 
 #if !defined SC_LIGHT
   sc_documentation=NULL;
@@ -1095,10 +1096,10 @@ static int toggle_option(const char *optptr, int option)
  * an "option list" from the contents of the file.
  */
 static void parserespf(char *filename,char *oname,char *ename,char *pname,
-                       char *rname, char *codepage);
+                       char *codepage);
 
 static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pname,
-                         char *rname, char *codepage)
+                         char *codepage)
 {
   char str[_MAX_PATH],*name;
   const char *ptr;
@@ -1223,22 +1224,20 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
         break;
 #if !defined SC_LIGHT
       case 'r':
-        if (!rname)
-          break;
-        strlcpy(rname,option_value(ptr),_MAX_PATH); /* set name of report file */
+        strlcpy(reportname,option_value(ptr),_MAX_PATH); /* set name of report file */
         sc_makereport=TRUE;
-        if (!strempty(rname)) {
-          set_extension(rname,".xml",FALSE);
+        if (!strempty(reportname)) {
+          set_extension(reportname,".xml",FALSE);
         } else if ((name=get_sourcefile(0))!=NULL) {
-          assert(strempty(rname));
+          assert(strempty(reportname));
           assert(strlen(name)<_MAX_PATH);
           if ((ptr=strrchr(name,DIRSEP_CHAR))!=NULL)
             ptr++;          /* strip path */
           else
             ptr=name;
           assert(strlen(ptr)<_MAX_PATH);
-          strcpy(rname,ptr);
-          set_extension(rname,".xml",TRUE);
+          strcpy(reportname,ptr);
+          set_extension(reportname,".xml",TRUE);
         } /* if */
         break;
 #endif
@@ -1328,7 +1327,7 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
       } /* switch */
     } else if (argv[arg][0]=='@') {
       #if !defined SC_LIGHT
-        parserespf(&argv[arg][1],oname,ename,pname,rname,codepage);
+        parserespf(&argv[arg][1],oname,ename,pname,codepage);
       #endif
     } else if ((ptr=strchr(argv[arg],'='))!=NULL) {
       i=(int)(ptr-argv[arg]);
@@ -1356,14 +1355,14 @@ static void parseoptions(int argc,char **argv,char *oname,char *ename,char *pnam
       } /* if */
       set_extension(oname,".asm",TRUE);
 #if !defined SC_LIGHT
-      if (sc_makereport && strempty(rname)) {
+      if (sc_makereport && strempty(reportname)) {
         if ((ptr=strrchr(str,DIRSEP_CHAR))!=NULL)
           ptr++;          /* strip path */
         else
           ptr=str;
         assert(strlen(ptr)<_MAX_PATH);
-        strcpy(rname,ptr);
-        set_extension(rname,".xml",TRUE);
+        strcpy(reportname,ptr);
+        set_extension(reportname,".xml",TRUE);
       } /* if */
 #endif
     } /* if */
@@ -1376,7 +1375,7 @@ void parsesingleoption(char *argv)
   char *args[2] = { 0, argv };
   char codepage[MAXCODEPAGE+1] = { 0 };
   codepage[0] = '\0';
-  parseoptions(2, args, NULL, NULL, NULL, NULL, codepage);
+  parseoptions(2, args, NULL, NULL, NULL, codepage);
   /* need explicit support for codepages */
   if (codepage[0] && !cp_set(codepage))
     error(108);         /* codepage mapping file not found */
@@ -1384,7 +1383,7 @@ void parsesingleoption(char *argv)
 
 #if !defined SC_LIGHT
 static void parserespf(char *filename,char *oname,char *ename,char *pname,
-                       char *rname,char *codepage)
+                       char *codepage)
 {
 #define MAX_OPTIONS     100
   FILE *fp;
@@ -1421,7 +1420,7 @@ static void parserespf(char *filename,char *oname,char *ename,char *pname,
   if (ptr!=NULL)
     error(102,"option table");   /* table overflow */
   /* parse the option table */
-  parseoptions(argc,argv,oname,ename,pname,rname,codepage);
+  parseoptions(argc,argv,oname,ename,pname,codepage);
   /* free allocated memory */
   free(argv);
   free(string);
@@ -1429,13 +1428,12 @@ static void parserespf(char *filename,char *oname,char *ename,char *pname,
 #endif
 
 static void setopt(int argc,char **argv,char *oname,char *ename,char *pname,
-                   char *rname,char *codepage)
+                   char *codepage)
 {
   delete_sourcefiletable(); /* make sure it is empty */
   *oname='\0';
   *ename='\0';
   *pname='\0';
-  *rname='\0';
   *codepage='\0';
   strcpy(pname,sDEF_PREFIX);
 
@@ -1458,10 +1456,10 @@ static void setopt(int argc,char **argv,char *oname,char *ename,char *pname,
         strcpy(cfgfile,"pawn.cfg");
       } /* if */
       if (access(cfgfile,4)==0)
-        parserespf(cfgfile,oname,ename,pname,rname,codepage);
+        parserespf(cfgfile,oname,ename,pname,codepage);
     } /* if */
   #endif
-  parseoptions(argc,argv,oname,ename,pname,rname,codepage);
+  parseoptions(argc,argv,oname,ename,pname,codepage);
   if (get_sourcefile(0)==NULL)
     about();
 }
