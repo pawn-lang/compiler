@@ -1,7 +1,7 @@
 {
   'test_type': 'output_check',
   'errors': """
-raw_error.pwn(1) : fatal error 111: user error: "raw error\\"
+raw_error.pwn(1) : fatal error 311: user error: "raw error\\"
 
 Compilation aborted.
 """

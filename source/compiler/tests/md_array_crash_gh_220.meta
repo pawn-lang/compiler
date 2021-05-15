@@ -1,7 +1,7 @@
 {
   'test_type': 'output_check',
   'errors': """
-md_array_crash_gh_220.pwn(6) : fatal error 111: user error: OK
+md_array_crash_gh_220.pwn(6) : fatal error 311: user error: OK
 
 Compilation aborted.
 """
