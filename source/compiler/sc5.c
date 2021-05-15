@@ -136,27 +136,6 @@ static char *errmsg[] = {
 /*094*/  "division by zero\n"
 };
 
-static char *fatalmsg[] = {
-/*100*/  "cannot read from file: \"%s\"\n",
-/*101*/  "cannot write to file: \"%s\"\n",
-/*102*/  "table overflow: \"%s\"\n",
-          /* table can be: loop table
-           *               literal table
-           *               staging buffer
-           *               option table (response file)
-           *               peephole optimizer table
-           */
-/*103*/  "insufficient memory\n",
-/*104*/  "invalid assembler instruction \"%s\"\n",
-/*105*/  "numeric overflow, exceeding capacity\n",
-/*106*/  "compiled script exceeds the maximum memory size (%ld bytes)\n",
-/*107*/  "too many error messages on one line\n",
-/*108*/  "codepage mapping file not found\n",
-/*109*/  "invalid path: \"%s\"\n",
-/*110*/  "assertion failed: %s\n",
-/*111*/  "user error: %s\n"
-};
-
 static char *warnmsg[] = {
 /*200*/  "symbol \"%s\" is truncated to %d characters\n",
 /*201*/  "redefinition of constant/macro (symbol \"%s\")\n",
@@ -212,6 +191,27 @@ static char *warnmsg[] = {
 /*251*/  "none of the variables used in loop condition are modified in loop body\n"
 };
 
+static char *fatalmsg[] = {
+/*300*/  "cannot read from file: \"%s\"\n",
+/*301*/  "cannot write to file: \"%s\"\n",
+/*302*/  "table overflow: \"%s\"\n",
+          /* table can be: loop table
+           *               literal table
+           *               staging buffer
+           *               option table (response file)
+           *               peephole optimizer table
+           */
+/*303*/  "insufficient memory\n",
+/*304*/  "invalid assembler instruction \"%s\"\n",
+/*305*/  "numeric overflow, exceeding capacity\n",
+/*306*/  "compiled script exceeds the maximum memory size (%ld bytes)\n",
+/*307*/  "too many error messages on one line\n",
+/*308*/  "codepage mapping file not found\n",
+/*309*/  "invalid path: \"%s\"\n",
+/*310*/  "assertion failed: %s\n",
+/*311*/  "user error: %s\n"
+};
+
 static char *noticemsg[] = {
 /*001*/  "; did you mean \"%s\"?\n",
 /*002*/  "; state variable out of scope\n",
@@ -256,18 +256,18 @@ static short lastfile;
    */
   notice=(unsigned long)number >> (sizeof(long)*4);
   number&=(~(unsigned long)0) >> (sizeof(long)*4);
-  assert(number>0 && number<300);
+  assert(number>0 && number<300+arraysize(fatalmsg));
 
   /* errflag is reset on each semicolon.
    * In a two-pass compiler, an error should not be reported twice. Therefore
    * the error reporting is enabled only in the second pass (and only when
    * actually producing output). Fatal errors may never be ignored.
    */
-  if ((errflag || sc_status!=statWRITE) && (number<100 || number>=200))
+  if ((errflag || sc_status!=statWRITE) && number<300)
     return 0;
 
   /* also check for disabled warnings */
-  if (number>=200) {
+  if (number>=200 && number<300) {
     int index=(number-200)/8;
     int mask=1 << ((number-200)%8);
     if ((warnstack.disable[index] & mask)!=0)
@@ -280,22 +280,22 @@ static short lastfile;
     pre=prefix[0];
     errflag=TRUE;       /* set errflag (skip rest of erroneous expression) */
     errnum++;
-  } else if (number<200) {
-    assert(number>=100 && number<(100+arraysize(fatalmsg)));
-    msg=fatalmsg[number-100];
+  } else if (number>=300) {
+    assert(number<(300+arraysize(fatalmsg)));
+    msg=fatalmsg[number-300];
     pre=prefix[1];
     errnum++;           /* a fatal error also counts as an error */
-  } else if (errwarn) {
-    assert(number>=200 && number<(200+arraysize(warnmsg)));
-    msg=warnmsg[number-200];
-    pre=prefix[0];
-    errflag=TRUE;
-    errnum++;
   } else {
     assert(number>=200 && number<(200+arraysize(warnmsg)));
     msg=warnmsg[number-200];
-    pre=prefix[2];
-    warnnum++;
+    if (errwarn) {
+      pre=prefix[0];
+      errflag=TRUE;
+      errnum++;
+    } else {
+      pre=prefix[2];
+      warnnum++;
+    } /* if */
   } /* if */
 
   if (notice!=0) {
@@ -334,7 +334,7 @@ static short lastfile;
   } /* if */
   va_end(argptr);
 
-  if ((number>=100 && number<200) || errnum>25){
+  if (number>=300 || errnum>25) {
     if (errfname[0]=='\0') {
       va_start(argptr,number);
       pc_error(0,"\nCompilation aborted.\n\n",NULL,0,0,argptr);
@@ -353,10 +353,10 @@ static short lastfile;
     errorcount=0;
   lastline=fline;
   lastfile=fcurrent;
-  if (number<200 || errwarn)
+  if (number<200 || number>=300 || errwarn)
     errorcount++;
   if (errorcount>=3)
-    error(107);         /* too many error/warning messages on one line */
+    error(307);         /* too many error/warning messages on one line */
 
   return 0;
 }
@@ -429,7 +429,7 @@ void pc_pushwarnings(void)
   void *p;
   p=calloc(sizeof(struct s_warnstack),1);
   if (p==NULL)
-    error(103); /* insufficient memory */
+    error(303); /* insufficient memory */
   memmove(p,&warnstack,sizeof(struct s_warnstack));
   warnstack.next=p;
 }

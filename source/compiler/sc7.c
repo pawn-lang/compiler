@@ -1276,12 +1276,12 @@ static void grow_stgbuffer(char **buffer, int *curmax, int *growth, int required
    * over a few kBytes, there is probably a run-away expression
    */
   if (requiredsize>sSTG_MAX)
-    error(102,"staging buffer");    /* staging buffer overflow (fatal error) */
+    error(302,"staging buffer");    /* staging buffer overflow (fatal error) */
   *curmax=requiredsize+*growth;
   *growth*=2; /* not as easy to grow this one by fibonacci, just double it */
   p=(char *)realloc(*buffer,*curmax*sizeof(char));
   if (p==NULL)
-    error(102,"staging buffer");    /* staging buffer overflow (fatal error) */
+    error(302,"staging buffer");    /* staging buffer overflow (fatal error) */
   *buffer=p;
   if (clear)
     **buffer='\0';
@@ -1476,7 +1476,7 @@ static int stgstring(char *start,char *end)
       /* allocate a argstack with sMAXARGS items */
       stack=(argstack *)malloc(sMAXARGS*sizeof(argstack));
       if (stack==NULL)
-        error(103);     /* insufficient memory */
+        error(303);     /* insufficient memory */
       reordered=TRUE;   /* mark that the expression is reordered */
       nest=1;           /* nesting counter */
       argc=0;           /* argument counter */
@@ -1700,7 +1700,7 @@ static char *replacesequence(char *pattern,char symbols[MAX_OPT_VARS][MAX_ALIAS+
 
   /* allocate a buffer to replace the sequence in */
   if ((buffer=(char*)malloc(*repl_length))==NULL)
-    error(103);
+    error(303);
 
   /* replace the pattern into this temporary buffer */
   lptr=buffer;

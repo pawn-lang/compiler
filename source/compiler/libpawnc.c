@@ -134,10 +134,12 @@ static char *prefix[3]={ "error", "fatal error", "warning" };
   if (number!=0) {
     char *pre;
 
-    pre=prefix[number/100];
-    if (number>=200 && pc_geterrorwarnings()){
-      pre=prefix[0];
-    }
+    if (number<200 || (number<300 && pc_geterrorwarnings()))
+      pre="error";
+    else if (number<300)
+      pre="warning";
+    else
+      pre="fatal error";
     if (firstline>=0)
       fprintf(stderr,"%s(%d -- %d) : %s %03d: ",filename,firstline,lastline,pre,number);
     else
