@@ -3011,8 +3011,10 @@ static void decl_const(int vclass)
   char *str;
   int tag,exprtag;
   int symbolline;
+  int fstatic;
   symbol *sym;
 
+  fstatic=(vclass==sGLOBAL && matchtoken(tSTATIC));
   insert_docstring_separator();         /* see comment in newfunc() */
   do {
     tag=pc_addtag(NULL);
@@ -3025,8 +3027,11 @@ static void decl_const(int vclass)
     /* add_constant() checks for duplicate definitions */
     check_tagmismatch(tag,exprtag,FALSE,symbolline);
     sym=add_constant(constname,val,vclass,tag);
-    if (sym!=NULL)
+    if (sym!=NULL) {
+      if (fstatic)
+        sym->fnumber=fcurrent;
       sc_attachdocumentation(sym);/* attach any documentation to the constant */
+    } /* if */
   } while (matchtoken(',')); /* enddo */   /* more? */
   needtoken(tTERM);
 }
