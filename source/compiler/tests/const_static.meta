@@ -1,0 +1,9 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+const_static.pwn(7) : error 017: undefined symbol "const_val"
+const_static.pwn(10) : error 020: invalid symbol name ""
+const_static.pwn(10) : warning 215: expression has no effect
+const_static.pwn(10) : warning 203: symbol is never used: ""
+"""
+}
