@@ -866,7 +866,7 @@ int amx_printstring(AMX *amx,cell *cstr,AMX_FMTINFO *info)
         case 0:
           assert(info!=NULL && info->params!=NULL);
           if (paramidx>=info->numparams)  /* insufficient parameters passed */
-            return 0;
+            return paramidx - 1;
           break;
         } /* switch */
         if (j==0)
@@ -889,13 +889,18 @@ int amx_printstring(AMX *amx,cell *cstr,AMX_FMTINFO *info)
         case 0:
           assert(info!=NULL && info->params!=NULL);
           if (paramidx>=info->numparams)  /* insufficient parameters passed */
-            return 0;
+            return paramidx - 1;
           break;
         } /* switch */
       } /* for */
     } /* if */
 
   } /* if (info==NULL || info->params==NULL) */
+
+  if(info != NULL) {
+    if(paramidx < info->numparams)
+      return INT_MAX;
+  }
 
   return paramidx;
 }
