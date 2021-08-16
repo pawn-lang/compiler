@@ -123,7 +123,7 @@ seems to be based on an older release of Pawn.
 [artifacts]:
   https://ci.appveyor.com/project/Southclaws/compiler/branch/master/artifacts
 [compat]: https://github.com/pawn-lang/compiler/wiki/Compatibility-mode
-[sampctl]: http://bit.ly/sampctl
+[sampctl]: https://github.com/Southclaws/sampctl
 [contributing]:
   https://github.com/pawn-lang/compiler/tree/master/.github/CONTRIBUTING.md
 [build_source]: https://github.com/pawn-lang/compiler/wiki/Building-From-Source
