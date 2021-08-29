@@ -6555,8 +6555,17 @@ static int dogoto(void)
 
   if (lex(&val,&st)==tSYMBOL) {
     sym=fetchlab(st);
-    if ((sym->usage & uDEFINE)!=0)
+    if ((sym->usage & uDEFINE)!=0) {
       clearassignments(1);
+    } else if (wqptr>wq) {
+      /* The label is not defined yet, which means it must be defined after the
+       * 'goto'. If we're inside of a loop, the target label may or may not be
+       * defined inside of the same loop - we can't know that ahead of time
+       * due to how the compiler works, so the best we can do for now is clear
+       * all the assignments at the current compound statement nesting level
+       * in order to avoid false-positives of warning 240. */
+      clearassignments(pc_nestlevel);
+    } /* if */
     jumplabel((int)sym->addr);
     sym->usage|=uREAD;  /* set "uREAD" bit */
     if ((sym->usage & uDEFINE)!=0) {
