@@ -214,6 +214,21 @@ lbl_1:
 		}
 lbl_2:
 	}
+	{
+		for (new x = 5; --x != 0;)
+		{
+			if (x == 2)
+			{
+				x = 1;
+				// The "x = 3;" line is used, as the target label of "goto"
+				// is located inside of the current loop, so this shouldn't
+				// trigger warning 240.
+				goto lbl_3;
+			}
+			x = 3;
+		lbl_3:
+		}
+	}
 }
 
 stock Tag:operator =(oper)
