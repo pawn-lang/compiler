@@ -194,8 +194,6 @@ static void (*unopers[])(void) = { lneg, neg, user_inc, user_dec };
     if (sym==NULL /*|| (sym->usage & uDEFINE)==0*/)
       return FALSE;
   } /* if */
-  if (oper==NULL)
-    pc_ovlassignment=TRUE;
 
   /* check existence and the proper declaration of this function */
   if ((sym->usage & uMISSING)!=0 || (sym->usage & uPROTOTYPED)==0) {
@@ -285,6 +283,8 @@ static void (*unopers[])(void) = { lneg, neg, user_inc, user_dec };
     store(lval);                /* store PRI in the symbol */
     moveto1();                  /* make sure PRI is restored on exit */
   } /* if */
+  if (oper==NULL)
+    pc_ovlassignment=TRUE;
   return TRUE;
 }
 
@@ -1104,6 +1104,17 @@ static int hier14(value *lval1)
     if (lval2.ident==iARRAY || lval2.ident==iREFARRAY)
       error(6);         /* must be assigned to an array */
   } /* if */
+  /* check if the previously assigned value was used (it's important to do this
+   * before generating the code for storing the value into the variable, as the latter
+   * might clobber the line number of the previous assignment used by warning 240) */
+  assert(lval3.sym!=NULL);
+  if (oper==NULL && lval3.sym->vclass==sLOCAL && (lval3.sym->usage & uASSIGNED)!=0
+      && lval3.sym->assignlevel>=pc_nestlevel) {
+    errorset(sSETPOS,lval3.sym->lnumber);
+    error(240,lval3.sym->name);     /* assigned/modified value is never used */
+    errorset(sSETPOS,-1);
+  } /* if */
+  /* store the expression result and mark the lvalue as modified */
   if (leftarray) {
     memcopy(val*sizeof(cell));
   } else {
@@ -1113,21 +1124,15 @@ static int hier14(value *lval1)
   } /* if */
   if (!oper)
     check_tagmismatch(lval3.tag,lval2.tag,TRUE,-1); /* tagname mismatch (if "oper", warning already given in plunge2()) */
-  if (lval3.sym)
-    markusage(lval3.sym,uWRITTEN);
+  markusage(lval3.sym,uWRITTEN);
   pc_sideeffect=TRUE;
   bitwise_opercount=bwcount;
   lval1->ident=iEXPRESSION;
-  /* register assignment/modification */
-  assert(lval3.sym!=NULL);
-  if (oper==NULL) {
-    if (lval3.sym->vclass==sLOCAL && (lval3.sym->usage & uASSIGNED)!=0
-        && lval3.sym->assignlevel>=pc_nestlevel)
-      error(240,lval3.sym->name);   /* previously assigned value is unused */
-    if (!pc_ovlassignment)
+  if (!pc_ovlassignment) {
+    if (oper==NULL)
       markinitialized(lval3.sym,TRUE,FALSE);
-  } else if (!pc_ovlassignment) {
-    markinitialized(lval3.sym,FALSE,TRUE);
+    else
+      markinitialized(lval3.sym,FALSE,TRUE);
   } /* if */
   return FALSE;         /* expression result is never an lvalue */
 }
