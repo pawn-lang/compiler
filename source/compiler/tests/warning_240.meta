@@ -1,20 +1,20 @@
 {
   'test_type': 'output_check',
   'errors': """
-warning_240.pwn(12) : warning 240: previously assigned value is never used (symbol "local_var")
+warning_240.pwn(11) : warning 240: assigned value is never used (symbol "local_var")
 warning_240.pwn(14) : warning 204: symbol is assigned a value that is never used: "local_var"
-warning_240.pwn(38) : warning 240: previously assigned value is never used (symbol "local_var")
-warning_240.pwn(52) : warning 240: previously assigned value is never used (symbol "local_var")
-warning_240.pwn(66) : warning 240: previously assigned value is never used (symbol "local_var")
-warning_240.pwn(74) : warning 240: previously assigned value is never used (symbol "local_var")
-warning_240.pwn(85) : warning 240: previously assigned value is never used (symbol "local_var")
-warning_240.pwn(97) : warning 240: previously assigned value is never used (symbol "local_var")
-warning_240.pwn(109) : warning 240: previously assigned value is never used (symbol "local_var")
-warning_240.pwn(120) : warning 240: previously assigned value is never used (symbol "local_var")
-warning_240.pwn(139) : warning 240: previously assigned value is never used (symbol "local_var")
-warning_240.pwn(174) : warning 240: previously assigned value is never used (symbol "arg")
-warning_240.pwn(178) : warning 240: previously assigned value is never used (symbol "arg")
-warning_240.pwn(183) : warning 240: previously assigned value is never used (symbol "refarg")
+warning_240.pwn(35) : warning 240: assigned value is never used (symbol "local_var")
+warning_240.pwn(46) : warning 240: assigned value is never used (symbol "local_var")
+warning_240.pwn(63) : warning 240: assigned value is never used (symbol "local_var")
+warning_240.pwn(71) : warning 240: assigned value is never used (symbol "local_var")
+warning_240.pwn(82) : warning 240: assigned value is never used (symbol "local_var")
+warning_240.pwn(93) : warning 240: assigned value is never used (symbol "local_var")
+warning_240.pwn(106) : warning 240: assigned value is never used (symbol "local_var")
+warning_240.pwn(114) : warning 240: assigned value is never used (symbol "local_var")
+warning_240.pwn(136) : warning 240: assigned value is never used (symbol "local_var")
+warning_240.pwn(168) : warning 240: assigned value is never used (symbol "arg")
+warning_240.pwn(176) : warning 240: assigned value is never used (symbol "arg")
+warning_240.pwn(182) : warning 240: assigned value is never used (symbol "refarg")
 warning_240.pwn(178) : warning 204: symbol is assigned a value that is never used: "arg"
 warning_240.pwn(212) : warning 204: symbol is assigned a value that is never used: "local_var"
 """

@@ -8,8 +8,8 @@ static global_static_var;
 test_locals()
 {
 	{
-		new local_var = 1;
-		local_var = 2; // warning 240
+		new local_var = 1; // warning 240
+		local_var = 2;
 		UseVariable(local_var);
 		local_var = 3; // warning 204
 	}
@@ -32,10 +32,10 @@ test_locals()
 		new local_var = 1;
 		if (TRUE)
 		{
-			local_var = 2;
+			local_var = 2; // warning 240
 		}
 		// The previous assignment ("local_var = 2") should be reported as unused.
-		local_var = 3; // warning 240
+		local_var = 3;
 		UseVariable(local_var);
 	}
 
@@ -43,13 +43,13 @@ test_locals()
 		new local_var;
 		if (TRUE)
 		{
-			local_var = 1;
+			local_var = 1; // warning 240
 		}
 		else
 		{
 		}
 		// The previous assignment ("local_var = 1") should be reported as unused.
-		local_var = 2; // warning 240
+		local_var = 2;
 		UseVariable(local_var);
 	}
 
@@ -60,18 +60,18 @@ test_locals()
 		}
 		else
 		{
-			local_var = 1;
+			local_var = 1; // warning 240
 		}
 		// The previous assignment ("local_var = 1") should be reported as unused.
-		local_var = 2; // warning 240
+		local_var = 2;
 		UseVariable(local_var);
 	}
 
 	{
-		new local_var = 1;
+		new local_var = 1; // warning 240
 		if (TRUE) {}
 		// The previous assignment ("local_var = 1") should be reported as unused.
-		local_var = 2; // warning 240
+		local_var = 2;
 		UseVariable(local_var);
 	}
 
@@ -79,10 +79,10 @@ test_locals()
 		new local_var = 1;
 		switch (TRUE)
 		{
-			default: local_var = 2;
+			default: local_var = 2; // warning 240
 		}
 		// The previous assignment ("local_var = 2") should be reported as unused.
-		local_var = 3; // warning 240
+		local_var = 3;
 		UseVariable(local_var);
 	}
 
@@ -90,11 +90,11 @@ test_locals()
 		new local_var = 1;
 		switch (TRUE)
 		{
-			case true: local_var = 2;
+			case true: local_var = 2; // warning 240
 			default: {}
 		}
 		// The previous assignment ("local_var = 2") should be reported as unused.
-		local_var = 3; // warning 240
+		local_var = 3;
 		UseVariable(local_var);
 	}
 
@@ -103,21 +103,21 @@ test_locals()
 		switch (TRUE)
 		{
 			case true: {}
-			default: local_var = 2;
+			default: local_var = 2; // warning 240
 		}
 		// The previous assignment ("local_var = 2") should be reported as unused.
-		local_var = 3; // warning 240
+		local_var = 3;
 		UseVariable(local_var);
 	}
 
 	{
-		new local_var = 1;
+		new local_var = 1; // warning 240
 		switch (TRUE)
 		{
 			default: {}
 		}
 		// The previous assignment ("local_var = 1") should be reported as unused.
-		local_var = 2; // warning 240
+		local_var = 2;
 		UseVariable(local_var);
 	}
 
@@ -133,10 +133,10 @@ test_locals()
 	}
 
 	{
-		new local_var = 1;
+		new local_var = 1; // warning 240
 		do {} while (FALSE);
 		// The previous assignment ("local_var = 1") should be reported as unused.
-		local_var = 1; // warning 240
+		local_var = 1;
 		UseVariable(local_var);
 	}
 
@@ -145,7 +145,7 @@ test_locals()
 		// assigned value can be used on the next function call, which is why
 		// assignment "local_static_var = 4" should NOT be reported as unused.
 		static local_static_var = 1;
-		local_static_var = 1; // warning 240
+		local_static_var = 1;
 		UseVariable(local_static_var);
 		local_static_var = 4;
 	}
@@ -165,22 +165,22 @@ test_globals()
 	global_static_var = 3;
 }
 
-test_args(arg, &refarg)
+test_args(arg, &refarg) // warning 240 (symbol "arg")
 {
 	// Technically function arguments are like local variables, except that they
 	// have a value implicitly assigned to them at the start of the function body.
 	// This is why on the subsequent assignment ("arg = 1") the compiler should warn
 	// about the previously assigned value being unused.
-	arg = 1; // warning 240
+	arg = 1;
 	if (TRUE)
-		arg = 2;
+		arg = 2; // warning 240
 	do {} while (FALSE);
-	arg = 3; // warning 240, warning 204
+	arg = 3; // warning 204
 
 	// "warning 203" is not applicable to references, as the value might be used
-	// outside of the function.
-	refarg = 1;
-	refarg = 2; // warning 240
+	// outside of the function, but warning 240 should still work for them.
+	refarg = 1; // warning 240
+	refarg = 2;
 	UseVariable(refarg);
 	refarg = 3;
 }
