@@ -5972,6 +5972,7 @@ static int test(int label,int parens,int invert)
   cell cidx;
   int ident,tag;
   int endtok;
+  short save_intest;
   cell constval;
   symbol *sym;
   int localstaging=FALSE;
@@ -5985,7 +5986,7 @@ static int test(int label,int parens,int invert)
     #endif
   } /* if */
 
-  PUSHSTK_I(sc_intest);
+  save_intest=sc_intest;
   sc_intest=TRUE;
   endtok=0;
   if (parens!=TEST_PLAIN) {
@@ -6039,7 +6040,7 @@ static int test(int label,int parens,int invert)
   else
     jmp_eq0(label);             /* jump to label if false (equal to 0) */
   markexpr(sEXPR,NULL,0);       /* end expression (give optimizer a chance) */
-  sc_intest=(short)POPSTK_I();  /* double typecast to avoid warning with Microsoft C */
+  sc_intest=save_intest;
   if (localstaging) {
     stgout(0);                  /* output queue from the very beginning (see
                                  * assert() when localstaging is set to TRUE) */
