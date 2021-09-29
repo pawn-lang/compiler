@@ -1,0 +1,6 @@
+#pragma option -;+
+
+main()
+{
+	do {}
+}
