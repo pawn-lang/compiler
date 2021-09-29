@@ -25,7 +25,7 @@ Learn more about writing MCVE from [StackOverflow](https://stackoverflow.com/hel
 If this section is not relevant, feel free to remove this section from your issue.
 -->
 
-```
+```Pawn
 ```
 
 <!-- comments on the code, if any -->
