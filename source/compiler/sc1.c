@@ -3819,6 +3819,8 @@ static void funcstub(int fnative)
   } /* if */
 
   if (tok==tOPERATOR) {
+    if (numdim!=0)
+      error(10);                /* invalid function or declaration */
     opertok=operatorname(symbolname);
     if (opertok==0)
       return;                   /* error message already given */
