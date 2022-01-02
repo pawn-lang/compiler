@@ -1784,7 +1784,7 @@ static int hier2(value *lval)
           needtoken(':');               /* ':' ends the case */
       } /* if */
       sc_allowtags=bck_allowtags;       /* reset */
-      ident=expression(NULL,&exprtag,NULL,FALSE);
+      ident=expression(NULL,&exprtag,NULL,TRUE);
     skip_impl_default:
       if (ident==iARRAY || ident==iREFARRAY)
         error(33,"-unknown-");          /* array must be indexed */
