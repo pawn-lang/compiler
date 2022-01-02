@@ -1,6 +1,7 @@
 #pragma semicolon 1
 
 Func() return 0;
+FuncNoRetVal(){}
 
 test_NonConstCaseValue(value)
 {
@@ -100,6 +101,14 @@ test_MissingDefault(value)
 	); // error 095: switch expression must contain a "default" case
 }
 
+test_NoReturnValue(value)
+{
+	return switch (value;
+		0: FuncNoRetVal(); // warning 209: function "FuncNoRetVal" should return a value
+		_: FuncNoRetVal(); // warning 209: function "FuncNoRetVal" should return a value
+	);
+}
+
 main()
 {
 	test_NonConstCaseValue(0);
@@ -113,4 +122,5 @@ main()
 	test_TagMismatchCase(0);
 	test_TagMismatchExpr(0);
 	test_MissingDefault(0);
+	test_NoReturnValue(0);
 }
