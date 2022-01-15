@@ -3937,6 +3937,7 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int fsto
   cell val,cidx,glbdecl;
   short filenum;
   int state_id;
+  int funcusage;
   unsigned int bck_attributes;
   char *bck_deprecate;  /* in case the user tries to use __pragma("deprecated")
                          * on a function argument */
@@ -3986,6 +3987,8 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int fsto
   sym=fetchfunc(symbolname,tag);/* get a pointer to the function entry */
   if (sym==NULL || (sym->usage & uNATIVE)!=0)
     return TRUE;                /* it was recognized as a function declaration, but not as a valid one */
+  funcusage=sym->usage;         /* before setting flags `uDECLPUBLIC` and `uDECLSTATIC`,
+                                 * back up the current usage state, we'll need it later */
   if (fpublic && opertok==0)
     sym->usage |= (uPUBLIC | uDECLPUBLIC);
   if (fstatic) {
@@ -4033,6 +4036,11 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int fsto
       error(218);       /* old style prototypes used with optional semicolons */
     if (state_id!=0)
       error(231);       /* state specification on forward declaration is ignored */
+    /* if the function has already been defined ("finalized"), we can't accept
+     * any new class specifiers */
+    if ((sym->usage & uDEFINE)!=0
+        && ((fpublic && (funcusage & uDECLPUBLIC)==0) || (fstatic && (funcusage & uDECLSTATIC)==0)))
+      error(25);        /* function heading differs from prototype */
     delete_symbols(&loctab,0,TRUE,TRUE);  /* prototype is done; forget everything */
     return TRUE;
   } /* if */
