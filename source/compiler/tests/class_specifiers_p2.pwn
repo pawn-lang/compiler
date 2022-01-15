@@ -23,6 +23,7 @@ stock Func5(){} // Func5() is "finalized"; subsequent forward declarations
                 // for this function can't introduce specifiers "static" and "public"
 forward stock Func5(); // OK (no new class specifiers)
 forward static stock Func5(); // error 025: function heading differs from prototype
+static stock Func5(); // error 025: function heading differs from prototype
 
 Func6(){}
 forward stock Func6(); // OK (specifier "stock" can be introduced after the definition)
