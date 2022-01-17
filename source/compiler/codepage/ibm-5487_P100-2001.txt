@@ -1,0 +1,13 @@
+# This file was auto-generated from "ibm-5487_P100-2001.ucm"
+# by "codepage-parser.pwn", (c) MPL 1.1, Alex "Y_Less" Cole, 2022.
+#
+# Lines with a single number denote bytes that are followed by a second byte to
+# create a DCBS pair.
+#
+# Lines with two numbers are byte sequence to unicode equivalent.
+
+# DBCS Lead Bytes
+
+# Single Byte Codes
+
+# Double Byte Codes

@@ -1,0 +1,88 @@
+# This file was auto-generated from "glibc-ISO_5427_EXT-2.1.2.ucm"
+# by "codepage-parser.pwn", (c) MPL 1.1, Alex "Y_Less" Cole, 2022.
+#
+# Lines with a single number denote bytes that are followed by a second byte to
+# create a DCBS pair.
+#
+# Lines with two numbers are byte sequence to unicode equivalent.
+
+# DBCS Lead Bytes
+
+# Single Byte Codes
+1 1
+2 2
+3 3
+4 4
+5 5
+6 6
+7 7
+8 8
+9 9
+10 10
+11 11
+12 12
+13 13
+14 14
+15 15
+16 16
+17 17
+18 18
+19 19
+20 20
+21 21
+22 22
+23 23
+24 24
+25 25
+26 26
+27 27
+28 28
+29 29
+30 30
+31 31
+32 32
+64 1169
+65 1106
+66 1107
+67 1108
+68 1105
+69 1109
+70 1110
+71 1111
+72 1112
+73 1113
+74 1114
+75 1115
+76 1116
+77 1118
+78 1119
+80 1123
+81 1139
+82 1141
+83 1131
+91 91
+93 93
+95 95
+96 1168
+97 1026
+98 1027
+99 1028
+100 1025
+101 1029
+102 1030
+103 1031
+104 1032
+105 1033
+106 1034
+107 1035
+108 1036
+109 1038
+110 1039
+111 1066
+112 1122
+113 1138
+114 1140
+115 1130
+127 127
+
+# Double Byte Codes
