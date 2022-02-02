@@ -3,7 +3,7 @@
 
 main()
 {
-	PrintConstVal();
+	UseConstVal();
 	printf("%d", const_val); // error 017: undefined symbol "const_val"
 
 	// A combination of "const static" can't be used for local constants.
