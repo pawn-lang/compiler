@@ -6017,7 +6017,7 @@ static int test(int label,int parens,int invert)
   } /* if */
   if (ident==iCONSTEXPR) {      /* constant expression */
     int testtype=0;
-    sc_intest=(short)POPSTK_I();/* restore stack */
+    sc_intest=save_intest;      /* restore stack */
     stgdel(index,cidx);
     if (constval) {             /* code always executed */
       error(206);               /* redundant test: always non-zero */
