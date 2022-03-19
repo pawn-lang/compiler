@@ -3822,8 +3822,10 @@ static void funcstub(int fnative)
   } /* if */
 
   if (tok==tOPERATOR) {
-    if (numdim!=0)
+    if (numdim!=0) {
       error(10);                /* invalid function or declaration */
+      numdim=0;                 /* ignore the array size specification */
+    } /* if */
     opertok=operatorname(symbolname);
     if (opertok==0)
       return;                   /* error message already given */
