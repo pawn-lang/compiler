@@ -12,26 +12,34 @@ forward Tag:[2] static stock Func();  // error 010: invalid function or declarat
 forward static stock Tag:[2] Func2(); // OK
 
 forward Func3();
-public Func3();  // class specifier "public" is introduced; it will be required in the definition
-Func3(){}        // error 025: function heading differs from prototype
+stock Func3(); // class specifier "stock" is added
+Func3(){} // OK (the function is implicitly defined as "stock")
 
-static Func4();  // class specifier "static" is introduced
-forward Func4(); // OK (class specifiers are only mandatory in function definitions, not declarations)
-static Func4(){} // OK (class specifier "static" is in place)
+forward Func4();
+public Func4(); // class specifier "public" is added
+Func4(){} // OK (the function is implicitly defined as "public")
 
-stock Func5(){} // Func5() is "finalized"; subsequent forward declarations
+forward Func5();
+static Func5(); // class specifier "static" is added
+Func5(){} // OK (the function is implicitly defined as "static")
+
+// Func6() is declared as "static", so any subsequent re-declarations
+// of this function with specifier "public" should be treated as errors
+forward static Func6();
+forward public Func6(); // error 025: function heading differs from prototype
+public Func6(){}        // error 025: function heading differs from prototype
+
+stock Func7(){} // Func4() is "finalized"; subsequent forward declarations
                 // for this function can't introduce specifiers "static" and "public"
-forward stock Func5(); // OK (no new class specifiers)
-forward static stock Func5(); // error 025: function heading differs from prototype
-static stock Func5(); // error 025: function heading differs from prototype
+forward stock Func7(); // OK (no new class specifiers)
+forward static stock Func7(); // error 025: function heading differs from prototype
+static stock Func7(); // error 025: function heading differs from prototype
 
-Func6(){}
-forward stock Func6(); // OK (specifier "stock" can be introduced after the definition)
+// Func8() is "finalized", but specifier "stock" can be added even after the definition,
+// as it doesn't affect code generation (it only disables warning 203 for the function)
+Func8(){}
+forward stock Func8(); // OK
 
-forward stock Func7(); // specifier "stock" is introduced, but it's not mandatory to use it
-                       // in the function definition
-Func7(){} // OK
-
-#pragma unused Func4, Func5, Func6, Func7
+#pragma unused Func3, Func5, Func7, Func8
 
 main(){}
