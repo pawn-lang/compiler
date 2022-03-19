@@ -3991,7 +3991,8 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int fsto
     return TRUE;                /* it was recognized as a function declaration, but not as a valid one */
   funcusage=sym->usage;         /* before setting flags `uDECLPUBLIC` and `uDECLSTATIC`,
                                  * back up the current usage state, we'll need it later */
-  if ((fpublic && (sym->usage & uDECLSTATIC)!=0) || (fstatic && (sym->usage & uDECLPUBLIC)!=0))
+  if (symbolname[0]!=PUBLIC_CHAR && ((fpublic && (sym->usage & uDECLSTATIC)!=0)
+                                     || (fstatic && (sym->usage & uDECLPUBLIC)!=0)))
     error(42);                  /* invalid combination of class specifiers */
   if (fpublic && opertok==0)
     sym->usage |= (uPUBLIC | uDECLPUBLIC);
