@@ -4037,7 +4037,8 @@ static int newfunc(char *firstname,int firsttag,int fpublic,int fstatic,int fsto
     if (state_id!=0)
       error(231);       /* state specification on forward declaration is ignored */
     /* if the function has already been defined ("finalized"), we can't accept
-     * any new class specifiers */
+     * any new class specifiers (except for 'stock', as it doesn't affect code
+     * generation) */
     if ((sym->usage & uDEFINE)!=0
         && ((fpublic && (funcusage & uDECLPUBLIC)==0) || (fstatic && (funcusage & uDECLSTATIC)==0)))
       error(25);        /* function heading differs from prototype */
