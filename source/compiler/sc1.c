@@ -664,7 +664,7 @@ int pc_compile(int argc, char *argv[])
       if (strcmp(incfname,sDEF_PREFIX)==0) {
         plungefile(incfname,FALSE,TRUE);    /* parse "default.inc" */
       } else {
-        if (!plungequalifiedfile(incfname)) /* parse "prefix" include file */
+        if (!plungequalifiedfile(incfname,1)) /* parse "prefix" include file */
           error(100,incfname);          /* cannot read from ... (fatal error) */
       } /* if */
     } /* if */
@@ -755,7 +755,7 @@ int pc_compile(int argc, char *argv[])
     if (strcmp(incfname,sDEF_PREFIX)==0)
       plungefile(incfname,FALSE,TRUE);  /* parse "default.inc" (again) */
     else
-      plungequalifiedfile(incfname);    /* parse implicit include file (again) */
+      plungequalifiedfile(incfname,1);    /* parse implicit include file (again) */
   } /* if */
   warnstack_init();
   preprocess();                         /* fetch first line */

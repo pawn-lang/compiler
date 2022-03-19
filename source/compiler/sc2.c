@@ -132,16 +132,17 @@ SC_FUNC void clearstk(void)
   assert(stktop==0);
 }
 
-SC_FUNC int plungequalifiedfile(char *name)
+SC_FUNC int plungequalifiedfile(char *name,char new_extensions)
 {
-  static char extensions[][6] = { "", ".inc", ".p", ".pawn", ".pwn" };
+  unsigned int skipped_extensions=new_extensions?0:1;
+  static char extensions[][6] = { "", ".inc", ".p", ".pawn", ".pwn"};
   int found;
   struct stat st;
   FILE *fp;
   char *path;
   char *real_path;
   char *ext;
-  int ext_idx;
+  unsigned int ext_idx;
 
   fp=NULL;
   ext_idx=0;
@@ -178,7 +179,7 @@ SC_FUNC int plungequalifiedfile(char *name)
       found=FALSE;
     } /* if */
     ext_idx++;
-  } while (!found && ext_idx<arraysize(extensions));
+  } while (!found && ext_idx<arraysize(extensions)-skipped_extensions);
   if (!found) {
     *ext='\0';                  /* restore filename */
     free(path);
@@ -227,7 +228,7 @@ SC_FUNC int plungefile(char *name,int try_currentpath,int try_includepaths)
   int result=FALSE;
 
   if (try_currentpath) {
-    result=plungequalifiedfile(name);
+    result=plungequalifiedfile(name,0);
     if (!result) {
       /* failed to open the file in the active directory, try to open the file
        * in the same directory as the current file --but first check whether
@@ -240,7 +241,7 @@ SC_FUNC int plungefile(char *name,int try_currentpath,int try_includepaths)
           char path[_MAX_PATH];
           strlcpy(path,inpfname,len+1);
           strlcat(path,name,arraysize(path));
-          result=plungequalifiedfile(path);
+          result=plungequalifiedfile(path,1);
         } /* if */
       } /* if */
     } /* if */
@@ -253,7 +254,7 @@ SC_FUNC int plungefile(char *name,int try_currentpath,int try_includepaths)
       char path[_MAX_PATH];
       strlcpy(path,ptr,arraysize(path));
       strlcat(path,name,arraysize(path));
-      result=plungequalifiedfile(path);
+      result=plungequalifiedfile(path,1);
     } /* for */
   } /* if */
   return result;
