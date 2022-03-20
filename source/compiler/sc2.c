@@ -442,7 +442,7 @@ static void readline(unsigned char *line)
   } while (num>=0 && cont);
 }
 
-/*  stripcom
+/*  stripcomment
  *
  *  Replaces all comments from the line by space characters. It updates
  *  a global variable ("icomment") for multiline comments, and a global
@@ -454,8 +454,8 @@ static void readline(unsigned char *line)
  *  The function also detects (and manages) "documentation comments". The
  *  global variable "icomment" is set to 2 for documentation comments.
  *
- *  Global references: icomment  (private to "stripcom")
- *  Global references: imlstring (private to "stripcom")
+ *  Global references: icomment  (private to "stripcomment")
+ *  Global references: imlstring (private to "stripcomment")
  *
  *  Returns 1 if the line started with a multiline string, and 2 if it also
  *  ends with the same multiline string, so that this won't trigger commands:
@@ -467,7 +467,6 @@ static void readline(unsigned char *line)
  *
  *  Some code might see that as a line starting with `#define` because there
  *  was no explicit line continuation, merely an implicit string one.
- *
  */
 static int stripcomment(unsigned char *line)
 {
