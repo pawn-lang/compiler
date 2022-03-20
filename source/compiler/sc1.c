@@ -3925,7 +3925,7 @@ static void funcstub(int fnative)
       if (numdim!=sym->child->dim.array.level+1) {
         error(25);              /* function heading differs from prototype */
       } else {
-        unsigned int i=0;
+        int i=0;
         sub=sym->child;
         do {
           if (dim[i]!=sub->dim.array.length) {
