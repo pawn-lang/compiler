@@ -3,10 +3,7 @@
  * (c) Copyright 2005, ITB CompuPhase
  * This file is provided as is (no warranties).
  */
-#if defined _string_included
-  #endinput
-#endif
-#define _string_included
+#pragma once
 #pragma library String
 
 native strlen(const string[]);

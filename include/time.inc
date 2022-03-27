@@ -3,10 +3,7 @@
  * (c) Copyright 2001-2005, ITB CompuPhase
  * This file is provided as is (no warranties).
  */
-#if defined _time_included
-  #endinput
-#endif
-#define _time_included
+#pragma once
 #pragma library Time
 
 native gettime(&hour=0, &minute=0, &second=0);

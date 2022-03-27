@@ -3,10 +3,7 @@
  * (c) Copyright 1998-2005, ITB CompuPhase
  * This file is provided as is (no warranties).
  */
-#if defined _Fixed_included
-  #endinput
-#endif
-#define _Fixed_included
+#pragma once
 #pragma library Fixed
 
 enum fround_method {

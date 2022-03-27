@@ -3,10 +3,7 @@
  * (c) Copyright 2005, ITB CompuPhase
  * This file is provided as is (no warranties).
  */
-#if defined _datagram_included
-  #endinput
-#endif
-#define _datagram_included
+#pragma once
 #pragma library DGram
 
 native sendstring(const message[], const destination[]="");

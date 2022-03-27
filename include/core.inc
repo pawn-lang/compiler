@@ -3,10 +3,7 @@
  * (c) Copyright 1998-2005, ITB CompuPhase
  * This file is provided as is (no warranties).
  */
-#if defined _core_included
-  #endinput
-#endif
-#define _core_included
+#pragma once
 #pragma library Core
 
 native heapspace();
