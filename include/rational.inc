@@ -4,10 +4,7 @@
  * (c) Copyright 2004-2005, ITB CompuPhase
  * This file is provided as is (no warranties).
  */
-#if defined _Rational_included
-  #endinput
-#endif
-#define _Rational_included
+#pragma once
 
 /* first try to include floating point support */
 #if !defined NOFLOAT

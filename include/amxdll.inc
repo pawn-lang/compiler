@@ -4,10 +4,7 @@
  * (c) Copyright 2000-2005, ITB CompuPhase
  * This file is provided as is (no warranties).
  */
-#if defined _amxdll_included
-  #endinput
-#endif
-#define _amxdll_included
+#pragma once
 
 enum
     {

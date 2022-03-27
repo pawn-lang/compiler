@@ -4,10 +4,7 @@
  * (c) Copyright 2006, ITB CompuPhase
  * This file is provided as is (no warranties).
  */
-#if defined _process_included
-  #endinput
-#endif
-#define _process_included
+#pragma once
 #pragma library Process
 
 native libcall(const libname[], const funcname[], const typestring[], ...);

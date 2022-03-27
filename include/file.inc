@@ -3,10 +3,7 @@
  * (c) Copyright 2004-2005, ITB CompuPhase
  * This file is provided as is (no warranties).
  */
-#if defined _file_included
-  #endinput
-#endif
-#define _file_included
+#pragma once
 #pragma library File
 
 enum filemode

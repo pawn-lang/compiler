@@ -3,10 +3,7 @@
  * (c) Copyright 2005, ITB CompuPhase
  * This file is provided as is (no warranties).
  */
-#if defined _args_included
-  #endinput
-#endif
-#define _args_included
+#pragma once
 #pragma library Args
 
 native argcount();
