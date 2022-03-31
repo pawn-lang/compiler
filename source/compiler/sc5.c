@@ -324,6 +324,9 @@ static short lastfile;
   } else {
     FILE *fp=fopen(errfname,"a");
     if (fp!=NULL) {
+      /* don't use `fatal error 111: user error:` redundant prefix */
+      if (number==111 || number==237)
+        fprintf(fp,"%s(%d) : ",inpfname,errline);
       if (start>=0 && start!=errline)
         fprintf(fp,"%s(%d -- %d) : %s %03d: ",inpfname,start,errline,pre,(int)number);
       else
