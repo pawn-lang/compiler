@@ -1012,7 +1012,7 @@ SC_VDECL short sc_allowtags;  /* allow/detect tagnames in lex() */
 SC_VDECL int sc_status;       /* read/write status */
 SC_VDECL int sc_rationaltag;  /* tag for rational numbers */
 SC_VDECL int rational_digits; /* number of fractional digits */
-SC_VDECL int sc_allowproccall;/* allow/detect tagnames in lex() */
+SC_VDECL int sc_allowproccall;/* allow "procedure call" syntax */
 SC_VDECL short sc_is_utf8;    /* is this source file in UTF-8 encoding */
 SC_VDECL char *pc_deprecate;  /* if non-NULL, mark next declaration as deprecated */
 SC_VDECL int sc_curstates;    /* ID of the current state list */

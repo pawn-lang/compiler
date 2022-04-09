@@ -89,7 +89,7 @@ SC_VDEFINE short sc_allowtags=TRUE;         /* allow/detect tagnames in lex() */
 SC_VDEFINE int sc_status;                   /* read/write status */
 SC_VDEFINE int sc_rationaltag=0;            /* tag for rational numbers */
 SC_VDEFINE int rational_digits=0;           /* number of fractional digits */
-SC_VDEFINE int sc_allowproccall=FALSE;      /* allow/detect tagnames in lex() */
+SC_VDEFINE int sc_allowproccall=FALSE;      /* allow "procedure call" syntax */
 SC_VDEFINE short sc_is_utf8=FALSE;          /* is this source file in UTF-8 encoding */
 SC_VDEFINE char *pc_deprecate=NULL;         /* if non-null, mark next declaration as deprecated */
 SC_VDEFINE int sc_curstates=0;              /* ID of the current state list */
