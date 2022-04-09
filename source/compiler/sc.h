@@ -992,7 +992,7 @@ SC_VDECL int sc_listing;      /* create .LST file? */
 SC_VDECL int sc_compress;     /* compress bytecode? */
 SC_VDECL int sc_needsemicolon;/* semicolon required to terminate expressions? */
 SC_VDECL int sc_dataalign;    /* data alignment value */
-SC_VDECL int sc_alignnext;    /* must frame of the next function be aligned? */
+SC_VDECL int sc_alignnext;    /* must the next variable or the frame of the next function be aligned? */
 SC_VDECL int pc_docexpr;      /* must expression be attached to documentation comment? */
 SC_VDECL int curseg;          /* 1 if currently parsing CODE, 2 if parsing DATA */
 SC_VDECL cell pc_stksize;     /* stack size */
