@@ -152,10 +152,16 @@ extern  "C" {
  * this number needs to be incremented.
  * The file version supported by the JIT may run behind MIN_AMX_VERSION. So
  * there is an extra constant for it: MAX_FILE_VER_JIT.
+ *
+ * For open.mp the file and AMX versions are different, to detect files built
+ * with the new compiler and `-O2`.  This prevents code compiled on the old
+ * compiler using `-O2`, despite the fact that they are the same.  Assembly code
+ * written on the old compiler can't use the macro ops, and can't detect when
+ * `-O2` is being used, so a lot of code breaks in that case.
  */
 #define CUR_FILE_VERSION  9     /* current file version; also the current AMX version */
 #define MIN_FILE_VERSION  6     /* lowest supported file format version for the current AMX version */
-#define MIN_AMX_VERSION   9     /* minimum AMX version needed to support the current file format */
+#define MIN_AMX_VERSION   10    /* minimum AMX version needed to support the current file format */
 #define MAX_FILE_VER_JIT  8     /* file version supported by the JIT */
 #define MIN_AMX_VER_JIT   8     /* AMX version supported by the JIT */
 
@@ -348,6 +354,7 @@ enum {
 #define AMX_FLAG_COMPACT  0x04  /* compact encoding */
 #define AMX_FLAG_SLEEP    0x08  /* script uses the sleep instruction (possible re-entry or power-down mode) */
 #define AMX_FLAG_NOCHECKS 0x10  /* no array bounds checking; no BREAK opcodes */
+#define AMX_FLAG_SYSREQD 0x400  /* SYSREQ.D is NOT used */
 #define AMX_FLAG_SYSREQN 0x800  /* script new (optimized) version of SYSREQ opcode */
 #define AMX_FLAG_NTVREG 0x1000  /* all native functions are registered */
 #define AMX_FLAG_JITC   0x2000  /* abstract machine is JIT compiled */

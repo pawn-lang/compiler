@@ -1450,7 +1450,7 @@ static int command(void)
       /* write parameter (if any) */
       while (*lptr<=' ' && *lptr!='\0')
         lptr++;
-      if (*lptr!='\0') {
+      while (*lptr!='\0') {
         symbol *sym;
         tok=lex(&val,&str);
         switch (tok) {
@@ -1519,7 +1519,9 @@ static int command(void)
           break;
         } /* case */
         } /* switch */
-      } /* if */
+        while (*lptr<=' ' && *lptr!='\0')
+          lptr++;
+      } /* while */
       stgwrite("\n");
       check_empty(lptr);
     } /* if */

@@ -860,6 +860,7 @@ static int amx_BrowseRelocate(AMX *amx)
 
   amx->flags &= ~AMX_FLAG_BROWSE;
   amx->flags |= AMX_FLAG_RELOC;
+  amx->flags |= AMX_FLAG_SYSREQD;
   if (sysreq_flg & 0x02)
     amx->flags |= AMX_FLAG_SYSREQN;
   return AMX_ERR_NONE;
