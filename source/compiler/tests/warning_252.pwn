@@ -17,8 +17,18 @@ test_retval()
 	return x++; // warning 252: variable has its value modified but never used: "x"
 }
 
+test_pragma_unused_unread()
+{
+	new x = 1, y = 2;
+	x += 2;
+	y -= 1;
+	#pragma unused x
+	#pragma unread y
+}
+
 main()
 {
 	test_basic();
 	test_retval();
+	test_pragma_unused_unread();
 }
