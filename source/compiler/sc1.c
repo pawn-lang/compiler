@@ -8689,7 +8689,7 @@ SC_FUNC void pragma_unused(symbol *sym, int unread, int unwritten)
   /* mark as read if the pragma wasn't "unwritten" */
   if (!unwritten) {
     sym->usage |= uREAD;
-    sym->usage &= ~uASSIGNED;
+    sym->usage &= ~(uASSIGNED | uMODIFIED);
   } /* if */
   /* mark as written if the pragma wasn't "unread" */
   if (sym->ident == iVARIABLE || sym->ident == iREFERENCE
