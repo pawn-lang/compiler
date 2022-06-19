@@ -243,12 +243,33 @@ test_overloaded()
 	b = 2;
 }
 
+test_return_refarg(&refarg)
+{
+	// Assignment "refarg = 1" shouldn't be reported as unused, as it's followed
+	// by a "return" statement and "refarg" is a pass-by-reference argument, so
+	// we assume it might be used by the caller (although we can't check for
+	// that to be sure). "exit" statement works in a similar way, so assignment
+	// "refarg = 2" shouldn't be reported as unused either.
+	if (TRUE)
+	{
+		refarg = 1;
+		return;
+	}
+	if (TRUE)
+	{
+		refarg = 2;
+		exit;
+	}
+	refarg = 3;
+}
+
 main()
 {
+	new x;
 	test_locals();
 	test_globals();
-	new x;
 	test_args(0,x);
 	test_goto();
 	test_overloaded();
+	test_return_refarg(x);
 }
