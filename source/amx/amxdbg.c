@@ -276,8 +276,8 @@ int AMXAPI dbg_LoadInfo(AMX_DBG *amxdbg, FILE *fp)
          && (cell)line->address > (cell)(line - 1)->address) {
     #if BYTE_ORDER==BIG_ENDIAN
       for (index = 0; index <= (uint32_t)(1u << 16) - 1; index++) {
-        dbg_AlignCell(&linetbl[index].address);
-        dbg_Align32((uint32_t*)&linetbl[index].line);
+        dbg_AlignCell(&amxdbg->linetbl[index].address);
+        dbg_Align32((uint32_t*)&amxdbg->linetbl[index].line);
         line++;
       } /* for */
     #endif
