@@ -243,9 +243,9 @@ static int errwarn;
  */
 SC_FUNC int error(long number,...)
 {
-static char *prefix[3]={ "error", "fatal error", "warning" };
-static int lastline,errorcount;
-static short lastfile;
+  static char *prefix[3]={ "error", "fatal error", "warning" };
+  static int lastline,errorcount;
+  static short lastfile;
   char *msg,*pre;
   va_list argptr;
   char string[128];
