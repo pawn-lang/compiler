@@ -1042,6 +1042,16 @@ int AMXAPI amx_Init(AMX *amx,void *program)
     AMX_FUNCSTUB *fs;
     int i,num;
 
+    fs=GETENTRY(hdr,publics,0);
+    assert(hdr->publics<=hdr->natives);
+    num=NUMENTRIES(hdr,publics,natives);
+    for (i=0; i<num; i++) {
+      amx_AlignCell(&fs->address);
+      if (USENAMETABLE(hdr))
+        amx_Align32(&((AMX_FUNCSTUBNT*)fs)->nameofs);
+      fs=(AMX_FUNCSTUB*)((unsigned char *)fs+hdr->defsize);
+    } /* for */
+
     fs=GETENTRY(hdr,natives,0);
     num=NUMENTRIES(hdr,natives,libraries);
     for (i=0; i<num; i++) {
@@ -1051,9 +1061,8 @@ int AMXAPI amx_Init(AMX *amx,void *program)
       fs=(AMX_FUNCSTUB*)((unsigned char *)fs+hdr->defsize);
     } /* for */
 
-    fs=GETENTRY(hdr,publics,0);
-    assert(hdr->publics<=hdr->natives);
-    num=NUMENTRIES(hdr,publics,natives);
+    fs=GETENTRY(hdr,libraries,0);
+    num=NUMENTRIES(hdr,libraries,pubvars);
     for (i=0; i<num; i++) {
       amx_AlignCell(&fs->address);
       if (USENAMETABLE(hdr))
