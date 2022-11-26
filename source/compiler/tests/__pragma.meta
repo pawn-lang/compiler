@@ -3,17 +3,19 @@
   'errors': """
 __pragma.pwn(6) : error 001: expected token: "-identifier-", but found "const"
 __pragma.pwn(10) : error 001: expected token: "-identifier-", but found "__pragma"
-__pragma.pwn(36) : warning 234: function is deprecated (symbol "Func") - use OtherFunc() instead
-__pragma.pwn(40) : warning 234: function is deprecated (symbol "NakedFunc") - use NakedFunc2() instead
-__pragma.pwn(43) : warning 207: unknown #pragma
-__pragma.pwn(44) : warning 207: unknown #pragma
-__pragma.pwn(48) : warning 207: unknown #pragma
-__pragma.pwn(62) : warning 200: symbol "long_name2_zzzzzzzz_zzzzzzzzz_z" is truncated to 31 characters
-__pragma.pwn(66) : warning 207: unknown #pragma
-__pragma.pwn(67) : warning 207: unknown #pragma
-__pragma.pwn(68) : warning 207: unknown #pragma
-__pragma.pwn(33) : warning 203: symbol is never used: "f"
-__pragma.pwn(29) : warning 204: symbol is assigned a value that is never used: "e"
-__pragma.pwn(70) : warning 203: symbol is never used: "operator~(Tag:)"
+__pragma.pwn(22) : error 001: expected token: "-identifier-", but found "__pragma"
+__pragma.pwn(23) : error 001: expected token: "-identifier-", but found "__pragma"
+__pragma.pwn(47) : warning 234: function is deprecated (symbol "Func") - use OtherFunc() instead
+__pragma.pwn(51) : warning 234: function is deprecated (symbol "NakedFunc") - use NakedFunc2() instead
+__pragma.pwn(54) : warning 207: unknown #pragma
+__pragma.pwn(55) : warning 207: unknown #pragma
+__pragma.pwn(59) : warning 207: unknown #pragma
+__pragma.pwn(73) : warning 200: symbol "long_name2_zzzzzzzz_zzzzzzzzz_z" is truncated to 31 characters
+__pragma.pwn(77) : warning 207: unknown #pragma
+__pragma.pwn(78) : warning 207: unknown #pragma
+__pragma.pwn(79) : warning 207: unknown #pragma
+__pragma.pwn(44) : warning 203: symbol is never used: "f"
+__pragma.pwn(40) : warning 204: symbol is assigned a value that is never used: "e"
+__pragma.pwn(81) : warning 203: symbol is never used: "operator~(Tag:)"
 """
 }

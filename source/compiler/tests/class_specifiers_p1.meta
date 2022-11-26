@@ -1,0 +1,29 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+class_specifiers_p1.pwn(22) : error 010: invalid function or declaration
+class_specifiers_p1.pwn(23) : error 010: invalid function or declaration
+class_specifiers_p1.pwn(24) : error 010: invalid function or declaration
+class_specifiers_p1.pwn(27) : error 042: invalid combination of class specifiers
+class_specifiers_p1.pwn(28) : error 042: invalid combination of class specifiers
+class_specifiers_p1.pwn(29) : error 042: invalid combination of class specifiers
+class_specifiers_p1.pwn(30) : error 042: invalid combination of class specifiers
+class_specifiers_p1.pwn(31) : error 042: invalid combination of class specifiers
+class_specifiers_p1.pwn(32) : error 042: invalid combination of class specifiers
+class_specifiers_p1.pwn(33) : error 001: expected token: ";", but found "("
+class_specifiers_p1.pwn(34) : error 001: expected token: ";", but found "("
+class_specifiers_p1.pwn(37) : error 042: invalid combination of class specifiers
+class_specifiers_p1.pwn(38) : error 042: invalid combination of class specifiers
+class_specifiers_p1.pwn(39) : error 042: invalid combination of class specifiers
+class_specifiers_p1.pwn(40) : error 042: invalid combination of class specifiers
+class_specifiers_p1.pwn(41) : error 042: invalid combination of class specifiers
+class_specifiers_p1.pwn(42) : error 042: invalid combination of class specifiers
+class_specifiers_p1.pwn(53) : error 042: invalid combination of class specifiers
+class_specifiers_p1.pwn(54) : error 042: invalid combination of class specifiers
+class_specifiers_p1.pwn(55) : error 042: invalid combination of class specifiers
+class_specifiers_p1.pwn(56) : error 042: invalid combination of class specifiers
+class_specifiers_p1.pwn(57) : error 042: invalid combination of class specifiers
+class_specifiers_p1.pwn(58) : error 042: invalid combination of class specifiers
+class_specifiers_p1.pwn(59) : error 042: invalid combination of class specifiers
+"""
+}

@@ -1,0 +1,12 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+class_specifiers_p2.pwn(4) : error 042: invalid combination of class specifiers
+class_specifiers_p2.pwn(7) : error 042: invalid combination of class specifiers
+class_specifiers_p2.pwn(11) : error 010: invalid function or declaration
+class_specifiers_p2.pwn(29) : error 042: invalid combination of class specifiers
+class_specifiers_p2.pwn(30) : error 042: invalid combination of class specifiers
+class_specifiers_p2.pwn(35) : error 025: function heading differs from prototype
+class_specifiers_p2.pwn(36) : error 025: function heading differs from prototype
+"""
+}
