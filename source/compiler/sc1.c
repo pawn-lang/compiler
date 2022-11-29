@@ -1567,11 +1567,11 @@ static void usage(void)
     pc_printf("         -A<num>  alignment in bytes of the data segment and the stack\n");
     pc_printf("         -a       output assembler code\n");
 #if AMX_COMPACTMARGIN > 2
-    pc_printf("         -C[+/-]  compact encoding for output file (default=%c)\n", sc_compress ? '+' : '-');
+    pc_printf("         -C[+/-]  compact encoding for output file (default=+)\n");
 #endif
     pc_printf("         -c<name> codepage name or number; e.g. 1252 for Windows Latin-1\n");
     pc_printf("         -Dpath   active directory path\n");
-    pc_printf("         -d<num>  debugging level (default=-d%d)\n",sc_debug);
+    pc_printf("         -d<num>  debugging level (default=-d1)\n");
     pc_printf("             0    no symbolic information, no run-time checks\n");
     pc_printf("             1    run-time checks, no symbolic information\n");
     pc_printf("             2    full debug information and dynamic checking\n");
@@ -1583,28 +1583,28 @@ static void usage(void)
     pc_printf("         -i<name> path for include files\n");
     pc_printf("         -l       create list file (preprocess only)\n");
     pc_printf("         -o<name> set base name of (P-code) output file\n");
-    pc_printf("         -O<num>  optimization level (default=-O%d)\n",pc_optimize);
+    pc_printf("         -O<num>  optimization level (default=-O1)\n");
     pc_printf("             0    no optimization\n");
     pc_printf("             1    JIT-compatible optimizations only\n");
     pc_printf("             2    full optimizations\n");
     pc_printf("         -p<name> set name of \"prefix\" file\n");
-    pc_printf("         -R[+/-]  add detailed recursion report with call chains (default=%c)\n",pc_recursion ? '+' : '-');
+    pc_printf("         -R[+/-]  add detailed recursion report with call chains (default=-)\n");
 #if !defined SC_LIGHT
     pc_printf("         -r[name] write cross reference report to console or to specified file\n");
 #endif
-    pc_printf("         -S<num>  stack/heap size in cells (default=%d)\n",(int)pc_stksize);
+    pc_printf("         -S<num>  stack/heap size in cells (default=4096)\n");
     pc_printf("         -s<num>  skip lines from the input file\n");
-    pc_printf("         -t<num>  TAB indent size (in character positions, default=%d)\n",sc_tabsize);
-    pc_printf("         -v<num>  verbosity level; 0=quiet, 1=normal, 2=verbose (default=%d)\n",verbosity);
+    pc_printf("         -t<num>  TAB indent size (in character positions, default=8)\n");
+    pc_printf("         -v<num>  verbosity level; 0=quiet, 1=normal, 2=verbose (default=1)\n");
     pc_printf("         -w<num>  disable a specific warning by its number\n");
     pc_printf("         -X<num>  abstract machine size limit in bytes\n");
     pc_printf("         -XD<num> abstract machine data/stack size limit in bytes\n");
-    pc_printf("         -Z[+/-]  run in compatibility mode (default=%c)\n",pc_compat ? '+' : '-');
-    pc_printf("         -E[+/-]  turn warnings in to errors\n");
+    pc_printf("         -Z[+/-]  run in compatibility mode (default=-)\n");
+    pc_printf("         -E[+/-]  turn warnings in to errors (default=-)\n");
     pc_printf("         -\\       use '\\' for escape characters\n");
     pc_printf("         -^       use '^' for escape characters\n");
-    pc_printf("         -;[+/-]  require a semicolon to end each statement (default=%c)\n", sc_needsemicolon ? '+' : '-');
-    pc_printf("         -([+/-]  require parentheses for function invocation (default=%c)\n", optproccall ? '-' : '+');
+    pc_printf("         -;[+/-]  require a semicolon to end each statement (default=-)\n");
+    pc_printf("         -([+/-]  require parentheses for function invocation (default=-)\n");
     pc_printf("         sym=val  define constant \"sym\" with value \"val\"\n");
     pc_printf("         sym=     define constant \"sym\" with value 0\n");
 #if defined	__WIN32__ || defined _WIN32 || defined _Windows || defined __MSDOS__
