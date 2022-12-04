@@ -1311,6 +1311,38 @@ static int command(void)
         } else if (strcmp(str,"semicolon")==0) {
           preproc_expr(&val,NULL);
           sc_needsemicolon=(int)val;
+        } else if (strcmp(str,"once")==0) {
+          /* check if compiler is not running with `-Z` arg */
+          if(!pc_compat) {
+            char symname[sNAMEMAX];
+            char *ptr;
+            symbol *included;
+            /* remove unnecessary directory names from include file absolute path */
+            char dirsep=
+              #if DIRSEP_CHAR!='\\'
+                '\\';
+              #else
+                DIRSEP_CHAR;
+              #endif
+            strcpy(symname,"_inc_");
+            if ((ptr=strrchr(inpfname,dirsep))!=NULL)
+              strlcat(symname,ptr+1,sizeof symname);
+            else
+              strlcat(symname,inpfname,sizeof symname);
+            included=find_symbol(&glbtab,symname,fcurrent,-1,NULL);
+            if (included==NULL)
+              /* couldn't find '_inc_includename' in symbols table */
+              add_constant(symname,1,sGLOBAL,0); // add symname ('_inc_includename') to global symbols table
+            else {
+              /* found '_inc_includename' symbol in global symbols table  */
+              if (!SKIPPING) {
+                assert(inpf!=NULL);
+                if (inpf!=inpf_org)
+                  pc_closesrc(inpf); // close input file (like #endinput)
+                inpf=NULL;
+              } /* if */
+            }
+          }
         } else if (strcmp(str,"tabsize")==0) {
           preproc_expr(&val,NULL);
           if (val>0)
