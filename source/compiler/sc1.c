@@ -2355,7 +2355,7 @@ static void declglb(char *firstname,int firsttag,int fpublic,int fstatic,int fst
     if (fstatic)
       sym->fnumber=filenum;
     if (explicit_init)
-      markinitialized(sym,TRUE);
+      markinitialized(sym,TRUE,FALSE);
     sc_attachdocumentation(sym);/* attach any documentation to the variable */
     if (sc_status==statSKIP) {
       sc_status=statWRITE;
@@ -2554,7 +2554,7 @@ static int declloc(int fstatic)
       } /* if */
     } /* if */
     if (explicit_init)
-      markinitialized(sym,!suppress_w240);
+      markinitialized(sym,!suppress_w240,FALSE);
     if (pc_ovlassignment)
       sym->usage |= uREAD;
     if (matchtoken(t__PRAGMA))
@@ -6152,8 +6152,8 @@ static int dowhile(void)
   pc_loopcond=tWHILE;
   endlessloop=test(wq[wqEXIT],TEST_DO,FALSE);/* branch to wq[wqEXIT] if false */
   pc_loopcond=0;
-  pc_nestlevel--;
   statement(NULL,FALSE);        /* if so, do a statement */
+  pc_nestlevel--;
   clearassignments(pc_nestlevel+1);
   testloopvariables(loopvars,FALSE,loopline);
   jumplabel(wq[wqLOOP]);        /* and loop to "while" start */
@@ -6591,8 +6591,17 @@ static int dogoto(void)
 
   if (lex(&val,&st)==tSYMBOL) {
     sym=fetchlab(st);
-    if ((sym->usage & uDEFINE)!=0)
+    if ((sym->usage & uDEFINE)!=0) {
       clearassignments(1);
+    } else if (wqptr>wq) {
+      /* The label is not defined yet, which means it must be defined after the
+       * 'goto'. If we're inside of a loop, the target label may or may not be
+       * defined inside of the same loop - we can't know that ahead of time
+       * due to how the compiler works, so the best we can do for now is clear
+       * all the assignments at the current compound statement nesting level
+       * in order to avoid false-positives of warning 240. */
+      clearassignments(pc_nestlevel);
+    } /* if */
     jumplabel((int)sym->addr);
     sym->usage|=uREAD;  /* set "uREAD" bit */
     if ((sym->usage & uDEFINE)!=0) {
@@ -8716,7 +8725,7 @@ SC_FUNC void pragma_unused(symbol *sym, int unread, int unwritten)
   /* mark as read if the pragma wasn't "unwritten" */
   if (!unwritten) {
     sym->usage |= uREAD;
-    sym->usage &= ~uASSIGNED;
+    sym->usage &= ~(uASSIGNED | uMODIFIED);
   } /* if */
   /* mark as written if the pragma wasn't "unread" */
   if (sym->ident == iVARIABLE || sym->ident == iREFERENCE

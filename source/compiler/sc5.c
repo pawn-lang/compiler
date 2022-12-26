@@ -198,7 +198,7 @@ static char *warnmsg[] = {
 /*237*/  "user warning: %s\n",
 /*238*/  "meaningless combination of class specifiers (%s)\n",
 /*239*/  "literal array/string passed to a non-const parameter\n",
-/*240*/  "previously assigned value is never used (symbol \"%s\")\n",
+/*240*/  "assigned value is never used (symbol \"%s\")\n",
 /*241*/  "negative or too big shift count\n",
 /*242*/  "shift overflow in enum element declaration (symbol \"%s\")\n",
 /*243*/  "redundant code: switch control expression is constant\n",
@@ -209,7 +209,8 @@ static char *warnmsg[] = {
 /*248*/  "possible misuse of comma operator\n",
 /*249*/  "check failed: %s\n",
 /*250*/  "variable \"%s\" used in loop condition not modified in loop body\n",
-/*251*/  "none of the variables used in loop condition are modified in loop body\n"
+/*251*/  "none of the variables used in loop condition are modified in loop body\n",
+/*252*/  "variable has its value modified but never used: \"%s\"\n"
 };
 
 static char *noticemsg[] = {

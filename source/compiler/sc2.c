@@ -3204,13 +3204,18 @@ SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_
       mustdelete=delete_labels;
       break;
     case iVARIABLE:
-      /* check that the assigned value was used, but don't show the warning
+      /* check that the assigned/modified value was used, but don't show the warning
        * if the variable is completely unused (we already have warning 203 for that) */
-      if ((sym->usage & (uASSIGNED | uREAD | uWRITTEN))==(uASSIGNED | uREAD | uWRITTEN)
-          && sym->vclass==sLOCAL) {
-        errorset(sSETPOS,sym->lnumber);
-        error(204,sym->name);   /* symbol is assigned a value that is never used */
-        errorset(sSETPOS,-1);
+      if (sym->vclass==sLOCAL) {
+        if ((sym->usage & (uREAD | uWRITTEN | uASSIGNED))==(uREAD | uWRITTEN | uASSIGNED)) {
+          errorset(sSETPOS,sym->lnumber);
+          error(204,sym->name);   /* symbol is assigned a value that is never used */
+          errorset(sSETPOS,-1);
+        } else if ((sym->usage & (uREAD | uWRITTEN | uMODIFIED))==(uREAD | uWRITTEN | uMODIFIED)) {
+          errorset(sSETPOS,sym->lnumber);
+          error(252,sym->name);   /* symbol has its value modified but never used */
+          errorset(sSETPOS,-1);
+        } /* if */
       } /* if */
       /* fallthrough */
     case iARRAY:
@@ -3395,7 +3400,7 @@ SC_FUNC void markusage(symbol *sym,int usage)
   if ((usage & uWRITTEN)!=0)
     sym->lnumber=fline;
   if ((usage & uREAD)!=0 && (sym->ident==iVARIABLE || sym->ident==iREFERENCE))
-    sym->usage &= ~uASSIGNED;
+    sym->usage &= ~(uASSIGNED | uMODIFIED);
   if ((usage & (uREAD | uWRITTEN))!=0 && (sym->ident==iVARIABLE || sym->ident==iREFERENCE))
     markloopvariable(sym,usage);
   /* check if (global) reference must be added to the symbol */
@@ -3410,15 +3415,17 @@ SC_FUNC void markusage(symbol *sym,int usage)
   } /* if */
 }
 
-SC_FUNC void markinitialized(symbol *sym,int assignment)
+SC_FUNC void markinitialized(symbol *sym,int assignment,int modification)
 {
   assert(sym!=NULL);
+  assert(!assignment | !modification);
   if (sym->ident!=iVARIABLE && sym->ident!=iREFERENCE && sym->ident!=iARRAY)
     return;
   if (sc_status==statFIRST && (sym->vclass==sLOCAL || sym->vclass==sSTATIC))
     return;
-  if (assignment && sym->vclass==sLOCAL && (sym->ident==iVARIABLE || sym->ident==iREFERENCE)) {
-    sym->usage |= uASSIGNED;
+  if ((assignment || modification) && sym->vclass==sLOCAL
+      && (sym->ident==iVARIABLE || sym->ident==iREFERENCE)) {
+    sym->usage |= assignment ? uASSIGNED : uMODIFIED;
     sym->assignlevel=pc_nestlevel;
   } /* if */
 }
@@ -3436,7 +3443,7 @@ SC_FUNC void clearassignments(int fromlevel)
   sym=&loctab;
   while ((sym=sym->next)!=NULL)
     if (sym->assignlevel>=fromlevel)
-      sym->usage &= ~uASSIGNED;
+      sym->usage &= ~(uASSIGNED | uMODIFIED);
 }
 
 /* memoizes all assignments done on the specified compound level and higher */
@@ -3468,18 +3475,22 @@ SC_FUNC void memoizeassignments(int fromlevel,symstate **assignments)
   sym=&loctab;
   while ((sym=sym->next)!=NULL && sym->ident==iLABEL) {}    /* skip labels */
   for (num=0; sym!=NULL; num++,sym=sym->next) {
-    /* if the assignment is unused and it was done inside the branch... */
-    if ((sym->usage & uASSIGNED)!=0 && sym->assignlevel>=fromlevel) {
-      /* clear the assignment flag, so the compiler won't report this assignment as unused
-       * if the next "if" or "switch" branch also contains an assignment to this variable */
-      sym->usage &= ~uASSIGNED;
-      /* memoize the assignment only if there was no other unused assignment
-       * in any other "if" or "switch" branch */
+    int flag=sym->usage & (uASSIGNED | uMODIFIED);
+    /* can't have both flags set at the same time */
+    assert((flag & uASSIGNED)==0 || (flag & uMODIFIED)==0);
+    /* if the assignment/modification is unused and it was done inside the branch... */
+    if (flag!=0 && sym->assignlevel>=fromlevel) {
+      /* memoize the assignment/modification only if there was no other unused
+       * assignment or modification in any other "if" or "switch" branch */
       assert_static(sizeof(sym->usage)==sizeof((*assignments)->usage));
-      if (((*assignments)[num].usage & uASSIGNED)==0) {
+      if (((*assignments)[num].usage & (uASSIGNED | uMODIFIED))==0) {
         (*assignments)[num].lnumber=sym->lnumber;
-        (*assignments)[num].usage |= uASSIGNED;
+        (*assignments)[num].usage |= flag;
       } /* if */
+      /* unset the assignment/modification flag for the variable, so the compiler
+       * won't report the assignment/modification as unused if the next "if" or
+       * "switch" branch also contains an assignment to this variable */
+      sym->usage &= ~(uASSIGNED | uMODIFIED);
     } /* if */
   } /* for */
 }
@@ -3493,8 +3504,9 @@ SC_FUNC void restoreassignments(int fromlevel,symstate *assignments)
   sym=&loctab;
   while ((sym=sym->next)!=NULL && sym->ident==iLABEL) {}    /* skip labels */
   for (num=0; sym!=NULL; num++,sym=sym->next) {
-    if (assignments!=NULL && (assignments[num].usage & uASSIGNED)!=0) {
-      sym->usage |= uASSIGNED;
+    int flag;
+    if (assignments!=NULL && (flag=(assignments[num].usage & (uASSIGNED | uMODIFIED)))!=0) {
+      sym->usage |= flag;
       sym->lnumber=assignments[num].lnumber;
     } /* if */
     /* demote all assignments that were made inside any of the "if"/"switch"

@@ -239,6 +239,8 @@ typedef struct s_symbol {
  * so the compiler would know it shouldn't set the uLOOPVAR flag when the variable
  * is read inside a loop condition */
 #define uNOLOOPVAR  0x2000
+/* uMODIFIED indicates that the value of a variable was modified, but not used yet */
+#define uMODIFIED   0x4000
 
 #define flagDEPRECATED 0x01  /* symbol is deprecated (avoid use) */
 #define flagNAKED     0x10  /* function is naked */
@@ -319,7 +321,7 @@ typedef struct s_valuepair {
 typedef struct s_assigninfo {
   int lnumber;      /* line number of the first unused assignment made in one of
                      * the branches (used for error messages) */
-  short usage;      /* usage flags to memoize (currently only uASSIGNED) */
+  short usage;      /* usage flags to memoize */
 } symstate;
 
 /* macros for code generation */
@@ -748,7 +750,7 @@ SC_FUNC void delete_symbol(symbol *root,symbol *sym);
 SC_FUNC void delete_symbols(symbol *root,int level,int delete_labels,int delete_functions);
 SC_FUNC int refer_symbol(symbol *entry,symbol *bywhom);
 SC_FUNC void markusage(symbol *sym,int usage);
-SC_FUNC void markinitialized(symbol *sym,int assignment);
+SC_FUNC void markinitialized(symbol *sym,int assignment,int modification);
 SC_FUNC void clearassignments(int fromlevel);
 SC_FUNC void memoizeassignments(int fromlevel,symstate **assignments);
 SC_FUNC void restoreassignments(int fromlevel,symstate *assignments);
