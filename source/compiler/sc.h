@@ -74,7 +74,10 @@ typedef struct s_arginfo {  /* function argument info */
   int dim[sDIMEN_MAX];
   int idxtag[sDIMEN_MAX];
   int numdim;           /* number of dimensions */
-  unsigned char hasdefault; /* bit0: is there a default value? bit6: "tagof"; bit7: "sizeof" */
+  unsigned char hasdefault; /* bit0: is there a default value?
+                             * bit5: "tagof" (with tag name as an argument);
+                             * bit6: "tagof" (with symbol name as an argument);
+                             * bit7: "sizeof" */
   union {
     cell val;           /* default value */
     struct {
@@ -992,7 +995,7 @@ SC_VDECL int sc_listing;      /* create .LST file? */
 SC_VDECL int sc_compress;     /* compress bytecode? */
 SC_VDECL int sc_needsemicolon;/* semicolon required to terminate expressions? */
 SC_VDECL int sc_dataalign;    /* data alignment value */
-SC_VDECL int sc_alignnext;    /* must frame of the next function be aligned? */
+SC_VDECL int sc_alignnext;    /* must the next variable or the frame of the next function be aligned? */
 SC_VDECL int pc_docexpr;      /* must expression be attached to documentation comment? */
 SC_VDECL int curseg;          /* 1 if currently parsing CODE, 2 if parsing DATA */
 SC_VDECL cell pc_stksize;     /* stack size */
@@ -1012,7 +1015,7 @@ SC_VDECL short sc_allowtags;  /* allow/detect tagnames in lex() */
 SC_VDECL int sc_status;       /* read/write status */
 SC_VDECL int sc_rationaltag;  /* tag for rational numbers */
 SC_VDECL int rational_digits; /* number of fractional digits */
-SC_VDECL int sc_allowproccall;/* allow/detect tagnames in lex() */
+SC_VDECL int sc_allowproccall;/* allow "procedure call" syntax */
 SC_VDECL short sc_is_utf8;    /* is this source file in UTF-8 encoding */
 SC_VDECL char *pc_deprecate;  /* if non-NULL, mark next declaration as deprecated */
 SC_VDECL int sc_curstates;    /* ID of the current state list */

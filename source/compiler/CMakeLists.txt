@@ -92,7 +92,6 @@ set(PAWNC_SRCS
   scstate.c
   scvars.c
   version.h)
-set_source_files_properties(sc1.c COMPILE_FLAGS -DNO_MAIN)
 if(WIN32)
   set(PAWNC_SRCS ${PAWNC_SRCS} libpawnc.rc)
   set_source_files_properties(libpawnc.c COMPILE_FLAGS -DPAWNC_DLL)
