@@ -74,7 +74,10 @@ typedef struct s_arginfo {  /* function argument info */
   int dim[sDIMEN_MAX];
   int idxtag[sDIMEN_MAX];
   int numdim;           /* number of dimensions */
-  unsigned char hasdefault; /* bit0: is there a default value? bit6: "tagof"; bit7: "sizeof" */
+  unsigned char hasdefault; /* bit0: is there a default value?
+                             * bit5: "tagof" (with tag name as an argument);
+                             * bit6: "tagof" (with symbol name as an argument);
+                             * bit7: "sizeof" */
   union {
     cell val;           /* default value */
     struct {
