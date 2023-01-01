@@ -1,0 +1,23 @@
+{
+  'test_type': 'runtime',
+  'output': """
+The discount for 1 items is 0%
+The discount for 3 items is 0%
+The discount for 4 items is 10%
+The discount for 7 items is 10%
+The discount for 10 items is 10%
+The discount for 11 items is 15%
+The discount for 20 items is 15%
+The discount for 50 items is 15%
+The discount for 1 items is 0%
+The discount for 3 items is 0%
+The discount for 4 items is 10%
+The discount for 7 items is 10%
+The discount for 10 items is 10%
+The discount for 11 items is 15%
+The discount for 20 items is 15%
+The discount for 50 items is 15%
+switch_expressions_runtime.amx returns 0
+  """,
+  'should_fail': False
+}

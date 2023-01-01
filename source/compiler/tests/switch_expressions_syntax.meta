@@ -1,0 +1,24 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+switch_expressions_syntax.pwn(8 -- 9) : error 008: must be a constant expression; assumed zero
+switch_expressions_syntax.pwn(16 -- 18) : error 015: "default" case must be the last case in switch statement
+switch_expressions_syntax.pwn(24 -- 26) : error 016: multiple defaults in "switch"
+switch_expressions_syntax.pwn(32 -- 33) : error 001: expected token: ";", but found "-integer value-"
+switch_expressions_syntax.pwn(32 -- 35) : error 001: expected token: ";", but found "-label-"
+switch_expressions_syntax.pwn(41 -- 42) : error 001: expected token: ":", but found "-integer value-"
+switch_expressions_syntax.pwn(41 -- 44) : error 029: invalid expression, assumed zero
+switch_expressions_syntax.pwn(50 -- 52) : error 040: duplicate "case" label (value 1)
+switch_expressions_syntax.pwn(59 -- 60) : error 050: invalid range
+switch_expressions_syntax.pwn(67 -- 69) : error 040: duplicate "case" label (value 1)
+switch_expressions_syntax.pwn(67 -- 70) : error 040: duplicate "case" label (value 3)
+switch_expressions_syntax.pwn(78 -- 79) : warning 213: tag mismatch: expected tag "Tag", but found none ("_")
+switch_expressions_syntax.pwn(78 -- 81) : warning 213: tag mismatch: expected tag "Tag", but found none ("_")
+switch_expressions_syntax.pwn(78 -- 82) : warning 213: tag mismatch: expected tag "Tag", but found none ("_")
+switch_expressions_syntax.pwn(90 -- 92) : warning 213: tag mismatch: expected tag "Tag", but found none ("_")
+switch_expressions_syntax.pwn(90 -- 94) : warning 213: tag mismatch: expected tag "Tag", but found none ("_")
+switch_expressions_syntax.pwn(99 -- 101) : error 095: switch expression must contain a "default" case
+switch_expressions_syntax.pwn(106 -- 107) : warning 209: function "FuncNoRetVal" should return a value
+switch_expressions_syntax.pwn(106 -- 108) : warning 209: function "FuncNoRetVal" should return a value
+"""
+}

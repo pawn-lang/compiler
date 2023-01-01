@@ -1657,6 +1657,175 @@ static int hier2(value *lval)
     } /* if */
     return FALSE;
   } /* case */
+  case tSWITCH: {
+    int swdefault,casecount,firstcase;
+    int swtag,csetag,exprtag;
+    int lbl_table,lbl_exit,lbl_case;
+    int ident,index;
+    int bck_allowtags;
+    cell cidx;
+    constvalue_root caselist = { NULL, NULL};   /* case list starts empty */
+    constvalue *cse,*csp,*newval;
+    char labelname[sNAMEMAX+1];
+    needtoken('(');
+    ident=expression(&val,&swtag,NULL,TRUE);
+    if (ident==iARRAY || ident==iREFARRAY)
+      error(33,"-unknown-");    /* array must be indexed */
+    /* generate the code for the switch statement, the label is the address
+     * of the case table (to be generated later).
+     */
+    lbl_table=getlabel();
+    lbl_case=0;                 /* just to avoid a compiler warning */
+    ffswitch(lbl_table);
+    lbl_exit=getlabel();        /* get label number for jumping out of switch */
+    casecount=0;
+    swdefault=FALSE;
+    firstcase=TRUE;
+    do {
+      int got_cseval=FALSE;     /* true if the case value gets misinterpreted by lex() as a label */
+      needtoken(tTERM);
+      ident=lex(&val,&st);
+      if (ident==')')
+        break;
+      lbl_case=getlabel();
+      setlabel(lbl_case);
+      bck_allowtags=sc_allowtags;
+      sc_allowtags=FALSE;       /* do not allow tagnames here */
+      if (ident==tLABEL && st[0]=='_' && st[1]=='\0') {
+        if (swdefault!=FALSE)
+          error(16);            /* multiple defaults in switch */
+        swdefault=TRUE;
+      } else {
+        if (ident!=tLABEL) {
+          lexpush();
+        } else {
+          symbol *csesym=findloc(st);
+          if (csesym==NULL)
+            csesym=findglb(st,sGLOBAL);
+          if (csesym!=NULL) {
+            markusage(csesym,uREAD);
+            ident=csesym->ident;
+            val=csesym->addr;
+            csetag=csesym->tag;
+            got_cseval=TRUE;
+          } else {
+            error(220);         /* expression with tag override must appear between parentheses */
+          } /* if */
+        } /* if */
+        if (swdefault!=FALSE)
+          error(15);            /* "default" case must be last in switch statement */
+        do {
+          if (!got_cseval) {
+            stgget(&index,&cidx);   /* mark position in code generator */
+            ident=expression(&val,&csetag,NULL,TRUE);
+          } /* if */
+          /* if the next token is ";" or ")", then this must be an implicit default case */
+          if (matchtoken(';') || matchtoken(')')) {
+            lexpush();
+            if (swdefault!=FALSE)
+              error(16);        /* multiple defaults in switch */
+            swdefault=TRUE;
+            exprtag=csetag;
+            sc_allowtags=bck_allowtags; /* reset */
+            goto skip_impl_default;
+          } /* if */
+          casecount++;
+          if (!got_cseval)
+            stgdel(index,cidx); /* scratch generated code */
+          if (ident!=iCONSTEXPR)
+            error(8);           /* must be constant expression */
+          check_tagmismatch(swtag,csetag,TRUE,-1);
+          /* Search the insertion point (the table is kept in sorted order, so
+           * that advanced abstract machines can sift the case table with a
+           * binary search). Check for duplicate case values at the same time.
+           */
+          for (csp=NULL, cse=caselist.first;
+               cse!=NULL && cse->value<val;
+               csp=cse, cse=cse->next)
+            /* nothing */;
+          if (cse!=NULL && cse->value==val)
+            error(40,val);              /* duplicate "case" label */
+          /* Since the label is stored as a string in the "constvalue", the
+           * size of an identifier must be at least 8, as there are 8
+           * hexadecimal digits in a 32-bit number.
+           */
+          #if sNAMEMAX < 8
+            #error Length of identifier (sNAMEMAX) too small.
+          #endif
+          assert(csp==NULL || csp->next==cse);
+          newval=insert_constval(csp,cse,itoh(lbl_case),val,0);
+          if (csp==NULL)
+            caselist.first=newval;
+          if (!got_cseval && matchtoken(tDBLDOT)) {
+            cell end;
+            stgget(&index,&cidx);       /* mark position in code generator */
+            ident=expression(&end,&csetag,NULL,TRUE);
+            stgdel(index,cidx);         /* scratch generated code */
+            if (ident!=iCONSTEXPR)
+              error(8);                 /* must be constant expression */
+            if (end<=val)
+              error(50);                /* invalid range */
+            check_tagmismatch(swtag,csetag,TRUE,-1);
+            while (++val<=end) {
+              casecount++;
+              /* find the new insertion point */
+              for (csp=NULL, cse=caselist.first;
+                   cse!=NULL && cse->value<val;
+                   csp=cse, cse=cse->next)
+                /* nothing */;
+              if (cse!=NULL && cse->value==val)
+                error(40,val);          /* duplicate "case" label */
+              assert(csp!=NULL && csp->next==cse);
+              newval=insert_constval(csp,cse,itoh(lbl_case),val,0);
+            } /* while */
+          } /* if */
+        } while (matchtoken(','));
+        if (!got_cseval)
+          needtoken(':');               /* ':' ends the case */
+      } /* if */
+      sc_allowtags=bck_allowtags;       /* reset */
+      ident=expression(NULL,&exprtag,NULL,TRUE);
+    skip_impl_default:
+      if (ident==iARRAY || ident==iREFARRAY)
+        error(33,"-unknown-");          /* array must be indexed */
+      if (firstcase) {
+        tag=exprtag;
+        firstcase=FALSE;
+      } else {
+        check_tagmismatch(tag,exprtag,TRUE,-1);
+      } /* if */
+      jumplabel(lbl_exit);
+    } while (!matchtoken(')'));
+    #if !defined NDEBUG
+      /* verify that the case table is sorted (unfortunately, duplicates can
+       * occur; there really shouldn't be duplicate cases, but the compiler
+       * may not crash or drop into an assertion for a user error). */
+      for (cse=caselist.first; cse!=NULL && cse->next!=NULL; cse=cse->next)
+        assert(cse->value <= cse->next->value);
+    #endif
+    /* generate the table here, before lbl_exit (general jump target) */
+    setlabel(lbl_table);
+    assert(swdefault==FALSE || swdefault==TRUE);
+    if (swdefault==FALSE) {
+      error(95);    /* switch expression must contain a "default" case */
+      /* store lbl_exit as the "none-matched" label in the switch table */
+      strcpy(labelname,itoh(lbl_exit));
+    } else {
+      /* lbl_case holds the label of the "default" clause */
+      strcpy(labelname,itoh(lbl_case));
+    } /* if */
+    ffcase(casecount,labelname,TRUE);
+    /* generate the rest of the table */
+    for (cse=caselist.first; cse!=NULL; cse=cse->next)
+      ffcase(cse->value,cse->name,FALSE);
+
+    setlabel(lbl_exit);
+    delete_consttable(&caselist); /* clear list of case labels */
+    clear_value(lval);
+    lval->ident=iEXPRESSION;
+    lval->tag=tag;
+    return FALSE;
+  } /* case */
   case t__STATIC_ASSERT:
   case t__STATIC_CHECK: {
     int use_warning=(tok==t__STATIC_CHECK);
