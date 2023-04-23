@@ -402,7 +402,6 @@ enum {
   /* reserved words (statements) */
   t__ADDRESSOF,
   tASSERT,
-  tBEGIN,
   tBREAK,
   tCASE,
   tCHAR,
@@ -413,7 +412,6 @@ enum {
   tDO,
   tELSE,
   t__EMIT,
-  tEND,
   tENUM,
   tEXIT,
   tFOR,
@@ -436,7 +434,6 @@ enum {
   tSTOCK,
   tSWITCH,
   tTAGOF,
-  tTHEN,
   tWHILE,
 
   /* compiler directives */

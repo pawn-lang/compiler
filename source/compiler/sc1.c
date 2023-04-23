@@ -122,8 +122,8 @@ static void destructsymbols(symbol *root,int level);
 static constvalue *find_constval_byval(constvalue_root *table,cell val);
 static symbol *fetchlab(char *name);
 static void statement(int *lastindent,int allow_decl);
-static void compound(int stmt_sameline,int starttok);
-static int test(int label,int parens,int invert);
+static void compound(int stmt_sameline);
+static int test(int label,int needparens,int invert);
 static int doexpr(int comma,int chkeffect,int allowarray,int mark_endexpr,
                   int *tag,symbol **symptr,int chkfuncresult,cell *val);
 static void doassert(void);
@@ -205,12 +205,6 @@ typedef struct {
   OPCODE_PROC func;
 } EMIT_OPCODE;
 
-enum {
-  TEST_PLAIN,           /* no parentheses */
-  TEST_THEN,            /* '(' <expr> ')' or <expr> 'then' */
-  TEST_DO,              /* '(' <expr> ')' or <expr> 'do' */
-  TEST_OPT,             /* '(' <expr> ')' or <expr> */
-};
 static int lastst     = 0;      /* last executed statement type */
 static int endlessloop= 0;      /* nesting level of endless loop */
 static int rettype    = 0;      /* the type that a "return" expression should have */
@@ -5745,10 +5739,9 @@ static void statement(int *lastindent,int allow_decl)
     } /* if */
     break;
   case '{':
-  case tBEGIN:
     save=fline;
     if (!matchtoken('}'))       /* {} is the empty statement */
-      compound(save==fline,tok);
+      compound(save==fline);
     /* lastst (for "last statement") does not change */
     break;
   case ';':
@@ -5846,24 +5839,23 @@ static void statement(int *lastindent,int allow_decl)
   } /* switch */
 }
 
-static void compound(int stmt_sameline,int starttok)
+static void compound(int stmt_sameline)
 {
   int indent=-1;
   cell save_decl=declared;
   int count_stmt=0;
   int block_start=fline;  /* save line where the compound block started */
-  int endtok;
 
   /* if there is more text on this line, we should adjust the statement indent */
   if (stmt_sameline) {
     int i;
     const unsigned char *p=lptr;
     /* go back to the opening brace */
-    while (*p!=starttok) {
+    while (*p!='{') {
       assert(p>pline);
       p--;
     } /* while */
-    assert(*p==starttok);  /* it should be found */
+    assert(*p=='{');  /* it should be found */
     /* go forward, skipping white-space */
     p++;
     while (*p<=' ' && *p!='\0')
@@ -5877,9 +5869,8 @@ static void compound(int stmt_sameline,int starttok)
         stmtindent++;
   } /* if */
 
-  endtok=(starttok=='{') ? '}' : tEND;
   pc_nestlevel+=1;              /* increase compound statement level */
-  while (matchtoken(endtok)==0){/* repeat until compound statement is closed */
+  while (matchtoken('}')==0) {  /* repeat until compound statement is closed */
     if (!freading){
       error(30,block_start);    /* compound block not closed at end of file */
       break;
@@ -6002,12 +5993,13 @@ SC_FUNC int constexpr(cell *val,int *tag,symbol **symptr)
  *
  *  Global references: sc_intest (altered, but restored upon termination)
  */
-static int test(int label,int parens,int invert)
+static int test(int label,int needparens,int invert)
 {
   int index,tok;
   cell cidx;
   int ident,tag;
-  int endtok;
+  int foundparen;
+  short save_intest;
   cell constval;
   symbol *sym;
   int localstaging=FALSE;
@@ -6021,17 +6013,11 @@ static int test(int label,int parens,int invert)
     #endif
   } /* if */
 
-  PUSHSTK_I(sc_intest);
+  save_intest=sc_intest;
   sc_intest=TRUE;
-  endtok=0;
-  if (parens!=TEST_PLAIN) {
-    if (matchtoken('('))
-      endtok=')';
-    else if (parens==TEST_THEN)
-      endtok=tTHEN;
-    else if (parens==TEST_DO)
-      endtok=tDO;
-  } /* if */
+  foundparen=FALSE;
+  if (needparens)
+    foundparen=needtoken('(');
   do {
     stgget(&index,&cidx);       /* mark position (of last expression) in
                                  * code generator */
@@ -6044,15 +6030,19 @@ static int test(int label,int parens,int invert)
       markexpr(sEXPR,NULL,0);
     } /* if */
   } while (tok); /* do */
-  if (endtok!=0)
-    needtoken(endtok);
+  if (needparens) {
+    if (foundparen)
+      needtoken(')');
+    else
+      matchtoken(')');
+  } /* if */
   if (ident==iARRAY || ident==iREFARRAY) {
     char *ptr=(sym!=NULL) ? sym->name : "-unknown-";
     error(33,ptr);              /* array must be indexed */
   } /* if */
   if (ident==iCONSTEXPR) {      /* constant expression */
     int testtype=0;
-    sc_intest=(short)POPSTK_I();/* restore stack */
+    sc_intest=save_intest;      /* restore stack */
     stgdel(index,cidx);
     if (constval) {             /* code always executed */
       error(206);               /* redundant test: always non-zero */
@@ -6075,7 +6065,7 @@ static int test(int label,int parens,int invert)
   else
     jmp_eq0(label);             /* jump to label if false (equal to 0) */
   markexpr(sEXPR,NULL,0);       /* end expression (give optimizer a chance) */
-  sc_intest=(short)POPSTK_I();  /* double typecast to avoid warning with Microsoft C */
+  sc_intest=save_intest;
   if (localstaging) {
     stgout(0);                  /* output queue from the very beginning (see
                                  * assert() when localstaging is set to TRUE) */
@@ -6095,7 +6085,7 @@ static int doif(void)
   lastst=0;                     /* reset the last statement */
   ifindent=stmtindent;          /* save the indent of the "if" instruction */
   flab1=getlabel();             /* get label number for false branch */
-  test(flab1,TEST_THEN,FALSE);  /* get expression, branch to flab1 if false */
+  test(flab1,TRUE,FALSE);       /* get expression, branch to flab1 if false */
   statement(NULL,FALSE);        /* if true, do a statement */
   if (!matchtoken(tELSE)) {     /* if...else ? */
     setlabel(flab1);            /* no, simple if..., print false label */
@@ -6150,7 +6140,7 @@ static int dowhile(void)
                    * so any assignments made inside the loop control expression
                    * could be cleaned up later */
   pc_loopcond=tWHILE;
-  endlessloop=test(wq[wqEXIT],TEST_DO,FALSE);/* branch to wq[wqEXIT] if false */
+  endlessloop=test(wq[wqEXIT],TRUE,FALSE);   /* branch to wq[wqEXIT] if false */
   pc_loopcond=0;
   pc_nestlevel--;
   statement(NULL,FALSE);        /* if so, do a statement */
@@ -6192,7 +6182,7 @@ static int dodo(void)
                    * so any assignments made inside the loop control expression
                    * could be cleaned up later */
   pc_loopcond=tDO;
-  endlessloop=test(wq[wqEXIT],TEST_OPT,FALSE);
+  endlessloop=test(wq[wqEXIT],TRUE,FALSE);
   pc_loopcond=0;
   pc_nestlevel--;
   clearassignments(pc_nestlevel+1);
@@ -6213,7 +6203,7 @@ static int dofor(void)
   int wq[wqSIZE],skiplab;
   cell save_decl;
   int save_nestlevel,save_endlessloop,save_numloopvars;
-  int index,endtok;
+  int index;
   int *ptr;
   int loopline=fline;
   symstate *loopvars=NULL;
@@ -6226,7 +6216,7 @@ static int dofor(void)
 
   addwhile(wq);
   skiplab=getlabel();
-  endtok= matchtoken('(') ? ')' : tDO;
+  needtoken('(');
   pc_nestlevel++; /* temporarily increase the "compound statement" nesting level,
                    * so any assignments made inside the loop initialization, control
                    * expression and increment blocks could be cleaned up later */
@@ -6271,14 +6261,14 @@ static int dofor(void)
     endlessloop=1;
   } else {
     pc_loopcond=tFOR;
-    endlessloop=test(wq[wqEXIT],TEST_PLAIN,FALSE);/* expression 2 (jump to wq[wqEXIT] if false) */
+    endlessloop=test(wq[wqEXIT],FALSE,FALSE);   /* expression 2 (jump to wq[wqEXIT] if false) */
     pc_loopcond=0;
     needtoken(';');
   } /* if */
   stgmark((char)(sEXPRSTART+1));    /* mark start of 3th expression in stage */
-  if (!matchtoken(endtok)) {
+  if (!matchtoken(')')) {
     doexpr(TRUE,TRUE,TRUE,TRUE,NULL,NULL,FALSE,NULL);   /* expression 3 */
-    needtoken(endtok);
+    needtoken(')');
   } /* if */
   stgmark(sENDREORDER);             /* mark end of reversed evaluation */
   stgout(index);
@@ -6325,7 +6315,7 @@ static int doswitch(void)
 {
   int lbl_table,lbl_exit,lbl_case;
   int swdefault,casecount;
-  int tok,endtok;
+  int tok;
   int swtag,csetag;
   int allterminal;
   int enumsymcount;
@@ -6339,11 +6329,11 @@ static int doswitch(void)
   char labelname[sNAMEMAX+1];
   symstate *assignments=NULL;
 
-  endtok= matchtoken('(') ? ')' : tDO;
+  needtoken('(');
   ident=doexpr(TRUE,FALSE,FALSE,FALSE,&swtag,NULL,TRUE,NULL);   /* evaluate switch expression */
   if (ident==iCONSTEXPR)
     error(243);                 /* redundant code: switch control expression is constant */
-  needtoken(endtok);
+  needtoken(')');
   /* generate the code for the switch statement, the label is the address
    * of the case table (to be generated later).
    */
@@ -6362,12 +6352,7 @@ static int doswitch(void)
       enumsym=NULL;
   } /* if */
 
-  if (matchtoken(tBEGIN)) {
-    endtok=tEND;
-  } else {
-    endtok='}';
-    needtoken('{');
-  } /* if */
+  needtoken('{');
   lbl_exit=getlabel();          /* get label number for jumping out of switch */
   swdefault=FALSE;
   allterminal=TRUE;             /* assume that all cases end with terminal statements */
@@ -6472,13 +6457,13 @@ static int doswitch(void)
       allterminal &= isterminal(lastst);
       break;
     default:
-      if (tok!=endtok) {
+      if (tok!='}') {
         error(2);
         indent_nowarn=TRUE; /* disable this check */
-        tok=endtok;     /* break out of the loop after an error */
+        tok='}';            /* break out of the loop after an error */
       } /* if */
     } /* switch */
-  } while (tok!=endtok);
+  } while (tok!='}');
   restoreassignments(pc_nestlevel+1,assignments);
 
   if (enumsym!=NULL && swdefault==FALSE && enumsym->x.tags.unique-enumsymcount<=2) {
@@ -6563,7 +6548,7 @@ static void doassert(void)
 
   if ((sc_debug & sCHKBOUNDS)!=0) {
     flab1=getlabel();           /* get label number for "OK" branch */
-    test(flab1,TEST_PLAIN,TRUE);/* get expression and branch to flab1 if true */
+    test(flab1,FALSE,TRUE);     /* get expression and branch to flab1 if true */
     insert_dbgline(fline);      /* make sure we can find the correct line number */
     ffabort(xASSERTION);
     setlabel(flab1);
@@ -8359,7 +8344,7 @@ static void dostate(void)
   if (matchtoken('(')) {
     flabel=getlabel();          /* get label number for "false" branch */
     pc_docexpr=TRUE;            /* attach expression as a documentation string */
-    test(flabel,TEST_PLAIN,FALSE);/* get expression, branch to flabel if false */
+    test(flabel,FALSE,FALSE);   /* get expression, branch to flabel if false */
     pc_docexpr=FALSE;
     needtoken(')');
   } else {

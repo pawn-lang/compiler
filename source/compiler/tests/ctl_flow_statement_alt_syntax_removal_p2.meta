@@ -1,0 +1,12 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+ctl_flow_statement_alt_syntax_removal_p2.pwn(7) : error 001: expected token: "(", but found "-identifier-"
+ctl_flow_statement_alt_syntax_removal_p2.pwn(7) : error 001: expected token: ")", but found "do"
+ctl_flow_statement_alt_syntax_removal_p2.pwn(8) : error 001: expected token: "(", but found "-identifier-"
+ctl_flow_statement_alt_syntax_removal_p2.pwn(9) : error 001: expected token: "while", but found "for"
+ctl_flow_statement_alt_syntax_removal_p2.pwn(9) : error 036: empty statement
+ctl_flow_statement_alt_syntax_removal_p2.pwn(10) : error 001: expected token: "while", but found "}"
+ctl_flow_statement_alt_syntax_removal_p2.pwn(10) : error 030: compound statement not closed at the end of file (started at line 7)
+"""
+}

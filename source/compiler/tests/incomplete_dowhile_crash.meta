@@ -1,0 +1,7 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+incomplete_dowhile_crash.pwn(6) : error 001: expected token: "while", but found "}"
+incomplete_dowhile_crash.pwn(7) : error 001: expected token: ";", but found "-end of file-"
+"""
+}
