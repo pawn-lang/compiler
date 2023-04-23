@@ -183,7 +183,7 @@ SC_FUNC void state_buildlist(int **list,int *listsize,int *count,int stateid)
     *listsize+=4;
     newlist=(int*)realloc(*list,*listsize*sizeof(int));
     if (newlist==NULL)
-      error(103);               /* insufficient memory */
+      error(303);               /* insufficient memory */
     *list=newlist;
   } /* if */
 
@@ -240,10 +240,10 @@ SC_FUNC int state_addlist(int *list,int count,int fsa)
   ptr=state_findlist(list,count,fsa,&last);
   if (ptr==NULL) {
     if ((ptr=(statelist*)malloc(sizeof(statelist)))==NULL)
-      error(103);       /* insufficient memory */
+      error(303);       /* insufficient memory */
     if ((ptr->states=(int*)malloc(count*sizeof(int)))==NULL) {
       free(ptr);
-      error(103);       /* insufficient memory */
+      error(303);       /* insufficient memory */
     } /* if */
     memcpy(ptr->states,list,count*sizeof(int));
     ptr->numstates=count;

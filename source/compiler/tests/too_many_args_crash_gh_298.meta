@@ -5,7 +5,7 @@ too_many_args_crash_gh_298.pwn(2) : error 045: too many function arguments
 too_many_args_crash_gh_298.pwn(2) : warning 215: expression has no effect
 too_many_args_crash_gh_298.pwn(2) : error 001: expected token: ";", but found ")"
 too_many_args_crash_gh_298.pwn(2) : error 029: invalid expression, assumed zero
-too_many_args_crash_gh_298.pwn(2) : fatal error 107: too many error messages on one line
+too_many_args_crash_gh_298.pwn(2) : fatal error 307: too many error messages on one line
 
 Compilation aborted.
 """

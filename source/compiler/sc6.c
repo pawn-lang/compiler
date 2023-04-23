@@ -904,7 +904,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
   if (numnatives>0) {
     nativelist=(symbol **)malloc(numnatives*sizeof(symbol *));
     if (nativelist==NULL)
-      error(103);               /* insufficient memory */
+      error(303);               /* insufficient memory */
     #if !defined NDEBUG
       memset(nativelist,0,numnatives*sizeof(symbol *)); /* for NULL checking */
     #endif
@@ -1026,7 +1026,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
      * if there are no labels */
     lbltab=(cell *)malloc(sc_labnum*sizeof(cell));
     if (lbltab==NULL)
-      error(103);               /* insufficient memory */
+      error(303);               /* insufficient memory */
     codeindex=0;
     pc_resetasm(fin);
     while (pc_readasm(fin,line,sizeof line)!=NULL) {
@@ -1049,7 +1049,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
         i=findopcode(instr,(int)(params-instr));
         if (opcodelist[i].name==NULL) {
           *params='\0';
-          error(104,instr);     /* invalid assembler instruction */
+          error(304,instr);     /* invalid assembler instruction */
         } /* if */
         if (opcodelist[i].segment==sIN_CSEG)
           codeindex+=opcodelist[i].func(NULL,skipwhitespace(params),opcodelist[i].opcode);
@@ -1077,7 +1077,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
       assert(params>instr);
       i=findopcode(instr,(int)(params-instr));
       if (opcodelist[i].name==NULL)
-        error(104, stripwhitespace(instr)); /* invalid assembler instruction */
+        error(304, stripwhitespace(instr)); /* invalid assembler instruction */
       if (opcodelist[i].segment==pass)
         opcodelist[i].func(fout,skipwhitespace(params),opcodelist[i].opcode);
     } /* while */
@@ -1098,7 +1098,7 @@ SC_FUNC int assemble(FILE *fout,FILE *fin)
     append_dbginfo(fout);       /* optionally append debug file */
 
   if (writeerror)
-    error(101,"disk full");
+    error(301,"disk full");
 
   /* adjust the header */
   size=(int)hdr.cod;    /* save, the value in the header may need to be swapped */

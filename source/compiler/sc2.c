@@ -100,7 +100,7 @@ SC_FUNC void pushstk(stkitem val)
     assert(newsize>stktop);
     newstack=(stkitem*)realloc(stack,newsize*sizeof(stkitem));
     if (newstack==NULL)
-      error(102,"parser stack");  /* stack overflow (recursive include?) */
+      error(302,"parser stack");  /* stack overflow (recursive include?) */
     stack=newstack;
     stktop=newsize;
   } /* if */
@@ -147,12 +147,12 @@ SC_FUNC int plungequalifiedfile(char *name)
   ext_idx=0;
   path=(char *)malloc(strlen(name)+sizeof(extensions[0]));
   if (path==NULL)
-    error(103);                 /* insufficient memory */
+    error(303);                 /* insufficient memory */
   strcpy(path,name);
   real_path=(char *)malloc(strlen(name)+sizeof(extensions[0]));
   if (real_path==NULL) {
     free(path);
-    error(103);                 /* insufficient memory */
+    error(303);                 /* insufficient memory */
   } /* if */
   do {
     found=TRUE;
@@ -198,7 +198,7 @@ SC_FUNC int plungequalifiedfile(char *name)
   PUSHSTK_I(fline);
   inpfname=path;            /* set name of include file */
   if (inpfname==NULL)
-    error(103);             /* insufficient memory */
+    error(303);             /* insufficient memory */
   inpf=fp;                  /* set input file pointer to include file */
   fnumber++;
   fline=0;                  /* set current line number to 0 */
@@ -343,7 +343,7 @@ static void doinclude(int silent)
     if (result && pc_compat)
       add_constant(symname,1,sGLOBAL,0);
     else if (!result && !silent)
-      error(100,name);          /* cannot read from ... (fatal error) */
+      error(300,name);          /* cannot read from ... (fatal error) */
   } /* if */
 }
 
@@ -1086,7 +1086,7 @@ static int command(void)
     ret=CMD_IF;
     assert(iflevel>=0);
     if (iflevel>=sCOMP_STACK)
-      error(102,"Conditional compilation stack"); /* table overflow */
+      error(302,"Conditional compilation stack"); /* table overflow */
     iflevel++;
     if (SKIPPING)
       break;                    /* break out of switch */
@@ -1178,7 +1178,7 @@ static int command(void)
         free(inpfname);
         inpfname=duplicatestring(pathname);
         if (inpfname==NULL)
-          error(103);           /* insufficient memory */
+          error(303);           /* insufficient memory */
         insert_dbgfile(inpfname);
       } /* if */
     } /* if */
@@ -1198,7 +1198,7 @@ static int command(void)
         /* nothing */;          /* save start of expression */
       preproc_expr(&val,NULL);  /* get constant expression (or 0 on error) */
       if (!val)
-        error(110,str);         /* assertion failed */
+        error(310,str);         /* assertion failed */
       check_empty(lptr);
     } /* if */
     break;
@@ -1222,7 +1222,7 @@ static int command(void)
             name[i]='\0';
           } /* if */
           if (!cp_set(name))
-            error(108);         /* codepage mapping file not found */
+            error(308);         /* codepage mapping file not found */
         } else if (strcmp(str,"compress")==0) {
           preproc_expr(&val,NULL);
           sc_compress=(int)val; /* switch code packing on/off */
@@ -1248,7 +1248,7 @@ static int command(void)
             while (ptr>=pc_deprecate && *ptr<= ' ')
               *ptr--='\0';
           } else {
-            error(103); /* insufficient memory */
+            error(303); /* insufficient memory */
           } /* if */
           lptr=(unsigned char*)strchr((char*)lptr,'\0'); /* skip to end (ignore "extra characters on line") */
         } else if (strcmp(str,"dynamic")==0) {
@@ -1554,7 +1554,7 @@ static int command(void)
       /* store matched pattern */
       pattern=(char*)malloc(count+1);
       if (pattern==NULL)
-        error(103);     /* insufficient memory */
+        error(303);     /* insufficient memory */
       lptr=start;
       count=0;
       while (lptr!=end) {
@@ -1588,7 +1588,7 @@ static int command(void)
       /* store matched substitution */
       substitution=(char*)malloc(count+1);  /* +1 for '\0' */
       if (substitution==NULL)
-        error(103);     /* insufficient memory */
+        error(303);     /* insufficient memory */
       lptr=start;
       count=0;
       while (lptr!=end) {
@@ -1647,12 +1647,12 @@ static int command(void)
         while (ptr >= usermsg && *ptr<=' ')
           *ptr--='\0';
         if (tok==tpERROR)
-          error(111,usermsg); /* user error */
+          error(311,usermsg); /* user error */
         else
           error(237,usermsg); /* user warning */
         free(usermsg);
       } else {
-        error(103); /* insufficient memory */
+        error(303); /* insufficient memory */
       } /* if */
     } /* if */
     break;
@@ -1826,7 +1826,7 @@ static int substpattern(unsigned char *line,size_t buffersize,char *pattern,char
         len=(int)(e-s);
         args[arg]=(unsigned char*)malloc(len+1);
         if (args[arg]==NULL)
-          error(103); /* insufficient memory */
+          error(303); /* insufficient memory */
         strlcpy((char*)args[arg],(char*)s,len+1);
         /* character behind the pattern was matched too */
         if (*e==*p) {
@@ -2549,14 +2549,14 @@ static void rectok(char *tokptr,int whitespace)
   if (pc_recstr==NULL) {
     pc_recstr=(char *)malloc((toklen+1)*sizeof(char));
     if (pc_recstr==NULL)
-      error(103);       /* insufficient memory */
+      error(303);       /* insufficient memory */
     memcpy(pc_recstr,tokptr,toklen*sizeof(char));
     pc_recstr[toklen]='\0';
   } else {
     int oldlen=strlen(pc_recstr);
     char *newresctr=realloc(pc_recstr,(oldlen+(whitespace ? 1 : 0)+toklen+1)*sizeof(char));
     if (newresctr==NULL)
-      error(103);       /* insufficient memory */
+      error(303);       /* insufficient memory */
     pc_recstr=newresctr;
     if (whitespace)
       pc_recstr[oldlen]=' ';
@@ -2749,7 +2749,7 @@ static void chk_grow_litq(void)
     litgrow=litmax-litgrow;
     p=(cell *)realloc(litq,litmax*sizeof(cell));
     if (p==NULL)
-      error(102,"literal table");   /* literal table overflow (fatal error) */
+      error(302,"literal table");   /* literal table overflow (fatal error) */
     litq=p;
   } /* if */
 }
@@ -3063,7 +3063,7 @@ static void symbol_cache_add(symbol *sym)
 
   if (pcache_sym==NULL) {
     if (hashtable_insert(&symbol_cache_ht,key,&sym)==0)
-      error(103);       /* insufficient memory */
+      error(303);       /* insufficient memory */
     return;
   } /* if */
   cache_sym=*pcache_sym;
@@ -3115,7 +3115,7 @@ static symbol *add_symbol(symbol *root,symbol *entry,int sort)
       root=root->next;
 
   if ((newsym=(symbol *)malloc(sizeof(symbol)))==NULL)
-    error(103);
+    error(303);
   memcpy(newsym,entry,sizeof(symbol));
   newsym->next=root->next;
   root->next=newsym;
@@ -3462,7 +3462,7 @@ SC_FUNC void memoizeassignments(int fromlevel,symstate **assignments)
       return;
     *assignments=(symstate *)calloc((size_t)num,sizeof(symstate));
     if (*assignments==NULL)
-      error(103); /* insufficient memory */
+      error(303); /* insufficient memory */
   } /* if */
 
   sym=&loctab;
@@ -3606,7 +3606,7 @@ SC_FUNC symbol *addsym(const char *name,cell addr,int ident,int vclass,int tag,i
 
   /* create an empty referrer list */
   if ((refer=(symbol**)malloc(sizeof(symbol*)))==NULL)
-    error(103);         /* insufficient memory */
+    error(303);         /* insufficient memory */
   *refer=NULL;
 
   /* first fill in the entry */

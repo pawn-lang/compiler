@@ -148,7 +148,7 @@ static stringlist *insert_string(stringlist *list,char *string)
     newlist.data=calloc(newlist.size,sizeof(char*));
     newlist.strings=newlist.data;
     if (newlist.data==NULL)
-      error(103);       /* insufficient memory (fatal error) */
+      error(303);       /* insufficient memory (fatal error) */
     *list=newlist;
   } else if (list->length==list->size ||
              list->length==list->data+list->size-list->strings) {
@@ -158,12 +158,12 @@ static stringlist *insert_string(stringlist *list,char *string)
     newlist.data=realloc(list->data,newlist.size*sizeof(char*));
     newlist.strings=newlist.data+(list->strings-list->data);
     if (newlist.data==NULL)
-      error(103);       /* insufficient memory (fatal error) */
+      error(303);       /* insufficient memory (fatal error) */
     memset(newlist.data+list->size,0,list->size/2*sizeof(char*));
     *list=newlist;
   } /* if */
   if ((list->strings[list->length]=duplicatestring(string))==NULL)
-    error(103);         /* insufficient memory (fatal error) */
+    error(303);         /* insufficient memory (fatal error) */
   list->length++;
   return list;
 }
@@ -214,7 +214,7 @@ SC_FUNC stringpair *insert_alias(char *name,char *alias)
   assert(alias!=NULL);
   assert(strlen(alias)<=sNAMEMAX);
   if ((cur=insert_stringpair(&alias_tab,name,alias,strlen(name)))==NULL)
-    error(103);       /* insufficient memory (fatal error) */
+    error(303);       /* insufficient memory (fatal error) */
   return cur;
 }
 
@@ -277,7 +277,7 @@ SC_FUNC stringpair *insert_subst(char *pattern,char *substitution,int prefixlen)
   assert(pattern!=NULL);
   assert(substitution!=NULL);
   if ((cur=insert_stringpair(&substpair,pattern,substitution,prefixlen))==NULL)
-    error(103);       /* insufficient memory (fatal error) */
+    error(303);       /* insufficient memory (fatal error) */
   adjustindex(*pattern);
   return cur;
 }
@@ -396,7 +396,7 @@ SC_FUNC valuepair *push_heaplist(long first, long second)
 {
   valuepair *cur, *last;
   if ((cur=malloc(sizeof(valuepair)))==NULL)
-    error(103);       /* insufficient memory (fatal error) */
+    error(303);       /* insufficient memory (fatal error) */
 
   cur->first=first;
   cur->second=second;

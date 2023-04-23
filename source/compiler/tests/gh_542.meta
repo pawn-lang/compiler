@@ -1,7 +1,7 @@
 {
   'test_type': 'output_check',
   'errors': """
-gh_542.pwn(2) : fatal error 110: assertion failed: false
+gh_542.pwn(2) : fatal error 310: assertion failed: false
 
 
 Compilation aborted.

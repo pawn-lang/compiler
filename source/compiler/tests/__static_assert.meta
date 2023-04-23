@@ -18,7 +18,7 @@ __static_assert.pwn(40) : error 008: must be a constant expression; assumed zero
 __static_assert.pwn(41) : error 001: expected token: "-string-", but found "-identifier-"
 __static_assert.pwn(42) : error 001: expected token: "-string-", but found "!"
 __static_assert.pwn(43) : error 001: expected token: "-string-", but found "!"
-__static_assert.pwn(49) : fatal error 110: assertion failed: this is zero
+__static_assert.pwn(49) : fatal error 310: assertion failed: this is zero
 
 Compilation aborted.
 """
