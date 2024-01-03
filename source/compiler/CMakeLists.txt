@@ -1,6 +1,11 @@
 project(pawnc C)
 cmake_minimum_required(VERSION 2.8)
 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+set(sNAMEMAX 31 CACHE INT "The maximum length of function/symbol names")
+set(PAWN_CELL_SIZE 32 CACHE INT "The number of bits in a cell")
+
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake)
 
 set(VERSION_MAJOR 3)
@@ -61,6 +66,8 @@ endif()
 if(APPLE)
   set(CMAKE_MACOSX_RPATH ON)
 endif()
+
+add_definitions(-DsNAMEMAX=${sNAMEMAX} -DPAWN_CELL_SIZE=${PAWN_CELL_SIZE})
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/version.h)
@@ -174,6 +181,7 @@ if(BUILD_TESTING)
     ../amx/amxaux.h
     ../amx/amxcons.c
     ../amx/amxcore.c
+    ../amx/amxstring.c
   )
   if(UNIX)
     set(PAWNRUNS_SRCS
