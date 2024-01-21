@@ -1,0 +1,6 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+gh_730_fix_const_arg.pwn(1) : error 042: invalid combination of class specifiers
+  """
+}
