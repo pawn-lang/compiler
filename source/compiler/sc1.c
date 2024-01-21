@@ -4276,6 +4276,8 @@ static int declargs(symbol *sym,int chkshadow)
         ident=iREFERENCE;
         break;
       case tCONST:
+        if (fconst)
+          error(42);                    /* invalid combination of class specifiers */
         if (ident!=iVARIABLE || numtags>0 || fpragma)
           error(1,sc_tokens[tSYMBOL-tFIRST],sc_tokens[tCONST-tFIRST]);
         fconst=TRUE;
