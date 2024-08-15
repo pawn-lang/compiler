@@ -1,50 +1,55 @@
-project(pawnc C)
-cmake_minimum_required(VERSION 2.8)
-
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake)
-
+#==============================================================================#
+cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+cmake_policy(SET CMP0115 NEW)
+#==============================================================================#
 set(VERSION_MAJOR 3)
 set(VERSION_MINOR 10)
 set(VERSION_BUILD 11)
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD})
 set(VERSION_STR ${VERSION})
 math(EXPR VERSION_INT "${VERSION_MAJOR} << 8 | ${VERSION_MINOR}")
+#==============================================================================#
+project(pawnc
+	LANGUAGES C
+	#VERSION ${VERSION}
+)
+
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake)
+#==============================================================================#
+include(CheckIncludeFiles)
+include(CheckFunctionExists)
 
 # check for optional include files
-include(CheckIncludeFile)
-check_include_file("unistd.h" HAVE_UNISTD_H)
-if(HAVE_UNISTD_H)
-  add_definitions(-DHAVE_UNISTD_H)
-endif()
-check_include_file("inttypes.h" HAVE_INTTYPES_H)
-if(HAVE_INTTYPES_H)
-  add_definitions(-DHAVE_INTTYPES_H)
-endif()
-check_include_file("stdint.h" HAVE_STDINT_H)
-if(HAVE_STDINT_H)
-  add_definitions(-DHAVE_STDINT_H)
-endif()
-check_include_file("alloca.h" HAVE_ALLOCA_H)
-if(HAVE_ALLOCA_H)
-  add_definitions(-DHAVE_ALLOCA_H)
-endif()
-check_include_file("endian.h" HAVE_ENDIAN_H)
-if(HAVE_ENDIAN_H)
-  add_definitions(-DHAVE_ENDIAN_H)
-endif()
+set(REQUIRED_INCLUDE_FILES
+    "inttypes.h"
+    "stdint.h"
+    "alloca.h"
+    "malloc.h"
+    "unistd.h"
+    "endian.h"
+)
+foreach(INCLUDE_FILE ${REQUIRED_INCLUDE_FILES})
+	string(REGEX REPLACE "\\.|/" "_" DEFINITION_NAME "HAVE_${INCLUDE_FILE}")
+	string(TOUPPER ${DEFINITION_NAME} DEFINITION_NAME)
+	check_include_files("${INCLUDE_FILE}" ${DEFINITION_NAME})
+	if(${DEFINITION_NAME})
+        add_definitions(-D${DEFINITION_NAME})
+	endif()
+endforeach()
 
 # check for optional library functions
-include(CheckFunctionExists)
-check_function_exists(strlcpy HAVE_STRLCPY)
-if(HAVE_STRLCPY)
-  add_definitions(-DHAVE_STRLCPY)
-endif()
-check_function_exists(strlcat HAVE_STRLCAT)
-if(HAVE_STRLCAT)
-  add_definitions(-DHAVE_STRLCAT)
-endif()
+set(REQUIRED_FUNCTIONS
+	strlcpy
+	strlcat
+)
+foreach(FUNCTION_NAME ${REQUIRED_FUNCTIONS})
+    set(DEFINITION_NAME "HAVE_${FUNCTION_NAME}")
+	check_function_exists(${FUNCTION_NAME} ${DEFINITION_NAME})
+	if(${DEFINITION_NAME})
+        add_definitions(-D${DEFINITION_NAME})
+	endif()
+endforeach()
 
 if(MSVC)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE)
@@ -64,6 +69,14 @@ if(APPLE)
   set(CMAKE_MACOSX_RPATH ON)
 endif()
 
+if(DEFINED sNAMEMAX
+    AND sNAMEMAX MATCHES "^[0-9]+$"
+    AND NOT sNAMEMAX LESS 31)
+  add_definitions(-DsNAMEMAX=${sNAMEMAX})
+else()
+  add_definitions(-DsNAMEMAX=63)
+endif()
+#==============================================================================#
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/version.h)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
