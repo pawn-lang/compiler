@@ -62,6 +62,7 @@ endif()
 
 if(APPLE)
   set(CMAKE_MACOSX_RPATH ON)
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 endif()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
