@@ -236,7 +236,9 @@ typedef struct tagAMX_NATIVE_INFO {
 #define AMX_USERNUM     4
 #endif
 #define sEXPMAX         19      /* maximum name length for file version <= 6 */
-#define sNAMEMAX        31      /* maximum name length of symbol name */
+#ifndef sNAMEMAX
+  #define sNAMEMAX      31      /* maximum name length of symbol name */
+#endif
 
 typedef struct tagAMX_FUNCSTUB {
   ucell address         PACKED;
