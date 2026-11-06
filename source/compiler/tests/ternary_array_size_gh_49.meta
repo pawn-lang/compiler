@@ -1,0 +1,13 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+ternary_array_size_gh_49.pwn(40) : error 047: array sizes do not match, or destination array is too small
+ternary_array_size_gh_49.pwn(42) : error 047: array sizes do not match, or destination array is too small
+ternary_array_size_gh_49.pwn(43) : error 047: array sizes do not match, or destination array is too small
+ternary_array_size_gh_49.pwn(45) : error 047: array sizes do not match, or destination array is too small
+ternary_array_size_gh_49.pwn(47) : error 047: array sizes do not match, or destination array is too small
+ternary_array_size_gh_49.pwn(48) : error 047: array sizes do not match, or destination array is too small
+ternary_array_size_gh_49.pwn(50) : error 047: array sizes do not match, or destination array is too small
+ternary_array_size_gh_49.pwn(52) : error 048: array dimensions do not match
+  """
+}

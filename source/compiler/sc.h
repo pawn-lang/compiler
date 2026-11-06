@@ -267,6 +267,8 @@ typedef struct s_value {
                          * iEXPRESSION or iREFERENCE */
   char boolresult;      /* boolean result for relational operators */
   cell *arrayidx;       /* last used array indices, for checking self assignment */
+  char arraysize_mismatch; /* TRUE if the operands of a conditional expression
+                         * are arrays of different sizes (see hier13()) */
 } value;
 
 /*  "while" statement queue (also used for "for" and "do - while" loops) */
