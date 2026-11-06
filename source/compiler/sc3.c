@@ -1069,7 +1069,8 @@ static int hier14(value *lval1)
     } /* if */
     if (lval3.sym->dim.array.level!=level)
       return error(48); /* array dimensions must match */
-    else if (ltlength<val || (exactmatch && ltlength>val) || val==0)
+    else if (ltlength<val || (exactmatch && ltlength>val) || val==0
+             || lval2.arraysize_mismatch)
       return error(47); /* array sizes must match */
     else if (lval3.ident!=iARRAYCELL)
       check_index_tagmismatch((lval2.sym!=NULL) ? lval2.sym->name : lval3.sym->name,lval3.sym->x.tags.index,idxtag,TRUE,0);
@@ -1128,6 +1129,26 @@ static int hier14(value *lval1)
       markusage(sym,uREAD);
   } /* if */
   return FALSE;         /* expression result is never an lvalue */
+}
+
+/* returns the number of dimensions of an array operand of a conditional
+ * expression (a literal array is always single-dimensional)
+ */
+static int cond_arraylevel(const value *lval)
+{
+  assert(lval->ident==iARRAY || lval->ident==iREFARRAY);
+  return (lval->sym!=NULL) ? lval->sym->dim.array.level : 0;
+}
+
+/* returns the size (in cells) of a single-dimensional array operand of a
+ * conditional expression, or 0 if the size is unknown
+ */
+static cell cond_arraysize(const value *lval)
+{
+  assert(lval->ident==iARRAY || lval->ident==iREFARRAY);
+  if (lval->sym==NULL)
+    return (lval->constval<0) ? -lval->constval : lval->constval; /* literal array or string */
+  return lval->sym->dim.array.length;
 }
 
 static int hier13(value *lval)
@@ -1193,8 +1214,26 @@ static int hier13(value *lval)
     } else if (!array1 && array2) {
       char *ptr=(lval2.sym!=NULL) ? lval2.sym->name : "-unknown-";
       error(33,ptr);            /* array must be indexed */
+    } else if (array1 && array2) {
+      /* Both operands are arrays: they must have the same number of dimensions
+       * and, when both sizes are known, the same size. The result of the
+       * expression only carries the size of the first operand, so an array
+       * of a different size in the second operand would be copied with a
+       * wrong size. A size mismatch is only an error where the result is
+       * copied or passed to an argument of a fixed size, so it is flagged
+       * in the result and checked in hier14() and callfunction() (GH #49).
+       */
+      if (cond_arraylevel(lval)!=cond_arraylevel(&lval2)) {
+        error(48);              /* array dimensions must match */
+      } else if (cond_arraylevel(lval)==0) {
+        cell size1=cond_arraysize(lval);
+        cell size2=cond_arraysize(&lval2);
+        if (size1!=0 && size2!=0 && size1!=size2)
+          lval->arraysize_mismatch=TRUE;
+      } /* if */
+      if (lval2.arraysize_mismatch)
+        lval->arraysize_mismatch=TRUE;  /* nested conditional expression in the second operand */
     } /* if */
-    /* ??? if both are arrays, should check dimensions */
     check_tagmismatch(lval->tag,lval2.tag,FALSE,-1); /* tagname mismatch ('true' and 'false' expressions) */
     setlabel(flab2);
     if (sc_status==statFIRST) {
@@ -2146,6 +2185,7 @@ static void clear_value(value *lval)
   lval->tag=0;
   lval->ident=0;
   lval->boolresult=FALSE;
+  lval->arraysize_mismatch=FALSE;
   /* do not clear lval->arrayidx, it is preset in hier14() */
   /* do not clear lval->cmptag */
 }
@@ -2523,6 +2563,8 @@ static int nesting=0;
               check_index_tagmismatch(sym->name,arg[argidx].idxtag[level],sym->x.tags.index,TRUE,0);
             append_constval(&arrayszlst,arg[argidx].name,sym->dim.array.length,level);
           } /* if */
+          if (lval.arraysize_mismatch && arg[argidx].dim[0]!=0)
+            error(47);          /* array sizes must match (conditional expression with arrays of different sizes) */
           /* address already in PRI */
           check_tagmismatch_multiple(arg[argidx].tags,arg[argidx].numtags,lval.tag,-1);
           if (lval.tag!=0)
