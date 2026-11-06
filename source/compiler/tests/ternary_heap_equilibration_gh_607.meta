@@ -1,0 +1,15 @@
+{
+  'test_type': 'runtime',
+  'output': """
+aaaa
+ss
+aaaa
+tt
+ss
+bb
+bb
+ff
+ternary_heap_equilibration_gh_607.amx returns 0
+  """,
+  'should_fail': False
+}

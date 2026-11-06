@@ -1135,7 +1135,7 @@ static int hier13(value *lval)
   int lvalue=plnge1(hier12,lval);
   if (matchtoken('?')) {
     int locheap=decl_heap;      /* save current heap delta */
-    long heap1,heap2;           /* max. heap delta either branch */
+    int heap1,heap2;            /* heap delta of either branch */
     int flab1=getlabel();
     int flab2=getlabel();
     value lval2={0};
@@ -1150,20 +1150,9 @@ static int hier13(value *lval)
       checkfunction(lval);      /* if the test is a function, that function
                                  * should return a value */
     } /* if */
-    if (sc_status!=statFIRST) {
-      #if !defined NDEBUG
-        int result=
-      #endif
-      popfront_heaplist(&heap1,&heap2);
-      assert(result);           /* pop off equally many items than were pushed */
-    } /* if */
     jmp_eq0(flab1);             /* go to second expression if primary register==0 */
     PUSHSTK_I(sc_allowtags);
     sc_allowtags=FALSE;         /* do not allow tagnames here (colon is a special token) */
-    if (sc_status==statWRITE) {
-      modheap(heap1*sizeof(cell));
-      decl_heap+=heap1;         /* equilibrate the heap (see comment below) */
-    } /* if */
     if (hier13(lval))
       rvalue(lval);
     if (lval->ident==iCONSTEXPR)        /* load constant here */
@@ -1175,10 +1164,6 @@ static int hier13(value *lval)
     jumplabel(flab2);
     setlabel(flab1);
     needtoken(':');
-    if (sc_status==statWRITE) {
-      modheap(heap2*sizeof(cell));
-      decl_heap+=heap2;         /* equilibrate the heap (see comment below) */
-    } /* if */
     if (hier13(&lval2))
       rvalue(&lval2);
     if (lval2.ident==iCONSTEXPR)        /* load constant here */
@@ -1196,19 +1181,35 @@ static int hier13(value *lval)
     } /* if */
     /* ??? if both are arrays, should check dimensions */
     check_tagmismatch(lval->tag,lval2.tag,FALSE,-1); /* tagname mismatch ('true' and 'false' expressions) */
-    setlabel(flab2);
-    if (sc_status==statFIRST) {
-      /* Calculate the max. heap space used by either branch and save values of
-       * max - heap1 and max - heap2. On the second pass, we use these values
-       * to equilibrate the heap space used by either branch. This is needed
-       * because we don't know (at compile time) which branch will be taken,
-       * but the heap cannot be restored inside each branch because the result
-       * on the heap may needed by the remaining expression.
-       */
-      int max=(heap1>heap2) ? heap1 : heap2;
-      push_heaplist(max-heap1,max-heap2);
+    /* Equilibrate the heap space used by either branch. This is needed
+     * because we don't know (at compile time) which branch will be taken,
+     * but the heap cannot be restored inside each branch because the result
+     * on the heap may be needed by the remaining expression. The heap usage
+     * of a branch is only known after its code has been generated, so the
+     * branch that uses less heap space gets an extra "heap" instruction
+     * appended after both branches have been generated. The "false" branch
+     * simply falls through into its adjustment; for the "true" branch the
+     * adjustment is placed in a separate block that the "false" branch jumps
+     * over. The adjustment only clobbers ALT, so the result in PRI is kept.
+     * (An earlier implementation collected the heap sizes during the first
+     * pass and applied them in the second pass, but the amount of ternary
+     * operators may differ between the passes because of conditional
+     * compilation, e.g. "#if defined func", see GH #607.)
+     */
+    if (heap1>heap2) {
+      modheap((heap1-heap2)*sizeof(cell));      /* "false" branch: allocate the difference */
+      setlabel(flab2);
+      decl_heap=locheap+heap1;
+    } else if (heap2>heap1) {
+      int flab3=getlabel();
+      jumplabel(flab3);
+      setlabel(flab2);
+      modheap((heap2-heap1)*sizeof(cell));      /* "true" branch: allocate the difference */
+      setlabel(flab3);
+      decl_heap=locheap+heap2;
+    } else {
+      setlabel(flab2);          /* both branches use the same amount of heap space */
     } /* if */
-    assert(sc_status!=statWRITE || heap1==heap2);
     if (lval->ident==iARRAY)
       lval->ident=iREFARRAY;    /* iARRAY becomes iREFARRAY */
     else if (lval->ident!=iREFARRAY)
