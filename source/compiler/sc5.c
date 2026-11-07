@@ -153,7 +153,7 @@ static char *fatalmsg[] = {
 /*108*/  "codepage mapping file not found\n",
 /*109*/  "invalid path: \"%s\"\n",
 /*110*/  "assertion failed: %s\n",
-/*111*/  "user error: %s\n"
+/*111*/  "%s\n"
 };
 
 static char *warnmsg[] = {
@@ -269,7 +269,8 @@ static short lastfile;
   } else if (number<200) {
     assert(number>=100 && number<(100+sizeof(fatalmsg)/sizeof(fatalmsg[0])));
     msg=fatalmsg[number-100];
-    pre=prefix[1];
+    /* a user error (#error) is still fatal, but gets its own prefix */
+    pre=(number==111) ? "user error" : prefix[1];
     errnum++;           /* a fatal error also counts as an error */
   } else if (errwarn) {
     assert(number>=200 && number<(200+sizeof(warnmsg)/sizeof(warnmsg[0])));

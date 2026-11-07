@@ -1,0 +1,7 @@
+{
+  'test_type': 'xml_check',
+  'xml_tag': 'general',
+  'xml': """
+first
+"""
+}

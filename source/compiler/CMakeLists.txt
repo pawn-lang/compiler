@@ -1,5 +1,13 @@
+cmake_minimum_required(VERSION 3.5)
 project(pawnc C)
-cmake_minimum_required(VERSION 2.8)
+
+# The compiler sources use C99 features (and "constexpr" is a keyword in C23),
+# so make the language standard explicit instead of relying on the compiler
+# default.
+if(NOT DEFINED CMAKE_C_STANDARD)
+  set(CMAKE_C_STANDARD 99)
+  set(CMAKE_C_STANDARD_REQUIRED ON)
+endif()
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake)
 

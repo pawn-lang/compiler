@@ -1877,25 +1877,31 @@ void sc_attachdocumentation(symbol *sym)
   /* first check the size */
   length=0;
   for (line=0; (str=get_docstring(line))!=NULL && *str!=sDOCSEP; line++) {
-    if (length>0)
-      length++;   /* count 1 extra for a separating space */
-    length+=strlen(str);
+    if (str[0]!='\0') {
+      if (length>0)
+        length++;   /* count 1 extra for a separating space */
+      length+=strlen(str);
+    } /* if */
   } /* for */
-  if (sym==NULL && sc_documentation!=NULL) {
-    length += strlen(sc_documentation) + 1 + 4; /* plus 4 for "<p/>" */
-    assert(length>strlen(sc_documentation));
-  } /* if */
 
   if (length>0) {
-    /* allocate memory for the documentation */
-    if (sym!=NULL && sym->documentation!=NULL)
+    if (sym==NULL && sc_documentation!=NULL) {
+      length += strlen(sc_documentation) + 1 + 4; /* plus 4 for "<p/>" */
+      assert(length>strlen(sc_documentation));
+    } else if (sym!=NULL && sym->documentation!=NULL) {
       length+=strlen(sym->documentation) + 1 + 4;/* plus 4 for "<p/>" */
+      assert(length>strlen(sym->documentation));
+    } /* if */
+
+    /* allocate memory for the documentation */
     doc=(char*)malloc((length+1)*sizeof(char));
     if (doc!=NULL) {
       /* initialize string or concatenate */
       if (sym==NULL && sc_documentation!=NULL) {
         strcpy(doc,sc_documentation);
         strcat(doc,"<p/>");
+        free(sc_documentation);
+        sc_documentation=NULL;
       } else if (sym!=NULL && sym->documentation!=NULL) {
         strcpy(doc,sym->documentation);
         strcat(doc,"<p/>");
@@ -1906,9 +1912,11 @@ void sc_attachdocumentation(symbol *sym)
       } /* if */
       /* collect all documentation */
       while ((str=get_docstring(0))!=NULL && *str!=sDOCSEP) {
-        if (doc[0]!='\0')
-          strcat(doc," ");
-        strcat(doc,str);
+        if (str[0]!='\0') {
+          if (doc[0]!='\0')
+            strcat(doc," ");
+          strcat(doc,str);
+        } /* if */
         delete_docstring(0);
       } /* while */
       if (str!=NULL) {
@@ -1916,12 +1924,12 @@ void sc_attachdocumentation(symbol *sym)
         assert(*str==sDOCSEP);
         delete_docstring(0);
       } /* if */
-      if (sym!=NULL) {
+      if (sym==NULL) {
+        assert(sc_documentation==NULL);
+        sc_documentation=doc;
+      } else {
         assert(sym->documentation==NULL);
         sym->documentation=doc;
-      } else {
-        free(sc_documentation);
-        sc_documentation=doc;
       } /* if */
     } /* if */
   } else {
@@ -2776,8 +2784,6 @@ static cell initvector(int ident,int tag,cell size,int startlit,int fillzero,
     cell step=((litidx-startlit)==1) ? (cell)0 : prev1-prev2;
     if (size==0 || (litidx-startlit)==0)
       error(41);                /* invalid ellipsis, array size unknown */
-    else if ((litidx-startlit)==(int)size)
-      error(18);                /* initialisation data exceeds declared size */
     while ((litidx-startlit)<(int)size) {
       prev1+=step;
       litadd(prev1);
@@ -2842,6 +2848,9 @@ static cell needsub(int *tag,constvalue_root **enumroot)
   if (val<0) {
     error(9);               /* negative array size is invalid; assumed zero */
     val=0;
+  } else if (val==0) {
+    error(9);               /* explicit zero array size is invalid; assumed one */
+    val=1;
   } /* if */
   needtoken(']');
 

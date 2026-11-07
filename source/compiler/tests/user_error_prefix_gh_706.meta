@@ -1,0 +1,8 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+user_error_prefix_gh_706.pwn(1) : user error 111: custom failure message
+
+Compilation aborted.
+  """
+}

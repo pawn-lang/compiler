@@ -134,7 +134,7 @@ static char *prefix[3]={ "error", "fatal error", "warning" };
   if (number!=0) {
     char *pre;
 
-    pre=prefix[number/100];
+    pre=(number==111) ? "user error" : prefix[number/100];
     if (number>=200 && pc_geterrorwarnings()){
       pre=prefix[0];
     }

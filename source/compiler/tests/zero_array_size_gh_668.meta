@@ -1,0 +1,6 @@
+{
+  'test_type': 'output_check',
+  'errors': """
+zero_array_size_gh_668.pwn(1) : error 009: invalid array size (negative, zero or out of bounds)
+  """
+}

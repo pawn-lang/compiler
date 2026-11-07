@@ -57,6 +57,12 @@ def remove_asm_comments(s):
 def strip(s):
   return s.strip(' \t\r\n')
 
+def normalize_xml_fragment(s):
+  # Remove the indentation the XML writer adds, but keep significant
+  # whitespace (such as trailing spaces) inside the fragment itself.
+  lines = normalize_newlines(s).split('\n')
+  return '\n'.join(line.strip('\t') for line in lines).strip('\n')
+
 class OutputCheckTest:
   def __init__(self, name, errors=None, extra_args=None):
     self.name = name
@@ -83,6 +89,56 @@ class OutputCheckTest:
         'Error output didn\'t match\n\nExpected errors:\n\n{}\n\n'
         'Actual errors:\n\n{}'
       ).format(expected_errors, errors)
+      return False
+    return True
+
+class XmlCheckTest:
+  def __init__(self, name, tag, expected, extra_args=None):
+    self.name = name
+    self.tag = tag
+    self.expected = expected
+    self.extra_args = extra_args
+
+  def run(self):
+    report = self.name + '_report'
+    args = ['-r=' + report, self.name + '.pwn']
+    if self.extra_args is not None:
+      args = self.extra_args + args
+    process, stdout, stderr = run_compiler(args=args)
+    if process.returncode != 0:
+      self.fail_reason = \
+        'Compiler exited with status {}'.format(process.returncode)
+      errors = stderr
+      if errors:
+        self.fail_reason += '\n\nErrors:\n\n{}'.format(errors)
+      return False
+
+    report_path = report + '.xml'
+    try:
+      with open(report_path, 'r') as report_file:
+        content = report_file.read()
+    except IOError:
+      self.fail_reason = \
+        'Documentation report "{}" was not generated'.format(report_path)
+      return False
+    finally:
+      if os.path.exists(report_path):
+        os.remove(report_path)
+
+    match = re.search(r'<{0}>(.*?)</{0}>'.format(re.escape(self.tag)),
+                      content, re.DOTALL)
+    if match is None:
+      self.fail_reason = \
+        'Tag <{}> was not found in the documentation report'.format(self.tag)
+      return False
+
+    actual = normalize_xml_fragment(match.group(1))
+    expected = normalize_xml_fragment(self.expected)
+    if actual != expected:
+      self.fail_reason = (
+        'Documentation didn\'t match\n\nExpected documentation:\n\n{!r}\n\n'
+        'Actual documentation:\n\n{!r}'
+      ).format(expected, actual)
       return False
     return True
 
@@ -197,6 +253,12 @@ for meta_file in glob.glob('*.meta'):
     tests.append(PCodeCheckTest(
       name=name,
       code_pattern=metadata.get('code_pattern'),
+      extra_args=metadata.get('extra_args')))
+  elif test_type == 'xml_check':
+    tests.append(XmlCheckTest(
+      name=name,
+      tag=metadata.get('xml_tag', 'general'),
+      expected=metadata.get('xml'),
       extra_args=metadata.get('extra_args')))
   elif test_type == 'runtime':
     tests.append(RuntimeTest(
